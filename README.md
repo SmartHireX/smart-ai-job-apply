@@ -30,6 +30,7 @@ AI-powered form filling extension for job applications.
 - ✅ Submit button highlighting
 - ✅ Secure authentication
 - ✅ Works on any website
+- ✅ **NEW**: Automatic token sync with SmartHireX website
 
 ## Technical Details
 
@@ -97,7 +98,8 @@ smart-hirex-extension/
 - Some dynamic forms may need manual field detection
 
 **Login not working?**
-- Make sure backend server is running
+- Make sure backend server is running at `http://localhost:8000`
+- Ensure frontend is running at `http://localhost:8080`
 - Check browser console for errors
 - Clear extension storage and try again
 
@@ -106,6 +108,13 @@ smart-hirex-extension/
 - Try filling manually then use extension for remaining fields
 - Report issues to help improve AI mapping
 
+## Recent Updates
+
+### Authentication Sync Fix (Dec 2024)
+- Fixed URL port mismatch (now correctly uses port 8080)
+- Added automatic token sync from website to extension
+- Improved authentication flow documentation
+
 ## Future Features
 
 - [ ] Multi-page form support
@@ -113,3 +122,4 @@ smart-hirex-extension/
 - [ ] Form template saving
 - [ ] Firefox support
 - [ ] Custom field mapping editor
+
