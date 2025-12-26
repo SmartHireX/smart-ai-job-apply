@@ -281,6 +281,43 @@ async function handleFillForm() {
 
         const mapping = await mappingResponse.json();
 
+        // Check if there are missing fields that need user input
+        if (mapping.missing_fields && mapping.missing_fields.length > 0) {
+            hideProgress();
+
+            // Show missing data dialog and wait for user input
+            const additionalData = await showMissingDataDialog(mapping.missing_fields, analysis.fields);
+
+            if (!additionalData) {
+                // User cancelled
+                showResult('error', '⚠️', 'Form filling cancelled. Please provide the required information.');
+                fillBtn.disabled = false;
+                return;
+            }
+
+            // Complete mapping with additional data
+            showProgress('Processing your additional data...', 70);
+            const completeResponse = await fetch(`${API_BASE_URL}/autofill/complete-with-data`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_email: email,
+                    form_fields: analysis.fields,
+                    additional_data: additionalData
+                })
+            });
+
+            if (!completeResponse.ok) {
+                throw new Error('Failed to complete mapping with additional data');
+            }
+
+            const completeMapping = await completeResponse.json();
+            mapping.mappings = completeMapping.mappings;
+        }
+
         // Fill form via content script
         showProgress('Filling form fields...', 90);
         const fillResult = await chrome.tabs.sendMessage(tab.id, {
@@ -337,6 +374,119 @@ function showResult(type, icon, message) {
 // Hide result
 function hideResult() {
     resultSection.classList.add('hidden');
+}
+
+// Show missing data dialog and collect user input
+async function showMissingDataDialog(missingFields, allFields) {
+    return new Promise((resolve) => {
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'missing-data-overlay';
+        overlay.className = 'modal-overlay';
+
+        // Create modal dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'missing-data-dialog';
+
+        // Dialog header
+        const header = document.createElement('div');
+        header.className = 'dialog-header';
+        header.innerHTML = `
+            <h3>📝 Additional Information Needed</h3>
+            <p>We need a few more details to complete the form</p>
+        `;
+
+        // Dialog content
+        const content = document.createElement('div');
+        content.className = 'dialog-content';
+
+        // Create form fields for missing data
+        const form = document.createElement('form');
+        form.id = 'missing-data-form';
+
+        missingFields.forEach((fieldPurpose) => {
+            // Find the field details from allFields
+            const fieldDetail = allFields.find(f => f.purpose === fieldPurpose);
+            const label = fieldDetail ? fieldDetail.label : fieldPurpose;
+            const fieldType = fieldDetail ? fieldDetail.type : 'text';
+
+            const fieldGroup = document.createElement('div');
+            fieldGroup.className = 'field-group';
+
+            const fieldLabel = document.createElement('label');
+            fieldLabel.textContent = label || fieldPurpose;
+            fieldLabel.setAttribute('for', `field-${fieldPurpose}`);
+
+            let input;
+            if (fieldType === 'textarea' || fieldPurpose.includes('letter') || fieldPurpose.includes('why')) {
+                input = document.createElement('textarea');
+                input.rows = 4;
+            } else {
+                input = document.createElement('input');
+                input.type = fieldType === 'email' ? 'email' : 'text';
+            }
+
+            input.id = `field-${fieldPurpose}`;
+            input.name = fieldPurpose;
+            input.placeholder = `Enter ${label || fieldPurpose}`;
+            input.required = true;
+
+            fieldGroup.appendChild(fieldLabel);
+            fieldGroup.appendChild(input);
+            form.appendChild(fieldGroup);
+        });
+
+        content.appendChild(form);
+
+        // Dialog footer
+        const footer = document.createElement('div');
+        footer.className = 'dialog-footer';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.textContent = 'Cancel';
+
+        const submitBtn = document.createElement('button');
+        submitBtn.type = 'button';
+        submitBtn.className = 'btn btn-primary';
+        submitBtn.textContent = 'Continue';
+
+        footer.appendChild(cancelBtn);
+        footer.appendChild(submitBtn);
+
+        // Assemble dialog
+        dialog.appendChild(header);
+        dialog.appendChild(content);
+        dialog.appendChild(footer);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        // Event handlers
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(null);
+        });
+
+        submitBtn.addEventListener('click', () => {
+            // Validate form
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            // Collect data
+            const formData = new FormData(form);
+            const additionalData = {};
+
+            for (const [key, value] of formData.entries()) {
+                additionalData[key] = value;
+            }
+
+            document.body.removeChild(overlay);
+            resolve(additionalData);
+        });
+    });
 }
 
 // Listen for messages from content script or background
