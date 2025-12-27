@@ -4,7 +4,7 @@ const FRONTEND_URL = 'http://localhost:8080';
 
 
 // DOM Elements
-let authSection, mainSection, loginBtn, syncBtn, fillBtn, logoutLink;
+let authSection, mainSection, loginBtn, fillBtn, logoutLink;
 let userInitial, userName, userEmail;
 let formStatus, formCount;
 let progressSection, progressFill, progressText;
@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     authSection = document.getElementById('auth-section');
     mainSection = document.getElementById('main-section');
     loginBtn = document.getElementById('login-btn');
-    syncBtn = document.getElementById('sync-btn');
     fillBtn = document.getElementById('fill-btn');
     logoutLink = document.getElementById('logout-link');
 
@@ -40,29 +39,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Add event listeners
     loginBtn.addEventListener('click', handleLogin);
-    syncBtn.addEventListener('click', handleSyncSession);
     fillBtn.addEventListener('click', handleFillForm);
     logoutLink.addEventListener('click', handleLogout);
 });
 
-// Check if user is authenticated
+// Check authentication status
 async function checkAuth() {
     try {
-        let { token } = await chrome.storage.local.get(['token']);
+        console.log('Checking authentication status...');
 
-        if (!token) {
-            // Check if logged in on another tab
+        // First, try to sync session from existing tabs automatically
+        const { token: existingToken } = await chrome.storage.local.get(['token']);
+
+        if (!existingToken) {
+            console.log('No stored token, checking for active session in tabs...');
             await checkExistingSession();
-            const result = await chrome.storage.local.get(['token']);
-            token = result.token;
-
-            if (!token) {
-                showAuthSection();
-                return;
-            }
         }
 
-        // Verify token and get user info
+        // Now check if we have a token (either from storage or newly synced)
+        const { token } = await chrome.storage.local.get(['token']);
+
+        if (!token) {
+            console.log('No token available, showing auth section');
+            showAuthSection();
+            return;
+        }
+
+        // Verify token is still valid
+        console.log('Verifying token with backend...');
         const response = await fetch(`${API_BASE_URL}/me`, {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -70,13 +74,25 @@ async function checkAuth() {
         });
 
         if (!response.ok) {
+            console.log('Token invalid, clearing and showing auth section');
             // Token invalid
             await chrome.storage.local.remove(['token', 'email']);
-            showAuthSection();
-            return;
+
+            // Try one more sync before giving up
+            await checkExistingSession();
+            const { token: newToken } = await chrome.storage.local.get(['token']);
+
+            if (!newToken) {
+                showAuthSection();
+                return;
+            }
+
+            // Recursive call with new token
+            return checkAuth();
         }
 
         const user = await response.json();
+        console.log('User authenticated:', user.email);
 
         // Store email
         const { email } = await chrome.storage.local.get(['email']);
@@ -115,6 +131,7 @@ async function checkExistingSession() {
 
 // Show authentication section
 function showAuthSection() {
+    console.log('Showing auth section');
     authSection.classList.remove('hidden');
     mainSection.classList.add('hidden');
     logoutLink.classList.add('hidden');
@@ -122,6 +139,7 @@ function showAuthSection() {
 
 // Show main section
 function showMainSection(user) {
+    console.log('Showing main section for user:', user);
     authSection.classList.add('hidden');
     mainSection.classList.remove('hidden');
     logoutLink.classList.remove('hidden');
@@ -130,10 +148,14 @@ function showMainSection(user) {
     if (user.name) {
         userName.textContent = user.name;
         userInitial.textContent = user.name.charAt(0).toUpperCase();
+    } else if (user.email) {
+        userName.textContent = user.email;
+        userInitial.textContent = user.email.charAt(0).toUpperCase();
     }
     if (user.email) {
         userEmail.textContent = user.email;
     }
+    console.log('Main section displayed successfully');
 }
 
 // Handle login
@@ -188,33 +210,48 @@ async function handleSyncSession() {
 
 // Handle logout
 async function handleLogout() {
+    console.log('Logging out...');
     await chrome.storage.local.remove(['token', 'email']);
-    showAuthSection();
+    await checkAuth();
 }
 
 // Detect forms on current page
 async function detectForms() {
+    console.log('Detecting forms on page...');
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        // Send message to content script to detect forms
+        if (!tab) {
+            console.log('No active tab found');
+            formCount.textContent = 'No active page';
+            return;
+        }
+
+        console.log('Current tab:', tab.url);
+
         const response = await chrome.tabs.sendMessage(tab.id, {
             type: 'DETECT_FORMS'
         });
 
+        console.log('Form detection response:', response);
+
         if (response && response.formCount > 0) {
-            formCount.textContent = `${response.formCount} form${response.formCount > 1 ? 's' : ''} detected`;
+            formStatus.classList.remove('error');
             formStatus.classList.add('success');
+            formCount.textContent = `${response.formCount} form(s) detected`;
             fillBtn.disabled = false;
+            console.log(`Forms found: ${response.formCount}`);
         } else {
-            formCount.textContent = 'No forms detected on this page';
-            formStatus.classList.remove('success');
+            formStatus.classList.remove('success', 'error');
+            formCount.textContent = 'No forms found on this page';
             fillBtn.disabled = true;
+            console.log('No forms found');
         }
     } catch (error) {
-        console.error('Form detection failed:', error);
-        formCount.textContent = 'Unable to detect forms';
+        console.error('Form detection error:', error);
+        formStatus.classList.remove('success');
         formStatus.classList.add('error');
+        formCount.textContent = 'Could not detect forms';
         fillBtn.disabled = true;
     }
 }
@@ -239,6 +276,9 @@ async function handleFillForm() {
             throw new Error('Could not extract form data');
         }
 
+        console.log('Extracted HTML length:', formData.html.length);
+        console.log('HTML preview (first 500 chars):', formData.html.substring(0, 500));
+
         // Analyze form with backend
         showProgress('AI is analyzing the form...', 60);
         const analysisResponse = await fetch(`${API_BASE_URL}/autofill/analyze`, {
@@ -258,6 +298,8 @@ async function handleFillForm() {
         }
 
         const analysis = await analysisResponse.json();
+        console.log('Analysis result:', analysis);
+        console.log('Fields detected:', analysis.fields ? analysis.fields.length : 0);
 
         // Map user data to form fields
         showProgress('Mapping your data to form fields...', 80);
@@ -280,6 +322,9 @@ async function handleFillForm() {
         }
 
         const mapping = await mappingResponse.json();
+        console.log('Mapping result:', mapping);
+        console.log('Mappings count:', mapping.mappings ? Object.keys(mapping.mappings).length : 0);
+        console.log('Missing fields:', mapping.missing_fields);
 
         // Check if there are missing fields that need user input
         if (mapping.missing_fields && mapping.missing_fields.length > 0) {
@@ -392,7 +437,7 @@ async function showMissingDataDialog(missingFields, allFields) {
         const header = document.createElement('div');
         header.className = 'dialog-header';
         header.innerHTML = `
-            <h3>📝 Additional Information Needed</h3>
+            <h3>Additional Information Needed</h3>
             <p>We need a few more details to complete the form</p>
         `;
 

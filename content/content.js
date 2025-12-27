@@ -52,28 +52,87 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Detect forms on the page
 function detectForms() {
+    // 1. Standard form elements
     const forms = document.querySelectorAll('form');
-    return forms.length;
+    if (forms.length > 0) return forms.length;
+
+    // 2. Elements with role="form"
+    const roleForms = document.querySelectorAll('[role="form"]');
+    if (roleForms.length > 0) return roleForms.length;
+
+    // 3. Workday specific detection
+    const workdayContainer = document.querySelector('[data-automation-id="signInPage"], [data-automation-id="candidateHome-page"], [data-automation-id="applyManually-page"]');
+    if (workdayContainer) return 1;
+
+    // 4. Fallback: look for containers with multiple inputs and a button
+    const containers = document.querySelectorAll('div, section, main');
+    let dynamicFormFound = 0;
+
+    for (const container of containers) {
+        // If it's a small container or too large, skip
+        if (container.children.length < 2) continue;
+
+        const inputs = container.querySelectorAll('input:not([type="hidden"]), textarea, select');
+        const buttons = container.querySelectorAll('button, [role="button"]');
+
+        // If container has at least 2 inputs and a button, consider it a potential form
+        if (inputs.length >= 2 && buttons.length >= 1) {
+            // Check if this container is nested within another candidate
+            const existingForms = document.querySelectorAll('form, [role="form"]');
+            let isNested = false;
+            for (const f of existingForms) {
+                if (f.contains(container)) {
+                    isNested = true;
+                    break;
+                }
+            }
+            if (!isNested) {
+                dynamicFormFound = 1;
+                break;
+            }
+        }
+    }
+
+    return dynamicFormFound;
 }
 
 // Extract form HTML
 function extractFormHTML() {
-    // Get all forms on the page
+    // 1. Get all standard forms
     const forms = document.querySelectorAll('form');
-
-    if (forms.length === 0) {
-        // No form tag, look for common input containers
-        const body = document.body;
-        return body.innerHTML;
+    if (forms.length > 0) {
+        let html = '';
+        forms.forEach(form => {
+            html += form.outerHTML + '\n';
+        });
+        return html;
     }
 
-    // Return HTML of the first form (or combine multiple)
-    let html = '';
-    forms.forEach(form => {
-        html += form.outerHTML + '\n';
-    });
+    // 2. Look for role="form"
+    const roleForms = document.querySelectorAll('[role="form"]');
+    if (roleForms.length > 0) {
+        let html = '';
+        roleForms.forEach(form => {
+            html += form.outerHTML + '\n';
+        });
+        return html;
+    }
 
-    return html;
+    // 3. Workday specific extraction
+    const workdayContainer = document.querySelector('[data-automation-id="signInPage"], [data-automation-id="candidateHome-page"], [data-automation-id="applyManually-page"]');
+    if (workdayContainer) {
+        return workdayContainer.outerHTML;
+    }
+
+    // 4. Fallback to common input containers
+    const inputs = document.querySelectorAll('input:not([type="hidden"]), textarea, select');
+    if (inputs.length > 0) {
+        // Find the most relevant container (usually 'main' or a large div)
+        const main = document.querySelector('main') || document.body;
+        return main.innerHTML;
+    }
+
+    return document.body.innerHTML;
 }
 
 // Fill form with mapped data
@@ -91,35 +150,53 @@ function fillForm(mappings) {
                 continue;
             }
 
-            const value = fieldData.value;
+            // Handle both flat mappings (value) and nested mappings ({value: ...})
+            const value = (fieldData && typeof fieldData === 'object' && fieldData.hasOwnProperty('value'))
+                ? fieldData.value
+                : fieldData;
 
             // Fill based on element type
-            if (element.tagName === 'INPUT') {
-                if (element.type === 'checkbox' || element.type === 'radio') {
-                    element.checked = value === 'true' || value === true;
-                } else {
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT') {
+                // Focus the element first
+                element.focus();
+
+                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                    if (element.type === 'checkbox' || element.type === 'radio') {
+                        element.checked = value === 'true' || value === true;
+                    } else {
+                        // Use native property setter to bypass React's value tracking
+                        try {
+                            const prototype = element.tagName === 'INPUT' ? window.HTMLInputElement.prototype : window.HTMLTextAreaElement.prototype;
+                            const nativeSetter = Object.getOwnPropertyDescriptor(prototype, "value").set;
+                            nativeSetter.call(element, value);
+                        } catch (e) {
+                            // Fallback for non-standard environments
+                            element.value = value;
+                        }
+                    }
+                } else if (element.tagName === 'SELECT') {
                     element.value = value;
-                }
-            } else if (element.tagName === 'SELECT') {
-                element.value = value;
-                // Try to select by text if value doesn't match
-                if (element.value !== value) {
-                    const options = element.options;
-                    for (let i = 0; i < options.length; i++) {
-                        if (options[i].text.toLowerCase() === value.toLowerCase()) {
-                            element.selectedIndex = i;
-                            break;
+                    // Try to select by text if value doesn't match
+                    if (element.value !== value) {
+                        const options = element.options;
+                        for (let i = 0; i < options.length; i++) {
+                            if (options[i].text.toLowerCase() === value.toLowerCase()) {
+                                element.selectedIndex = i;
+                                break;
+                            }
                         }
                     }
                 }
-            } else if (element.tagName === 'TEXTAREA') {
-                element.value = value;
-            }
 
-            // Trigger events to ensure form validation
-            element.dispatchEvent(new Event('input', { bubbles: true }));
-            element.dispatchEvent(new Event('change', { bubbles: true }));
-            element.dispatchEvent(new Event('blur', { bubbles: true }));
+                // Trigger events to ensure form validation
+                // Use a combination of events for maximum compatibility
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+                element.dispatchEvent(new Event('change', { bubbles: true }));
+
+                // For React/modern frameworks, sometimes we need to trigger the setter manually 
+                // but usually dispatching input + change + blur is enough if we focused first.
+                element.dispatchEvent(new Event('blur', { bubbles: true }));
+            }
 
             // Add highlight animation
             highlightField(element);

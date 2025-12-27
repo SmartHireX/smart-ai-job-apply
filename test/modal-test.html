@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal UI Test</title>
+    <link rel="stylesheet" href="../popup/popup.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            padding: 40px;
+            background: #f1f5f9;
+        }
+
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #0f172a;
+            margin-bottom: 20px;
+        }
+
+        .test-btn {
+            background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <h1>🎨 Premium Modal Test</h1>
+        <p style="color: #64748b; margin-bottom: 24px;">
+            Click the button below to see the new premium modal design.
+        </p>
+        <button class="test-btn" onclick="showTestModal()">
+            Show Missing Data Modal
+        </button>
+    </div>
+
+    <script>
+        function showTestModal() {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+
+            // Create modal dialog
+            const dialog = document.createElement('div');
+            dialog.className = 'missing-data-dialog';
+
+            // Dialog header
+            const header = document.createElement('div');
+            header.className = 'dialog-header';
+            header.innerHTML = `
+                <h3>Additional Information Needed</h3>
+                <p>We need a few more details to complete the form</p>
+            `;
+
+            // Dialog content
+            const content = document.createElement('div');
+            content.className = 'dialog-content';
+
+            const form = document.createElement('form');
+
+            // Sample fields
+            const fields = [
+                { id: 'family_name', label: 'Family Name', type: 'text' },
+                { id: 'address', label: 'Address Line 1', type: 'text' },
+                { id: 'city', label: 'City', type: 'text' },
+                { id: 'phone', label: 'Phone Number', type: 'tel' }
+            ];
+
+            fields.forEach(field => {
+                const fieldGroup = document.createElement('div');
+                fieldGroup.className = 'field-group';
+
+                const label = document.createElement('label');
+                label.textContent = field.label;
+                label.setAttribute('for', field.id);
+
+                const input = document.createElement('input');
+                input.type = field.type;
+                input.id = field.id;
+                input.name = field.id;
+                input.placeholder = `Enter ${field.label.toLowerCase()}`;
+
+                fieldGroup.appendChild(label);
+                fieldGroup.appendChild(input);
+                form.appendChild(fieldGroup);
+            });
+
+            content.appendChild(form);
+
+            // Dialog footer
+            const footer = document.createElement('div');
+            footer.className = 'dialog-footer';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'btn btn-secondary';
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.onclick = () => {
+                document.body.removeChild(overlay);
+            };
+
+            const continueBtn = document.createElement('button');
+            continueBtn.type = 'button';
+            continueBtn.className = 'btn btn-primary';
+            continueBtn.textContent = 'Continue';
+            continueBtn.onclick = () => {
+                alert('Form data would be submitted here!');
+                document.body.removeChild(overlay);
+            };
+
+            footer.appendChild(cancelBtn);
+            footer.appendChild(continueBtn);
+
+            // Assemble modal
+            dialog.appendChild(header);
+            dialog.appendChild(content);
+            dialog.appendChild(footer);
+            overlay.appendChild(dialog);
+
+            // Add to page
+            document.body.appendChild(overlay);
+
+            // Close on backdrop click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    document.body.removeChild(overlay);
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
