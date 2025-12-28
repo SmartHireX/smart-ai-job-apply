@@ -423,114 +423,32 @@ function hideResult() {
 
 // Show missing data dialog and collect user input
 async function showMissingDataDialog(missingFields, allFields) {
-    return new Promise((resolve) => {
-        // Create modal overlay
-        const overlay = document.createElement('div');
-        overlay.id = 'missing-data-overlay';
-        overlay.className = 'modal-overlay';
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Get active tab
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        // Create modal dialog
-        const dialog = document.createElement('div');
-        dialog.className = 'missing-data-dialog';
-
-        // Dialog header
-        const header = document.createElement('div');
-        header.className = 'dialog-header';
-        header.innerHTML = `
-            <h3>Additional Information Needed</h3>
-            <p>We need a few more details to complete the form</p>
-        `;
-
-        // Dialog content
-        const content = document.createElement('div');
-        content.className = 'dialog-content';
-
-        // Create form fields for missing data
-        const form = document.createElement('form');
-        form.id = 'missing-data-form';
-
-        missingFields.forEach((fieldPurpose) => {
-            // Find the field details from allFields
-            const fieldDetail = allFields.find(f => f.purpose === fieldPurpose);
-            const label = fieldDetail ? fieldDetail.label : fieldPurpose;
-            const fieldType = fieldDetail ? fieldDetail.type : 'text';
-
-            const fieldGroup = document.createElement('div');
-            fieldGroup.className = 'field-group';
-
-            const fieldLabel = document.createElement('label');
-            fieldLabel.textContent = label || fieldPurpose;
-            fieldLabel.setAttribute('for', `field-${fieldPurpose}`);
-
-            let input;
-            if (fieldType === 'textarea' || fieldPurpose.includes('letter') || fieldPurpose.includes('why')) {
-                input = document.createElement('textarea');
-                input.rows = 4;
-            } else {
-                input = document.createElement('input');
-                input.type = fieldType === 'email' ? 'email' : 'text';
-            }
-
-            input.id = `field-${fieldPurpose}`;
-            input.name = fieldPurpose;
-            input.placeholder = `Enter ${label || fieldPurpose}`;
-            input.required = true;
-
-            fieldGroup.appendChild(fieldLabel);
-            fieldGroup.appendChild(input);
-            form.appendChild(fieldGroup);
-        });
-
-        content.appendChild(form);
-
-        // Dialog footer
-        const footer = document.createElement('div');
-        footer.className = 'dialog-footer';
-
-        const cancelBtn = document.createElement('button');
-        cancelBtn.type = 'button';
-        cancelBtn.className = 'btn btn-secondary';
-        cancelBtn.textContent = 'Cancel';
-
-        const submitBtn = document.createElement('button');
-        submitBtn.type = 'button';
-        submitBtn.className = 'btn btn-primary';
-        submitBtn.textContent = 'Continue';
-
-        footer.appendChild(cancelBtn);
-        footer.appendChild(submitBtn);
-
-        // Assemble dialog
-        dialog.appendChild(header);
-        dialog.appendChild(content);
-        dialog.appendChild(footer);
-        overlay.appendChild(dialog);
-        document.body.appendChild(overlay);
-
-        // Event handlers
-        cancelBtn.addEventListener('click', () => {
-            document.body.removeChild(overlay);
-            resolve(null);
-        });
-
-        submitBtn.addEventListener('click', () => {
-            // Validate form
-            if (!form.checkValidity()) {
-                form.reportValidity();
+            if (!tab) {
+                reject(new Error('No active tab found'));
                 return;
             }
 
-            // Collect data
-            const formData = new FormData(form);
-            const additionalData = {};
+            // Send message to content script to show modal on the page
+            const response = await chrome.tabs.sendMessage(tab.id, {
+                type: 'SHOW_MISSING_DATA_MODAL',
+                missingFields: missingFields,
+                allFields: allFields
+            });
 
-            for (const [key, value] of formData.entries()) {
-                additionalData[key] = value;
+            if (response && response.success) {
+                resolve(response.data);
+            } else {
+                reject(new Error(response?.error || 'Failed to collect missing data'));
             }
-
-            document.body.removeChild(overlay);
-            resolve(additionalData);
-        });
+        } catch (error) {
+            console.error('Error showing missing data modal:', error);
+            reject(error);
+        }
     });
 }
 
