@@ -157,6 +157,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true });
         return false;
     }
+
+    if (message.type === 'SHOW_ERROR_TOAST') {
+        showErrorToast(message.message);
+        return true;
+    }
 });
 
 // ============================================
@@ -1059,6 +1064,70 @@ function fillForm(mappings) {
         canUndo: Object.keys(originalValues).length > 0,
         fileFields: [] // File fields now handled by sidebar, not returned here
     };
+}
+
+/**
+ * Show error toast notification
+ */
+function showErrorToast(message) {
+    // Remove any existing toast
+    const existingToast = document.getElementById('smarthirex-fill-toast');
+    if (existingToast) existingToast.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'smarthirex-fill-toast';
+    toast.style.cssText = `
+        position: fixed;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-left: 4px solid #ef4444;
+        border-radius: 8px;
+        padding: 16px 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        z-index: 999999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        min-width: 320px;
+        max-width: 450px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        animation: slideDownFade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    `;
+
+    toast.innerHTML = `
+        <div style="font-size: 20px; line-height: 1; flex-shrink: 0;">⚠️</div>
+        <div style="flex: 1;">
+            <div style="font-weight: 700; color: #7f1d1d; font-size: 15px; margin-bottom: 4px;">Error</div>
+            <div style="color: #450a0a; font-size: 14px; line-height: 1.4;">${message}</div>
+        </div>
+        <div style="cursor: pointer; color: #991b1b; padding: 4px;" onclick="this.parentElement.remove()">✕</div>
+    `;
+
+    // Add animation styles if needed
+    if (!document.getElementById('smarthirex-toast-styles')) {
+        const style = document.createElement('style');
+        style.id = 'smarthirex-toast-styles';
+        style.textContent = `
+            @keyframes slideDownFade {
+                from { transform: translate(-50%, -20px); opacity: 0; }
+                to { transform: translate(-50%, 0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.body.appendChild(toast);
+
+    // Auto remove after 6 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translate(-50%, -10px)';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 6000);
 }
 
 /**

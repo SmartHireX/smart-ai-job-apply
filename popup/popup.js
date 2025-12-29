@@ -1191,4 +1191,18 @@ function showQuotaErrorModal(message) {
             overlay.remove();
         }
     }, 10000);
+
+    // ALSO Show toaster on the actual page (content script)
+    try {
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    type: 'SHOW_ERROR_TOAST',
+                    message: message || 'You\'ve exceeded your AI quota.'
+                });
+            }
+        });
+    } catch (e) {
+        console.error('Failed to show error toaster:', e);
+    }
 }
