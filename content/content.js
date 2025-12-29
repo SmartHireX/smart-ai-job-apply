@@ -617,13 +617,14 @@ function fillForm(mappings) {
     highlightSubmitButton();
 
     // Detect and highlight file upload fields
-    const fileFields = detectFileFields();
-    if (fileFields.length > 0) {
-        // Highlight file fields after a short delay
-        setTimeout(() => {
-            highlightFileFields(fileFields);
-        }, 1000);
-    }
+    // NOTE: File field highlighting removed - now handled by low-confidence sidebar
+    // const fileFields = detectFileFields();
+    // if (fileFields.length > 0) {
+    //     // Highlight file fields after a short delay
+    //     setTimeout(() => {
+    //         highlightFileFields(fileFields);
+    //     }, 1000);
+    // }
 
     // Store original values in sessionStorage for undo (expires in 5 minutes)
     const undoData = {
@@ -642,10 +643,7 @@ function fillForm(mappings) {
         filled: filledCount,
         total: totalCount,
         canUndo: Object.keys(originalValues).length > 0,
-        fileFields: fileFields.map(field => ({
-            selector: getElementSelector(field),
-            label: field.labels && field.labels.length > 0 ? field.labels[0].textContent : 'File Upload'
-        }))
+        fileFields: [] // File fields now handled by sidebar, not returned here
     };
 }
 
@@ -677,12 +675,39 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
             field: element,
             label,
             confidence: item.confidence,
-            fieldType: item.fieldData.field_type || element.type || 'text'
+            fieldType: item.fieldData.field_type || element.type || 'text',
+            isFileUpload: false
         };
     }).filter(Boolean);
 
+    // Also detect file upload fields
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(fileInput => {
+        if (!isFieldVisible(fileInput)) return;
+
+        let label = 'File Upload';
+        if (fileInput.labels && fileInput.labels[0]) {
+            label = fileInput.labels[0].textContent.trim();
+        } else if (fileInput.name) {
+            label = fileInput.name.replace(/[_-]/g, ' ');
+        } else if (fileInput.id) {
+            label = fileInput.id.replace(/[_-]/g, ' ');
+        }
+
+        // Check if not already filled
+        if (!fileInput.files || fileInput.files.length === 0) {
+            fieldsWithInfo.push({
+                field: fileInput,
+                label,
+                confidence: 1.0,  // File uploads are high priority
+                fieldType: 'file',
+                isFileUpload: true
+            });
+        }
+    });
+
     if (fieldsWithInfo.length === 0) {
-        console.log('No visible low-confidence fields to show');
+        console.log('No visible low-confidence fields or file uploads to show');
         return;
     }
 
@@ -703,9 +728,9 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
             <div class="header-content">
                 <div class="header-title">
                     <span id="lowconf-count" class="count-badge">${fieldsWithInfo.length}</span>
-                    <span class="header-text">low-confidence field${fieldsWithInfo.length > 1 ? 's' : ''}</span>
+                    <span class="header-text">field${fieldsWithInfo.length > 1 ? 's' : ''} needing attention</span>
                 </div>
-                <div class="header-subtitle">Please review and fill manually</div>
+                <div class="header-subtitle">Please review and complete</div>
             </div>
             <button class="close-btn" onclick="this.closest('#smarthirex-lowconf-panel').remove(); document.querySelectorAll('.smarthirex-lowconf-overlay').forEach(el => el.remove()); document.querySelectorAll('.smarthirex-lowconf-highlight').forEach(el => el.classList.remove('smarthirex-lowconf-highlight'))">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -719,14 +744,20 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
             ${fieldsWithInfo.map((item, i) => {
         const confidencePercent = Math.round(item.confidence * 100);
         const confidenceClass = item.confidence >= 0.7 ? 'medium' : 'low';
+
+        // Special styling for file uploads
+        const isFile = item.isFileUpload;
+        const fieldIcon = isFile ? '📎' : (i + 1);
+        const fieldNumClass = isFile ? 'file-upload-icon' : '';
+
         return `
-                    <div class="field-item" data-idx="${i}">
-                        <div class="field-number">${i + 1}</div>
+                    <div class="field-item ${isFile ? 'file-upload-item' : ''}" data-idx="${i}">
+                        <div class="field-number ${fieldNumClass}">${fieldIcon}</div>
                         <div class="field-content">
                             <div class="field-label">${item.label}</div>
                             <div class="field-hint">
-                                <span class="field-type-badge">${item.fieldType}</span>
-                                <span class="field-confidence-badge ${confidenceClass}">${confidencePercent}% confidence</span>
+                                <span class="field-type-badge ${isFile ? 'file-badge' : ''}">${isFile ? 'FILE UPLOAD' : item.fieldType.toUpperCase()}</span>
+                                ${!isFile ? `<span class="field-confidence-badge ${confidenceClass}">${confidencePercent}% confidence</span>` : '<span class="field-priority-badge">Required</span>'}
                             </div>
                         </div>
                         <div class="field-arrow">
@@ -1179,6 +1210,43 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
                 background: linear-gradient(135deg, #dbeafe, #bfdbfe);
                 color: #1e40af;
                 border-color: rgba(30, 64, 175, 0.2);
+            }
+            
+            .field-priority-badge {
+                font-size: 11px;
+                padding: 3px 8px;
+                border-radius: 6px;
+                font-weight: 700;
+                letter-spacing: 0.2px;
+                background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+                color: #065f46;
+                border: 1px solid rgba(5, 150, 105, 0.3);
+            }
+            
+            .field-type-badge.file-badge {
+                background: linear-gradient(135deg, #10b981, #059669);
+                color: white;
+                border-color: rgba(5, 150, 105, 0.3);
+            }
+            
+            .file-upload-item {
+                background: linear-gradient(135deg, rgba(236, 253, 245, 0.6) 0%, rgba(209, 250, 229, 0.6) 100%);
+                border-color: rgba(16, 185, 129, 0.2);
+            }
+            
+            .file-upload-item:hover {
+                background: rgba(236, 253, 245, 0.95);
+                border-color: rgba(16, 185, 129, 0.4);
+                box-shadow: 
+                    0 4px 12px rgba(16, 185, 129, 0.15),
+                    0 0 0 1px rgba(16, 185, 129, 0.1);
+            }
+            
+            .file-upload-icon {
+                background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.2));
+                color: #059669;
+                border-color: rgba(16, 185, 129, 0.3);
+                font-size: 16px;
             }
             
             @keyframes slideOutToBottomLeft {
