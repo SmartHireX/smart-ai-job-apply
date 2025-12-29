@@ -303,6 +303,16 @@ async function handleFillForm() {
         console.log('Analysis result:', analysis);
         console.log('Fields detected:', analysis.fields ? analysis.fields.length : 0);
 
+        // Check for quota error
+        if (analysis.error === 'AI_QUOTA_EXCEEDED') {
+            showQuotaErrorModal(analysis.error_message);
+            return;
+        }
+
+        if (!analysis.success) {
+            throw new Error(analysis.error_message || 'Form analysis failed');
+        }
+
         // Map user data to form fields
         showProgress('Mapping your data to form fields...', 80);
         const { email } = await chrome.storage.local.get(['email']);
@@ -326,6 +336,16 @@ async function handleFillForm() {
 
         const mapping = await mappingResponse.json();
         console.log('Mapping result:', mapping);
+
+        // Check for quota error
+        if (mapping.error === 'AI_QUOTA_EXCEEDED') {
+            showQuotaErrorModal(mapping.error_message);
+            return;
+        }
+
+        if (!mapping.success) {
+            throw new Error(mapping.error_message || 'Data mapping failed');
+        }
         console.log('Mappings count:', mapping.mappings ? Object.keys(mapping.mappings).length : 0);
         console.log('Missing fields:', mapping.missing_fields);
 
@@ -367,10 +387,18 @@ async function handleFillForm() {
             allFields: analysis.fields
         });
 
-        if (!previewResult.success || previewResult.data.cancelled) {
-            // User cancelled from preview
+        if (!previewResult.success || (previewResult.data && previewResult.data.cancelled)) {
+            // User cancelled from preview OR error occurred
             hideProgress();
-            showResult('info', 'ℹ️', 'Form filling cancelled.');
+
+            if (!previewResult.success || (previewResult.data && previewResult.data.error)) {
+                const errMsg = previewResult.error || (previewResult.data ? previewResult.data.error : 'Unknown error in preview');
+                showResult('error', '⚠️', `Form filling failed: ${errMsg}`);
+                console.error("Preview modal error:", errMsg);
+            } else {
+                showResult('info', 'ℹ️', 'Form filling cancelled.');
+            }
+
             fillBtn.disabled = false;
             return;
         }
@@ -420,16 +448,89 @@ async function handleFillForm() {
 }
 
 // Show progress
+// Show progress with premium Skeleton UI
 function showProgress(message, percent) {
     progressSection.classList.remove('hidden');
     progressText.textContent = message;
     progressFill.style.width = `${percent}%`;
+
+    // Inject Skeleton Styles if needed
+    if (!document.getElementById('skeleton-styles')) {
+        const style = document.createElement('style');
+        style.id = 'skeleton-styles';
+        style.textContent = `
+            @keyframes shimmer {
+                0% { background-position: -200% 0; }
+                100% { background-position: 200% 0; }
+            }
+            .skeleton-overlay {
+                position: absolute;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: white;
+                z-index: 50;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                animation: fadeIn 0.3s ease-out;
+            }
+            .skeleton-header {
+                height: 24px;
+                width: 60%;
+                background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+                background-size: 200% 100%;
+                animation: shimmer 1.5s infinite;
+                border-radius: 4px;
+            }
+            .skeleton-row {
+                display: flex;
+                gap: 12px;
+                margin-bottom: 8px;
+            }
+            .skeleton-field {
+                height: 40px;
+                flex: 1;
+                background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+                background-size: 200% 100%;
+                animation: shimmer 1.5s infinite;
+                border-radius: 6px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Create or show skeleton overlay
+    let overlay = document.getElementById('skeleton-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'skeleton-overlay';
+        overlay.className = 'skeleton-overlay';
+        overlay.innerHTML = `
+            <div class="skeleton-header"></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:12px; margin-top:20px;">
+               <div class="skeleton-row"><div class="skeleton-field"></div><div class="skeleton-field"></div></div>
+               <div class="skeleton-row"><div class="skeleton-field"></div></div>
+               <div class="skeleton-row"><div class="skeleton-field"></div><div class="skeleton-field"></div></div>
+            </div>
+            <div style="text-align:center; color:#64748b; font-size:13px; font-weight:500; margin-top:auto;">
+               ${message}
+            </div>
+        `;
+        progressSection.appendChild(overlay);
+    } else {
+        // Update message inside skeleton
+        const msgEl = overlay.querySelector('div:last-child');
+        if (msgEl) msgEl.textContent = message;
+    }
 }
 
+// Hide progress
 // Hide progress
 function hideProgress() {
     progressSection.classList.add('hidden');
     progressFill.style.width = '0%';
+    const overlay = document.getElementById('skeleton-overlay');
+    if (overlay) overlay.remove();
 }
 
 // Show result
@@ -552,4 +653,111 @@ async function handleUndo() {
         );
         undoBtn.disabled = false;
     }
+}
+// Add this to the end of popup.js
+
+/**
+ * Show premium error modal for AI quota exceeded
+ */
+function showQuotaErrorModal(message) {
+    // Hide progress
+    hideProgress();
+
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+    `;
+
+    overlay.innerHTML = `
+        <div style="
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        ">
+            <div style="
+                width: 64px;
+                height: 64px;
+                background: linear-gradient(135deg, #f59e0b, #ef4444);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 20px;
+                font-size: 32px;
+            ">⚠️</div>
+            
+            <h2 style="
+                font-size: 20px;
+                font-weight: 700;
+                color: #1e293b;
+                margin: 0 0 12px;
+            ">AI Quota Exceeded</h2>
+            
+            <p style="
+                font-size: 14px;
+                color: #64748b;
+                line-height: 1.6;
+                margin: 0 0 24px;
+            ">${message || 'You\'ve exceeded your AI quota. Please try again in a few minutes.'}</p>
+            
+            <div style="
+                display: flex;
+                gap: 12px;
+                justify-content: center;
+            ">
+                <button onclick="this.closest('div').parentElement.remove()" style="
+                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: transform 0.2s;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    Got It
+                </button>
+                
+                <a href="https://ai.google.dev/" target="_blank" style="
+                    background: #f1f5f9;
+                    color: #475569;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    text-decoration: none;
+                    display: inline-block;
+                    transition: background 0.2s;
+                " onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                    Learn More
+                </a>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+        if (overlay.parentNode) {
+            overlay.remove();
+        }
+    }, 10000);
 }
