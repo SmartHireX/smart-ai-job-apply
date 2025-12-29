@@ -89,10 +89,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 console.log(`📊 High-confidence: ${highConfCount}, Low-confidence: ${lowConfCount}`);
 
-                // 1. Fill high-confidence fields instantly
+                // 1. Fill high-confidence fields with Ghost Typer effect (sequential)
                 if (highConfCount > 0) {
-                    const fillResult = fillForm(highConfidenceMappings);
-                    console.log(`✅ Filled ${fillResult.filled} fields`);
+                    console.log('👻 Starting Ghost Typer effect...');
+                    let filledCount = 0;
+
+                    // Iterate sequentially for the visual effect
+                    for (const [selector, data] of Object.entries(highConfidenceMappings)) {
+                        const element = document.querySelector(selector);
+                        if (element && isFieldVisible(element)) {
+                            // Scroll to element
+                            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                            // Visualize typing
+                            await simulateTyping(element, data.value);
+                            filledCount++;
+                        }
+                    }
+                    console.log(`✅ Ghost Typer finished: ${filledCount} fields`);
                 }
 
                 // 2. Show toast notification
@@ -118,7 +132,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         );
 
                         showAccordionSidebar(highConfFields, lowConfFields);
-                    }, 1000); // Small delay after toast
+                    }, 500); // reduced delay
                 }
 
                 sendResponse({ success: true, filled: highConfCount, review: lowConfCount });
@@ -588,6 +602,52 @@ function highlightFileField(element) {
 // END ENTERPRISE HELPERS
 // ============================================
 
+/**
+ * Ghost Typer: Simulates human typing into an element
+ */
+async function simulateTyping(element, value) {
+    if (!element || !value) return;
+
+    // Add typing visual state
+    element.classList.add('smarthirex-typing');
+    element.focus();
+
+    const tagName = element.tagName;
+    const inputType = element.type?.toLowerCase();
+    const isTextInputs = (tagName === 'INPUT' && ['text', 'email', 'tel', 'url', 'search', 'password', 'number'].includes(inputType)) || tagName === 'TEXTAREA';
+
+    if (isTextInputs) {
+        // Clear current value
+        element.value = '';
+
+        // Type characters
+        const chars = value.toString().split('');
+        for (const char of chars) {
+            element.value += char;
+            // Dispatch input event for frameworks (React/Vue)
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+
+            // Random delay between keystrokes (ultra-fast but visible)
+            // Visible typing speed: 20-40ms per character
+            await new Promise(r => setTimeout(r, Math.random() * 20 + 20));
+        }
+    } else {
+        // Non-text inputs (select, radio, etc.) - just set value with small delay
+        await new Promise(r => setTimeout(r, 200));
+        setFieldValue(element, value);
+    }
+
+    // Remove typing state and add filled state
+    element.classList.remove('smarthirex-typing');
+    element.classList.add('smarthirex-filled');
+
+    // Final events to ensure state is saved
+    dispatchChangeEvents(element);
+
+    // Small pause before next field
+    await new Promise(r => setTimeout(r, 100));
+}
+
 // Fill form with mapped data
 function fillForm(mappings) {
     // Validate mappings
@@ -714,8 +774,8 @@ function showSuccessToast(filledCount, reviewCount) {
     toast.id = 'smarthirex-fill-toast';
     toast.style.cssText = `
         position: fixed;
-        top: 80px;
-        right: 24px;
+        top: 24px;
+        left: 24px;
         background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
         border: 1px solid #e2e8f0;
         border-radius: 12px;
@@ -724,7 +784,7 @@ function showSuccessToast(filledCount, reviewCount) {
         z-index: 999999;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         min-width: 300px;
-        animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     `;
 
     const icon = filledCount > 0 ? '✅' : '📋';
@@ -734,21 +794,21 @@ function showSuccessToast(filledCount, reviewCount) {
         <div style="display: flex; align-items: start; gap: 12px;">
             <div style="font-size: 24px; line-height: 1;">${icon}</div>
             <div style="flex: 1;">
-                <div style="font-weight: 600; color: #0f172a; font-size: 14px; margin-bottom: 4px;">
+                <div style="font-weight: 700; color: #0f172a; font-size: 15px; margin-bottom: 4px; letter-spacing: -0.01em;">
                     ${fillText}
                 </div>
                 ${reviewCount > 0 ? `
-                    <div style="color: #f59e0b; font-size: 13px; display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                    <div style="color: #d97706; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; margin-top: 6px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <circle cx="12" cy="12" r="10"/>
                             <line x1="12" y1="8" x2="12" y2="12"/>
                             <line x1="12" y1="16" x2="12.01" y2="16"/>
                         </svg>
-                        <span>${reviewCount} field${reviewCount > 1 ? 's' : ''} need${reviewCount === 1 ? 's' : ''} your review</span>
+                        <span>Action required: ${reviewCount} field${reviewCount > 1 ? 's' : ''} to review</span>
                     </div>
                 ` : `
-                    <div style="color: #10b981; font-size: 13px;">
-                        All fields completed!
+                    <div style="color: #059669; font-size: 13px; font-weight: 500;">
+                        ✨ All fields smartly filled!
                     </div>
                 `}
             </div>
@@ -769,8 +829,8 @@ function showSuccessToast(filledCount, reviewCount) {
         const style = document.createElement('style');
         style.id = 'smarthirex-toast-styles';
         style.textContent = `
-            @keyframes slideInRight {
-                from { opacity: 0; transform: translateX(100px) scale(0.95); }
+            @keyframes slideInLeft {
+                from { opacity: 0; transform: translateX(-100px) scale(0.95); }
                 to { opacity: 1; transform: translateX(0) scale(1); }
             }
         `;
@@ -779,15 +839,13 @@ function showSuccessToast(filledCount, reviewCount) {
 
     document.body.appendChild(toast);
 
-    // Auto-dismiss after 5 seconds if all fields filled
-    if (reviewCount === 0) {
-        setTimeout(() => {
-            if (toast && toast.parentElement) {
-                toast.style.animation = 'slideInRight 0.3s reverse';
-                setTimeout(() => toast.remove(), 300);
-            }
-        }, 5000);
-    }
+    // Auto-dismiss after 5 seconds for all cases (since sidebar is open)
+    setTimeout(() => {
+        if (toast && toast.parentElement) {
+            toast.style.animation = 'slideInLeft 0.3s reverse';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 5000);
 }
 
 /**

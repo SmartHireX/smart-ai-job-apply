@@ -404,7 +404,9 @@ async function handleFillForm() {
         }
 
         // Form is already filled by content script, just show the result
-        const fillResult = previewResult.data;
+        // New instant fill returns: { success: true, filled: X, review: Y }
+        const filledCount = previewResult.filled || 0;
+        const reviewCount = previewResult.review || 0;
         showProgress('Complete!', 100);
 
         // Show success result
@@ -412,13 +414,11 @@ async function handleFillForm() {
             hideProgress();
 
             // Build success message
-            let successMessage = `Successfully filled ${fillResult.filled} out of ${fillResult.total} fields!`;
+            let successMessage = `Successfully filled ${filledCount} field${filledCount !== 1 ? 's' : ''}!`;
 
-            // Add file upload reminder if there are file fields
-            if (fillResult.fileFields && fillResult.fileFields.length > 0) {
-                const fileCount = fillResult.fileFields.length;
-                const fileWord = fileCount === 1 ? 'document' : 'documents';
-                successMessage += `\n\n📄 Please upload ${fileCount} ${fileWord} at the highlighted field${fileCount > 1 ? 's' : ''}.`;
+            // Add review reminder if there are fields needing review
+            if (reviewCount > 0) {
+                successMessage += `\n\n⚠️ ${reviewCount} field${reviewCount !== 1 ? 's' : ''} need${reviewCount === 1 ? 's' : ''} your review.`;
             }
 
             showResult(
@@ -427,12 +427,15 @@ async function handleFillForm() {
                 successMessage
             );
 
-            // Show undo button if undo data is available
-            if (fillResult.canUndo) {
-                undoBtn.classList.remove('hidden');
-            }
 
             fillBtn.disabled = false;
+
+            // Auto-close popup after 3 seconds to let user see the success animation
+            console.log('✅ Setting up auto-close in 3 seconds...');
+            setTimeout(() => {
+                console.log('⏰ Attempting to close popup now...');
+                window.close();
+            }, 3000);
         }, 500);
 
     } catch (error) {
@@ -447,103 +450,503 @@ async function handleFillForm() {
     }
 }
 
-// Show progress
-// Show progress with premium Skeleton UI
+// Show progress with premium animated UI
 function showProgress(message, percent) {
     progressSection.classList.remove('hidden');
     progressText.textContent = message;
     progressFill.style.width = `${percent}%`;
 
-    // Inject Skeleton Styles if needed
-    if (!document.getElementById('skeleton-styles')) {
-        const style = document.createElement('style');
-        style.id = 'skeleton-styles';
-        style.textContent = `
-            @keyframes shimmer {
-                0% { background-position: -200% 0; }
-                100% { background-position: 200% 0; }
+    // Create or update premium loader overlay
+    let overlay = document.getElementById('premium-loader-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'premium-loader-overlay';
+        overlay.className = 'premium-loader-overlay';
+
+        // Determine which step we're on based on percent
+        let currentStep = 1;
+        if (percent >= 60) currentStep = 3;
+        else if (percent >= 40) currentStep = 2;
+
+        overlay.innerHTML = `
+            <div class="premium-loader-card">
+                <div class="loader-icon">
+                    <div class="spinning-ring"></div>
+                    <div class="pulsing-dot"></div>
+                </div>
+                <div class="loader-steps">
+                    <div class="step ${currentStep >= 1 ? 'active' : ''}" data-step="1">
+                        <div class="step-icon">📊</div>
+                        <div class="step-label">Analyzing Form</div>
+                    </div>
+                    <div class="step ${currentStep >= 2 ? 'active' : ''}" data-step="2">
+                        <div class="step-icon">✨</div>
+                        <div class="step-label">AI Processing</div>
+                    </div>
+                    <div class="step ${currentStep >= 3 ? 'active' : ''}" data-step="3">
+                        <div class="step-icon">🎯</div>
+                        <div class="step-label">Mapping Data</div>
+                    </div>
+                </div>
+                <div class="loader-message">${message}</div>
+            </div>
+        `;
+        progressSection.appendChild(overlay);
+    } else {
+        // Update existing overlay
+        const messageEl = overlay.querySelector('.loader-message');
+        if (messageEl) messageEl.textContent = message;
+
+        // Update step indicators
+        let currentStep = 1;
+        if (percent >= 80) currentStep = 4; // All done
+        else if (percent >= 60) currentStep = 3;
+        else if (percent >= 40) currentStep = 2;
+
+        const steps = overlay.querySelectorAll('.step');
+        steps.forEach((step, idx) => {
+            if (idx + 1 <= currentStep) {
+                step.classList.add('active');
+            } else {
+                step.classList.remove('active');
             }
-            .skeleton-overlay {
+        });
+    }
+
+    // Inject premium loader styles if not already present
+    if (!document.getElementById('premium-loader-styles')) {
+        const style = document.createElement('style');
+        style.id = 'premium-loader-styles';
+        style.textContent = `
+            .premium-loader-overlay {
                 position: absolute;
-                top: 0; left: 0; right: 0; bottom: 0;
-                background: white;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(10px);
                 z-index: 50;
-                padding: 20px;
                 display: flex;
-                flex-direction: column;
-                gap: 16px;
+                align-items: center;
+                justify-content: center;
                 animation: fadeIn 0.3s ease-out;
             }
-            .skeleton-header {
-                height: 24px;
-                width: 60%;
-                background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-                background-size: 200% 100%;
-                animation: shimmer 1.5s infinite;
-                border-radius: 4px;
+            
+            .premium-loader-card {
+                text-align: center;
+                padding: 24px;
             }
-            .skeleton-row {
+            
+            .loader-icon {
+                position: relative;
+                width: 80px;
+                height: 80px;
+                margin: 0 auto 24px;
+            }
+            
+            .spinning-ring {
+                position: absolute;
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                border: 3px solid transparent;
+                border-top-color: #8B5CF6;
+                border-right-color: #6366F1;
+                animation: spin-gradient 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            }
+            
+            @keyframes spin-gradient {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            .pulsing-dot {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 16px;
+                height: 16px;
+                margin: -8px 0 0 -8px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #8B5CF6, #6366F1);
+                animation: pulse-dot 1.5s ease-in-out infinite;
+            }
+            
+            @keyframes pulse-dot {
+                0%, 100% {
+                    transform: scale(0.8);
+                    opacity: 0.6;
+                }
+                50% {
+                    transform: scale(1.2);
+                    opacity: 1;
+                }
+            }
+            
+            .loader-steps {
                 display: flex;
-                gap: 12px;
-                margin-bottom: 8px;
+                justify-content: center;
+                gap: 16px;
+                margin-bottom: 20px;
             }
-            .skeleton-field {
-                height: 40px;
-                flex: 1;
-                background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-                background-size: 200% 100%;
-                animation: shimmer 1.5s infinite;
-                border-radius: 6px;
+            
+            .step {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+                opacity: 0.3;
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            .step.active {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+            
+            .step-icon {
+                font-size: 24px;
+                filter: grayscale(1);
+                transition: filter 0.3s;
+            }
+            
+            .step.active .step-icon {
+                filter: grayscale(0);
+                animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            }
+            
+            @keyframes bounce-in {
+                0% { transform: scale(0.3); }
+                50% { transform: scale(1.2); }
+                100% { transform: scale(1); }
+            }
+            
+            .step-label {
+                font-size: 10px;
+                font-weight: 600;
+                color: #64748b;
+                white-space: nowrap;
+            }
+            
+            .step.active .step-label {
+                color: #8B5CF6;
+            }
+            
+            .loader-message {
+                font-size: 14px;
+                font-weight: 600;
+                color: #475569;
+                background: linear-gradient(90deg, #8B5CF6, #6366F1, #8B5CF6);
+                background-size: 200% auto;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                animation: shimmer 3s linear infinite;
+            }
+            
+            @keyframes shimmer {
+                0% { background-position: 200% center; }
+                100% { background-position: -200% center; }
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// Hide progress
+function hideProgress() {
+    progressSection.classList.add('hidden');
+    progressFill.style.width = '0%';
+    const overlay = document.getElementById('premium-loader-overlay');
+    if (overlay) overlay.remove();
+}
+
+
+// Show premium result modal
+function showResult(type, icon, message) {
+    // Remove basic result section
+    resultSection.classList.add('hidden');
+
+    // Remove any existing premium modal
+    const existingModal = document.getElementById('premium-result-modal');
+    if (existingModal) existingModal.remove();
+
+    // Create premium modal
+    const modal = document.createElement('div');
+    modal.id = 'premium-result-modal';
+    modal.className = `premium-result-modal ${type}`;
+
+    const isSuccess = type === 'success';
+    const isError = type === 'error';
+
+    modal.innerHTML = `
+        <div class="premium-result-backdrop"></div>
+        <div class="premium-result-card">
+            <div class="result-icon-container ${isError ? 'shake-error' : ''}">
+                ${isSuccess ? `
+                    <svg class="checkmark" viewBox="0 0 52 52">
+                        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                    </svg>
+                ` : `
+                    <div class="error-icon">${icon}</div>
+                `}
+            </div>
+            <h3 class="result-title">${isSuccess ? '✨ Success!' : isError ? 'Oops!' : 'Notice'}</h3>
+            <p class="result-text">${message}</p>
+            <button class="result-close-btn" onclick="window.close();">
+                ${isSuccess ? 'Done! Close Extension' : 'Got it'}
+            </button>
+        </div>
+        ${isSuccess ? '<div class="confetti-container"></div>' : ''}
+    `;
+
+    document.body.appendChild(modal);
+
+    // Trigger confetti animation for success
+    if (isSuccess) {
+        createConfetti(modal.querySelector('.confetti-container'));
+    }
+
+    // Inject premium result styles if not already present
+    if (!document.getElementById('premium-result-styles')) {
+        const style = document.createElement('style');
+        style.id = 'premium-result-styles';
+        style.textContent = `
+            .premium-result-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 99999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: modal-fade-in 0.3s ease-out;
+            }
+            
+            @keyframes modal-fade-in {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            .premium-result-backdrop {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(15, 23, 42, 0.7);
+                backdrop-filter: blur(8px);
+            }
+            
+            .premium-result-card {
+                position: relative;
+                background: white;
+                border-radius: 20px;
+                padding: 40px 32px 32px;
+                max-width: 340px;
+                width: calc(100% - 40px);
+                text-align: center;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                animation: card-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            
+            @keyframes card-slide-up {
+                from {
+                    transform: translateY(32px) scale(0.95);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0) scale(1);
+                    opacity: 1;
+                }
+            }
+            
+            .result-icon-container {
+                width: 80px;
+                height: 80px;
+                margin: 0 auto 20px;
+                position: relative;
+            }
+            
+            /* Success Checkmark Animation */
+            .checkmark {
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                display: block;
+                stroke-width: 3;
+                stroke: #10b981;
+                stroke-miterlimit: 10;
+                animation: fill-success 0.4s ease-in-out 0.4s forwards, scale-success 0.3s ease-in-out 0.9s both;
+            }
+            
+            .checkmark-circle {
+                stroke-dasharray: 166;
+                stroke-dashoffset: 166;
+                stroke-width: 3;
+                stroke: #10b981;
+                fill: none;
+                animation: stroke-circle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+            }
+            
+            .checkmark-check {
+                transform-origin: 50% 50%;
+                stroke-dasharray: 48;
+                stroke-dashoffset: 48;
+                animation: stroke-check 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+            }
+            
+            @keyframes stroke-circle {
+                100% {
+                    stroke-dashoffset: 0;
+                }
+            }
+            
+            @keyframes stroke-check {
+                100% {
+                    stroke-dashoffset: 0;
+                }
+            }
+            
+            @keyframes scale-success {
+                0%, 100% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.1);
+                }
+            }
+            
+            @keyframes fill-success {
+                100% {
+                    box-shadow: inset 0 0 0 40px #10b981;
+                }
+            }
+            
+            /* Error Icon Animation */
+            .error-icon {
+                font-size: 48px;
+                animation: shake 0.5s ease-in-out;
+            }
+            
+            .shake-error {
+                animation: shake 0.5s ease-in-out;
+            }
+            
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+                20%, 40%, 60%, 80% { transform: translateX(8px); }
+            }
+            
+            .result-title {
+                font-size: 24px;
+                font-weight: 700;
+                color: #0f172a;
+                margin: 0 0 12px;
+                letter-spacing: -0.02em;
+            }
+            
+            .result-text {
+                font-size: 15px;
+                color: #64748b;
+                line-height: 1.6;
+                margin: 0 0 24px;
+                white-space: pre-line;
+            }
+            
+            .result-close-btn {
+                width: 100%;
+                padding: 14px 20px;
+                background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                font-size: 15px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            }
+            
+            .result-close-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+            }
+            
+            .result-close-btn:active {
+                transform: translateY(0);
+            }
+            
+            /* Confetti */
+            .confetti-container {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                overflow: hidden;
+                pointer-events: none;
+                z-index: 100000;
+            }
+            
+            .confetti-piece {
+                position: absolute;
+                width: 8px;
+                height: 8px;
+                background: var(--confetti-color);
+                top: 0;
+                opacity: 0;
+                animation: confetti-fall 2.5s ease-in-out forwards;
+            }
+            
+            @keyframes confetti-fall {
+                0% {
+                    opacity: 1;
+                    transform: translateY(0) rotate(0deg);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translateY(100vh) rotate(720deg);
+                }
             }
         `;
         document.head.appendChild(style);
     }
 
-    // Create or show skeleton overlay
-    let overlay = document.getElementById('skeleton-overlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'skeleton-overlay';
-        overlay.className = 'skeleton-overlay';
-        overlay.innerHTML = `
-            <div class="skeleton-header"></div>
-            <div style="flex:1; display:flex; flex-direction:column; gap:12px; margin-top:20px;">
-               <div class="skeleton-row"><div class="skeleton-field"></div><div class="skeleton-field"></div></div>
-               <div class="skeleton-row"><div class="skeleton-field"></div></div>
-               <div class="skeleton-row"><div class="skeleton-field"></div><div class="skeleton-field"></div></div>
-            </div>
-            <div style="text-align:center; color:#64748b; font-size:13px; font-weight:500; margin-top:auto;">
-               ${message}
-            </div>
-        `;
-        progressSection.appendChild(overlay);
-    } else {
-        // Update message inside skeleton
-        const msgEl = overlay.querySelector('div:last-child');
-        if (msgEl) msgEl.textContent = message;
+    // Don't auto-dismiss success modals - popup will close automatically
+}
+
+// Create confetti particles
+function createConfetti(container) {
+    const colors = ['#8B5CF6', '#6366F1', '#10b981', '#f59e0b', '#ec4899'];
+    const pieces = 30;
+
+    for (let i = 0; i < pieces; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti-piece';
+        confetti.style.setProperty('--confetti-color', colors[Math.floor(Math.random() * colors.length)]);
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.animationDelay = Math.random() * 0.3 + 's';
+        confetti.style.animationDuration = (Math.random() * 1 + 2) + 's';
+        container.appendChild(confetti);
     }
 }
 
-// Hide progress
-// Hide progress
-function hideProgress() {
-    progressSection.classList.add('hidden');
-    progressFill.style.width = '0%';
-    const overlay = document.getElementById('skeleton-overlay');
-    if (overlay) overlay.remove();
-}
-
-// Show result
-function showResult(type, icon, message) {
-    resultSection.classList.remove('hidden', 'success', 'error');
-    resultSection.classList.add(type);
-    resultIcon.textContent = icon;
-    resultMessage.textContent = message;
-}
-
-// Hide result
+// Hide result (now removes modal)
 function hideResult() {
     resultSection.classList.add('hidden');
+    const modal = document.getElementById('premium-result-modal');
+    if (modal) modal.remove();
 }
 
 // Show missing data dialog and collect user input
