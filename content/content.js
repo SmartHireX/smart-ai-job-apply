@@ -31,6 +31,18 @@ window.addEventListener('message', (event) => {
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'GET_PAGE_CONTEXT') {
+        const text = document.body.innerText || "";
+        const selection = window.getSelection().toString();
+        sendResponse({
+            content: text,
+            selectedText: selection,
+            url: window.location.href,
+            title: document.title
+        });
+        return true;
+    }
+
     if (message.type === 'DETECT_FORMS') {
         const formCount = detectForms();
         sendResponse({ formCount });
