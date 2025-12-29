@@ -126,7 +126,7 @@ async function handleSendMessage() {
         }
 
         // Send message to backend
-        const response = await fetch(`${API_BASE_URL}/chatbot/chat`, {
+        const response = await fetch(`${API_BASE_URL}/chat`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -150,7 +150,13 @@ async function handleSendMessage() {
         hideTypingIndicator();
 
         // Add bot response
-        const botMessage = data.response || 'Sorry, I could not generate a response.';
+        let botMessage = data.response;
+        // Check if response is an object with a message property (new format)
+        if (typeof botMessage === 'object' && botMessage !== null) {
+            botMessage = botMessage.message || JSON.stringify(botMessage);
+        }
+
+        botMessage = botMessage || 'Sorry, I could not generate a response.';
         addMessageToUI(botMessage, true);
         await saveChatHistory(botMessage, true);
 
@@ -223,6 +229,9 @@ function addMessageToUI(text, isBot) {
 
 // Basic markdown formatting
 function formatMarkdown(text) {
+    if (typeof text !== 'string') {
+        return '';
+    }
     // Convert **bold** to <strong>
     text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 
@@ -244,6 +253,8 @@ function formatMarkdown(text) {
 
 // Show typing indicator
 function showTypingIndicator() {
+    // Append to chat messages (ensures it's at the bottom if it was removed)
+    chatMessages.appendChild(typingIndicator);
     typingIndicator.classList.remove('hidden');
     scrollToBottom();
 }
