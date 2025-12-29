@@ -164,6 +164,370 @@ function extractFormHTML() {
     return document.body.innerHTML;
 }
 
+// ============================================
+// ENTERPRISE FORM FILLING HELPERS - Phase 1
+// ============================================
+
+/**
+ * Check if a field is visible (security: prevent AutoSpill attacks)
+ */
+function isFieldVisible(element) {
+    try {
+        const style = window.getComputedStyle(element);
+        return (
+            element.type !== 'hidden' &&
+            style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            style.opacity !== '0' &&
+            element.offsetWidth > 0 &&
+            element.offsetHeight > 0
+        );
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Validate field value before filling
+ */
+function validateFieldValue(value, fieldType) {
+    if (!value) return { valid: true, value };
+
+    const validations = {
+        email: {
+            test: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+            message: 'Invalid email format'
+        },
+        tel: {
+            test: (v) => v.replace(/\D/g, '').length >= 10,
+            message: 'Phone number too short'
+        },
+        url: {
+            test: (v) => {
+                try {
+                    new URL(v.startsWith('http') ? v : `https://${v}`);
+                    return true;
+                } catch {
+                    return false;
+                }
+            },
+            message: 'Invalid URL'
+        }
+    };
+
+    const validator = validations[fieldType];
+    if (validator && !validator.test(value)) {
+        return { valid: false, reason: validator.message, value };
+    }
+
+    return { valid: true, value };
+}
+
+/**
+ * Normalize value based on field type
+ */
+function normalizeValue(value, fieldType) {
+    if (!value) return value;
+
+    switch (fieldType) {
+        case 'url':
+            // Add https:// if missing
+            return value.startsWith('http') ? value : `https://${value}`;
+        case 'email':
+            // Trim and lowercase
+            return value.trim().toLowerCase();
+        case 'tel':
+            // Remove non-digits for storage, but keep formatted for display
+            return value.trim();
+        default:
+            return value;
+    }
+}
+
+/**
+ * Enhanced field value setter with React compatibility
+ * Handles ALL input types like enterprise tools (1Password, LastPass)
+ */
+function setFieldValue(element, value) {
+    const tagName = element.tagName;
+    const inputType = element.type?.toLowerCase();
+
+    // Focus the element first for better event handling
+    try {
+        element.focus();
+    } catch (e) {
+        // Some elements can't be focused, that's okay
+    }
+
+    // Handle different input types
+    if (tagName === 'INPUT') {
+        switch (inputType) {
+            case 'radio':
+                setRadioValue(element, value);
+                break;
+            case 'checkbox':
+                setCheckboxValue(element, value);
+                break;
+            case 'date':
+            case 'datetime-local':
+            case 'time':
+            case 'month':
+            case 'week':
+                setDateTimeValue(element, value);
+                break;
+            case 'number':
+            case 'range':
+                setNumberValue(element, value);
+                break;
+            case 'color':
+                setColorValue(element, value);
+                break;
+            case 'file':
+                // Can't programmatically set file inputs for security reasons
+                highlightFileField(element);
+                return; // Don't dispatch events
+            default:
+                // text, email, tel, url, password, search, etc.
+                setTextValue(element, value);
+                break;
+        }
+    } else if (tagName === 'TEXTAREA') {
+        setTextValue(element, value);
+    } else if (tagName === 'SELECT') {
+        setSelectValue(element, value);
+    }
+
+    // Dispatch comprehensive event sequence for React/Vue/Angular compatibility
+    dispatchChangeEvents(element);
+}
+
+/**
+ * Set radio button value (enterprise approach)
+ */
+function setRadioValue(element, value) {
+    // For radio buttons, we need to find the correct option in the group
+    const name = element.name;
+    if (!name) {
+        // Single radio without a group, just check if value matches
+        element.checked = (element.value == value || value === true || value === 'true');
+        return;
+    }
+
+    // Find all radios in the same group
+    const radioGroup = document.querySelectorAll(`input[type="radio"][name="${name}"]`);
+
+    // Try to match by value first
+    let matched = false;
+    radioGroup.forEach(radio => {
+        if (radio.value.toLowerCase() === value.toString().toLowerCase()) {
+            radio.checked = true;
+            matched = true;
+        } else {
+            radio.checked = false;
+        }
+    });
+
+    // If no match by value, try matching by label text
+    if (!matched) {
+        radioGroup.forEach(radio => {
+            const label = findLabelText(radio);
+            if (label && label.toLowerCase().includes(value.toString().toLowerCase())) {
+                radio.checked = true;
+                matched = true;
+            }
+        });
+    }
+
+    // If still no match, check the first option as fallback
+    if (!matched && radioGroup.length > 0) {
+        radioGroup[0].checked = true;
+    }
+}
+
+/**
+ * Set checkbox value
+ */
+function setCheckboxValue(element, value) {
+    // Handle various truthy/falsy representations
+    const truthyValues = [true, 'true', 'yes', '1', 'on', 'checked'];
+    const isTruthy = truthyValues.includes(value?.toString().toLowerCase());
+    element.checked = isTruthy;
+}
+
+/**
+ * Set date/time input value
+ */
+function setDateTimeValue(element, value) {
+    // Try to format value appropriately for the input type
+    try {
+        let formattedValue = value;
+
+        if (element.type === 'date') {
+            // Ensure format is YYYY-MM-DD
+            const date = new Date(value);
+            if (!isNaN(date.getTime())) {
+                formattedValue = date.toISOString().split('T')[0];
+            }
+        } else if (element.type === 'datetime-local') {
+            // Ensure format is YYYY-MM-DDThh:mm
+            const date = new Date(value);
+            if (!isNaN(date.getTime())) {
+                formattedValue = date.toISOString().slice(0, 16);
+            }
+        } else if (element.type === 'time') {
+            // Ensure format is hh:mm
+            const date = new Date(value);
+            if (!isNaN(date.getTime())) {
+                formattedValue = date.toTimeString().slice(0, 5);
+            }
+        }
+
+        element.value = formattedValue;
+    } catch (e) {
+        // Fallback to direct value setting
+        element.value = value;
+    }
+}
+
+/**
+ * Set number/range input value
+ */
+function setNumberValue(element, value) {
+    // Ensure value is numeric
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+        // Check min/max constraints
+        const min = element.min ? parseFloat(element.min) : -Infinity;
+        const max = element.max ? parseFloat(element.max) : Infinity;
+        const clampedValue = Math.min(Math.max(numValue, min), max);
+        element.value = clampedValue;
+    } else {
+        element.value = value;
+    }
+}
+
+/**
+ * Set color picker value
+ */
+function setColorValue(element, value) {
+    // Ensure value is in #RRGGBB format
+    let colorValue = value.toString();
+    if (!colorValue.startsWith('#')) {
+        colorValue = '#' + colorValue;
+    }
+    element.value = colorValue;
+}
+
+/**
+ * Set text-based input value (with React compatibility)
+ */
+function setTextValue(element, value) {
+    // Use native property setter to bypass React's value tracking
+    try {
+        const prototype = element.tagName === 'INPUT'
+            ? window.HTMLInputElement.prototype
+            : window.HTMLTextAreaElement.prototype;
+        const nativeSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+        nativeSetter.call(element, value);
+    } catch (e) {
+        // Fallback for non-standard environments
+        element.value = value;
+    }
+}
+
+/**
+ * Set select dropdown value (including multi-select)
+ */
+function setSelectValue(element, value) {
+    if (element.multiple) {
+        // Handle multi-select
+        const values = Array.isArray(value) ? value : [value];
+        Array.from(element.options).forEach(option => {
+            option.selected = values.includes(option.value) ||
+                values.some(v => option.text.toLowerCase().includes(v.toString().toLowerCase()));
+        });
+    } else {
+        // Single select
+        element.value = value;
+
+        // Try to select by text if value doesn't match
+        if (element.value !== value) {
+            const options = element.options;
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].text.toLowerCase() === value.toString().toLowerCase()) {
+                    element.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Dispatch change events for framework compatibility
+ */
+function dispatchChangeEvents(element) {
+    element.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+    element.dispatchEvent(new Event('change', { bubbles: true }));
+    element.dispatchEvent(new Event('blur', { bubbles: true }));
+
+    // For some React versions, also dispatch InputEvent
+    try {
+        element.dispatchEvent(new InputEvent('input', {
+            bubbles: true,
+            cancelable: true,
+            data: element.value
+        }));
+    } catch {
+        // InputEvent not supported in all browsers, ignore
+    }
+
+    // For radio/checkbox, also trigger click event
+    if (element.type === 'radio' || element.type === 'checkbox') {
+        element.dispatchEvent(new Event('click', { bubbles: true }));
+    }
+}
+
+/**
+ * Find label text for an element
+ */
+function findLabelText(element) {
+    // Check for aria-label
+    const ariaLabel = element.getAttribute('aria-label');
+    if (ariaLabel) return ariaLabel;
+
+    // Check for associated label
+    if (element.id) {
+        const label = document.querySelector(`label[for="${element.id}"]`);
+        if (label) return label.textContent.trim();
+    }
+
+    // Check for parent label
+    const parentLabel = element.closest('label');
+    if (parentLabel) return parentLabel.textContent.trim();
+
+    // Check for previous sibling label
+    const prevLabel = element.previousElementSibling;
+    if (prevLabel && prevLabel.tagName === 'LABEL') {
+        return prevLabel.textContent.trim();
+    }
+
+    return '';
+}
+
+/**
+ * Highlight file input field since we can't fill it programmatically
+ */
+function highlightFileField(element) {
+    element.style.outline = '3px solid #F59E0B';
+    element.style.outlineOffset = '2px';
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ============================================
+// END ENTERPRISE HELPERS
+// ============================================
+
 // Fill form with mapped data
 function fillForm(mappings) {
     // Validate mappings
@@ -191,6 +555,11 @@ function fillForm(mappings) {
                 continue;
             }
 
+            // SECURITY: Skip hidden fields to prevent AutoSpill attacks
+            if (!isFieldVisible(element)) {
+                continue;
+            }
+
             // Save original value before filling
             if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
                 if (element.type === 'checkbox' || element.type === 'radio') {
@@ -202,56 +571,26 @@ function fillForm(mappings) {
                 originalValues[selector] = element.value;
             }
 
-            // Handle both flat mappings (value) and nested mappings ({value: ...})
+            // Handle both flat mappings (value) and nested mappings ({value: ..., field_type: ...})
             const value = (fieldData && typeof fieldData === 'object' && fieldData.hasOwnProperty('value'))
                 ? fieldData.value
                 : fieldData;
 
+            const fieldType = fieldData?.field_type || element.type;
 
+            // VALIDATION: Validate value before filling
+            const validation = validateFieldValue(value, fieldType);
+            if (!validation.valid) {
+                // Skip invalid values
+                continue;
+            }
 
-            // Fill based on element type
+            // NORMALIZATION: Normalize value based on field type
+            const normalizedValue = normalizeValue(value, fieldType);
+
+            // Fill based on element type using enterprise helper
             if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT') {
-                // Focus the element first
-                element.focus();
-
-                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-                    if (element.type === 'checkbox' || element.type === 'radio') {
-                        element.checked = value === 'true' || value === true;
-                    } else {
-                        // Use native property setter to bypass React's value tracking
-                        try {
-                            const prototype = element.tagName === 'INPUT' ? window.HTMLInputElement.prototype : window.HTMLTextAreaElement.prototype;
-                            const nativeSetter = Object.getOwnPropertyDescriptor(prototype, "value").set;
-                            nativeSetter.call(element, value);
-                        } catch (e) {
-                            // Fallback for non-standard environments
-                            element.value = value;
-                        }
-                    }
-                } else if (element.tagName === 'SELECT') {
-                    element.value = value;
-                    // Try to select by text if value doesn't match
-                    if (element.value !== value) {
-                        const options = element.options;
-                        for (let i = 0; i < options.length; i++) {
-                            if (options[i].text.toLowerCase() === value.toLowerCase()) {
-                                element.selectedIndex = i;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                // Trigger events to ensure form validation
-                // Use a combination of events for maximum compatibility
-                element.dispatchEvent(new Event('input', { bubbles: true }));
-                element.dispatchEvent(new Event('change', { bubbles: true }));
-
-                // For React/modern frameworks, sometimes we need to trigger the setter manually 
-                // but usually dispatching input + change + blur is enough if we focused first.
-                element.dispatchEvent(new Event('blur', { bubbles: true }));
-
-
+                setFieldValue(element, normalizedValue);
             }
 
             // Add highlight animation

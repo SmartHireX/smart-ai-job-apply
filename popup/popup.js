@@ -323,47 +323,37 @@ async function handleFillForm() {
             throw new Error('Data mapping failed');
         }
 
+
         const mapping = await mappingResponse.json();
         console.log('Mapping result:', mapping);
         console.log('Mappings count:', mapping.mappings ? Object.keys(mapping.mappings).length : 0);
         console.log('Missing fields:', mapping.missing_fields);
 
-        // Check if there are missing fields that need user input
+        // Add missing fields to mappings with empty values for inline editing in preview
         if (mapping.missing_fields && mapping.missing_fields.length > 0) {
-            hideProgress();
+            console.log('Adding missing fields to preview modal for inline editing');
 
-            // Show missing data dialog and wait for user input
-            const additionalData = await showMissingDataDialog(mapping.missing_fields, analysis.fields);
+            // Find the missing fields in the analysis
+            for (const missingPurpose of mapping.missing_fields) {
+                // Find field with this purpose
+                const field = analysis.fields.find(f =>
+                    f.purpose === missingPurpose ||
+                    f.label.toLowerCase().includes(missingPurpose.toLowerCase())
+                );
 
-            if (!additionalData) {
-                // User cancelled
-                showResult('error', '⚠️', 'Form filling cancelled. Please provide the required information.');
-                fillBtn.disabled = false;
-                return;
+                if (field && field.selector) {
+                    // Add to mappings with empty value and low confidence
+                    mapping.mappings[field.selector] = {
+                        value: '',
+                        confidence: 0.3,
+                        source: 'user_input_required',
+                        field_type: field.type,
+                        required: field.required || false
+                    };
+                }
             }
-
-            // Complete mapping with additional data
-            showProgress('Processing your additional data...', 70);
-            const completeResponse = await fetch(`${API_BASE_URL}/autofill/complete-with-data`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    user_email: email,
-                    form_fields: analysis.fields,
-                    additional_data: additionalData
-                })
-            });
-
-            if (!completeResponse.ok) {
-                throw new Error('Failed to complete mapping with additional data');
-            }
-
-            const completeMapping = await completeResponse.json();
-            mapping.mappings = completeMapping.mappings;
         }
+
 
         // Show preview modal for user to review and confirm
         hideProgress();

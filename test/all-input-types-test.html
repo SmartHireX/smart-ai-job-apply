@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Input Types Test - SmartHireX</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section h3 {
+            color: #4F46E5;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        input,
+        select,
+        textarea {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="url"],
+        input[type="date"],
+        input[type="time"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+        }
+
+        input[type="checkbox"],
+        input[type="radio"] {
+            margin-right: 8px;
+            width: auto;
+        }
+
+        .radio-group,
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .test-info {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form-container">
+        <h1>Complete Input Types Test</h1>
+        <p class="subtitle">Testing enterprise-level form filling for ALL input types</p>
+
+        <div class="test-info">
+            <strong>🧪 Test Instructions:</strong>
+            <ol>
+                <li>Click SmartHireX extension icon</li>
+                <li>Click "Fill Form" button</li>
+                <li>Verify ALL field types are filled correctly</li>
+                <li>Check radio buttons select the right option</li>
+                <li>Check checkboxes get checked appropriately</li>
+                <li>Verify dates, numbers, colors are formatted properly</li>
+            </ol>
+        </div>
+
+        <form id="test-form" action="#" method="post">
+            <!-- Text-based inputs -->
+            <div class="section">
+                <h3>📝 Text-Based Inputs</h3>
+                <div class="form-group">
+                    <label for="first-name">First Name</label>
+                    <input type="text" id="first-name" name="firstName">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="tel" id="phone" name="phone">
+                </div>
+                <div class="form-group">
+                    <label for="linkedin">LinkedIn URL</label>
+                    <input type="url" id="linkedin" name="linkedin">
+                </div>
+            </div>
+
+            <!-- Radio buttons -->
+            <div class="section">
+                <h3>🔘 Radio Buttons</h3>
+                <div class="form-group">
+                    <label>Experience Level:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="experience" value="0-2" /> 0-2 years</label>
+                        <label><input type="radio" name="experience" value="3-5" /> 3-5 years</label>
+                        <label><input type="radio" name="experience" value="6-10" /> 6-10 years</label>
+                        <label><input type="radio" name="experience" value="10+" /> 10+ years</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Authorized to work in US?</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="visa-status" value="yes" /> Yes</label>
+                        <label><input type="radio" name="visa-status" value="no" /> No</label>
+                        <label><input type="radio" name="visa-status" value="need-sponsorship" /> Need
+                            Sponsorship</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Checkboxes -->
+            <div class="section">
+                <h3>☑️ Checkboxes</h3>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="remote" value="yes" /> Open to remote work</label>
+                    <label><input type="checkbox" name="relocate" value="yes" /> Willing to relocate</label>
+                    <label><input type="checkbox" name="travel" value="yes" /> Available for travel</label>
+                </div>
+            </div>
+
+            <!-- Date/Time inputs -->
+            <div class="section">
+                <h3>📅 Date & Time Inputs</h3>
+                <div class="form-group">
+                    <label for="start-date">Available Start Date</label>
+                    <input type="date" id="start-date" name="startDate">
+                </div>
+                <div class="form-group">
+                    <label for="interview-time">Preferred Interview Time</label>
+                    <input type="time" id="interview-time" name="interviewTime">
+                </div>
+            </div>
+
+            <!-- Number inputs -->
+            <div class="section">
+                <h3>🔢 Number Inputs</h3>
+                <div class="form-group">
+                    <label for="salary">Expected Salary (in thousands)</label>
+                    <input type="number" id="salary" name="salary" min="0" max="500" step="5">
+                </div>
+                <div class="form-group">
+                    <label for="notice-period">Notice Period (days)</label>
+                    <input type="range" id="notice-period" name="noticePeriod" min="0" max="90" step="15">
+                    <span id="notice-value">0</span> days
+                </div>
+            </div>
+
+            <!-- Select dropdowns -->
+            <div class="section">
+                <h3>📋 Select Dropdowns</h3>
+                <div class="form-group">
+                    <label for="education">Highest Education</label>
+                    <select id="education" name="education">
+                        <option value="">Select...</option>
+                        <option value="hs">High School</option>
+                        <option value="bachelors">Bachelor's Degree</option>
+                        <option value="masters">Master's Degree</option>
+                        <option value="phd">PhD</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="skills">Skills (Multi-select)</label>
+                    <select id="skills" name="skills" multiple size="4">
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="react">React</option>
+                        <option value="nodejs">Node.js</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Textarea -->
+            <div class="section">
+                <h3>📄 Text Area</h3>
+                <div class="form-group">
+                    <label for="why-interested">Why are you interested in this position?</label>
+                    <textarea id="why-interested" name="whyInterested" rows="4"></textarea>
+                </div>
+            </div>
+
+            <!-- File input -->
+            <div class="section">
+                <h3>📎 File Upload</h3>
+                <div class="form-group">
+                    <label for="resume-file">Upload Resume</label>
+                    <input type="file" id="resume-file" name="resumeFile" accept=".pdf,.doc,.docx">
+                    <small style="color: #666;">Note: File inputs will be highlighted (can't be auto-filled for
+                        security)</small>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Update range slider display
+        document.getElementById('notice-period').addEventListener('input', (e) => {
+            document.getElementById('notice-value').textContent = e.target.value;
+        });
+    </script>
+</body>
+
+</html>
