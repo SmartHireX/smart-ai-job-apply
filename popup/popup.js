@@ -4,7 +4,7 @@ const FRONTEND_URL = 'http://localhost:8080';
 
 
 // DOM Elements
-let authSection, mainSection, loginBtn, fillBtn, logoutLink;
+let authSection, mainSection, loginBtn, fillBtn, logoutLink, undoBtn;
 let userInitial, userName, userEmail;
 let formStatus, formCount;
 let progressSection, progressFill, progressText;
@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     resultSection = document.getElementById('result-section');
     resultIcon = document.getElementById('result-icon');
     resultMessage = document.getElementById('result-message');
+    undoBtn = document.getElementById('undo-btn');
 
     // Check authentication
     await checkAuth();
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     loginBtn.addEventListener('click', handleLogin);
     fillBtn.addEventListener('click', handleFillForm);
     logoutLink.addEventListener('click', handleLogout);
+    undoBtn.addEventListener('click', handleUndo);
 });
 
 // Check authentication status
@@ -363,23 +365,55 @@ async function handleFillForm() {
             mapping.mappings = completeMapping.mappings;
         }
 
-        // Fill form via content script
-        showProgress('Filling form fields...', 90);
-        const fillResult = await chrome.tabs.sendMessage(tab.id, {
-            type: 'FILL_FORM',
-            mappings: mapping.mappings
+        // Show preview modal for user to review and confirm
+        hideProgress();
+        showProgress('Ready to preview mappings...', 85);
+
+        // Show preview modal for reviewing mappings before filling
+        const previewResult = await chrome.tabs.sendMessage(tab.id, {
+            type: 'SHOW_PREVIEW_MODAL',
+            mappings: mapping.mappings,
+            analysis: analysis,
+            allFields: analysis.fields
         });
 
+        if (!previewResult.success || previewResult.data.cancelled) {
+            // User cancelled from preview
+            hideProgress();
+            showResult('info', 'ℹ️', 'Form filling cancelled.');
+            fillBtn.disabled = false;
+            return;
+        }
+
+        // Form is already filled by content script, just show the result
+        const fillResult = previewResult.data;
         showProgress('Complete!', 100);
 
         // Show success result
         setTimeout(() => {
             hideProgress();
+
+            // Build success message
+            let successMessage = `Successfully filled ${fillResult.filled} out of ${fillResult.total} fields!`;
+
+            // Add file upload reminder if there are file fields
+            if (fillResult.fileFields && fillResult.fileFields.length > 0) {
+                const fileCount = fillResult.fileFields.length;
+                const fileWord = fileCount === 1 ? 'document' : 'documents';
+                successMessage += `\n\n📄 Please upload ${fileCount} ${fileWord} at the highlighted field${fileCount > 1 ? 's' : ''}.`;
+            }
+
             showResult(
                 'success',
                 '✅',
-                `Successfully filled ${fillResult.filled} out of ${fillResult.total} fields!`
+                successMessage
             );
+
+            // Show undo button if undo data is available
+            if (fillResult.canUndo) {
+                undoBtn.classList.remove('hidden');
+            }
+
             fillBtn.disabled = false;
         }, 500);
 
@@ -484,3 +518,48 @@ window.addEventListener('message', async (event) => {
         }
     }
 });
+
+// Handle undo button click
+async function handleUndo() {
+    try {
+        undoBtn.disabled = true;
+        hideResult();
+        showProgress('Restoring original values...', 50);
+
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        // Send undo message to content script
+        const undoResult = await chrome.tabs.sendMessage(tab.id, {
+            type: 'UNDO_FILL'
+        });
+
+        hideProgress();
+
+        if (undoResult.success) {
+            showResult(
+                'success',
+                '✨',
+                `Successfully restored ${undoResult.restored} fields to their original values!`
+            );
+            // Hide undo button after successful undo
+            undoBtn.classList.add('hidden');
+        } else {
+            showResult(
+                'error',
+                '❌',
+                undoResult.error || 'Failed to undo. Please refresh the page and try again.'
+            );
+            undoBtn.disabled = false;
+        }
+
+    } catch (error) {
+        console.error('Undo failed:', error);
+        hideProgress();
+        showResult(
+            'error',
+            '❌',
+            'Undo failed. Please try again.'
+        );
+        undoBtn.disabled = false;
+    }
+}

@@ -56,6 +56,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             .catch(error => sendResponse({ success: false, error: error.message }));
         return true; // Keep message channel open for async response
     }
+
+    if (message.type === 'SHOW_PREVIEW_MODAL') {
+        // Show preview modal - form will be filled directly in content script
+        (async () => {
+            try {
+                const data = await showPreviewModal(message.mappings, message.analysis, message.allFields);
+                sendResponse({ success: true, data });
+            } catch (error) {
+                sendResponse({ success: false, error: error.message });
+            }
+        })();
+
+        return true; // Keep message channel open for async response
+    }
+
+    if (message.type === 'UNDO_FILL') {
+        // Undo the last form fill
+        const result = undoFormFill();
+        sendResponse(result);
+        return true;
+    }
 });
 
 // Detect forms on the page
@@ -145,23 +166,48 @@ function extractFormHTML() {
 
 // Fill form with mapped data
 function fillForm(mappings) {
+    // Validate mappings
+    if (!mappings || typeof mappings !== 'object' || Object.keys(mappings).length === 0) {
+        return {
+            success: false,
+            filled: 0,
+            total: 0,
+            canUndo: false,
+            fileFields: [],
+            error: 'Invalid or empty mappings'
+        };
+    }
+
     let filledCount = 0;
     let totalCount = Object.keys(mappings).length;
     const filledFields = [];
+    const originalValues = {}; // Store original values for undo
 
     for (const [selector, fieldData] of Object.entries(mappings)) {
         try {
             const element = document.querySelector(selector);
 
             if (!element) {
-                console.warn(`Element not found: ${selector}`);
                 continue;
+            }
+
+            // Save original value before filling
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                if (element.type === 'checkbox' || element.type === 'radio') {
+                    originalValues[selector] = element.checked;
+                } else {
+                    originalValues[selector] = element.value;
+                }
+            } else if (element.tagName === 'SELECT') {
+                originalValues[selector] = element.value;
             }
 
             // Handle both flat mappings (value) and nested mappings ({value: ...})
             const value = (fieldData && typeof fieldData === 'object' && fieldData.hasOwnProperty('value'))
                 ? fieldData.value
                 : fieldData;
+
+
 
             // Fill based on element type
             if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT') {
@@ -204,6 +250,8 @@ function fillForm(mappings) {
                 // For React/modern frameworks, sometimes we need to trigger the setter manually 
                 // but usually dispatching input + change + blur is enough if we focused first.
                 element.dispatchEvent(new Event('blur', { bubbles: true }));
+
+
             }
 
             // Add highlight animation
@@ -212,7 +260,7 @@ function fillForm(mappings) {
             filledCount++;
 
         } catch (error) {
-            console.error(`Error filling ${selector}:`, error);
+            // Silently skip fields that can't be filled
         }
     }
 
@@ -224,11 +272,137 @@ function fillForm(mappings) {
     // Find and highlight submit button
     highlightSubmitButton();
 
+    // Detect and highlight file upload fields
+    const fileFields = detectFileFields();
+    if (fileFields.length > 0) {
+        // Highlight file fields after a short delay
+        setTimeout(() => {
+            highlightFileFields(fileFields);
+        }, 1000);
+    }
+
+    // Store original values in sessionStorage for undo (expires in 5 minutes)
+    const undoData = {
+        originalValues,
+        timestamp: Date.now(),
+        expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutes
+    };
+    try {
+        sessionStorage.setItem('smarthirex_undo_data', JSON.stringify(undoData));
+    } catch (e) {
+        console.warn('Could not store undo data:', e);
+    }
+
     return {
         success: true,
         filled: filledCount,
-        total: totalCount
+        total: totalCount,
+        canUndo: Object.keys(originalValues).length > 0,
+        fileFields: fileFields.map(field => ({
+            selector: getElementSelector(field),
+            label: field.labels && field.labels.length > 0 ? field.labels[0].textContent : 'File Upload'
+        }))
     };
+}
+
+// Undo form fill - restore original values
+function undoFormFill() {
+    try {
+        // Retrieve undo data from sessionStorage
+        const undoDataStr = sessionStorage.getItem('smarthirex_undo_data');
+
+        if (!undoDataStr) {
+            return {
+                success: false,
+                error: 'No undo data available'
+            };
+        }
+
+        const undoData = JSON.parse(undoDataStr);
+
+        // Check if undo data has expired
+        if (Date.now() > undoData.expiresAt) {
+            sessionStorage.removeItem('smarthirex_undo_data');
+            return {
+                success: false,
+                error: 'Undo data has expired (> 5 minutes old)'
+            };
+        }
+
+        let restoredCount = 0;
+        const { originalValues } = undoData;
+
+        // Restore each field to its original value
+        for (const [selector, originalValue] of Object.entries(originalValues)) {
+            try {
+                const element = document.querySelector(selector);
+
+                if (!element) {
+                    console.warn(`Element not found for undo: ${selector}`);
+                    continue;
+                }
+
+                // Restore based on element type
+                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                    if (element.type === 'checkbox' || element.type === 'radio') {
+                        element.checked = originalValue;
+                    } else {
+                        // Use native setter for React compatibility
+                        try {
+                            const prototype = element.tagName === 'INPUT' ? window.HTMLInputElement.prototype : window.HTMLTextAreaElement.prototype;
+                            const nativeSetter = Object.getOwnPropertyDescriptor(prototype, "value").set;
+                            nativeSetter.call(element, originalValue);
+                        } catch (e) {
+                            element.value = originalValue;
+                        }
+                    }
+                } else if (element.tagName === 'SELECT') {
+                    element.value = originalValue;
+                }
+
+                // Trigger events to update form state
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+                element.dispatchEvent(new Event('change', { bubbles: true }));
+                element.dispatchEvent(new Event('blur', { bubbles: true }));
+
+                // Add visual feedback (brief flash)
+                element.style.transition = 'background-color 0.3s';
+                element.style.backgroundColor = '#fef3c7';
+                setTimeout(() => {
+                    element.style.backgroundColor = '';
+                }, 300);
+
+                restoredCount++;
+            } catch (error) {
+                console.error(`Error restoring ${selector}:`, error);
+            }
+        }
+
+        // Clear undo data after successful undo
+        sessionStorage.removeItem('smarthirex_undo_data');
+
+        // Remove file field highlighting if present
+        const highlightedFields = document.querySelectorAll('.smarthirex-file-upload-highlight');
+        highlightedFields.forEach(field => {
+            field.classList.remove('smarthirex-file-upload-highlight');
+        });
+
+        // Remove file upload overlays
+        const overlays = document.querySelectorAll('.smarthirex-file-upload-overlay');
+        overlays.forEach(overlay => overlay.remove());
+
+        return {
+            success: true,
+            restored: restoredCount
+        };
+
+    } catch (error) {
+        console.error('Undo failed:', error);
+        return {
+            success: false,
+            error: error.message || 'Undo failed'
+        };
+    }
 }
 
 // Highlight filled field with animation
@@ -285,6 +459,98 @@ function highlightSubmitButton() {
             submitBtn.classList.remove('smarthirex-submit');
         }, 5000);
     }
+}
+
+// Detect all file upload fields on the page
+function detectFileFields() {
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    return Array.from(fileInputs);
+}
+
+// Highlight file upload fields with visual indicators
+function highlightFileFields(fileFields) {
+    fileFields.forEach((field, index) => {
+        // Add pulsing border class
+        field.classList.add('smarthirex-file-upload-highlight');
+
+        // Create overlay with instructions
+        const overlay = document.createElement('div');
+        overlay.className = 'smarthirex-file-upload-overlay';
+        overlay.innerHTML = `
+            <div class="smarthirex-file-upload-indicator">
+                <div class="icon">📄</div>
+                <div class="message">Please upload your document here</div>
+                <div class="hint">Click or drag & drop</div>
+            </div>
+        `;
+
+        // Position overlay near the file input
+        const rect = field.getBoundingClientRect();
+        overlay.style.position = 'absolute';
+        overlay.style.left = `${rect.left + window.scrollX}px`;
+        overlay.style.top = `${rect.top + window.scrollY - 80}px`;
+        overlay.style.zIndex = '999998';
+
+        document.body.appendChild(overlay);
+
+        // Scroll to first file field
+        if (index === 0) {
+            setTimeout(() => {
+                field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 500);
+        }
+
+        // Remove overlay after 15 seconds, but show again on hover
+        const removeOverlay = () => {
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.remove();
+                }
+            }, 300);
+        };
+
+        setTimeout(removeOverlay, 15000);
+
+        // Show overlay again on hover
+        field.addEventListener('mouseenter', () => {
+            if (!overlay.parentNode) {
+                document.body.appendChild(overlay);
+                overlay.style.opacity = '1';
+            }
+        });
+
+        // Remove highlight when file is selected
+        field.addEventListener('change', () => {
+            field.classList.remove('smarthirex-file-upload-highlight');
+            if (overlay.parentNode) {
+                overlay.remove();
+            }
+        });
+    });
+}
+
+// Get a unique selector for an element
+function getElementSelector(element) {
+    if (element.id) {
+        return `#${element.id}`;
+    }
+
+    if (element.name) {
+        return `input[name="${element.name}"]`;
+    }
+
+    // Fallback: use tag + nth-of-type
+    const parent = element.parentElement;
+    if (parent) {
+        const siblings = Array.from(parent.children).filter(child =>
+            child.tagName === element.tagName
+        );
+        const index = siblings.indexOf(element) + 1;
+        return `${element.tagName.toLowerCase()}:nth-of-type(${index})`;
+    }
+
+    return element.tagName.toLowerCase();
 }
 
 // Show missing data modal on the page
@@ -411,6 +677,248 @@ async function showMissingDataModal(missingFields, allFields) {
             }
         });
     });
+}
+
+// Show preview modal for reviewing mappings before filling
+async function showPreviewModal(mappings, analysis, allFields) {
+    return new Promise((resolve, reject) => {
+        // Inject modal styles if not already present
+        if (!document.getElementById('smarthirex-modal-styles')) {
+            injectModalStyles();
+        }
+
+        // Calculate statistics
+        const stats = calculateMappingStats(mappings, allFields);
+
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'smarthirex-preview-overlay';
+        overlay.className = 'smarthirex-modal-overlay';
+
+        // Create modal dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'smarthirex-preview-dialog';
+
+        // Dialog header with stats
+        const header = document.createElement('div');
+        header.className = 'smarthirex-dialog-header';
+        header.innerHTML = `
+            <h3>Review Before Filling</h3>
+            <p style="margin-top: 8px;">Please review and confirm the field mappings below</p>
+            <div class="smarthirex-stats-summary" style="margin-top: 16px; display: flex; gap: 16px; flex-wrap: wrap;">
+                <div class="stat-item">
+                    <span class="stat-label">Total Fields:</span>
+                    <span class="stat-value">${stats.total}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Auto-Fill:</span>
+                    <span class="stat-value" style="color: #10b981;">${stats.autoFill}</span>
+                </div>
+                ${stats.manualUpload > 0 ? `
+                    <div class="stat-item">
+                        <span class="stat-label">Manual Upload:</span>
+                        <span class="stat-value" style="color: #f59e0b;">${stats.manualUpload}</span>
+                    </div>
+                ` : ''}
+            </div>
+            <div class="smarthirex-confidence-summary" style="margin-top: 12px; display: flex; gap: 12px; font-size: 12px;">
+                ${stats.highConfidence > 0 ? `<span class="confidence-badge high">${stats.highConfidence} High</span>` : ''}
+                ${stats.mediumConfidence > 0 ? `<span class="confidence-badge medium">${stats.mediumConfidence} Medium</span>` : ''}
+                ${stats.lowConfidence > 0 ? `<span class="confidence-badge low">${stats.lowConfidence} Low</span>` : ''}
+            </div>
+        `;
+
+        // Dialog content - table of mappings
+        const content = document.createElement('div');
+        content.className = 'smarthirex-dialog-content';
+
+        const table = document.createElement('div');
+        table.className = 'smarthirex-mappings-table';
+
+        // Table header
+        const tableHeader = document.createElement('div');
+        tableHeader.className = 'table-header';
+        tableHeader.innerHTML = `
+            <div class="th-checkbox"><input type="checkbox" id="select-all-fields" checked></div>
+            <div class="th-field">Field Name</div>
+            <div class="th-value">Value</div>
+            <div class="th-confidence">Confidence</div>
+        `;
+        table.appendChild(tableHeader);
+
+        // Table body with editable rows
+        const tableBody = document.createElement('div');
+        tableBody.className = 'table-body';
+
+        // Add rows for each mapping
+        for (const [selector, fieldData] of Object.entries(mappings)) {
+            const fieldInfo = allFields.find(f => f.selector === selector) || {};
+            const label = fieldInfo.label || selector;
+            const value = fieldData.value || '';
+            const confidence = fieldData.confidence || 1.0;
+            const isFileField = fieldInfo.type === 'file';
+
+            const row = document.createElement('div');
+            row.className = 'table-row';
+            row.dataset.selector = selector;
+
+            const confidenceLevel = getConfidenceLevel(confidence);
+            const confidenceClass = confidenceLevel.toLowerCase();
+
+            row.innerHTML = `
+                <div class="td-checkbox">
+                    <input type="checkbox" class="field-checkbox" ${!isFileField ? 'checked' : ''} ${isFileField ? 'disabled' : ''}>
+                </div>
+                <div class="td-field">
+                    ${isFileField ? '<span class="file-icon">📄</span>' : ''}
+                    <span class="field-label">${label}</span>
+                    ${fieldInfo.required ? '<span class="required-badge">*</span>' : ''}
+                </div>
+                <div class="td-value">
+                    ${isFileField ?
+                    '<span class="manual-upload-text">Upload Manually</span>' :
+                    `<input type="text" class="value-input" value="${escapeHtml(value)}" ${confidence >= 0.9 ? '' : 'style="background: #fef3c7;"'}>`
+                }
+                </div>
+                <div class="td-confidence">
+                    ${!isFileField ? `<span class="confidence-badge ${confidenceClass}">${confidenceLevel}</span>` : ''}
+                </div>
+            `;
+
+            tableBody.appendChild(row);
+        }
+
+        table.appendChild(tableBody);
+        content.appendChild(table);
+
+        // Dialog footer
+        const footer = document.createElement('div');
+        footer.className = 'smarthirex-dialog-footer';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'smarthirex-btn smarthirex-btn-secondary';
+        cancelBtn.textContent = 'Cancel';
+
+        const fillBtn = document.createElement('button');
+        fillBtn.type = 'button';
+        fillBtn.className = 'smarthirex-btn smarthirex-btn-primary';
+        fillBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Fill Form
+        `;
+
+        footer.appendChild(cancelBtn);
+        footer.appendChild(fillBtn);
+
+        // Assemble dialog
+        dialog.appendChild(header);
+        dialog.appendChild(content);
+        dialog.appendChild(footer);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        // Event handlers
+        // Select all checkbox
+        const selectAllCheckbox = tableHeader.querySelector('#select-all-fields');
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const checkboxes = tableBody.querySelectorAll('.field-checkbox:not([disabled])');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            resolve({ mappings: {}, cancelled: true });
+            setTimeout(() => document.body.removeChild(overlay), 50);
+        });
+
+        // Fill button - collect edited mappings and fill the form directly
+        fillBtn.addEventListener('click', () => {
+            const editedMappings = {};
+            const rows = tableBody.querySelectorAll('.table-row');
+
+            rows.forEach((row) => {
+                const checkbox = row.querySelector('.field-checkbox');
+                const selector = row.dataset.selector;
+
+                // Only include checked fields
+                if (checkbox && checkbox.checked && !checkbox.disabled) {
+                    const valueInput = row.querySelector('.value-input');
+                    const newValue = valueInput ? valueInput.value : mappings[selector]?.value;
+
+                    editedMappings[selector] = {
+                        ...mappings[selector],
+                        value: newValue
+                    };
+                }
+            });
+
+            // Remove modal first
+            document.body.removeChild(overlay);
+
+            // Fill the form directly in content script
+            const result = fillForm(editedMappings);
+
+            // Resolve with the result so popup knows it's done
+            resolve({ mappings: editedMappings, filled: result.filled, total: result.total, success: result.success, cancelled: false });
+        });
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                resolve({ mappings: {}, cancelled: true });
+                setTimeout(() => document.body.removeChild(overlay), 50);
+            }
+        });
+    });
+}
+
+// Calculate mapping statistics for preview
+function calculateMappingStats(mappings, allFields) {
+    let total = 0;
+    let autoFill = 0;
+    let manualUpload = 0;
+    let highConfidence = 0;
+    let mediumConfidence = 0;
+    let lowConfidence = 0;
+
+    for (const [selector, fieldData] of Object.entries(mappings)) {
+        total++;
+        const fieldInfo = allFields.find(f => f.selector === selector) || {};
+
+        if (fieldInfo.type === 'file') {
+            manualUpload++;
+        } else {
+            autoFill++;
+            const confidence = fieldData.confidence || 1.0;
+            if (confidence >= 0.9) highConfidence++;
+            else if (confidence >= 0.7) mediumConfidence++;
+            else lowConfidence++;
+        }
+    }
+
+    return {
+        total,
+        autoFill,
+        manualUpload,
+        highConfidence,
+        mediumConfidence,
+        lowConfidence
+    };
+}
+
+// Get confidence level label
+function getConfidenceLevel(confidence) {
+    if (confidence >= 0.9) return 'High';
+    if (confidence >= 0.7) return 'Medium';
+    return 'Low';
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Inject modal styles into the page
@@ -675,6 +1183,344 @@ function injectModalStyles() {
                 0 0 0 1px rgba(139, 92, 246, 0.2),
                 0 8px 20px rgba(139, 92, 246, 0.35);
             transform: translateY(-1px);
+        }
+
+        /* Preview Modal Specific Styles */
+        .smarthirex-preview-dialog {
+            background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1px rgba(15, 23, 42, 0.05),
+                0 20px 25px -5px rgba(15, 23, 42, 0.1),
+                0 40px 60px -15px rgba(15, 23, 42, 0.25);
+            animation: smarthirex-slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        .smarthirex-preview-dialog::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #8B5CF6 0%, #6366F1 50%, #8B5CF6 100%);
+            background-size: 200% 100%;
+            animation: smarthirex-shimmer 3s linear infinite;
+        }
+
+        .smarthirex-preview-dialog .smarthirex-dialog-header::before {
+            content: '👀';
+        }
+
+        .smarthirex-stats-summary {
+            background: rgba(139, 92, 246, 0.05);
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(139, 92, 246, 0.1);
+        }
+
+        .smarthirex-stats-summary .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .smarthirex-stats-summary .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .smarthirex-stats-summary .stat-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .smarthirex-confidence-summary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .confidence-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .confidence-badge.high {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .confidence-badge.medium {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+
+        .confidence-badge.low {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        /* Table Styles */
+        .smarthirex-mappings-table {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .smarthirex-mappings-table .table-header {
+            display: grid;
+            grid-template-columns: 40px 1fr 2fr 100px;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .smarthirex-mappings-table .table-body {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .smarthirex-mappings-table .table-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .smarthirex-mappings-table .table-body::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .smarthirex-mappings-table .table-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 2fr 100px;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s;
+        }
+
+        .smarthirex-mappings-table .table-row:hover {
+            background: #fafbfc;
+        }
+
+        .smarthirex-mappings-table .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .td-checkbox,
+        .th-checkbox {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .td-checkbox input[type="checkbox"],
+        .th-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #8B5CF6;
+        }
+
+        .td-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #0f172a;
+        }
+
+        .field-icon {
+            font-size: 18px;
+        }
+
+        .field-label {
+            font-weight: 500;
+        }
+
+        .required-badge {
+            color: #ef4444;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .td-value {
+            display: flex;
+            align-items: center;
+        }
+
+        .value-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .value-input:focus {
+            outline: none;
+            border-color: #8B5CF6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .manual-upload-text {
+            font-size: 13px;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .td-confidence {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .smarthirex-preview-dialog {
+                max-width: 100%;
+                margin: 0;
+                border-radius: 20px 20px 0 0;
+                max-height: 95vh;
+            }
+
+            .smarthirex-mappings-table .table-header,
+            .smarthirex-mappings-table .table-row {
+                grid-template-columns: 30px 1fr 80px;
+                gap: 8px;
+            }
+
+            .th-value,
+            .td-value {
+                display: none;
+            }
+
+            .smarthirex-dialog-header {
+                padding: 24px 20px 20px 20px;
+            }
+
+            .smarthirex-dialog-header h3,
+            .smarthirex-dialog-header p {
+                margin-left: 36px;
+            }
+
+            .smarthirex-dialog-content {
+                padding: 16px;
+            }
+
+            .smarthirex-dialog-footer {
+                padding: 16px 20px 24px 20px;
+                flex-direction: column;
+            }
+
+            .smarthirex-btn {
+                width: 100%;
+            }
+        }
+
+        /* File Upload Field Highlighting */
+        .smarthirex-file-upload-highlight {
+            animation: smarthirex-file-pulse 2s infinite !important;
+            border: 3px solid #8B5CF6 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2) !important;
+        }
+
+        @keyframes smarthirex-file-pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+                border-color: #8B5CF6;
+            }
+            50% {
+                box-shadow: 0 0 0 12px rgba(139, 92, 246, 0);
+                border-color: #a78bfa;
+            }
+        }
+
+        .smarthirex-file-upload-overlay {
+            position: absolute;
+            z-index: 999998;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .smarthirex-file-upload-indicator {
+            background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow:
+                0 0 0 1px rgba(139, 92, 246, 0.3),
+                0 10px 25px rgba(139, 92, 246, 0.4),
+                0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            animation: smarthirex-indicator-bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes smarthirex-indicator-bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .smarthirex-file-upload-indicator .icon {
+            font-size: 32px;
+            animation: smarthirex-icon-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes smarthirex-icon-pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .smarthirex-file-upload-indicator .message {
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: -0.01em;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .smarthirex-file-upload-indicator .hint {
+            font-size: 12px;
+            opacity: 0.9;
+            font-weight: 500;
+            text-align: center;
         }
     `;
     document.head.appendChild(style);
