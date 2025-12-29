@@ -151,7 +151,306 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse(result);
         return true;
     }
+
+    if (message.type === 'TOGGLE_CHAT') {
+        toggleChatInterface();
+        sendResponse({ success: true });
+        return false;
+    }
 });
+
+// ============================================
+// CHAT INTERFACE INJECTION
+// ============================================
+
+function toggleChatInterface() {
+    const existingChat = document.getElementById('smarthirex-chat-container');
+
+    if (existingChat) {
+        // Toggle visibility if it exists
+        if (existingChat.style.display === 'none') {
+            existingChat.style.display = 'block';
+            existingChat.classList.add('slide-in');
+        } else {
+            existingChat.style.display = 'none';
+        }
+        return;
+    }
+
+    // Create container
+    const container = document.createElement('div');
+    container.id = 'smarthirex-chat-container';
+
+    // Initial styles - Bottom right position
+    container.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 400px;
+        height: 600px;
+        max-width: 90vw;
+        max-height: 90vh;
+        min-width: 300px;
+        min-height: 200px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        z-index: 2147483647;
+        overflow: visible; /* Changed to visible for resize handles */
+        border: 1px solid rgba(0,0,0,0.1);
+        transition: transform 0.1s ease-out;
+        animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    `;
+
+    // Add drag handle at the top (covering the header area)
+    const dragHandle = document.createElement('div');
+    dragHandle.title = "Click and drag to move";
+    dragHandle.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 30px; /* Leave space for close button */
+        height: 60px; /* Cover the approximate header height */
+        cursor: move;
+        z-index: 100;
+        background: transparent;
+    `;
+    container.appendChild(dragHandle);
+
+    // Add close button (extra overlay control)
+    const closeBtn = document.createElement('div');
+    closeBtn.innerHTML = '×';
+    closeBtn.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        width: 24px;
+        height: 24px;
+        line-height: 24px;
+        text-align: center;
+        cursor: pointer;
+        z-index: 101;
+        color: white;
+        font-weight: bold;
+        font-family: sans-serif;
+        font-size: 20px;
+        opacity: 0.8;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    `;
+    closeBtn.onclick = () => {
+        container.style.display = 'none';
+    };
+    closeBtn.onmouseenter = () => closeBtn.style.opacity = '1';
+    closeBtn.onmouseleave = () => closeBtn.style.opacity = '0.8';
+    container.appendChild(closeBtn);
+
+    // Create Iframe
+    const iframe = document.createElement('iframe');
+    iframe.src = chrome.runtime.getURL('chat/chat.html');
+    iframe.style.cssText = `
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: white;
+        border-radius: 12px; /* Inner radius for iframe */
+    `;
+
+    container.appendChild(iframe);
+
+    // ============================================
+    // CUSTOM RESIZERS (4 CORNERS)
+    // ============================================
+    const resizerSize = 15;
+    const resizerStyles = `
+        position: absolute;
+        width: ${resizerSize}px;
+        height: ${resizerSize}px;
+        background: transparent;
+        z-index: 200;
+    `;
+
+    // 1. Top-Left (NW)
+    const resizerNW = document.createElement('div');
+    resizerNW.style.cssText = `${resizerStyles} top: -5px; left: -5px; cursor: nw-resize;`;
+    container.appendChild(resizerNW);
+
+    // 2. Top-Right (NE)
+    const resizerNE = document.createElement('div');
+    resizerNE.style.cssText = `${resizerStyles} top: -5px; right: -5px; cursor: ne-resize;`;
+    container.appendChild(resizerNE);
+
+    // 3. Bottom-Left (SW)
+    const resizerSW = document.createElement('div');
+    resizerSW.style.cssText = `${resizerStyles} bottom: -5px; left: -5px; cursor: sw-resize;`;
+    container.appendChild(resizerSW);
+
+    // 4. Bottom-Right (SE)
+    const resizerSE = document.createElement('div');
+    resizerSE.style.cssText = `${resizerStyles} bottom: -5px; right: -5px; cursor: se-resize;`;
+    container.appendChild(resizerSE);
+
+    // Resize Logic
+    setupResizer(resizerNW, 'nw');
+    setupResizer(resizerNE, 'ne');
+    setupResizer(resizerSW, 'sw');
+    setupResizer(resizerSE, 'se');
+
+    function setupResizer(resizer, direction) {
+        let startX, startY, startWidth, startHeight, startRight, startBottom;
+
+        resizer.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // Stop drag event from propagating to container drag
+
+            startX = e.clientX;
+            startY = e.clientY;
+
+            const rect = container.getBoundingClientRect();
+            startWidth = rect.width;
+            startHeight = rect.height;
+
+            // Get computed styles for right/bottom
+            const computedStyle = window.getComputedStyle(container);
+            startRight = parseFloat(computedStyle.right);
+            startBottom = parseFloat(computedStyle.bottom);
+
+            // Disable iframe interactions during resize for smoothness
+            iframe.style.pointerEvents = 'none';
+            container.style.transition = 'none';
+
+            function onMouseMove(e) {
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+
+                // NW: Drag Left/Up -> Increase Width/Height (Anchored Right/Bottom)
+                if (direction === 'nw') {
+                    // Moving Left (negative deltaX) should INCREASE width
+                    container.style.width = `${startWidth - deltaX}px`;
+                    // Moving Up (negative deltaY) should INCREASE height
+                    container.style.height = `${startHeight - deltaY}px`;
+                }
+
+                // NE: Drag Right/Up -> Increase Width/Height. But Right is Anchored.
+                // WE MUST: Decrease Right, Increase Width
+                if (direction === 'ne') {
+                    // Moving Right (positive deltaX)
+                    // Increase Width by deltaX
+                    container.style.width = `${startWidth + deltaX}px`;
+                    // Decrease Right by deltaX
+                    container.style.right = `${startRight - deltaX}px`;
+
+                    // Moving Up (negative deltaY) -> Increase Height
+                    container.style.height = `${startHeight - deltaY}px`;
+                }
+
+                // SW: Drag Left/Down -> Increase Width. But Bottom is Anchored.
+                // WE MUST: Decrease Bottom, Increase Height
+                if (direction === 'sw') {
+                    // Moving Left (negative deltaX) -> Increase Width
+                    container.style.width = `${startWidth - deltaX}px`;
+
+                    // Moving Down (positive deltaY)
+                    // Increase Height
+                    container.style.height = `${startHeight + deltaY}px`;
+                    // Decrease Bottom
+                    container.style.bottom = `${startBottom - deltaY}px`;
+                }
+
+                // SE: Drag Right/Down -> Increase Width/Height. Anchors Right/Bottom.
+                // WE MUST: Decrease Right, Decrease Bottom, Increase W/H
+                if (direction === 'se') {
+                    // Moving Right (positive deltaX)
+                    container.style.width = `${startWidth + deltaX}px`;
+                    container.style.right = `${startRight - deltaX}px`;
+
+                    // Moving Down (positive deltaY)
+                    container.style.height = `${startHeight + deltaY}px`;
+                    container.style.bottom = `${startBottom - deltaY}px`;
+                }
+            }
+
+            function onMouseUp() {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                // Re-enable iframe interactions
+                iframe.style.pointerEvents = 'auto';
+                container.style.transition = 'transform 0.1s ease-out';
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+    }
+
+    document.body.appendChild(container);
+
+    // Draggable functionality
+    let isDragging = false;
+    let dragStartX;
+    let dragStartY;
+    let initialRight;
+    let initialBottom;
+
+    dragHandle.addEventListener("mousedown", dragStart);
+    document.addEventListener("mouseup", dragEnd);
+    document.addEventListener("mousemove", drag);
+
+    function dragStart(e) {
+        if (e.target === dragHandle) {
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+
+            // Get current styles
+            const rect = container.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            // Calculate initial right/bottom values
+            initialRight = viewportWidth - rect.right;
+            initialBottom = viewportHeight - rect.bottom;
+
+            // Disable transition during drag
+            container.style.transition = 'none';
+        }
+    }
+
+    function dragEnd(e) {
+        if (isDragging) {
+            isDragging = false;
+            // Re-enable transition
+            container.style.transition = 'transform 0.3s ease';
+        }
+    }
+
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+
+            const deltaX = dragStartX - e.clientX; // Moving left increases right value
+            const deltaY = dragStartY - e.clientY; // Moving up increases bottom value
+
+            container.style.right = `${initialRight + deltaX}px`;
+            container.style.bottom = `${initialBottom + deltaY}px`;
+
+            // Reset transform if it was used
+            container.style.transform = 'none';
+        }
+    }
+
+    // Inject keyframe animation if not present
+    if (!document.getElementById('smarthirex-animations')) {
+        const style = document.createElement('style');
+        style.id = 'smarthirex-animations';
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
 
 // Detect forms on the page
 function detectForms() {

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Nova AI</title>
+    <link rel="stylesheet" href="chat.css">
+</head>
+
+<body>
+    <div class="chat-container">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="header-content">
+                <div class="ai-icon-wrapper">
+                    <div class="ai-icon-glow"></div>
+                    <div class="ai-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" />
+                            <path d="M2 17L12 22L22 17" />
+                            <path d="M2 12L12 17L22 12" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="header-text">
+                    <h1>Nova AI</h1>
+                    <div class="status-indicator">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Online & Ready</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div class="chat-messages" id="chat-messages">
+            <!-- Welcome message -->
+            <div class="message-wrapper bot-message">
+                <div class="message-avatar bot-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" />
+                        <path d="M2 17L12 22L22 17" />
+                        <path d="M2 12L12 17L22 12" />
+                    </svg>
+                </div>
+                <div class="message-content bot-content">
+                    <div class="message-text">Hi! I'm Nova, your AI career assistant. How can I help you today? 🚀</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input-wrapper">
+            <div class="chat-input-container">
+                <textarea id="message-input" placeholder="Message Nova..." rows="1" autocomplete="off"></textarea>
+                <button id="send-button" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading indicator (hidden by default) -->
+        <div class="typing-indicator hidden" id="typing-indicator">
+            <div class="message-wrapper bot-message">
+                <div class="message-avatar bot-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" />
+                        <path d="M2 17L12 22L22 17" />
+                        <path d="M2 12L12 17L22 12" />
+                    </svg>
+                </div>
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="chat.js"></script>
+</body>
+
+</html>

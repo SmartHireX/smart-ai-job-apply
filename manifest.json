@@ -41,5 +41,17 @@
             ],
             "run_at": "document_idle"
         }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "chat/chat.html",
+                "chat/chat.css",
+                "chat/chat.js"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
     ]
 }

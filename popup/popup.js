@@ -4,7 +4,7 @@ const FRONTEND_URL = 'http://localhost:8080';
 
 
 // DOM Elements
-let authSection, mainSection, loginBtn, fillBtn, logoutLink, undoBtn;
+let authSection, mainSection, loginBtn, fillBtn, chatBtn, logoutLink, undoBtn;
 let userInitial, userName, userEmail;
 let formStatus, formCount;
 let progressSection, progressFill, progressText;
@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     mainSection = document.getElementById('main-section');
     loginBtn = document.getElementById('login-btn');
     fillBtn = document.getElementById('fill-btn');
+    chatBtn = document.getElementById('chat-btn');
     logoutLink = document.getElementById('logout-link');
 
     userInitial = document.getElementById('user-initial');
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Add event listeners
     loginBtn.addEventListener('click', handleLogin);
     fillBtn.addEventListener('click', handleFillForm);
+    chatBtn.addEventListener('click', handleChatOpen);
     logoutLink.addEventListener('click', handleLogout);
     undoBtn.addEventListener('click', handleUndo);
 });
@@ -216,6 +218,32 @@ async function handleLogout() {
     await chrome.storage.local.remove(['token', 'email']);
     await checkAuth();
 }
+
+// Handle chat window open
+// Handle chat window open
+async function handleChatOpen() {
+    console.log('Toggling chat overlay...');
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        if (!tab) {
+            console.log('No active tab found');
+            return;
+        }
+
+        // Send message to content script to toggle chat
+        await chrome.tabs.sendMessage(tab.id, {
+            type: 'TOGGLE_CHAT'
+        });
+
+        // Close the extension popup since the chat will appear on page
+        window.close();
+
+    } catch (error) {
+        console.error('Failed to toggle chat:', error);
+    }
+}
+
 
 // Detect forms on current page
 async function detectForms() {
