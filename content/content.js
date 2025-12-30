@@ -117,24 +117,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 console.log(`📊 High-confidence: ${highConfCount}, Low-confidence: ${lowConfCount}`);
 
-                // 1. Fill high-confidence fields with Ghost Typer effect (sequential)
-                if (highConfCount > 0) {
-                    console.log('👻 Starting Ghost Typer effect...');
-                    let filledCount = 0;
+                // 1. Fill ALL fields regardless of confidence (Sequential Ghost Typer)
+                const allFieldsToFill = { ...highConfidenceMappings, ...lowConfidenceMappings };
+                const totalFillCount = Object.keys(allFieldsToFill).length;
+
+                if (totalFillCount > 0) {
+                    console.log('👻 Starting Ghost Typer effect for ALL fields...');
 
                     // Iterate sequentially for the visual effect
-                    for (const [selector, data] of Object.entries(highConfidenceMappings)) {
+                    for (const [selector, data] of Object.entries(allFieldsToFill)) {
                         const element = document.querySelector(selector);
                         if (element && isFieldVisible(element)) {
                             // Scroll to element
                             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-                            // Visualize typing
-                            await simulateTyping(element, data.value);
-                            filledCount++;
+                            // Visualize typing with confidence awareness
+                            const confidence = data.confidence || 0;
+                            if (data.value) {
+                                await simulateTyping(element, data.value, confidence);
+                            } else {
+                                // If value is empty, just highlight so user knows to review
+                                highlightField(element, confidence);
+                            }
                         }
                     }
-                    console.log(`✅ Ghost Typer finished: ${filledCount} fields`);
+                    console.log(`✅ Ghost Typer finished: ${totalFillCount} fields`);
                 }
 
                 // 2. Show toast notification
@@ -204,7 +211,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function processPageForm(token, userEmail, apiBaseUrl) {
     try {
         console.log('✨ Starting page-level processing...');
-        showProcessingWidget('Analyzing form structure...', 1);
+        showProcessingWidget('Nova is analyzing page architecture...', 1);
 
         // 1. Extract HTML
         const formHTML = extractFormHTML();
@@ -249,7 +256,7 @@ async function processPageForm(token, userEmail, apiBaseUrl) {
         }
 
         // 5. Complete & Show Preview
-        showProcessingWidget('Ready!', 4);
+        showProcessingWidget('Optimization Complete.', 4);
         setTimeout(() => removeProcessingWidget(), 800);
 
         // Trigger existing preview flow
@@ -337,15 +344,31 @@ async function executeInstantFill(data) {
         const highConfCount = Object.keys(highConfidenceMappings).length;
         const lowConfCount = Object.keys(lowConfidenceMappings).length;
 
-        // 1. Ghost Typer
-        if (highConfCount > 0) {
-            for (const [selector, fieldData] of Object.entries(highConfidenceMappings)) {
+        // 1. Fill ALL fields regardless of confidence (Sequential Ghost Typer)
+        const allFieldsToFill = { ...highConfidenceMappings, ...lowConfidenceMappings };
+        const totalFillCount = Object.keys(allFieldsToFill).length;
+
+        if (totalFillCount > 0) {
+            console.log('👻 Starting Ghost Typer effect for ALL fields...');
+
+            // Iterate sequentially for the visual effect
+            for (const [selector, data] of Object.entries(allFieldsToFill)) {
                 const element = document.querySelector(selector);
                 if (element && isFieldVisible(element)) {
+                    // Scroll to element
                     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    await simulateTyping(element, fieldData.value);
+
+                    // Visualize typing with confidence awareness
+                    const confidence = data.confidence || 0;
+                    if (data.value) {
+                        await simulateTyping(element, data.value, confidence);
+                    } else {
+                        // If value is empty, just highlight so user knows to review
+                        highlightField(element, confidence);
+                    }
                 }
             }
+            console.log(`✅ Ghost Typer finished: ${totalFillCount} fields`);
         }
 
         // 2. Toast
@@ -372,7 +395,7 @@ async function executeInstantFill(data) {
     }
 }
 
-// FANG-Style Processing Widget
+// FANG-Style Processing Widget - Premium Design
 function showProcessingWidget(text, step) {
     let widget = document.getElementById('smarthirex-processing-widget');
     if (!widget) {
@@ -388,70 +411,107 @@ function showProcessingWidget(text, step) {
                 top: 32px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: rgba(255, 255, 255, 0.85);
+                background: rgba(255, 255, 255, 0.9);
                 backdrop-filter: blur(20px);
                 -webkit-backdrop-filter: blur(20px);
-                border: 1px solid rgba(255, 255, 255, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.8);
                 padding: 12px 24px;
                 border-radius: 99px;
                 box-shadow: 
-                    0 20px 40px -10px rgba(0, 0, 0, 0.15),
-                    0 0 0 1px rgba(255, 255, 255, 0.5) inset,
-                    0 0 0 1px rgba(0,0,0,0.05);
+                    0 10px 40px -10px rgba(10, 102, 194, 0.25),
+                    0 0 0 1px rgba(10, 102, 194, 0.1),
+                    0 0 15px rgba(10, 102, 194, 0.15); /* Blue glow */
                 display: flex;
                 align-items: center;
-                gap: 14px;
+                gap: 16px;
                 z-index: 2147483647;
                 font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
                 animation: widgetSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-                min-width: 300px;
+                min-width: 340px;
                 transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             }
             #smarthirex-processing-widget:hover {
-                transform: translateX(-50%) translateY(4px);
-                background: rgba(255, 255, 255, 0.95);
+                transform: translateX(-50%) translateY(4px) scale(1.02);
+                background: rgba(255, 255, 255, 0.98);
                 box-shadow: 
-                    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-                    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
-                    0 0 0 1px rgba(0,0,0,0.08);
+                    0 25px 50px -12px rgba(10, 102, 194, 0.3),
+                    0 0 0 1px rgba(10, 102, 194, 0.2),
+                    0 0 25px rgba(10, 102, 194, 0.25);
             }
             @keyframes widgetSlideDown {
                 from { transform: translate(-50%, -100%); opacity: 0; }
                 to { transform: translate(-50%, 0); opacity: 1; }
             }
-            .sh-spinner {
-                width: 22px;
-                height: 22px;
-                border: 2.5px solid rgba(10, 102, 194, 0.15);
+            .sh-icon-container {
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+            }
+            .sh-icon-ring {
+                position: absolute;
+                inset: 0;
+                border: 2px solid transparent;
                 border-top-color: #0a66c2;
+                border-right-color: #0a66c2;
                 border-radius: 50%;
-                animation: shSpin 1s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
+                animation: shSpin 1.5s linear infinite;
+            }
+            .sh-icon-core {
+                width: 16px;
+                height: 16px;
+                background: #0a66c2;
+                border-radius: 50%;
+                animation: shPulse 2s ease-in-out infinite;
+                box-shadow: 0 0 10px #0a66c2;
             }
             @keyframes shSpin { to { transform: rotate(360deg); } }
+            @keyframes shPulse { 
+                0%, 100% { transform: scale(0.8); opacity: 0.8; }
+                50% { transform: scale(1.1); opacity: 1; }
+            }
+            .sh-text-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
             .sh-text {
                 font-size: 14px;
                 font-weight: 600;
                 color: #0f172a;
-                flex: 1;
+                letter-spacing: -0.3px;
+                background: linear-gradient(90deg, #0f172a, #334155);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
             }
             .sh-step {
-                font-size: 12px;
+                font-size: 11px;
                 color: #64748b;
                 font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-top: 2px;
             }
         `;
         document.head.appendChild(style);
     }
 
     if (step === -1) {
-        widget.innerHTML = `<div style="color:#ef4444">⚠️</div><div class="sh-text" style="color:#b91c1c">${text}</div>`;
+        widget.innerHTML = `<div style="font-size: 24px;">⚠️</div><div class="sh-text" style="color:#b91c1c; -webkit-text-fill-color: #b91c1c;">${text}</div>`;
         return;
     }
 
     widget.innerHTML = `
-        <div class="sh-spinner"></div>
-        <div class="sh-text">${text}</div>
-        ${step > 0 ? `<div class="sh-step">${step}/3</div>` : ''}
+        <div class="sh-icon-container">
+            <div class="sh-icon-ring"></div>
+            <div class="sh-icon-core"></div>
+        </div>
+        <div class="sh-text-container">
+            <div class="sh-text">${text}</div>
+            ${step > 0 ? `<div class="sh-step">STEP ${step} OF 3</div>` : ''}
+        </div>
     `;
 }
 
@@ -1878,7 +1938,7 @@ function addAccordionStyles() {
         #smarthirex-accordion-sidebar .close-btn {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            color: rgba(255, 255, 255, 0.9);
+            color: #ffffff !important;
             width: 28px;
             height: 28px;
             border-radius: 8px;
@@ -2171,7 +2231,12 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
                 </div>
                 <div class="header-subtitle">Please review and complete</div>
             </div>
-            </div>
+            <button class="close-btn" id="smarthirex-lowconf-close" style="color: white !important;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
         </div>
         <div class="panel-divider"></div>
         <div class="panel-list">
@@ -2210,6 +2275,17 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
 `;
 
     document.body.appendChild(panel);
+
+    // Securely attach close listener
+    const lowConfCloseBtn = panel.querySelector('#smarthirex-lowconf-close');
+    if (lowConfCloseBtn) {
+        lowConfCloseBtn.addEventListener('click', () => {
+            const p = document.getElementById('smarthirex-lowconf-panel');
+            if (p) p.remove();
+            document.querySelectorAll('.smarthirex-lowconf-overlay').forEach(el => el.remove());
+            document.querySelectorAll('.smarthirex-lowconf-highlight').forEach(el => el.classList.remove('smarthirex-lowconf-highlight'));
+        });
+    }
 
     // Securely attach close listener
 
