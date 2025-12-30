@@ -13,32 +13,31 @@
         <!-- Header -->
         <div class="header">
             <div class="logo">
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="32" height="32" rx="8" fill="url(#gradient)" />
+                <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="4" fill="#0a66c2" />
                     <path d="M16 8L20 12L16 16L12 12L16 8Z" fill="white" />
                     <path d="M16 16L20 20L16 24L12 20L16 16Z" fill="white" opacity="0.7" />
-                    <defs>
-                        <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
-                            <stop offset="0%" stop-color="#8B5CF6" />
-                            <stop offset="100%" stop-color="#6366F1" />
-                        </linearGradient>
-                    </defs>
                 </svg>
             </div>
             <div class="title">
                 <h1>SmartHireX</h1>
-                <p>AI Form Filler</p>
+                <p>Enterprise Agent</p>
             </div>
         </div>
 
         <!-- Auth Section -->
         <div id="auth-section" class="section hidden">
-            <p class="info-text">Please log in to use AI form filling</p>
-            <button id="login-btn" class="btn btn-primary">
-                Login to SmartHireX
-            </button>
+            <div class="user-info"
+                style="flex-direction: column; align-items: center; text-align: center; border-left: 4px solid #0a66c2;">
+                <p class="info-text" style="font-weight: 600;">Authentication Required</p>
+                <p class="info-text" style="font-size: 12px; margin-bottom: 16px;">Securely connect to your SmartHireX
+                    enterprise account to activate neural features.</p>
+                <button id="login-btn" class="btn btn-primary">
+                    Connect Account
+                </button>
+            </div>
             <p style="margin-top: 12px; font-size: 11px; color: #64748b; text-align: center;">
-                Already logged in? The extension will automatically sync your session.
+                Zero-Trust Neural Bridge • End-to-End Encrypted
             </p>
         </div>
 
@@ -57,24 +56,26 @@
             <!-- Form Detection Status -->
             <div id="form-status" class="form-status">
                 <div class="status-icon">📝</div>
-                <p id="form-count">Detecting forms...</p>
+                <div style="flex: 1;">
+                    <p id="form-count">Scanning page structure...</p>
+                </div>
             </div>
 
             <!-- Fill Button -->
             <button id="fill-btn" class="btn btn-fill" disabled>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 3L3 9L12 15L21 9L12 3Z" />
                     <path d="M3 15L12 21L21 15" />
                 </svg>
-                <span>Fill Form with AI</span>
+                <span>Execute Smart Fill</span>
             </button>
 
             <!-- Chat with AI Button -->
             <button id="chat-btn" class="btn btn-chat">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
-                <span>Chat with AI</span>
+                <span>Nova Assistant</span>
             </button>
 
             <!-- Progress Section -->
@@ -82,7 +83,7 @@
                 <div class="progress-bar">
                     <div id="progress-fill" class="progress-fill"></div>
                 </div>
-                <p id="progress-text" class="progress-text">Analyzing form...</p>
+                <p id="progress-text" class="progress-text">Processing neural patterns...</p>
             </div>
 
             <!-- Result Section -->
@@ -90,11 +91,11 @@
                 <div id="result-icon" class="result-icon"></div>
                 <p id="result-message" class="result-message"></p>
                 <button id="undo-btn" class="undo-btn hidden">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 7v6h6"></path>
                         <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
                     </svg>
-                    Undo Changes
+                    Revert Actions
                 </button>
             </div>
         </div>
@@ -102,7 +103,7 @@
         <!-- Footer -->
         <div class="footer">
 
-            <a href="#" id="logout-link" class="hidden">Logout</a>
+            <a href="#" id="logout-link" class="hidden">Disconnect Session</a>
         </div>
     </div>
 

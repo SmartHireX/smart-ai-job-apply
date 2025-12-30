@@ -519,7 +519,7 @@ function showProgress(message, percent) {
                 <div class="loader-message">${message}</div>
             </div>
         `;
-        progressSection.appendChild(overlay);
+        document.body.appendChild(overlay); // Append to body for full screen
     } else {
         // Update existing overlay
         const messageEl = overlay.querySelector('.loader-message');
@@ -547,18 +547,27 @@ function showProgress(message, percent) {
         style.id = 'premium-loader-styles';
         style.textContent = `
             .premium-loader-overlay {
-                position: absolute;
+                position: fixed; /* Fixed to cover window */
                 top: 0;
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: rgba(255, 255, 255, 0.98);
-                backdrop-filter: blur(10px);
-                z-index: 50;
+                /* Semi-transparent animated gradient to show blur */
+                background: linear-gradient(-45deg, rgba(255,255,255,0.95), rgba(250,250,250,0.95), rgba(245,245,245,0.95), rgba(255,255,255,0.95));
+                background-size: 400% 400%;
+                backdrop-filter: blur(8px); /* Strong blur */
+                -webkit-backdrop-filter: blur(8px);
+                animation: gradient-flow 6s ease infinite, fadeIn 0.4s ease-out;
+                z-index: 9999; /* Highest z-index */
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                animation: fadeIn 0.3s ease-out;
+            }
+
+            @keyframes gradient-flow {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
             }
             
             .premium-loader-card {
@@ -568,20 +577,20 @@ function showProgress(message, percent) {
             
             .loader-icon {
                 position: relative;
-                width: 80px;
-                height: 80px;
-                margin: 0 auto 24px;
+                width: 60px;
+                height: 60px;
+                margin: 0 auto 20px;
             }
             
             .spinning-ring {
                 position: absolute;
-                width: 80px;
-                height: 80px;
+                width: 60px;
+                height: 60px;
                 border-radius: 50%;
                 border: 3px solid transparent;
-                border-top-color: #8B5CF6;
-                border-right-color: #6366F1;
-                animation: spin-gradient 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                border-top-color: #0a66c2;
+                border-right-color: #60a5fa;
+                animation: spin-gradient 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
             }
             
             @keyframes spin-gradient {
@@ -593,12 +602,12 @@ function showProgress(message, percent) {
                 position: absolute;
                 top: 50%;
                 left: 50%;
-                width: 16px;
-                height: 16px;
-                margin: -8px 0 0 -8px;
+                width: 12px;
+                height: 12px;
+                margin: -6px 0 0 -6px;
                 border-radius: 50%;
-                background: linear-gradient(135deg, #8B5CF6, #6366F1);
-                animation: pulse-dot 1.5s ease-in-out infinite;
+                background: linear-gradient(135deg, #0a66c2, #3b82f6);
+                animation: pulse-dot 2s ease-in-out infinite;
             }
             
             @keyframes pulse-dot {
@@ -624,29 +633,29 @@ function showProgress(message, percent) {
                 flex-direction: column;
                 align-items: center;
                 gap: 6px;
-                opacity: 0.3;
-                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                opacity: 0.4;
+                transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             }
             
             .step.active {
                 opacity: 1;
-                transform: scale(1.1);
+                transform: scale(1.05);
             }
             
             .step-icon {
-                font-size: 24px;
+                font-size: 20px;
                 filter: grayscale(1);
                 transition: filter 0.3s;
             }
             
             .step.active .step-icon {
                 filter: grayscale(0);
-                animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
             }
             
             @keyframes bounce-in {
                 0% { transform: scale(0.3); }
-                50% { transform: scale(1.2); }
+                50% { transform: scale(1.1); }
                 100% { transform: scale(1); }
             }
             
@@ -658,19 +667,18 @@ function showProgress(message, percent) {
             }
             
             .step.active .step-label {
-                color: #8B5CF6;
+                color: #0a66c2;
             }
             
             .loader-message {
-                font-size: 14px;
+                font-size: 13px;
                 font-weight: 600;
-                color: #475569;
-                background: linear-gradient(90deg, #8B5CF6, #6366F1, #8B5CF6);
+                background: linear-gradient(90deg, #0a66c2, #3b82f6, #0a66c2);
                 background-size: 200% auto;
                 -webkit-background-clip: text;
                 background-clip: text;
                 -webkit-text-fill-color: transparent;
-                animation: shimmer 3s linear infinite;
+                animation: shimmer 4s linear infinite;
             }
             
             @keyframes shimmer {
@@ -895,20 +903,20 @@ function showResult(type, icon, message) {
             .result-close-btn {
                 width: 100%;
                 padding: 14px 20px;
-                background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+                background: linear-gradient(135deg, #0a66c2 0%, #3b82f6 100%);
                 color: white;
                 border: none;
-                border-radius: 10px;
+                border-radius: 4px; /* rounded-sm */
                 font-size: 15px;
                 font-weight: 600;
                 cursor: pointer;
                 transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+                box-shadow: 0 4px 12px rgba(10, 102, 194, 0.3);
             }
             
             .result-close-btn:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+                box-shadow: 0 8px 20px rgba(10, 102, 194, 0.4);
             }
             
             .result-close-btn:active {
@@ -956,7 +964,7 @@ function showResult(type, icon, message) {
 
 // Create confetti particles
 function createConfetti(container) {
-    const colors = ['#8B5CF6', '#6366F1', '#10b981', '#f59e0b', '#ec4899'];
+    const colors = ['#0a66c2', '#3b82f6', '#10b981', '#f59e0b', '#0ea5e9'];
     const pieces = 30;
 
     for (let i = 0; i < pieces; i++) {

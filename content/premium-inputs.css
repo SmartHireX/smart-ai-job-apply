@@ -1,4 +1,4 @@
-/* Premium Radio, Checkbox, Select Styles */
+/* Premium Radio, Checkbox, Select Styles - Elite Enterprise */
 .premium-radio-group {
     display: flex;
     flex-direction: column;
@@ -10,8 +10,9 @@
     align-items: center;
     gap: 10px;
     padding: 8px 12px;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    /* rounded-sm */
     cursor: pointer;
     transition: all 0.2s;
     background: white;
@@ -25,7 +26,7 @@
 .premium-radio-option input[type="radio"] {
     width: 16px;
     height: 16px;
-    accent-color: #667eea;
+    accent-color: #0a66c2;
     cursor: pointer;
 }
 
@@ -40,8 +41,9 @@
     align-items: center;
     gap: 10px;
     padding: 8px 12px;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    /* rounded-sm */
     cursor: pointer;
     background: white;
     transition: all 0.2s;
@@ -53,9 +55,9 @@
 }
 
 .premium-checkbox input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: #667eea;
+    width: 16px;
+    height: 16px;
+    accent-color: #0a66c2;
     cursor: pointer;
 }
 
@@ -66,22 +68,23 @@
 }
 
 /* Premium Select */
-.premium-select {
-    padding: 8px 12px !important;
-    border: 2px solid #e2e8f0 !important;
-    border-radius: 8px !important;
-    font-size: 13px !important;
-}
-
-.premium-select:focus {
-    border-color: #667eea !important;
-    outline: none !important;
-}
-
+.premium-select,
 .premium-date,
 .premium-number,
 .premium-textarea {
     padding: 8px 12px !important;
-    border: 2px solid #e2e8f0 !important;
-    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 4px !important;
+    /* rounded-sm */
+    font-size: 13px !important;
+    background: white !important;
+}
+
+.premium-select:focus,
+.premium-date:focus,
+.premium-number:focus,
+.premium-textarea:focus {
+    border-color: #0a66c2 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 1px #0a66c2 !important;
 }
