@@ -2,6 +2,7 @@
 console.log('SmartHireX background service worker started');
 
 // Listen for messages from content scripts or popup
+// Listen for messages from content scripts or popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'STORE_TOKEN') {
         // Store authentication token and fetch user info
@@ -36,6 +37,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
 
         return true; // Keep message channel open for async response
+    }
+
+    if (message.type === 'PROXY_REQ') {
+        // Proxy API requests from content script to avoid CORS
+        const { url, method, headers, body } = message;
+
+        console.log(`Proxying ${method} request to: ${url}`);
+
+        fetch(url, {
+            method,
+            headers,
+            body: body ? JSON.stringify(body) : undefined
+        })
+            .then(async (response) => {
+                const data = await response.json();
+                sendResponse({
+                    success: response.ok,
+                    data,
+                    status: response.status,
+                    error: !response.ok ? (data.detail || data.error || 'Request failed') : undefined
+                });
+            })
+            .catch(error => {
+                console.error('Proxy request failed:', error);
+                sendResponse({ success: false, error: error.message });
+            });
+
+        return true; // Keep message channel open
     }
 });
 

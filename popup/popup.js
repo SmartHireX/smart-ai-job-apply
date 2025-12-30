@@ -281,200 +281,55 @@ async function detectForms() {
         console.error('Form detection error:', error);
         formStatus.classList.remove('success');
         formStatus.classList.add('error');
-        formCount.textContent = 'Could not detect forms';
+
+        if (error.message.includes('Receiving end does not exist') || error.message.includes('Could not establish connection')) {
+            formCount.textContent = 'Please refresh the page';
+        } else {
+            formCount.textContent = 'Could not detect forms';
+        }
         fillBtn.disabled = true;
     }
 }
 
 // Handle fill form
+// Handle fill form
 async function handleFillForm() {
     try {
         fillBtn.disabled = true;
-        hideResult();
-        showProgress('Analyzing form fields...', 20);
 
+        // Get token
         const { token } = await chrome.storage.local.get(['token']);
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-        // Get form HTML from content script
-        showProgress('Extracting form data...', 40);
-        const formData = await chrome.tabs.sendMessage(tab.id, {
-            type: 'GET_FORM_HTML'
-        });
-
-        if (!formData || !formData.html) {
-            throw new Error('Could not extract form data');
-        }
-
-        console.log('Extracted HTML length:', formData.html.length);
-        console.log('HTML preview (first 500 chars):', formData.html.substring(0, 500));
-
-        // Analyze form with backend
-        showProgress('AI is analyzing the form...', 60);
-        const analysisResponse = await fetch(`${API_BASE_URL}/autofill/analyze`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                html: formData.html,
-                url: tab.url
-            })
-        });
-
-        if (!analysisResponse.ok) {
-            throw new Error('Form analysis failed');
-        }
-
-        const analysis = await analysisResponse.json();
-        console.log('Analysis result:', analysis);
-        console.log('Fields detected:', analysis.fields ? analysis.fields.length : 0);
-
-        // Check for quota error
-        if (analysis.error === 'AI_QUOTA_EXCEEDED') {
-            showQuotaErrorModal(analysis.error_message);
-            return;
-        }
-
-        if (!analysis.success) {
-            throw new Error(analysis.error_message || 'Form analysis failed');
-        }
-
-        // Map user data to form fields
-        showProgress('Mapping your data to form fields...', 80);
         const { email } = await chrome.storage.local.get(['email']);
 
-        const mappingResponse = await fetch(`${API_BASE_URL}/autofill/map-data`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                user_email: email,
-                form_fields: analysis.fields
-            })
-        });
-
-        if (!mappingResponse.ok) {
-            throw new Error('Data mapping failed');
-        }
-
-
-        const mapping = await mappingResponse.json();
-        console.log('Mapping result:', mapping);
-
-        // Check for quota error
-        if (mapping.error === 'AI_QUOTA_EXCEEDED') {
-            showQuotaErrorModal(mapping.error_message);
+        if (!token) {
+            showAuthSection();
             return;
         }
 
-        if (!mapping.success) {
-            throw new Error(mapping.error_message || 'Data mapping failed');
-        }
-        console.log('Mappings count:', mapping.mappings ? Object.keys(mapping.mappings).length : 0);
-        console.log('Missing fields:', mapping.missing_fields);
+        // Get active tab
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        // Add missing fields to mappings with empty values for inline editing in preview
-        if (mapping.missing_fields && mapping.missing_fields.length > 0) {
-            console.log('Adding missing fields to preview modal for inline editing');
-
-            // Find the missing fields in the analysis
-            for (const missingPurpose of mapping.missing_fields) {
-                // Find field with this purpose
-                const field = analysis.fields.find(f =>
-                    f.purpose === missingPurpose ||
-                    f.label.toLowerCase().includes(missingPurpose.toLowerCase())
-                );
-
-                if (field && field.selector) {
-                    // Add to mappings with empty value and low confidence
-                    mapping.mappings[field.selector] = {
-                        value: '',
-                        confidence: 0.3,
-                        source: 'user_input_required',
-                        field_type: field.type,
-                        required: field.required || false
-                    };
-                }
-            }
-        }
-
-
-        // Show preview modal for user to review and confirm
-        hideProgress();
-        showProgress('Ready to preview mappings...', 85);
-
-        // Show preview modal for reviewing mappings before filling
-        const previewResult = await chrome.tabs.sendMessage(tab.id, {
-            type: 'SHOW_PREVIEW_MODAL',
-            mappings: mapping.mappings,
-            analysis: analysis,
-            allFields: analysis.fields
-        });
-
-        if (!previewResult.success || (previewResult.data && previewResult.data.cancelled)) {
-            // User cancelled from preview OR error occurred
-            hideProgress();
-
-            if (!previewResult.success || (previewResult.data && previewResult.data.error)) {
-                const errMsg = previewResult.error || (previewResult.data ? previewResult.data.error : 'Unknown error in preview');
-                showResult('error', '⚠️', `Form filling failed: ${errMsg}`);
-                console.error("Preview modal error:", errMsg);
-            } else {
-                showResult('info', 'ℹ️', 'Form filling cancelled.');
-            }
-
-            fillBtn.disabled = false;
+        if (!tab) {
+            console.error('No active tab found');
             return;
         }
 
-        // Form is already filled by content script, just show the result
-        // New instant fill returns: { success: true, filled: X, review: Y }
-        const filledCount = previewResult.filled || 0;
-        const reviewCount = previewResult.review || 0;
-        showProgress('Complete!', 100);
+        // Send message to content script to start processing
+        console.log('🚀 Triggering page-level processing...');
+        chrome.tabs.sendMessage(tab.id, {
+            type: 'START_PAGE_PROCESSING',
+            token: token,
+            userEmail: email,
+            apiBaseUrl: API_BASE_URL
+        });
 
-        // Show success result
-        setTimeout(() => {
-            hideProgress();
-
-            // Build success message
-            let successMessage = `Successfully filled ${filledCount} field${filledCount !== 1 ? 's' : ''}!`;
-
-            // Add review reminder if there are fields needing review
-            if (reviewCount > 0) {
-                successMessage += `\n\n⚠️ ${reviewCount} field${reviewCount !== 1 ? 's' : ''} need${reviewCount === 1 ? 's' : ''} your review.`;
-            }
-
-            showResult(
-                'success',
-                '✅',
-                successMessage
-            );
-
-
-            fillBtn.disabled = false;
-
-            // Auto-close popup after 3 seconds to let user see the success animation
-            console.log('✅ Setting up auto-close in 3 seconds...');
-            setTimeout(() => {
-                console.log('⏰ Attempting to close popup now...');
-                window.close();
-            }, 3000);
-        }, 500);
+        // Close popup immediately to let animation take over on page
+        window.close();
 
     } catch (error) {
-        console.error('Form filling failed:', error);
-        hideProgress();
-        showResult(
-            'error',
-            '❌',
-            error.message || 'Failed to fill form. Please try again.'
-        );
+        console.error('Failed to start processing:', error);
         fillBtn.disabled = false;
+        showResult('error', '❌', 'Failed to start. Please try again.');
     }
 }
 

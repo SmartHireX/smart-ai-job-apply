@@ -7,10 +7,18 @@ window.addEventListener('smarthirex_token_update', (event) => {
     const token = event.detail?.token;
     if (token) {
         console.log('Token received from website, storing in extension...');
-        chrome.runtime.sendMessage({
-            type: 'STORE_TOKEN',
-            token: token
-        });
+        try {
+            if (chrome.runtime?.id) {
+                chrome.runtime.sendMessage({
+                    type: 'STORE_TOKEN',
+                    token: token
+                });
+            } else {
+                console.warn('Extension context invalidated. Please refresh the page.');
+            }
+        } catch (e) {
+            console.warn('Extension context invalidated. Please refresh the page.');
+        }
     }
 });
 
@@ -21,10 +29,18 @@ window.addEventListener('message', (event) => {
 
     if (event.data?.type === 'SMARTHIREX_LOGIN' && event.data?.token) {
         console.log('Token received via postMessage, storing in extension...');
-        chrome.runtime.sendMessage({
-            type: 'STORE_TOKEN',
-            token: event.data.token
-        });
+        try {
+            if (chrome.runtime?.id) {
+                chrome.runtime.sendMessage({
+                    type: 'STORE_TOKEN',
+                    token: event.data.token
+                });
+            } else {
+                console.warn('Extension context invalidated. Please refresh the page.');
+            }
+        } catch (e) {
+            console.warn('Extension context invalidated. Please refresh the page.');
+        }
     }
 });
 // ============================================
@@ -170,11 +186,284 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return false;
     }
 
+    if (message.type === 'START_PAGE_PROCESSING') {
+        processPageForm(message.token, message.userEmail, message.apiBaseUrl);
+        return false; // Fire and forget - do not keep channel open as popup closes
+    }
+
     if (message.type === 'SHOW_ERROR_TOAST') {
         showErrorToast(message.message);
-        return true;
+        return false;
     }
 });
+
+// ============================================
+// PAGE LEVEL PROCESSING
+// ============================================
+
+async function processPageForm(token, userEmail, apiBaseUrl) {
+    try {
+        console.log('✨ Starting page-level processing...');
+        showProcessingWidget('Analyzing form structure...', 1);
+
+        // 1. Extract HTML
+        const formHTML = extractFormHTML();
+        if (!formHTML) throw new Error('No form found');
+
+        // 2. Analyze (via Proxy)
+        showProcessingWidget('AI is understanding the form...', 2);
+        const analysis = await makeProxyRequest('POST', `${apiBaseUrl}/autofill/analyze`, token, {
+            html: formHTML,
+            url: window.location.href
+        });
+
+        if (!analysis) throw new Error('Analysis request failed (no response)');
+
+        if (!analysis.success || analysis.data.error) throw new Error(analysis.data?.error_message || 'Analysis failed');
+
+        // 3. Map Data (via Proxy)
+        showProcessingWidget('Mapping your profile data...', 3);
+        const mapping = await makeProxyRequest('POST', `${apiBaseUrl}/autofill/map-data`, token, {
+            user_email: userEmail,
+            form_fields: analysis.data.fields
+        });
+
+        if (!mapping) throw new Error('Mapping request failed (no response)');
+
+        if (!mapping.success || mapping.data.error) throw new Error(mapping.data?.error_message || 'Mapping failed');
+
+        // 4. Handle Missing Fields
+        const mappings = mapping.data.mappings;
+        if (mapping.data.missing_fields?.length > 0) {
+            mapping.data.missing_fields.forEach(purpose => {
+                const field = analysis.data.fields.find(f => f.purpose === purpose);
+                if (field?.selector) {
+                    mappings[field.selector] = {
+                        value: '',
+                        confidence: 0.3,
+                        source: 'user_input_required',
+                        field_type: field.type
+                    };
+                }
+            });
+        }
+
+        // 5. Complete & Show Preview
+        showProcessingWidget('Ready!', 4);
+        setTimeout(() => removeProcessingWidget(), 800);
+
+        // Trigger existing preview flow
+        window.postMessage({
+            type: 'SMARTHIREX_PREVIEW',
+            mappings: mappings,
+            analysis: analysis.data,
+            allFields: analysis.data.fields
+        }, '*');
+
+        // Reuse existing logic by calling the handler directly
+        const previewMsg = {
+            mappings: mappings,
+            analysis: analysis.data,
+            allFields: analysis.data.fields
+        };
+
+        // Execute the preview logic (same as SHOW_PREVIEW_MODAL but local)
+        // We can just re-use the block from the message listener
+        // But better to exact same function. Let's create a helper or just emit event.
+        // Actually, we can just call the logic from line 78 directly.
+        executeInstantFill(previewMsg);
+
+    } catch (error) {
+        console.error('Processing failed:', error);
+        showProcessingWidget('Error occurred', -1); // Error state
+        showErrorToast(error.message);
+        setTimeout(() => removeProcessingWidget(), 2000);
+    }
+}
+
+// Helper to make proxy requests via background
+// Helper to make proxy requests via background
+function makeProxyRequest(method, url, token, body) {
+    return new Promise((resolve, reject) => {
+        // Set a timeout of 30 seconds
+        const timeoutId = setTimeout(() => {
+            reject(new Error('Request timed out'));
+        }, 30000);
+
+        try {
+            chrome.runtime.sendMessage({
+                type: 'PROXY_REQ',
+                url,
+                method,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body
+            }, response => {
+                clearTimeout(timeoutId);
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
+        } catch (e) {
+            clearTimeout(timeoutId);
+            reject(e);
+        }
+    });
+}
+
+// Logic extracted from listener for reuse
+async function executeInstantFill(data) {
+    try {
+        console.log('🚀 SmartHireX: Starting instant fill workflow...');
+        const HIGH_CONFIDENCE_THRESHOLD = 0.9;
+        const mappings = data.mappings;
+
+        const highConfidenceMappings = {};
+        const lowConfidenceMappings = {};
+
+        Object.entries(mappings).forEach(([selector, fieldData]) => {
+            const confidence = fieldData.confidence || 0;
+            if (confidence >= HIGH_CONFIDENCE_THRESHOLD && !fieldData.skipped) {
+                highConfidenceMappings[selector] = fieldData;
+            } else if (!fieldData.skipped) {
+                lowConfidenceMappings[selector] = fieldData;
+            }
+        });
+
+        const highConfCount = Object.keys(highConfidenceMappings).length;
+        const lowConfCount = Object.keys(lowConfidenceMappings).length;
+
+        // 1. Ghost Typer
+        if (highConfCount > 0) {
+            for (const [selector, fieldData] of Object.entries(highConfidenceMappings)) {
+                const element = document.querySelector(selector);
+                if (element && isFieldVisible(element)) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    await simulateTyping(element, fieldData.value);
+                }
+            }
+        }
+
+        // 2. Toast
+        showSuccessToast(highConfCount, lowConfCount);
+
+        // 3. Sidebar (Using new FANG style)
+        if (lowConfCount > 0 || highConfCount > 0) {
+            setTimeout(() => {
+                const lowConfFields = Object.entries(lowConfidenceMappings).map(
+                    ([selector, d]) => ({ selector, fieldData: d, confidence: d.confidence || 0 })
+                );
+                const highConfFields = Object.entries(highConfidenceMappings).map(
+                    ([selector, d]) => ({ selector, fieldData: d, confidence: d.confidence || 1.0 })
+                );
+                showAccordionSidebar(highConfFields, lowConfFields);
+            }, 500);
+        } else {
+            console.warn('⚠️ No fields to fill or review found.');
+            showErrorToast('Analysis complete, but no matching fields were found on this specific page.');
+        }
+
+    } catch (error) {
+        console.error('Fill error:', error);
+    }
+}
+
+// FANG-Style Processing Widget
+function showProcessingWidget(text, step) {
+    let widget = document.getElementById('smarthirex-processing-widget');
+    if (!widget) {
+        widget = document.createElement('div');
+        widget.id = 'smarthirex-processing-widget';
+        document.body.appendChild(widget);
+
+        // Inject styles
+        const style = document.createElement('style');
+        style.textContent = `
+            #smarthirex-processing-widget {
+                position: fixed;
+                top: 32px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(255, 255, 255, 0.85);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 255, 255, 0.4);
+                padding: 12px 24px;
+                border-radius: 99px;
+                box-shadow: 
+                    0 20px 40px -10px rgba(0, 0, 0, 0.15),
+                    0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+                    0 0 0 1px rgba(0,0,0,0.05);
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                z-index: 2147483647;
+                font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+                animation: widgetSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+                min-width: 300px;
+                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            #smarthirex-processing-widget:hover {
+                transform: translateX(-50%) translateY(4px);
+                background: rgba(255, 255, 255, 0.95);
+                box-shadow: 
+                    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+                    0 0 0 1px rgba(0,0,0,0.08);
+            }
+            @keyframes widgetSlideDown {
+                from { transform: translate(-50%, -100%); opacity: 0; }
+                to { transform: translate(-50%, 0); opacity: 1; }
+            }
+            .sh-spinner {
+                width: 22px;
+                height: 22px;
+                border: 2.5px solid rgba(10, 102, 194, 0.15);
+                border-top-color: #0a66c2;
+                border-radius: 50%;
+                animation: shSpin 1s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
+            }
+            @keyframes shSpin { to { transform: rotate(360deg); } }
+            .sh-text {
+                font-size: 14px;
+                font-weight: 600;
+                color: #0f172a;
+                flex: 1;
+            }
+            .sh-step {
+                font-size: 12px;
+                color: #64748b;
+                font-weight: 500;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    if (step === -1) {
+        widget.innerHTML = `<div style="color:#ef4444">⚠️</div><div class="sh-text" style="color:#b91c1c">${text}</div>`;
+        return;
+    }
+
+    widget.innerHTML = `
+        <div class="sh-spinner"></div>
+        <div class="sh-text">${text}</div>
+        ${step > 0 ? `<div class="sh-step">${step}/3</div>` : ''}
+    `;
+}
+
+function removeProcessingWidget() {
+    const w = document.getElementById('smarthirex-processing-widget');
+    if (w) {
+        w.style.opacity = '0';
+        w.style.transform = 'translate(-50%, -20px) scale(0.95)';
+        w.style.transition = 'all 0.3s';
+        setTimeout(() => w.remove(), 300);
+    }
+}
 
 // ============================================
 // CHAT INTERFACE INJECTION
@@ -1114,8 +1403,23 @@ function showErrorToast(message) {
             <div style="font-weight: 700; color: #7f1d1d; font-size: 15px; margin-bottom: 4px;">Error</div>
             <div style="color: #450a0a; font-size: 14px; line-height: 1.4;">${message}</div>
         </div>
-        <div style="cursor: pointer; color: #991b1b; padding: 4px;" onclick="this.parentElement.remove()">✕</div>
+        <div id="smarthirex-error-close" style="cursor: pointer; color: #991b1b; padding: 4px;">✕</div>
     `;
+
+    // Securely attach listener
+    document.body.appendChild(toast);
+
+    // Auto remove after 6 seconds
+    setTimeout(() => {
+        if (toast && toast.parentNode) toast.remove();
+    }, 6000);
+
+    const closeBtn = document.getElementById('smarthirex-error-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            if (toast) toast.remove();
+        });
+    }
 
     // Add animation styles if needed
     if (!document.getElementById('smarthirex-toast-styles')) {
@@ -1192,7 +1496,7 @@ function showSuccessToast(filledCount, reviewCount) {
                     </div>
                 `}
             </div>
-            <button onclick="this.closest('#smarthirex-fill-toast').remove()" style="
+            <button id="smarthirex-toast-close" style="
                 background: transparent;
                 border: none;
                 color: #64748b;
@@ -1203,6 +1507,14 @@ function showSuccessToast(filledCount, reviewCount) {
             ">×</button>
         </div>
     `;
+
+    // Attach click handler separately for CSP compliance
+    // We need to wait for appending to body first, or create element first
+    // Since we used innerHTML on 'toast' element, we can find the button inside 'toast'
+    // BEFORE appending 'toast' to body? Yes.
+
+    // Actually, 'toast' is the container. We set innerHTML on it.
+    // So we can find the close button within 'toast' immediately.
 
     // Add animation styles if not already present
     if (!document.getElementById('smarthirex-toast-styles')) {
@@ -1218,6 +1530,14 @@ function showSuccessToast(filledCount, reviewCount) {
     }
 
     document.body.appendChild(toast);
+
+    // Attach listener after appending (or before, doesn't matter for element reference)
+    const closeBtn = document.getElementById('smarthirex-toast-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            toast.remove();
+        });
+    }
 
     // Auto-dismiss after 5 seconds for all cases (since sidebar is open)
     setTimeout(() => {
@@ -1307,7 +1627,7 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                 </svg>
                 <span>Form Review</span>
             </div>
-            <button class="close-btn" onclick="document.getElementById('smarthirex-accordion-sidebar').remove(); document.querySelectorAll('.smarthirex-field-highlight').forEach(el => el.classList.remove('smarthirex-field-highlight'));">
+            <button class="close-btn" id="smarthirex-sidebar-close">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
@@ -1409,10 +1729,20 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
         ` : ''}
     `;
 
-    // Add styles for accordion
+    // Add accordion styles
     addAccordionStyles();
 
     document.body.appendChild(panel);
+
+    // Add close handler securely
+    const sidebarCloseBtn = panel.querySelector('#smarthirex-sidebar-close');
+    if (sidebarCloseBtn) {
+        sidebarCloseBtn.addEventListener('click', () => {
+            const sidebar = document.getElementById('smarthirex-accordion-sidebar');
+            if (sidebar) sidebar.remove();
+            document.querySelectorAll('.smarthirex-field-highlight').forEach(el => el.classList.remove('smarthirex-field-highlight'));
+        });
+    }
 
     // Highlight fields that need review
     needsReviewFields.forEach(item => {
@@ -1481,13 +1811,16 @@ function addAccordionStyles() {
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(20px);
             border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 8px 10px -6px rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(0,0,0,0.05); /* Ring */
             z-index: 999999;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            animation: slideInFromBottomLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: slideInFromBottomLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
         
         @keyframes slideInFromBottomLeft {
@@ -1506,35 +1839,49 @@ function addAccordionStyles() {
             justify-content: space-between;
             align-items: center;
             padding: 16px 20px;
-            border-bottom: 1px solid #e5e7eb;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: #0a66c2;
             color: white;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 4px 12px rgba(10, 102, 194, 0.2);
         }
         
         #smarthirex-accordion-sidebar .header-title {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 15px;
+            color: white;
+            letter-spacing: -0.01em;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        #smarthirex-accordion-sidebar .header-title svg {
+            color: white;
+            opacity: 0.9;
         }
         
         #smarthirex-accordion-sidebar .close-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.9);
             width: 28px;
             height: 28px;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            backdrop-filter: blur(4px);
         }
         
         #smarthirex-accordion-sidebar .close-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.4);
         }
         
         #smarthirex-accordion-sidebar .accordion-section {
@@ -1601,22 +1948,16 @@ function addAccordionStyles() {
             cursor: pointer;
             transition: all 0.2s;
             border-left: 3px solid transparent;
+            border-bottom: 1px solid #f3f4f6;
         }
         
         #smarthirex-accordion-sidebar .field-item:hover {
             background: #f9fafb;
-            border-left-color: #8b5cf6;
+            border-left-color: #0a66c2;
         }
         
         #smarthirex-accordion-sidebar .field-info {
             flex: 1;
-        }
-        
-        #smarthirex-accordion-sidebar .field-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #111827;
-            margin-bottom: 4px;
         }
         
         #smarthirex-accordion-sidebar .field-meta {
@@ -1631,15 +1972,22 @@ function addAccordionStyles() {
         }
         
         #smarthirex-accordion-sidebar .field-confidence {
-            font-weight: 600;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
         }
         
         #smarthirex-accordion-sidebar .field-confidence.low {
-            color: #ef4444;
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
         }
         
         #smarthirex-accordion-sidebar .field-confidence.medium {
-            color: #f59e0b;
+            background: #eff6ff;
+            color: #0a66c2;
+            border: 1px solid #dbeafe;
         }
         
         #smarthirex-accordion-sidebar .field-badge {
@@ -1666,6 +2014,28 @@ function addAccordionStyles() {
         @keyframes pulse {
             0%, 100% { outline-color: #f59e0b; }
             50% { outline-color: #fbbf24; }
+        }
+
+        /* PREMIUM GHOST TYPER STYLES */
+        .smarthirex-typing {
+            background: linear-gradient(90deg, rgba(10, 102, 194, 0.03) 0%, rgba(10, 102, 194, 0.1) 50%, rgba(10, 102, 194, 0.03) 100%) !important;
+            background-size: 200% 100% !important;
+            animation: shimmerType 1.5s infinite linear !important;
+            border-color: #0a66c2 !important;
+            box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.25) !important;
+            transition: all 0.2s ease !important;
+            position: relative !important;
+        }
+
+        @keyframes shimmerType {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .smarthirex-filled {
+            background-color: rgba(16, 185, 129, 0.05) !important;
+            border-color: #10b981 !important;
+            transition: background-color 0.5s ease !important;
         }
     `;
 
@@ -1736,13 +2106,13 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
         return;
     }
 
-    console.log(`Found ${fieldsWithInfo.length} low-confidence fields to display`);
+    console.log(`Found ${fieldsWithInfo.length} low - confidence fields to display`);
 
     // Create the sidebar panel
     const panel = document.createElement('div');
     panel.id = 'smarthirex-lowconf-panel';
     panel.innerHTML = `
-        <div class="panel-header">
+    < div class="panel-header" >
             <div class="header-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <circle cx="12" cy="12" r="10"/>
@@ -1757,13 +2127,13 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
                 </div>
                 <div class="header-subtitle">Please review and complete</div>
             </div>
-            <button class="close-btn" onclick="this.closest('#smarthirex-lowconf-panel').remove(); document.querySelectorAll('.smarthirex-lowconf-overlay').forEach(el => el.remove()); document.querySelectorAll('.smarthirex-lowconf-highlight').forEach(el => el.classList.remove('smarthirex-lowconf-highlight'))">
+            <button class="close-btn" id="smarthirex-lowconf-close">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
             </button>
-        </div>
+        </div >
         <div class="panel-divider"></div>
         <div class="panel-list">
             ${fieldsWithInfo.map((item, i) => {
@@ -1798,9 +2168,20 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
             <div class="footer-icon">⚠️</div>
             <div class="footer-text">Confidence below 90% - verify before submitting</div>
         </div>
-    `;
+`;
 
     document.body.appendChild(panel);
+
+    // Securely attach close listener
+    const lowConfCloseBtn = panel.querySelector('#smarthirex-lowconf-close');
+    if (lowConfCloseBtn) {
+        lowConfCloseBtn.addEventListener('click', () => {
+            const p = document.getElementById('smarthirex-lowconf-panel');
+            if (p) p.remove();
+            document.querySelectorAll('.smarthirex-lowconf-overlay').forEach(el => el.remove());
+            document.querySelectorAll('.smarthirex-lowconf-highlight').forEach(el => el.classList.remove('smarthirex-lowconf-highlight'));
+        });
+    }
 
     // Add highlighting to low-confidence fields
     fieldsWithInfo.forEach((item, index) => {
@@ -1814,19 +2195,19 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
         overlay.className = 'smarthirex-lowconf-overlay';
         const confidencePercent = Math.round(item.confidence * 100);
         overlay.innerHTML = `
-            <div class="lowconf-badge">
+    < div class="lowconf-badge" >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M12 20h9"/>
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
                 </svg>
                 <span>Review (${confidencePercent}%)</span>
-            </div>
-        `;
+            </div >
+    `;
 
         const rect = field.getBoundingClientRect();
         overlay.style.position = 'absolute';
-        overlay.style.left = `${rect.left + window.scrollX}px`;
-        overlay.style.top = `${rect.top + window.scrollY - 46}px`;
+        overlay.style.left = `${rect.left + window.scrollX} px`;
+        overlay.style.top = `${rect.top + window.scrollY - 46} px`;
         overlay.style.zIndex = '999998';
 
         document.body.appendChild(overlay);
@@ -1851,436 +2232,410 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
         const style = document.createElement('style');
         style.id = 'lowconf-sidebar-styles';
         style.textContent = `
-            #smarthirex-lowconf-panel {
-                position: fixed;
-                left: 24px;
-                bottom: 24px;
-                width: 400px;
-                max-height: 520px;
-                background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
-                border-radius: 20px;
-                box-shadow: 
-                    0 0 0 1px rgba(0, 0, 0, 0.04),
-                    0 8px 16px -4px rgba(0, 0, 0, 0.08),
-                    0 20px 40px -8px rgba(0, 0, 0, 0.12),
-                    0 32px 64px -12px rgba(0, 0, 0, 0.14);
-                z-index: 2147483647 !important;
-                font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
-                animation: slideInFromBottomLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-                border: 1px solid rgba(245, 158, 11, 0.1);
-                overflow: hidden;
+#smarthirex - lowconf - panel {
+    position: fixed;
+    left: 24px;
+    bottom: 24px;
+    width: 400px;
+    max - height: 520px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop - filter: blur(20px);
+    -webkit - backdrop - filter: blur(20px);
+    border - radius: 20px;
+    box - shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+        0 8px 16px - 4px rgba(0, 0, 0, 0.08),
+            0 20px 40px - 8px rgba(0, 0, 0, 0.12),
+                0 32px 64px - 12px rgba(0, 0, 0, 0.14);
+    z - index: 2147483647!important;
+    font - family: -apple - system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans - serif;
+    animation: slideInFromBottomLeft 0.6s cubic - bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(10, 102, 194, 0.1);
+    overflow: hidden;
+}
+
+@keyframes slideInFromBottomLeft {
+                from {
+        transform: translateY(40px) translateX(-20px) scale(0.95);
+        opacity: 0;
+    }
+                to {
+        transform: translateY(0) translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+#smarthirex - lowconf - panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear - gradient(90deg, 
+                #0a66c2 0 %, 
+                #3b82f6 25 %, 
+                #60a5fa 50 %, 
+                #3b82f6 75 %, 
+                #0a66c2 100 %
+            );
+    background - size: 200 % 100 %;
+    animation: shimmer 3s linear infinite;
+    opacity: 0.5;
+}
+
+@keyframes shimmer {
+    0 % { background- position: 200 % 0;
+}
+100 % { background- position: -200 % 0; }
             }
+
+#smarthirex - lowconf - panel.panel - header {
+    padding: 24px 24px 20px 24px;
+    background: #0a66c2;
+    border - bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align - items: flex - start;
+    gap: 14px;
+    color: white;
+}
+
+#smarthirex - lowconf - panel.header - icon {
+    width: 42px;
+    height: 42px;
+    background: rgba(255, 255, 255, 0.15);
+    border - radius: 12px;
+    display: flex;
+    align - items: center;
+    justify - content: center;
+    color: white;
+    flex - shrink: 0;
+    box - shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    backdrop - filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#smarthirex - lowconf - panel.header - content {
+    flex: 1;
+    min - width: 0;
+}
+
+#smarthirex - lowconf - panel.header - title {
+    display: flex;
+    align - items: center;
+    gap: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border - radius: 10px;
+    display: flex;
+    align - items: center;
+    justify - content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic - bezier(0.4, 0, 0.2, 1);
+    color: #64748b;
+    flex - shrink: 0;
+}
+
+#smarthirex - lowconf - panel.close - btn:hover {
+    background: rgba(241, 245, 249, 1);
+    border - color: rgba(0, 0, 0, 0.1);
+    color: #334155;
+    transform: scale(1.05);
+}
+
+#smarthirex - lowconf - panel.panel - divider {
+    height: 1px;
+    background: linear - gradient(to right,
+        transparent,
+        rgba(0, 0, 0, 0.08) 20 %,
+        rgba(0, 0, 0, 0.08) 80 %,
+        transparent);
+    margin: 0;
+}
+
+#smarthirex - lowconf - panel.panel - list {
+    padding: 16px 16px 12px 16px;
+    max - height: 340px;
+    overflow - y: auto;
+    overflow - x: hidden;
+}
+
+#smarthirex - lowconf - panel.panel - list:: -webkit - scrollbar {
+    width: 6px;
+}
+
+#smarthirex - lowconf - panel.panel - list:: -webkit - scrollbar - track {
+    background: transparent;
+}
+
+#smarthirex - lowconf - panel.panel - list:: -webkit - scrollbar - thumb {
+    background: rgba(203, 213, 225, 0.6);
+    border - radius: 3px;
+}
+
+#smarthirex - lowconf - panel.panel - list:: -webkit - scrollbar - thumb:hover {
+    background: rgba(148, 163, 184, 0.8);
+}
+
+#smarthirex - lowconf - panel.field - item {
+    display: flex;
+    align - items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    margin - bottom: 10px;
+    background: linear - gradient(135deg, rgba(255, 255, 255, 0.4) 0 %, rgba(255, 255, 255, 0.6) 100 %);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border - radius: 14px;
+    cursor: pointer;
+    transition: all 0.25s cubic - bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+#smarthirex - lowconf - panel.field - item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear - gradient(135deg, rgba(245, 158, 11, 0.08) 0 %, rgba(249, 115, 22, 0.08) 100 %);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+#smarthirex - lowconf - panel.field - item:hover {
+    background: rgba(255, 255, 255, 0.9);
+    border - color: rgba(245, 158, 11, 0.3);
+    transform: translateX(6px) scale(1.02);
+    box - shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(245, 158, 11, 0.1);
+}
+
+#smarthirex - lowconf - panel.field - item: hover::before {
+    opacity: 1;
+}
+
+#smarthirex - lowconf - panel.field - item:active {
+    transform: translateX(4px) scale(0.98);
+}
+
+#smarthirex - lowconf - panel.field - number {
+    width: 28px;
+    height: 28px;
+    background: linear - gradient(135deg, rgba(245, 158, 11, 0.12), rgba(249, 115, 22, 0.15));
+    color: #ea580c;
+    border - radius: 8px;
+    display: flex;
+    align - items: center;
+    justify - content: center;
+    font - size: 12px;
+    font - weight: 700;
+    flex - shrink: 0;
+    position: relative;
+    z - index: 1;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+#smarthirex - lowconf - panel.field - content {
+    flex: 1;
+    min - width: 0;
+    position: relative;
+    z - index: 1;
+}
+
+#smarthirex - lowconf - panel.field - label {
+    font - size: 14px;
+    font - weight: 600;
+    color: #1e293b;
+    margin - bottom: 5px;
+    overflow: hidden;
+    text - overflow: ellipsis;
+    white - space: nowrap;
+    letter - spacing: -0.2px;
+}
+
+#smarthirex - lowconf - panel.field - hint {
+    font - size: 11px;
+    color: #64748b;
+    font - weight: 500;
+    display: flex;
+    align - items: center;
+    gap: 6px;
+    flex - wrap: wrap;
+}
+
+#smarthirex - lowconf - panel.field - arrow {
+    color: #cbd5e1;
+    flex - shrink: 0;
+    transition: all 0.25s ease;
+    position: relative;
+    z - index: 1;
+}
+
+#smarthirex - lowconf - panel.field - item: hover.field - arrow {
+    color: #f59e0b;
+    transform: translateX(4px);
+}
+
+#smarthirex - lowconf - panel.panel - footer {
+    padding: 16px 24px 20px 24px;
+    background: linear - gradient(to top, rgba(255, 255, 255, 0.8), transparent);
+    border - top: 1px solid rgba(0, 0, 0, 0.04);
+    display: flex;
+    align - items: center;
+    gap: 12px;
+}
+
+#smarthirex - lowconf - panel.footer - icon {
+    font - size: 18px;
+    filter: drop - shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+#smarthirex - lowconf - panel.footer - text {
+    font - size: 13px;
+    color: #64748b;
+    font - weight: 600;
+    letter - spacing: -0.1px;
+}
             
-            @keyframes slideInFromBottomLeft {
-                from { 
-                    transform: translateY(40px) translateX(-20px) scale(0.95); 
-                    opacity: 0; 
-                }
-                to { 
-                    transform: translateY(0) translateX(0) scale(1); 
-                    opacity: 1; 
-                }
-            }
-            
-            #smarthirex-lowconf-panel::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 3px;
-                background: linear-gradient(90deg, 
-                    #f59e0b 0%, 
-                    #f97316 25%, 
-                    #fb923c 50%, 
-                    #f97316 75%, 
-                    #f59e0b 100%);
-                background-size: 200% 100%;
-                animation: shimmer 3s linear infinite;
-            }
-            
-            @keyframes shimmer {
-                0% { background-position: 200% 0; }
-                100% { background-position: -200% 0; }
-            }
-            
-            #smarthirex-lowconf-panel .panel-header {
-                padding: 24px 24px 20px 24px;
-                background: linear-gradient(135deg, rgba(251, 146, 60, 0.04) 0%, rgba(249, 115, 22, 0.06) 100%);
-                border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-                display: flex;
-                align-items: flex-start;
-                gap: 14px;
-            }
-            
-            #smarthirex-lowconf-panel .header-icon {
-                width: 42px;
-                height: 42px;
-                background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-                border-radius: 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                flex-shrink: 0;
-                box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
-            }
-            
-            #smarthirex-lowconf-panel .header-content {
-                flex: 1;
-                min-width: 0;
-            }
-            
-            #smarthirex-lowconf-panel .header-title {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                margin-bottom: 6px;
-            }
-            
-            #smarthirex-lowconf-panel .count-badge {
-                background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-                color: white;
-                padding: 4px 10px;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: 700;
-                letter-spacing: -0.3px;
-                box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-            }
-            
-            #smarthirex-lowconf-panel .header-text {
-                font-size: 16px;
-                font-weight: 600;
-                color: #0f172a;
-                letter-spacing: -0.4px;
-            }
-            
-            #smarthirex-lowconf-panel .header-subtitle {
-                font-size: 13px;
-                color: #64748b;
-                font-weight: 500;
-                letter-spacing: -0.1px;
-            }
-            
-            #smarthirex-lowconf-panel .close-btn {
-                width: 32px;
-                height: 32px;
-                background: rgba(248, 250, 252, 0.8);
-                border: 1px solid rgba(0, 0, 0, 0.06);
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                color: #64748b;
-                flex-shrink: 0;
-            }
-            
-            #smarthirex-lowconf-panel .close-btn:hover {
-                background: rgba(241, 245, 249, 1);
-                border-color: rgba(0, 0, 0, 0.1);
-                color: #334155;
-                transform: scale(1.05);
-            }
-            
-            #smarthirex-lowconf-panel .panel-divider {
-                height: 1px;
-                background: linear-gradient(to right, 
-                    transparent, 
-                    rgba(0, 0, 0, 0.08) 20%, 
-                    rgba(0, 0, 0, 0.08) 80%, 
-                    transparent);
-                margin: 0;
-            }
-            
-            #smarthirex-lowconf-panel .panel-list {
-                padding: 16px 16px 12px 16px;
-                max-height: 340px;
-                overflow-y: auto;
-                overflow-x: hidden;
-            }
-            
-            #smarthirex-lowconf-panel .panel-list::-webkit-scrollbar {
-                width: 6px;
-            }
-            
-            #smarthirex-lowconf-panel .panel-list::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            
-            #smarthirex-lowconf-panel .panel-list::-webkit-scrollbar-thumb {
-                background: rgba(203, 213, 225, 0.6);
-                border-radius: 3px;
-            }
-            
-            #smarthirex-lowconf-panel .panel-list::-webkit-scrollbar-thumb:hover {
-                background: rgba(148, 163, 184, 0.8);
-            }
-            
-            #smarthirex-lowconf-panel .field-item {
-                display: flex;
-                align-items: center;
-                gap: 14px;
-                padding: 14px 16px;
-                margin-bottom: 10px;
-                background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.6) 100%);
-                border: 1px solid rgba(0, 0, 0, 0.06);
-                border-radius: 14px;
-                cursor: pointer;
-                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                position: relative;
-                overflow: hidden;
-            }
-            
-            #smarthirex-lowconf-panel .field-item::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(249, 115, 22, 0.08) 100%);
-                opacity: 0;
-                transition: opacity 0.25s ease;
-            }
-            
-            #smarthirex-lowconf-panel .field-item:hover {
-                background: rgba(255, 255, 255, 0.9);
-                border-color: rgba(245, 158, 11, 0.3);
-                transform: translateX(6px) scale(1.02);
-                box-shadow: 
-                    0 4px 12px rgba(0, 0, 0, 0.08),
-                    0 0 0 1px rgba(245, 158, 11, 0.1);
-            }
-            
-            #smarthirex-lowconf-panel .field-item:hover::before {
-                opacity: 1;
-            }
-            
-            #smarthirex-lowconf-panel .field-item:active {
-                transform: translateX(4px) scale(0.98);
-            }
-            
-            #smarthirex-lowconf-panel .field-number {
-                width: 28px;
-                height: 28px;
-                background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(249, 115, 22, 0.15));
-                color: #ea580c;
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 12px;
-                font-weight: 700;
-                flex-shrink: 0;
-                position: relative;
-                z-index: 1;
-                border: 1px solid rgba(245, 158, 11, 0.2);
-            }
-            
-            #smarthirex-lowconf-panel .field-content {
-                flex: 1;
-                min-width: 0;
-                position: relative;
-                z-index: 1;
-            }
-            
-            #smarthirex-lowconf-panel .field-label {
-                font-size: 14px;
-                font-weight: 600;
-                color: #1e293b;
-                margin-bottom: 5px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                letter-spacing: -0.2px;
-            }
-            
-            #smarthirex-lowconf-panel .field-hint {
-                font-size: 11px;
-                color: #64748b;
-                font-weight: 500;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                flex-wrap: wrap;
-            }
-            
-            #smarthirex-lowconf-panel .field-arrow {
-                color: #cbd5e1;
-                flex-shrink: 0;
-                transition: all 0.25s ease;
-                position: relative;
-                z-index: 1;
-            }
-            
-            #smarthirex-lowconf-panel .field-item:hover .field-arrow {
-                color: #f59e0b;
-                transform: translateX(4px);
-            }
-            
-            #smarthirex-lowconf-panel .panel-footer {
-                padding: 16px 24px 20px 24px;
-                background: linear-gradient(to top, rgba(255, 255, 255, 0.8), transparent);
-                border-top: 1px solid rgba(0, 0, 0, 0.04);
-                display: flex;
-                align-items: center;
-                gap: 12px;
-            }
-            
-            #smarthirex-lowconf-panel .footer-icon {
-                font-size: 18px;
-                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-            }
-            
-            #smarthirex-lowconf-panel .footer-text {
-                font-size: 13px;
-                color: #64748b;
-                font-weight: 600;
-                letter-spacing: -0.1px;
-            }
-            
-            .smarthirex-lowconf-highlight {
-                outline: 3px solid #f59e0b !important;
-                outline-offset: 3px !important;
-                box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.15) !important;
-                animation: pulse-lowconf-field 2.5s ease-in-out infinite !important;
-                border-radius: 8px;
-            }
-            
-            @keyframes pulse-lowconf-field {
-                0%, 100% { 
-                    outline-color: #f59e0b; 
-                    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.15); 
-                }
-                50% { 
-                    outline-color: #fb923c; 
-                    box-shadow: 0 0 0 6px rgba(251, 146, 60, 0.25); 
+            .smarthirex - lowconf - highlight {
+    outline: 3px solid #f59e0b!important;
+    outline - offset: 3px!important;
+    box - shadow: 0 0 0 6px rgba(245, 158, 11, 0.15)!important;
+    animation: pulse - lowconf - field 2.5s ease -in -out infinite!important;
+    border - radius: 8px;
+}
+
+@keyframes pulse - lowconf - field {
+    0 %, 100 % {
+        outline- color: #f59e0b;
+    box - shadow: 0 0 0 6px rgba(245, 158, 11, 0.15);
+}
+50 % {
+    outline- color: #fb923c;
+box - shadow: 0 0 0 6px rgba(251, 146, 60, 0.25); 
                 }
             }
             
-            .smarthirex-lowconf-overlay {
-                opacity: 1;
-                transition: opacity 0.3s ease;
-                animation: fadeInBounce 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-                filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
-            }
+            .smarthirex - lowconf - overlay {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    animation: fadeInBounce 0.5s cubic - bezier(0.16, 1, 0.3, 1);
+    filter: drop - shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+}
+
+@keyframes fadeInBounce {
+    0 % { opacity: 0; transform: translateY(-15px) scale(0.9); }
+    60 % { transform: translateY(2px) scale(1.02); }
+    100 % { opacity: 1; transform: translateY(0) scale(1); }
+}
             
-            @keyframes fadeInBounce {
-                0% { opacity: 0; transform: translateY(-15px) scale(0.9); }
-                60% { transform: translateY(2px) scale(1.02); }
-                100% { opacity: 1; transform: translateY(0) scale(1); }
-            }
-            
-            .lowconf-badge {
-                background: linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #fb923c 100%);
-                color: white;
-                padding: 8px 14px;
-                border-radius: 10px;
-                display: inline-flex;
-                align-items: center;
-                gap: 7px;
-                box-shadow: 
-                    0 4px 16px rgba(245, 158, 11, 0.4),
-                    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
-                font-size: 13px;
-                font-weight: 700;
-                letter-spacing: 0.3px;
-                animation: floatGlow 4s ease-in-out infinite;
-            }
-            
-            @keyframes floatGlow {
-                0%, 100% { 
-                    transform: translateY(0); 
-                    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
-                }
-                50% { 
-                    transform: translateY(-5px); 
-                    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.5);
-                }
-            }
-            
-            .field-type-badge {
-                background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-                color: #475569;
-                padding: 3px 8px;
-                border-radius: 6px;
-                font-size: 10px;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                border: 1px solid rgba(0, 0, 0, 0.06);
-            }
-            
-            .field-confidence-badge {
-                font-size: 11px;
-                padding: 3px 8px;
-                border-radius: 6px;
-                font-weight: 700;
-                letter-spacing: 0.2px;
-                border: 1px solid;
-            }
-            
-            .field-confidence-badge.low {
-                background: linear-gradient(135deg, #fef3c7, #fde68a);
-                color: #92400e;
-                border-color: rgba(146, 64, 14, 0.2);
-            }
-            
-            .field-confidence-badge.medium {
-                background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-                color: #1e40af;
-                border-color: rgba(30, 64, 175, 0.2);
-            }
-            
-            .field-priority-badge {
-                font-size: 11px;
-                padding: 3px 8px;
-                border-radius: 6px;
-                font-weight: 700;
-                letter-spacing: 0.2px;
-                background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-                color: #065f46;
-                border: 1px solid rgba(5, 150, 105, 0.3);
-            }
-            
-            .field-type-badge.file-badge {
-                background: linear-gradient(135deg, #10b981, #059669);
-                color: white;
-                border-color: rgba(5, 150, 105, 0.3);
-            }
-            
-            .file-upload-item {
-                background: linear-gradient(135deg, rgba(236, 253, 245, 0.6) 0%, rgba(209, 250, 229, 0.6) 100%);
-                border-color: rgba(16, 185, 129, 0.2);
-            }
-            
-            .file-upload-item:hover {
-                background: rgba(236, 253, 245, 0.95);
-                border-color: rgba(16, 185, 129, 0.4);
-                box-shadow: 
-                    0 4px 12px rgba(16, 185, 129, 0.15),
-                    0 0 0 1px rgba(16, 185, 129, 0.1);
-            }
-            
-            .file-upload-icon {
-                background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.2));
-                color: #059669;
-                border-color: rgba(16, 185, 129, 0.3);
-                font-size: 16px;
-            }
-            
-            @keyframes slideOutToBottomLeft {
-                to { 
-                    transform: translateY(40px) translateX(-20px) scale(0.95); 
-                    opacity: 0; 
+            .lowconf - badge {
+    background: linear - gradient(135deg, #f59e0b 0 %, #f97316 50 %, #fb923c 100 %);
+    color: white;
+    padding: 8px 14px;
+    border - radius: 10px;
+    display: inline - flex;
+    align - items: center;
+    gap: 7px;
+    box - shadow:
+    0 4px 16px rgba(245, 158, 11, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    font - size: 13px;
+    font - weight: 700;
+    letter - spacing: 0.3px;
+    animation: floatGlow 4s ease -in -out infinite;
+}
+
+@keyframes floatGlow {
+    0 %, 100 % {
+        transform: translateY(0);
+        box- shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+}
+50 % {
+    transform: translateY(-5px);
+    box- shadow: 0 8px 24px rgba(245, 158, 11, 0.5);
                 }
             }
-        `;
+            
+            .field - type - badge {
+    background: linear - gradient(135deg, #f1f5f9, #e2e8f0);
+    color: #475569;
+    padding: 3px 8px;
+    border - radius: 6px;
+    font - size: 10px;
+    font - weight: 700;
+    text - transform: uppercase;
+    letter - spacing: 0.5px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+            
+            .field - confidence - badge {
+    font - size: 11px;
+    padding: 3px 8px;
+    border - radius: 6px;
+    font - weight: 700;
+    letter - spacing: 0.2px;
+    border: 1px solid;
+}
+            
+            .field - confidence - badge.low {
+    background: linear - gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    border - color: rgba(146, 64, 14, 0.2);
+}
+            
+            .field - confidence - badge.medium {
+    background: linear - gradient(135deg, #dbeafe, #bfdbfe);
+    color: #1e40af;
+    border - color: rgba(30, 64, 175, 0.2);
+}
+            
+            .field - priority - badge {
+    font - size: 11px;
+    padding: 3px 8px;
+    border - radius: 6px;
+    font - weight: 700;
+    letter - spacing: 0.2px;
+    background: linear - gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+    border: 1px solid rgba(5, 150, 105, 0.3);
+}
+            
+            .field - type - badge.file - badge {
+    background: linear - gradient(135deg, #10b981, #059669);
+    color: white;
+    border - color: rgba(5, 150, 105, 0.3);
+}
+            
+            .file - upload - item {
+    background: linear - gradient(135deg, rgba(236, 253, 245, 0.6) 0 %, rgba(209, 250, 229, 0.6) 100 %);
+    border - color: rgba(16, 185, 129, 0.2);
+}
+            
+            .file - upload - item:hover {
+    background: rgba(236, 253, 245, 0.95);
+    border - color: rgba(16, 185, 129, 0.4);
+    box - shadow:
+    0 4px 12px rgba(16, 185, 129, 0.15),
+        0 0 0 1px rgba(16, 185, 129, 0.1);
+}
+            
+            .file - upload - icon {
+    background: linear - gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.2));
+    color: #059669;
+    border - color: rgba(16, 185, 129, 0.3);
+    font - size: 16px;
+}
+
+@keyframes slideOutToBottomLeft {
+                to {
+        transform: translateY(40px) translateX(-20px) scale(0.95);
+        opacity: 0;
+    }
+}
+`;
         document.head.appendChild(style);
     }
 
@@ -2358,7 +2713,7 @@ function highlightUnfilledFields() {
     const panel = document.createElement('div');
     panel.id = 'smarthirex-unfilled-panel';
     panel.innerHTML = `
-        <div class="panel-header">
+    < div class="panel-header" >
             <div class="header-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <circle cx="12" cy="12" r="10"/>
@@ -2379,7 +2734,7 @@ function highlightUnfilledFields() {
                     <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
             </button>
-        </div>
+        </div >
         <div class="panel-divider"></div>
         <div class="panel-list">
             ${validFields.map((item, i) => `
@@ -2401,7 +2756,7 @@ function highlightUnfilledFields() {
             <div class="footer-icon">✨</div>
             <div class="footer-text">Fill all fields to continue</div>
         </div>
-    `;
+`;
 
     document.body.appendChild(panel);
 
@@ -2416,19 +2771,19 @@ function highlightUnfilledFields() {
         const overlay = document.createElement('div');
         overlay.className = 'smarthirex-unfilled-overlay';
         overlay.innerHTML = `
-            <div class="unfilled-badge">
+    < div class="unfilled-badge" >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M12 20h9"/>
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
                 </svg>
                 <span>Required</span>
-            </div>
-        `;
+            </div >
+    `;
 
         const rect = field.getBoundingClientRect();
         overlay.style.position = 'absolute';
-        overlay.style.left = `${rect.left + window.scrollX}px`;
-        overlay.style.top = `${rect.top + window.scrollY - 46}px`;
+        overlay.style.left = `${rect.left + window.scrollX} px`;
+        overlay.style.top = `${rect.top + window.scrollY - 46} px`;
         overlay.style.zIndex = '999998';
 
         document.body.appendChild(overlay);
@@ -2453,264 +2808,265 @@ function highlightUnfilledFields() {
         const style = document.createElement('style');
         style.id = 'unfilled-premium-styles';
         style.textContent = `
-            #smarthirex-unfilled-panel {
-                position: fixed;
-                left: 20px;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 340px;
-                background: #ffffff;
-                border-radius: 16px;
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-                z-index: 2147483647 !important;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                animation: slideInFromLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-                border: 1px solid rgba(0, 0, 0, 0.08);
-            }
+#smarthirex - unfilled - panel {
+    position: fixed;
+    left: 20px;
+    top: 50 %;
+    transform: translateY(-50 %);
+    width: 340px;
+    background: #ffffff;
+    border - radius: 16px;
+    box - shadow: 0 20px 25px - 5px rgba(0, 0, 0, 0.1), 0 10px 10px - 5px rgba(0, 0, 0, 0.04);
+    z - index: 2147483647!important;
+    font - family: -apple - system, BlinkMacSystemFont, "Segoe UI", Roboto, sans - serif;
+    animation: slideInFromLeft 0.5s cubic - bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+@keyframes slideInFromLeft {
+                from { transform: translateY(-50 %) translateX(-60px); opacity: 0; }
+                to { transform: translateY(-50 %) translateX(0); opacity: 1; }
+}
             
-            @keyframes slideInFromLeft {
-                from { transform: translateY(-50%) translateX(-60px); opacity: 0; }
-                to { transform: translateY(-50%) translateX(0); opacity: 1; }
-            }
+            .panel - header {
+    padding: 20px;
+    display: flex;
+    align - items: flex - start;
+    gap: 12px;
+}
             
-            .panel-header {
-                padding: 20px;
-                display: flex;
-                align-items: flex-start;
-                gap: 12px;
-            }
+            .header - icon {
+    width: 36px;
+    height: 36px;
+    background: linear - gradient(135deg, #667eea 0 %, #764ba2 100 %);
+    border - radius: 10px;
+    display: flex;
+    align - items: center;
+    justify - content: center;
+    color: white;
+    flex - shrink: 0;
+}
             
-            .header-icon {
-                width: 36px;
-                height: 36px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                flex-shrink: 0;
-            }
+            .header - content {
+    flex: 1;
+    min - width: 0;
+}
             
-            .header-content {
-                flex: 1;
-                min-width: 0;
-            }
+            .header - title {
+    display: flex;
+    align - items: center;
+    gap: 8px;
+    margin - bottom: 4px;
+}
             
-            .header-title {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-bottom: 4px;
-            }
+            .count - badge {
+    background: linear - gradient(135deg, #667eea 0 %, #764ba2 100 %);
+    color: white;
+    padding: 2px 8px;
+    border - radius: 8px;
+    font - size: 13px;
+    font - weight: 700;
+    letter - spacing: -0.3px;
+}
             
-            .count-badge {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 2px 8px;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 700;
-                letter-spacing: -0.3px;
-            }
+            .header - text {
+    font - size: 15px;
+    font - weight: 600;
+    color: #1e293b;
+    letter - spacing: -0.3px;
+}
             
-            .header-text {
-                font-size: 15px;
-                font-weight: 600;
-                color: #1e293b;
-                letter-spacing: -0.3px;
-            }
+            .header - subtitle {
+    font - size: 12px;
+    color: #64748b;
+    font - weight: 500;
+}
             
-            .header-subtitle {
-                font-size: 12px;
-                color: #64748b;
-                font-weight: 500;
-            }
+            .close - btn {
+    width: 28px;
+    height: 28px;
+    background: #f1f5f9;
+    border: none;
+    border - radius: 8px;
+    display: flex;
+    align - items: center;
+    justify - content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #64748b;
+    flex - shrink: 0;
+}
             
-            .close-btn {
-                width: 28px;
-                height: 28px;
-                background: #f1f5f9;
-                border: none;
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                transition: all 0.2s;
-                color: #64748b;
-                flex-shrink: 0;
-            }
+            .close - btn:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
             
-            .close-btn:hover {
-                background: #e2e8f0;
-                color: #334155;
-            }
+            .panel - divider {
+    height: 1px;
+    background: linear - gradient(to right, transparent, #e2e8f0, transparent);
+    margin: 0 20px;
+}
             
-            .panel-divider {
-                height: 1px;
-                background: linear-gradient(to right, transparent, #e2e8f0, transparent);
-                margin: 0 20px;
-            }
+            .panel - list {
+    padding: 16px 12px;
+    max - height: 400px;
+    overflow - y: auto;
+}
             
-            .panel-list {
-                padding: 16px 12px;
-                max-height: 400px;
-                overflow-y: auto;
-            }
+            .panel - list:: -webkit - scrollbar {
+    width: 6px;
+}
             
-            .panel-list::-webkit-scrollbar {
-                width: 6px;
-            }
+            .panel - list:: -webkit - scrollbar - track {
+    background: transparent;
+}
             
-            .panel-list::-webkit-scrollbar-track {
-                background: transparent;
-            }
+            .panel - list:: -webkit - scrollbar - thumb {
+    background: #cbd5e1;
+    border - radius: 3px;
+}
             
-            .panel-list::-webkit-scrollbar-thumb {
-                background: #cbd5e1;
-                border-radius: 3px;
-            }
+            .field - item {
+    display: flex;
+    align - items: center;
+    gap: 12px;
+    padding: 12px;
+    margin - bottom: 8px;
+    background: #fafafa;
+    border: 1px solid #e2e8f0;
+    border - radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s cubic - bezier(0.4, 0, 0.2, 1);
+}
             
-            .field-item {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 12px;
-                margin-bottom: 8px;
-                background: #fafafa;
-                border: 1px solid #e2e8f0;
-                border-radius: 10px;
-                cursor: pointer;
-                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            }
+            .field - item:hover {
+    background: #f8fafc;
+    border - color: #cbd5e1;
+    transform: translateX(4px);
+    box - shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
             
-            .field-item:hover {
-                background: #f8fafc;
-                border-color: #cbd5e1;
-                transform: translateX(4px);
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            }
+            .field - number {
+    width: 24px;
+    height: 24px;
+    background: linear - gradient(135deg, #667eea20, #764ba220);
+    color: #667eea;
+    border - radius: 6px;
+    display: flex;
+    align - items: center;
+    justify - content: center;
+    font - size: 11px;
+    font - weight: 700;
+    flex - shrink: 0;
+}
             
-            .field-number {
-                width: 24px;
-                height: 24px;
-                background: linear-gradient(135deg, #667eea20, #764ba220);
-                color: #667eea;
-                border-radius: 6px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 11px;
-                font-weight: 700;
-                flex-shrink: 0;
-            }
+            .field - content {
+    flex: 1;
+    min - width: 0;
+}
             
-            .field-content {
-                flex: 1;
-                min-width: 0;
-            }
+            .field - label {
+    font - size: 13px;
+    font - weight: 600;
+    color: #334155;
+    margin - bottom: 2px;
+    overflow: hidden;
+    text - overflow: ellipsis;
+    white - space: nowrap;
+}
             
-            .field-label {
-                font-size: 13px;
-                font-weight: 600;
-                color: #334155;
-                margin-bottom: 2px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
+            .field - hint {
+    font - size: 11px;
+    color: #94a3b8;
+    font - weight: 500;
+}
             
-            .field-hint {
-                font-size: 11px;
-                color: #94a3b8;
-                font-weight: 500;
-            }
+            .field - arrow {
+    color: #cbd5e1;
+    flex - shrink: 0;
+    transition: all 0.2s;
+}
             
-            .field-arrow {
-                color: #cbd5e1;
-                flex-shrink: 0;
-                transition: all 0.2s;
-            }
+            .field - item: hover.field - arrow {
+    color: #667eea;
+    transform: translateX(2px);
+}
             
-            .field-item:hover .field-arrow {
-                color: #667eea;
-                transform: translateX(2px);
-            }
+            .panel - footer {
+    padding: 16px 20px;
+    background: linear - gradient(to bottom, transparent, #fafafa);
+    border - top: 1px solid #f1f5f9;
+    display: flex;
+    align - items: center;
+    gap: 10px;
+    border - radius: 0 0 16px 16px;
+}
             
-            .panel-footer {
-                padding: 16px 20px;
-                background: linear-gradient(to bottom, transparent, #fafafa);
-                border-top: 1px solid #f1f5f9;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                border-radius: 0 0 16px 16px;
-            }
+            .footer - icon {
+    font - size: 16px;
+}
             
-            .footer-icon {
-                font-size: 16px;
-            }
-            
-            .footer-text {
-                font-size: 12px;
-                color: #64748b;
-                font-weight: 600;
-            }
-            
+            .footer - text {
+    font - size: 12px;
+    color: #64748b;
+    font - weight: 600;
+}
+
             /* Field Highlighting */
-            .smarthirex-unfilled-highlight {
-                outline: 2px solid #667eea !important;
-                outline-offset: 2px !important;
-                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1) !important;
-                animation: pulse-field 2s ease-in-out infinite !important;
+            .smarthirex - unfilled - highlight {
+    outline: 2px solid #667eea!important;
+    outline - offset: 2px!important;
+    box - shadow: 0 0 0 4px rgba(102, 126, 234, 0.1)!important;
+    animation: pulse - field 2s ease -in -out infinite!important;
+}
+
+@keyframes pulse - field {
+    0 %, 100 % { outline- color: #667eea; box - shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+50 % { outline- color: #764ba2; box - shadow: 0 0 0 4px rgba(118, 75, 162, 0.15); }
             }
-            
-            @keyframes pulse-field {
-                0%, 100% { outline-color: #667eea; box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1); }
-                50% { outline-color: #764ba2; box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.15); }
-            }
-            
+
             /* Field Overlay Badge */
-            .smarthirex-unfilled-overlay {
-                opacity: 1;
-                transition: opacity 0.3s;
-                animation: fadeIn 0.4s ease-out;
-            }
-            
-            @keyframes fadeIn {
+            .smarthirex - unfilled - overlay {
+    opacity: 1;
+    transition: opacity 0.3s;
+    animation: fadeIn 0.4s ease - out;
+}
+
+@keyframes fadeIn {
                 from { opacity: 0; transform: translateY(-10px); }
                 to { opacity: 1; transform: translateY(0); }
-            }
+}
             
-            .unfilled-badge {
-                background: linear-gradient(135deg, #667eea, #764ba2);
-                color: white;
-                padding: 6px 12px;
-                border-radius: 8px;
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-                font-size: 12px;
-                font-weight: 600;
-                letter-spacing: 0.2px;
-                animation: float 3s ease-in-out infinite;
-            }
-            
-            @keyframes float {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-4px); }
-            }
-            
-            /* Mobile Responsive */
-            @media (max-width: 768px) {
-                #smarthirex-unfilled-panel {
-                    width: 280px;
-                    left: 12px;
-                }
-            }
-        `;
+            .unfilled - badge {
+    background: linear - gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 6px 12px;
+    border - radius: 8px;
+    display: inline - flex;
+    align - items: center;
+    gap: 6px;
+    box - shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    font - size: 12px;
+    font - weight: 600;
+    letter - spacing: 0.2px;
+    animation: float 3s ease -in -out infinite;
+}
+
+@keyframes float {
+    0 %, 100 % { transform: translateY(0); }
+    50 % { transform: translateY(-4px); }
+}
+
+/* Mobile Responsive */
+@media(max - width: 768px) {
+    #smarthirex - unfilled - panel {
+        width: 280px;
+        left: 12px;
+    }
+}
+`;
         document.head.appendChild(style);
     }
 
@@ -2748,10 +3104,10 @@ function highlightUnfilledFields() {
 
     const slideOutStyle = document.createElement('style');
     slideOutStyle.textContent = `
-        @keyframes slideOutToLeft {
-            to { transform: translateY(-50%) translateX(-60px); opacity: 0; }
-        }
-    `;
+@keyframes slideOutToLeft {
+            to { transform: translateY(-50 %) translateX(-60px); opacity: 0; }
+}
+`;
     document.head.appendChild(slideOutStyle);
 
     console.log('✅ Premium unfilled field UX activated!');
@@ -2790,7 +3146,7 @@ function undoFormFill() {
                 const element = document.querySelector(selector);
 
                 if (!element) {
-                    console.warn(`Element not found for undo: ${selector}`);
+                    console.warn(`Element not found for undo: ${selector} `);
                     continue;
                 }
 
@@ -2826,7 +3182,7 @@ function undoFormFill() {
 
                 restoredCount++;
             } catch (error) {
-                console.error(`Error restoring ${selector}:`, error);
+                console.error(`Error restoring ${selector}: `, error);
             }
         }
 
@@ -2929,18 +3285,18 @@ function highlightFileFields(fileFields) {
         const overlay = document.createElement('div');
         overlay.className = 'smarthirex-file-upload-overlay';
         overlay.innerHTML = `
-            <div class="smarthirex-file-upload-indicator">
+    < div class="smarthirex-file-upload-indicator" >
                 <div class="icon">📄</div>
                 <div class="message">Please upload your document here</div>
                 <div class="hint">Click or drag & drop</div>
-            </div>
-        `;
+            </div >
+    `;
 
         // Position overlay near the file input
         const rect = field.getBoundingClientRect();
         overlay.style.position = 'absolute';
-        overlay.style.left = `${rect.left + window.scrollX}px`;
-        overlay.style.top = `${rect.top + window.scrollY - 80}px`;
+        overlay.style.left = `${rect.left + window.scrollX} px`;
+        overlay.style.top = `${rect.top + window.scrollY - 80} px`;
         overlay.style.zIndex = '999998';
 
         document.body.appendChild(overlay);
@@ -2985,11 +3341,11 @@ function highlightFileFields(fileFields) {
 // Get a unique selector for an element
 function getElementSelector(element) {
     if (element.id) {
-        return `#${element.id}`;
+        return `#${element.id} `;
     }
 
     if (element.name) {
-        return `input[name="${element.name}"]`;
+        return `input[name = "${element.name}"]`;
     }
 
     // Fallback: use tag + nth-of-type
@@ -2999,7 +3355,7 @@ function getElementSelector(element) {
             child.tagName === element.tagName
         );
         const index = siblings.indexOf(element) + 1;
-        return `${element.tagName.toLowerCase()}:nth-of-type(${index})`;
+        return `${element.tagName.toLowerCase()}: nth - of - type(${index})`;
     }
 
     return element.tagName.toLowerCase();
@@ -3009,609 +3365,610 @@ function getElementSelector(element) {
 // Helper to get consistent enterprise-grade CSS for all modals (Shadow DOM & Main)
 function getEnterpriseModalCSS() {
     return `
-        /* ENTERPRISE THEME VARIABLES & FONTS */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* ENTERPRISE THEME VARIABLES & FONTS */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         :host {
-            all: initial;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+    all: initial;
+    font - family: 'Inter', -apple - system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans - serif;
+}
 
-        .smarthirex-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2147483647 !important;
-            padding: 20px;
-            animation: smarthirex-fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
+        .smarthirex - modal - overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop - filter: blur(8px);
+    -webkit - backdrop - filter: blur(8px);
+    display: flex;
+    align - items: center;
+    justify - content: center;
+    z - index: 2147483647!important;
+    padding: 20px;
+    animation: smarthirex - fadeIn 0.3s cubic - bezier(0.16, 1, 0.3, 1);
+    font - family: 'Inter', -apple - system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans - serif;
+}
 
-        @keyframes smarthirex-fadeIn {
+@keyframes smarthirex - fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
+}
+
+        .smarthirex - missing - data - dialog {
+    background: linear - gradient(180deg, #ffffff 0 %, #fafbfc 100 %);
+    border - radius: 20px;
+    width: 100 %;
+    max - width: 480px;
+    max - height: 85vh;
+    overflow: hidden;
+    box - shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.05),
+        0 20px 25px - 5px rgba(15, 23, 42, 0.1),
+            0 40px 60px - 15px rgba(15, 23, 42, 0.25);
+    animation: smarthirex - slideUp 0.4s cubic - bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+        .smarthirex - missing - data - dialog::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear - gradient(90deg, #8B5CF6 0 %, #6366F1 50 %, #8B5CF6 100 %);
+    background - size: 200 % 100 %;
+    animation: smarthirex - shimmer 3s linear infinite;
+}
+
+@keyframes smarthirex - shimmer {
+    0 % { background- position: 200 % 0;
+}
+100 % { background- position: -200 % 0; }
         }
 
-        .smarthirex-missing-data-dialog {
-            background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
-            border-radius: 20px;
-            width: 100%;
-            max-width: 480px;
-            max-height: 85vh;
-            overflow: hidden;
-            box-shadow:
-                0 0 0 1px rgba(15, 23, 42, 0.05),
-                0 20px 25px -5px rgba(15, 23, 42, 0.1),
-                0 40px 60px -15px rgba(15, 23, 42, 0.25);
-            animation: smarthirex-slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-        }
-
-        .smarthirex-missing-data-dialog::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #8B5CF6 0%, #6366F1 50%, #8B5CF6 100%);
-            background-size: 200% 100%;
-            animation: smarthirex-shimmer 3s linear infinite;
-        }
-
-        @keyframes smarthirex-shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        @keyframes smarthirex-slideUp {
+@keyframes smarthirex - slideUp {
             from {
-                transform: translateY(32px) scale(0.96);
-                opacity: 0;
-            }
+        transform: translateY(32px) scale(0.96);
+        opacity: 0;
+    }
             to {
-                transform: translateY(0) scale(1);
-                opacity: 1;
-            }
-        }
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
 
-        .smarthirex-dialog-header {
-            padding: 32px 32px 24px 32px;
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(99, 102, 241, 0.03) 100%);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-            position: relative;
-        }
+        .smarthirex - dialog - header {
+    padding: 32px 32px 24px 32px;
+    background: linear - gradient(135deg, rgba(139, 92, 246, 0.03) 0 %, rgba(99, 102, 241, 0.03) 100 %);
+    border - bottom: 1px solid rgba(226, 232, 240, 0.8);
+    position: relative;
+}
 
-        .smarthirex-dialog-header::before {
-            content: '🎯';
-            position: absolute;
-            top: 24px;
-            left: 32px;
-            font-size: 28px;
-            opacity: 0.9;
-        }
+        .smarthirex - dialog - header::before {
+    content: '🎯';
+    position: absolute;
+    top: 24px;
+    left: 32px;
+    font - size: 28px;
+    opacity: 0.9;
+}
 
-        .smarthirex-dialog-header h3 {
-            font-size: 22px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 8px;
-            margin-left: 44px;
-            letter-spacing: -0.02em;
-            line-height: 1.3;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-        }
+        .smarthirex - dialog - header h3 {
+    font - size: 22px;
+    font - weight: 700;
+    color: #0f172a;
+    margin - bottom: 8px;
+    margin - left: 44px;
+    letter - spacing: -0.02em;
+    line - height: 1.3;
+    font - family: -apple - system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans - serif;
+}
 
-        .smarthirex-dialog-header p {
-            font-size: 14px;
-            color: #64748b;
-            margin-left: 44px;
-            line-height: 1.5;
-            font-weight: 500;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-        }
+        .smarthirex - dialog - header p {
+    font - size: 14px;
+    color: #64748b;
+    margin - left: 44px;
+    line - height: 1.5;
+    font - weight: 500;
+    font - family: -apple - system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans - serif;
+}
 
-        .smarthirex-dialog-content {
-            padding: 24px 32px;
-            max-height: calc(85vh - 200px);
-            overflow-y: auto;
-        }
+        .smarthirex - dialog - content {
+    padding: 24px 32px;
+    max - height: calc(85vh - 200px);
+    overflow - y: auto;
+}
 
-        .smarthirex-dialog-content::-webkit-scrollbar {
-            width: 8px;
-        }
+        .smarthirex - dialog - content:: -webkit - scrollbar {
+    width: 8px;
+}
 
-        .smarthirex-dialog-content::-webkit-scrollbar-track {
-            background: transparent;
-        }
+        .smarthirex - dialog - content:: -webkit - scrollbar - track {
+    background: transparent;
+}
 
-        .smarthirex-dialog-content::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
+        .smarthirex - dialog - content:: -webkit - scrollbar - thumb {
+    background: #cbd5e1;
+    border - radius: 4px;
+}
 
-        .smarthirex-dialog-content::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
+        .smarthirex - dialog - content:: -webkit - scrollbar - thumb:hover {
+    background: #94a3b8;
+}
 
-        .smarthirex-field-group {
-            margin-bottom: 20px;
-            animation: smarthirex-slideIn 0.3s ease forwards;
-            opacity: 0;
-        }
+        .smarthirex - field - group {
+    margin - bottom: 20px;
+    animation: smarthirex - slideIn 0.3s ease forwards;
+    opacity: 0;
+}
 
-        .smarthirex-field-group:nth-child(1) { animation-delay: 0.05s; }
-        .smarthirex-field-group:nth-child(2) { animation-delay: 0.1s; }
-        .smarthirex-field-group:nth-child(3) { animation-delay: 0.15s; }
-        .smarthirex-field-group:nth-child(4) { animation-delay: 0.2s; }
-        .smarthirex-field-group:nth-child(5) { animation-delay: 0.25s; }
+        .smarthirex - field - group: nth - child(1) { animation - delay: 0.05s; }
+        .smarthirex - field - group: nth - child(2) { animation - delay: 0.1s; }
+        .smarthirex - field - group: nth - child(3) { animation - delay: 0.15s; }
+        .smarthirex - field - group: nth - child(4) { animation - delay: 0.2s; }
+        .smarthirex - field - group: nth - child(5) { animation - delay: 0.25s; }
 
-        @keyframes smarthirex-slideIn {
+@keyframes smarthirex - slideIn {
             from {
-                transform: translateX(-8px);
-                opacity: 0;
-            }
+        transform: translateX(-8px);
+        opacity: 0;
+    }
             to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
 
-        .smarthirex-field-group:last-child {
-            margin-bottom: 0;
-        }
+        .smarthirex - field - group: last - child {
+    margin - bottom: 0;
+}
 
-        .smarthirex-field-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #0f172a;
-            margin-bottom: 8px;
-            letter-spacing: -0.01em;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-        }
+        .smarthirex - field - group label {
+    display: block;
+    font - size: 13px;
+    font - weight: 600;
+    color: #0f172a;
+    margin - bottom: 8px;
+    letter - spacing: -0.01em;
+    font - family: -apple - system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans - serif;
+}
 
-        .smarthirex-field-group label::after {
-            content: '*';
-            color: #ef4444;
-            margin-left: 4px;
-            font-weight: 700;
-        }
+        .smarthirex - field - group label::after {
+    content: '*';
+    color: #ef4444;
+    margin - left: 4px;
+    font - weight: 700;
+}
 
-        .smarthirex-field-group input,
-        .smarthirex-field-group textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 14px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            background: #ffffff;
-            color: #0f172a;
-        }
+        .smarthirex - field - group input,
+        .smarthirex - field - group textarea {
+    width: 100 %;
+    padding: 12px 14px;
+    border: 1.5px solid #e2e8f0;
+    border - radius: 10px;
+    font - size: 14px;
+    font - family: -apple - system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans - serif;
+    transition: all 0.2s cubic - bezier(0.4, 0, 0.2, 1);
+    background: #ffffff;
+    color: #0f172a;
+}
 
-        .smarthirex-field-group input::placeholder,
-        .smarthirex-field-group textarea::placeholder {
-            color: #94a3b8;
-        }
+        .smarthirex - field - group input:: placeholder,
+        .smarthirex - field - group textarea::placeholder {
+    color: #94a3b8;
+}
 
-        .smarthirex-field-group input:hover,
-        .smarthirex-field-group textarea:hover {
-            border-color: #cbd5e1;
-        }
+        .smarthirex - field - group input: hover,
+        .smarthirex - field - group textarea:hover {
+    border - color: #cbd5e1;
+}
 
-        .smarthirex-field-group input:focus,
-        .smarthirex-field-group textarea:focus {
-            outline: none;
-            border-color: #8B5CF6;
-            box-shadow:
-                0 0 0 4px rgba(139, 92, 246, 0.08),
-                0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            background: #ffffff;
-        }
+        .smarthirex - field - group input: focus,
+        .smarthirex - field - group textarea:focus {
+    outline: none;
+    border - color: #8B5CF6;
+    box - shadow:
+    0 0 0 4px rgba(139, 92, 246, 0.08),
+        0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    background: #ffffff;
+}
 
-        .smarthirex-field-group textarea {
-            resize: vertical;
-            min-height: 96px;
-            line-height: 1.5;
-        }
+        .smarthirex - field - group textarea {
+    resize: vertical;
+    min - height: 96px;
+    line - height: 1.5;
+}
 
-        .smarthirex-dialog-footer {
-            padding: 20px 32px 32px 32px;
-            background: linear-gradient(180deg, rgba(248, 250, 252, 0.5) 0%, rgba(248, 250, 252, 0.8) 100%);
-            border-top: 1px solid rgba(226, 232, 240, 0.8);
-            display: flex;
-            gap: 12px;
-        }
+        .smarthirex - dialog - footer {
+    padding: 20px 32px 32px 32px;
+    background: linear - gradient(180deg, rgba(248, 250, 252, 0.5) 0 %, rgba(248, 250, 252, 0.8) 100 %);
+    border - top: 1px solid rgba(226, 232, 240, 0.8);
+    display: flex;
+    gap: 12px;
+}
 
-        .smarthirex-btn {
-            flex: 1;
-            padding: 14px 20px;
-            font-size: 15px;
-            font-weight: 600;
-            border-radius: 10px;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-        }
+        .smarthirex - btn {
+    flex: 1;
+    padding: 14px 20px;
+    font - size: 15px;
+    font - weight: 600;
+    border - radius: 10px;
+    transition: all 0.2s cubic - bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    font - family: -apple - system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans - serif;
+}
 
-        .smarthirex-btn-secondary {
-            background: #ffffff;
-            color: #475569;
-            border: 1.5px solid #e2e8f0;
-        }
+        .smarthirex - btn - secondary {
+    background: #ffffff;
+    color: #475569;
+    border: 1.5px solid #e2e8f0;
+}
 
-        .smarthirex-btn-secondary:hover {
-            background: #f8fafc;
-            border-color: #cbd5e1;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
-        }
+        .smarthirex - btn - secondary:hover {
+    background: #f8fafc;
+    border - color: #cbd5e1;
+    transform: translateY(-1px);
+    box - shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
+}
 
-        .smarthirex-btn-primary {
-            background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
-            color: white;
-            border: none;
-            box-shadow:
-                0 0 0 1px rgba(139, 92, 246, 0.1),
-                0 4px 12px rgba(139, 92, 246, 0.25);
-        }
+        .smarthirex - btn - primary {
+    background: linear - gradient(135deg, #8B5CF6 0 %, #6366F1 100 %);
+    color: white;
+    border: none;
+    box - shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.1),
+        0 4px 12px rgba(139, 92, 246, 0.25);
+}
 
-        .smarthirex-btn-primary:hover {
-            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
-            box-shadow:
-                0 0 0 1px rgba(139, 92, 246, 0.2),
-                0 8px 20px rgba(139, 92, 246, 0.35);
-            transform: translateY(-1px);
-        }
+        .smarthirex - btn - primary:hover {
+    background: linear - gradient(135deg, #7c3aed 0 %, #4f46e5 100 %);
+    box - shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.2),
+        0 8px 20px rgba(139, 92, 246, 0.35);
+    transform: translateY(-1px);
+}
 
         /* Preview Modal Specific Styles */
-        .smarthirex-preview-dialog {
-            background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
-            border-radius: 20px;
-            width: 100%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow: hidden;
-            box-shadow:
-                0 0 0 1px rgba(15, 23, 42, 0.05),
-                0 20px 25px -5px rgba(15, 23, 42, 0.1),
-                0 40px 60px -15px rgba(15, 23, 42, 0.25);
-            animation: smarthirex-slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-        }
+        .smarthirex - preview - dialog {
+    background: linear - gradient(180deg, #ffffff 0 %, #fafbfc 100 %);
+    border - radius: 20px;
+    width: 100 %;
+    max - width: 800px;
+    max - height: 90vh;
+    overflow: hidden;
+    box - shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.05),
+        0 20px 25px - 5px rgba(15, 23, 42, 0.1),
+            0 40px 60px - 15px rgba(15, 23, 42, 0.25);
+    animation: smarthirex - slideUp 0.4s cubic - bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
 
-        .smarthirex-preview-dialog::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #8B5CF6 0%, #6366F1 50%, #8B5CF6 100%);
-            background-size: 200% 100%;
-            animation: smarthirex-shimmer 3s linear infinite;
-        }
+        .smarthirex - preview - dialog::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear - gradient(90deg, #8B5CF6 0 %, #6366F1 50 %, #8B5CF6 100 %);
+    background - size: 200 % 100 %;
+    animation: smarthirex - shimmer 3s linear infinite;
+}
 
-        .smarthirex-preview-dialog .smarthirex-dialog-header::before {
-            content: '👀';
-        }
+        .smarthirex - preview - dialog.smarthirex - dialog - header::before {
+    content: '👀';
+}
 
-        .smarthirex-stats-summary {
-            background: rgba(139, 92, 246, 0.05);
-            padding: 12px 16px;
-            border-radius: 10px;
-            border: 1px solid rgba(139, 92, 246, 0.1);
-        }
+        .smarthirex - stats - summary {
+    background: rgba(139, 92, 246, 0.05);
+    padding: 12px 16px;
+    border - radius: 10px;
+    border: 1px solid rgba(139, 92, 246, 0.1);
+}
 
-        .smarthirex-stats-summary .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .smarthirex - stats - summary.stat - item {
+    display: flex;
+    align - items: center;
+    gap: 6px;
+}
 
-        .smarthirex-stats-summary .stat-label {
-            font-size: 13px;
-            color: #64748b;
-            font-weight: 500;
-        }
+        .smarthirex - stats - summary.stat - label {
+    font - size: 13px;
+    color: #64748b;
+    font - weight: 500;
+}
 
-        .smarthirex-stats-summary .stat-value {
-            font-size: 15px;
-            font-weight: 700;
-            color: #0f172a;
-        }
+        .smarthirex - stats - summary.stat - value {
+    font - size: 15px;
+    font - weight: 700;
+    color: #0f172a;
+}
 
-        .smarthirex-confidence-summary {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .smarthirex - confidence - summary {
+    display: flex;
+    align - items: center;
+    gap: 8px;
+}
 
-        .confidence-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .confidence - badge {
+    display: inline - flex;
+    align - items: center;
+    padding: 4px 10px;
+    border - radius: 6px;
+    font - size: 11px;
+    font - weight: 600;
+    text - transform: uppercase;
+    letter - spacing: 0.5px;
+}
 
-        .confidence-badge.high {
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #10b981;
-        }
+        .confidence - badge.high {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #10b981;
+}
 
-        .confidence-badge.medium {
-            background: #fef3c7;
-            color: #92400e;
-            border: 1px solid #f59e0b;
-        }
+        .confidence - badge.medium {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+}
 
-        .confidence-badge.low {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #ef4444;
-        }
+        .confidence - badge.low {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
+}
 
         /* Table Styles */
-        .smarthirex-mappings-table {
-            background: white;
-            border-radius: 10px;
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-        }
+        .smarthirex - mappings - table {
+    background: white;
+    border - radius: 10px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
 
-        .smarthirex-mappings-table .table-header {
-            display: grid;
-            grid-template-columns: 40px 1fr 2fr 100px;
-            gap: 12px;
-            padding: 14px 16px;
-            background: #f8fafc;
-            border-bottom: 2px solid #e2e8f0;
-            font-size: 12px;
-            font-weight: 700;
-            color: #475569;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .smarthirex - mappings - table.table - header {
+    display: grid;
+    grid - template - columns: 40px 1fr 2fr 100px;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border - bottom: 2px solid #e2e8f0;
+    font - size: 12px;
+    font - weight: 700;
+    color: #475569;
+    text - transform: uppercase;
+    letter - spacing: 0.5px;
+}
 
-        .smarthirex-mappings-table .table-body {
-            max-height: 400px;
-            overflow-y: auto;
-        }
+        .smarthirex - mappings - table.table - body {
+    max - height: 400px;
+    overflow - y: auto;
+}
 
-        .smarthirex-mappings-table .table-body::-webkit-scrollbar {
-            width: 6px;
-        }
+        .smarthirex - mappings - table.table - body:: -webkit - scrollbar {
+    width: 6px;
+}
 
-        .smarthirex-mappings-table .table-body::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
+        .smarthirex - mappings - table.table - body:: -webkit - scrollbar - thumb {
+    background: #cbd5e1;
+    border - radius: 3px;
+}
 
-        .smarthirex-mappings-table .table-row {
-            display: grid;
-            grid-template-columns: 40px 1fr 2fr 100px;
-            gap: 12px;
-            padding: 12px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            transition: background 0.15s;
-        }
+        .smarthirex - mappings - table.table - row {
+    display: grid;
+    grid - template - columns: 40px 1fr 2fr 100px;
+    gap: 12px;
+    padding: 12px 16px;
+    border - bottom: 1px solid #f1f5f9;
+    transition: background 0.15s;
+}
 
-        .smarthirex-mappings-table .table-row:hover {
-            background: #fafbfc;
-        }
+        .smarthirex - mappings - table.table - row:hover {
+    background: #fafbfc;
+}
 
-        .smarthirex-mappings-table .table-row:last-child {
-            border-bottom: none;
-        }
+        .smarthirex - mappings - table.table - row: last - child {
+    border - bottom: none;
+}
 
-        .td-checkbox,
-        .th-checkbox {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .td - checkbox,
+        .th - checkbox {
+    display: flex;
+    align - items: center;
+    justify - content: center;
+}
 
-        .td-checkbox input[type="checkbox"],
-        .th-checkbox input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: #8B5CF6;
-        }
+        .td - checkbox input[type = "checkbox"],
+        .th - checkbox input[type = "checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent - color: #8B5CF6;
+}
 
-        .td-field {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #0f172a;
-        }
+        .td - field {
+    display: flex;
+    align - items: center;
+    gap: 8px;
+    font - size: 14px;
+    color: #0f172a;
+}
 
-        .field-icon {
-            font-size: 18px;
-        }
+        .field - icon {
+    font - size: 18px;
+}
 
-        .field-label {
-            font-weight: 500;
-        }
+        .field - label {
+    font - weight: 500;
+}
 
-        .required-badge {
-            color: #ef4444;
-            font-weight: 700;
-            font-size: 16px;
-        }
+        .required - badge {
+    color: #ef4444;
+    font - weight: 700;
+    font - size: 16px;
+}
 
-        .td-value {
-            display: flex;
-            align-items: center;
-        }
+        .td - value {
+    display: flex;
+    align - items: center;
+}
 
-        .value-input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 13px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            transition: all 0.2s;
-        }
+        .value - input {
+    width: 100 %;
+    padding: 8px 12px;
+    border: 1.5px solid #e2e8f0;
+    border - radius: 8px;
+    font - size: 13px;
+    font - family: -apple - system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans - serif;
+    transition: all 0.2s;
+}
 
-        .value-input:focus {
-            outline: none;
-            border-color: #8B5CF6;
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-        }
+        .value - input:focus {
+    outline: none;
+    border - color: #8B5CF6;
+    box - shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
 
-        .manual-upload-text {
-            font-size: 13px;
-            color: #64748b;
-            font-style: italic;
-        }
+        .manual - upload - text {
+    font - size: 13px;
+    color: #64748b;
+    font - style: italic;
+}
 
-        .td-confidence {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .td - confidence {
+    display: flex;
+    align - items: center;
+    justify - content: center;
+}
 
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .smarthirex-preview-dialog {
-                max-width: 100%;
-                margin: 0;
-                border-radius: 20px 20px 0 0;
-                max-height: 95vh;
-            }
+/* Mobile Responsive */
+@media(max - width: 768px) {
+            .smarthirex - preview - dialog {
+        max - width: 100 %;
+        margin: 0;
+        border - radius: 20px 20px 0 0;
+        max - height: 95vh;
+    }
 
-            .smarthirex-mappings-table .table-header,
-            .smarthirex-mappings-table .table-row {
-                grid-template-columns: 30px 1fr 80px;
-                gap: 8px;
-            }
+            .smarthirex - mappings - table.table - header,
+            .smarthirex - mappings - table.table - row {
+        grid - template - columns: 30px 1fr 80px;
+        gap: 8px;
+    }
 
-            .th-value,
-            .td-value {
-                display: none;
-            }
+            .th - value,
+            .td - value {
+        display: none;
+    }
 
-            .smarthirex-dialog-header {
-                padding: 24px 20px 20px 20px;
-            }
+            .smarthirex - dialog - header {
+        padding: 24px 20px 20px 20px;
+    }
 
-            .smarthirex-dialog-header h3,
-            .smarthirex-dialog-header p {
-                margin-left: 36px;
-            }
+            .smarthirex - dialog - header h3,
+            .smarthirex - dialog - header p {
+        margin - left: 36px;
+    }
 
-            .smarthirex-dialog-content {
-                padding: 16px;
-            }
+            .smarthirex - dialog - content {
+        padding: 16px;
+    }
 
-            .smarthirex-dialog-footer {
-                padding: 16px 20px 24px 20px;
-                flex-direction: column;
-            }
+            .smarthirex - dialog - footer {
+        padding: 16px 20px 24px 20px;
+        flex - direction: column;
+    }
 
-            .smarthirex-btn {
-                width: 100%;
-            }
-        }
+            .smarthirex - btn {
+        width: 100 %;
+    }
+}
 
         /* File Upload Field Highlighting */
-        .smarthirex-file-upload-highlight {
-            animation: smarthirex-file-pulse 2s infinite !important;
-            border: 3px solid #8B5CF6 !important;
-            border-radius: 8px !important;
-            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2) !important;
-        }
+        .smarthirex - file - upload - highlight {
+    animation: smarthirex - file - pulse 2s infinite!important;
+    border: 3px solid #8B5CF6!important;
+    border - radius: 8px!important;
+    box - shadow: 0 0 0 4px rgba(139, 92, 246, 0.2)!important;
+}
 
-        @keyframes smarthirex-file-pulse {
-            0%, 100% {
-                box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
-                border-color: #8B5CF6;
-            }
-            50% {
-                box-shadow: 0 0 0 12px rgba(139, 92, 246, 0);
-                border-color: #a78bfa;
-            }
-        }
-
-        .smarthirex-file-upload-overlay {
-            position: absolute;
-            z-index: 999998;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .smarthirex-file-upload-indicator {
-            background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
-            color: white;
-            padding: 16px 24px;
-            border-radius: 12px;
-            box-shadow:
-                0 0 0 1px rgba(139, 92, 246, 0.3),
-                0 10px 25px rgba(139, 92, 246, 0.4),
-                0 4px 8px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            animation: smarthirex-indicator-bounce 2s ease-in-out infinite;
-        }
-
-        @keyframes smarthirex-indicator-bounce {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-8px);
+@keyframes smarthirex - file - pulse {
+    0 %, 100 % {
+        box- shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+    border - color: #8B5CF6;
+}
+50 % {
+    box- shadow: 0 0 0 12px rgba(139, 92, 246, 0);
+border - color: #a78bfa;
             }
         }
 
-        .smarthirex-file-upload-indicator .icon {
-            font-size: 32px;
-            animation: smarthirex-icon-pulse 1.5s ease-in-out infinite;
-        }
+        .smarthirex - file - upload - overlay {
+    position: absolute;
+    z - index: 999998;
+    pointer - events: none;
+    transition: opacity 0.3s ease;
+}
 
-        @keyframes smarthirex-icon-pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.1);
-            }
-        }
+        .smarthirex - file - upload - indicator {
+    background: linear - gradient(135deg, #8B5CF6 0 %, #6366F1 100 %);
+    color: white;
+    padding: 16px 24px;
+    border - radius: 12px;
+    box - shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.3),
+        0 10px 25px rgba(139, 92, 246, 0.4),
+            0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex - direction: column;
+    align - items: center;
+    gap: 8px;
+    animation: smarthirex - indicator - bounce 2s ease -in -out infinite;
+}
 
-        .smarthirex-file-upload-indicator .message {
-            font-size: 15px;
-            font-weight: 700;
-            text-align: center;
-            letter-spacing: -0.01em;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
+@keyframes smarthirex - indicator - bounce {
+    0 %, 100 % {
+        transform: translateY(0);
+    }
+    50 % {
+        transform: translateY(-8px);
+    }
+}
 
-        .smarthirex-file-upload-indicator .hint {
-            font-size: 12px;
-            opacity: 0.9;
-            font-weight: 500;
-            text-align: center;
-        }
-    `;
+        .smarthirex - file - upload - indicator.icon {
+    font - size: 32px;
+    animation: smarthirex - icon - pulse 1.5s ease -in -out infinite;
+}
+
+@keyframes smarthirex - icon - pulse {
+    0 %, 100 % {
+        transform: scale(1);
+    }
+    50 % {
+        transform: scale(1.1);
+    }
+}
+
+        .smarthirex - file - upload - indicator.message {
+    font - size: 15px;
+    font - weight: 700;
+    text - align: center;
+    letter - spacing: -0.01em;
+    text - shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+        .smarthirex - file - upload - indicator.hint {
+    font - size: 12px;
+    opacity: 0.9;
+    font - weight: 500;
+    text - align: center;
+}
+`;
 }
 
 async function showMissingDataModal(missingFields, allFields) {
@@ -3634,9 +3991,9 @@ async function showMissingDataModal(missingFields, allFields) {
         const header = document.createElement('div');
         header.className = 'smarthirex-dialog-header';
         header.innerHTML = `
-            <h3>Additional Information Needed</h3>
-            <p>We need a few more details to complete the form</p>
-        `;
+    < h3 > Additional Information Needed</h3 >
+        <p>We need a few more details to complete the form</p>
+`;
 
         // Dialog content
         const content = document.createElement('div');
@@ -3657,7 +4014,7 @@ async function showMissingDataModal(missingFields, allFields) {
 
             const fieldLabel = document.createElement('label');
             fieldLabel.textContent = label || fieldPurpose;
-            fieldLabel.setAttribute('for', `smarthirex-field-${fieldPurpose}`);
+            fieldLabel.setAttribute('for', `smarthirex - field - ${fieldPurpose} `);
 
             let input;
             if (fieldType === 'textarea' || fieldPurpose.includes('letter') || fieldPurpose.includes('why')) {
@@ -3668,9 +4025,9 @@ async function showMissingDataModal(missingFields, allFields) {
                 input.type = fieldType === 'email' ? 'email' : 'text';
             }
 
-            input.id = `smarthirex-field-${fieldPurpose}`;
+            input.id = `smarthirex - field - ${fieldPurpose} `;
             input.name = fieldPurpose;
-            input.placeholder = `Enter ${label || fieldPurpose}`;
+            input.placeholder = `Enter ${label || fieldPurpose} `;
             input.required = true;
 
             fieldGroup.appendChild(fieldLabel);
@@ -3755,24 +4112,24 @@ function renderPremiumInput(fieldInfo, value, confidence) {
                     const optLabel = typeof opt === 'object' ? (opt.label || opt.value || opt) : opt;
                     const isChecked = optValue == value || optLabel == value;
                     return `
-                        <label class="premium-radio-option">
-                            <input type="radio" name="preview-${fieldInfo.selector}" value="${escapeValue(optValue)}" ${isChecked ? 'checked' : ''}>
-                            <span class="radio-label">${optLabel}</span>
-                        </label>
-                    `;
+    < label class="premium-radio-option" >
+        <input type="radio" name="preview-${fieldInfo.selector}" value="${escapeValue(optValue)}" ${isChecked ? 'checked' : ''}>
+            <span class="radio-label">${optLabel}</span>
+        </label>
+`;
                 }).join('');
-                return `<div class="premium-radio-group">${radioOptions}</div>`;
+                return `< div class="premium-radio-group" > ${radioOptions}</div > `;
             }
-            return `<input type="text" class="value-input" value="${escapeValue(value)}" ${lowConfidenceStyle}>`;
+            return `< input type = "text" class="value-input" value = "${escapeValue(value)}" ${lowConfidenceStyle}> `;
 
         case 'checkbox':
             const isChecked = value === true || value === 'true' || value === '1' || value === 'yes' || value === 'on';
             return `
-                <label class="premium-checkbox">
-                    <input type="checkbox" class="value-checkbox" ${isChecked ? 'checked' : ''}>
-                    <span class="checkbox-label">${isChecked ? 'Yes' : 'No'}</span>
-                </label>
-            `;
+    < label class="premium-checkbox" >
+        <input type="checkbox" class="value-checkbox" ${isChecked ? 'checked' : ''}>
+            <span class="checkbox-label">${isChecked ? 'Yes' : 'No'}</span>
+        </label>
+`;
 
         case 'select':
             if (fieldInfo.options && fieldInfo.options.length > 0) {
@@ -3780,38 +4137,38 @@ function renderPremiumInput(fieldInfo, value, confidence) {
                     const optValue = typeof opt === 'object' ? (opt.value || opt) : opt;
                     const optLabel = typeof opt === 'object' ? (opt.label || opt.value || opt) : opt;
                     const isSelected = optValue == value || optLabel == value;
-                    return `<option value="${escapeValue(optValue)}" ${isSelected ? 'selected' : ''}>${optLabel}</option>`;
+                    return `< option value = "${escapeValue(optValue)}" ${isSelected ? 'selected' : ''}> ${optLabel}</option > `;
                 }).join('');
                 return `
-                    <select class="premium-select value-input" ${lowConfidenceStyle}>
-                        <option value="">Select...</option>
+    < select class="premium-select value-input" ${lowConfidenceStyle}>
+        <option value="">Select...</option>
                         ${selectOptions}
-                    </select>
-                `;
+                    </select >
+    `;
             }
-            return `<input type="text" class="value-input" value="${escapeValue(value)}" ${lowConfidenceStyle}>`;
+            return `< input type = "text" class="value-input" value = "${escapeValue(value)}" ${lowConfidenceStyle}> `;
 
         case 'date':
         case 'datetime-local':
         case 'time':
         case 'month':
         case 'week':
-            return `<input type="${inputType}" class="premium-date value-input" value="${escapeValue(value)}" ${lowConfidenceStyle}>`;
+            return `< input type = "${inputType}" class="premium-date value-input" value = "${escapeValue(value)}" ${lowConfidenceStyle}> `;
 
         case 'number':
         case 'range':
-            return `<input type="number" class="premium-number value-input" value="${escapeValue(value)}" ${lowConfidenceStyle}>`;
+            return `< input type = "number" class="premium-number value-input" value = "${escapeValue(value)}" ${lowConfidenceStyle}> `;
 
         case 'textarea':
-            return `<textarea class="premium-textarea value-input" rows="2" ${lowConfidenceStyle}>${escapeValue(value)}</textarea>`;
+            return `< textarea class="premium-textarea value-input" rows = "2" ${lowConfidenceStyle}> ${escapeValue(value)}</textarea > `;
 
         case 'email':
         case 'tel':
         case 'url':
-            return `<input type="${inputType}" class="value-input" value="${escapeValue(value)}" ${lowConfidenceStyle} placeholder="${inputType === 'email' ? 'name@example.com' : ''}">`;
+            return `< input type = "${inputType}" class="value-input" value = "${escapeValue(value)}" ${lowConfidenceStyle} placeholder = "${inputType === 'email' ? 'name@example.com' : ''}" > `;
 
         default:
-            return `<input type="text" class="value-input" value="${escapeValue(value)}" ${lowConfidenceStyle}>`;
+            return `< input type = "text" class="value-input" value = "${escapeValue(value)}" ${lowConfidenceStyle}> `;
     }
 }
 
