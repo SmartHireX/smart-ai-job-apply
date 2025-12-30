@@ -229,7 +229,7 @@ async function processPageForm(token, userEmail, apiBaseUrl) {
         if (!analysis.success || analysis.data.error) throw new Error(analysis.data?.error_message || 'Analysis failed');
 
         // 3. Map Data (via Proxy)
-        showProcessingWidget('Mapping your profile data...', 3);
+        showProcessingWidget('Mapping your data to form...', 3);
         const mapping = await makeProxyRequest('POST', `${apiBaseUrl}/autofill/map-data`, token, {
             user_email: userEmail,
             form_fields: analysis.data.fields
@@ -1830,10 +1830,20 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
             const isExpanded = header.classList.contains('expanded');
 
             if (isExpanded) {
+                // Close this section
                 header.classList.remove('expanded');
                 header.classList.add('collapsed');
                 content.classList.remove('expanded');
             } else {
+                // Close all other sections first
+                headers.forEach(otherHeader => {
+                    const otherContent = otherHeader.nextElementSibling;
+                    otherHeader.classList.remove('expanded');
+                    otherHeader.classList.add('collapsed');
+                    otherContent.classList.remove('expanded');
+                });
+
+                // Then open this section
                 header.classList.remove('collapsed');
                 header.classList.add('expanded');
                 content.classList.add('expanded');
@@ -1881,19 +1891,19 @@ function addAccordionStyles() {
             left: 24px;
             width: 360px;
             max-height: 80vh;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(20px);
-            border-radius: 16px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
             box-shadow: 
-                0 20px 25px -5px rgba(0, 0, 0, 0.1),
-                0 8px 10px -6px rgba(0, 0, 0, 0.1),
-                0 0 0 1px rgba(0,0,0,0.05); /* Ring */
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0,0,0,0.05);
             z-index: 999999;
             font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            animation: slideInFromBottomLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: slideInFromBottomLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         
         @keyframes slideInFromBottomLeft {
@@ -1915,8 +1925,8 @@ function addAccordionStyles() {
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             background: #0a66c2;
             color: white;
-            border-radius: 16px 16px 0 0;
-            box-shadow: 0 4px 12px rgba(10, 102, 194, 0.2);
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
         #smarthirex-accordion-sidebar .header-title {
@@ -1965,10 +1975,14 @@ function addAccordionStyles() {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 14px 20px;
+            padding: 14px 20px 14px 17px;
             cursor: pointer;
             transition: all 0.2s;
             user-select: none;
+            background: #f8fafc;
+            border: 1px solid rgba(10,102,194,0.15);
+            border-left: 3px solid #0a66c2;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
         
         #smarthirex-accordion-sidebar .section-header:hover {
@@ -2022,11 +2036,12 @@ function addAccordionStyles() {
             transition: all 0.2s;
             border-left: 3px solid transparent;
             border-bottom: 1px solid #f3f4f6;
+            background: #f9fafb;
         }
         
         #smarthirex-accordion-sidebar .field-item:hover {
-            background: #f9fafb;
-            border-left-color: #0a66c2;
+            background: #eff0f3ff;
+            border-left-color: #64748b;
         }
         
         #smarthirex-accordion-sidebar .field-info {
@@ -2210,15 +2225,19 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
         return;
     }
 
-    console.log(`Found ${fieldsWithInfo.length} low - confidence fields to display`);
+    // Separate File Uploads from regular Low Confidence fields
+    const lowConfFields = fieldsWithInfo.filter(f => !f.isFileUpload);
+    const fileUploadFields = fieldsWithInfo.filter(f => f.isFileUpload);
+
+    console.log(`Found ${lowConfFields.length} review fields and ${fileUploadFields.length} file uploads`);
 
     // Create the sidebar panel
     const panel = document.createElement('div');
     panel.id = 'smarthirex-lowconf-panel';
     panel.innerHTML = `
-    < div class="panel-header" >
-            <div class="header-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <div class="panel-header" style="background: #0a66c2; border-bottom: 1px solid rgba(255,255,255,0.1); border-radius: 2px 2px 0 0; flex-shrink: 0;">
+            <div class="header-icon" style="background: rgba(255,255,255,0.2); border-radius: 6px; padding: 4px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -2231,7 +2250,7 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
                 </div>
                 <div class="header-subtitle">Please review and complete</div>
             </div>
-            <button class="close-btn" id="smarthirex-lowconf-close" style="color: white !important;">
+            <button class="close-btn" id="smarthirex-lowconf-close" style="color: white !important; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
@@ -2239,24 +2258,23 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
             </button>
         </div>
         <div class="panel-divider"></div>
-        <div class="panel-list">
-            ${fieldsWithInfo.map((item, i) => {
+        <div class="panel-list" style="flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0; position: relative;">
+            
+            ${lowConfFields.length > 0 ? `
+            <div class="section-header" style="position: sticky; top: 0; background: rgba(248,250,252,0.98); backdrop-filter: blur(8px); padding: 12px 24px 8px 20px; font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid rgba(10,102,194,0.15); border-left: 3px solid #0a66c2; box-shadow: 0 1px 2px rgba(0,0,0,0.02); z-index: 10;">
+                Review Required (${lowConfFields.length})
+            </div>
+            ${lowConfFields.map((item, i) => {
         const confidencePercent = Math.round(item.confidence * 100);
         const confidenceClass = item.confidence >= 0.7 ? 'medium' : 'low';
-
-        // Special styling for file uploads
-        const isFile = item.isFileUpload;
-        const fieldIcon = isFile ? '📎' : (i + 1);
-        const fieldNumClass = isFile ? 'file-upload-icon' : '';
-
         return `
-                    <div class="field-item ${isFile ? 'file-upload-item' : ''}" data-idx="${i}">
-                        <div class="field-number ${fieldNumClass}">${fieldIcon}</div>
+                    <div class="field-item" data-idx="${i}" style="padding-left: 32px; background: #f9fafb;">
+                        <div class="field-number">${i + 1}</div>
                         <div class="field-content">
                             <div class="field-label">${item.label}</div>
                             <div class="field-hint">
-                                <span class="field-type-badge ${isFile ? 'file-badge' : ''}">${isFile ? 'FILE UPLOAD' : item.fieldType.toUpperCase()}</span>
-                                ${!isFile ? `<span class="field-confidence-badge ${confidenceClass}">${confidencePercent}% confidence</span>` : '<span class="field-priority-badge">Required</span>'}
+                                <span class="field-type-badge ${item.fieldType}">${item.fieldType.toUpperCase()}</span>
+                                <span class="field-confidence-badge ${confidenceClass}">${confidencePercent}% confidence</span>
                             </div>
                         </div>
                         <div class="field-arrow">
@@ -2267,8 +2285,34 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
                     </div>
                 `;
     }).join('')}
+            ` : ''}
+
+            ${fileUploadFields.length > 0 ? `
+            <div class="section-header" style="position: sticky; top: ${lowConfFields.length > 0 ? '0' : '0'}; background: rgba(248,250,252,0.98); backdrop-filter: blur(8px); padding: 12px 24px 8px 20px; font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid rgba(10,102,194,0.15); border-left: 3px solid #0a66c2; box-shadow: 0 1px 2px rgba(0,0,0,0.02); z-index: 10;">
+                File Uploads (${fileUploadFields.length})
+            </div>
+            ${fileUploadFields.map((item, i) => {
+        return `
+                    <div class="field-item file-upload-item" data-idx="${lowConfFields.length + i}" style="padding-left: 32px; background: #f9fafb;">
+                        <div class="field-number file-upload-icon">📎</div>
+                        <div class="field-content">
+                            <div class="field-label">${item.label}</div>
+                            <div class="field-hint">
+                                <span class="field-type-badge file-badge">FILE UPLOAD</span>
+                                <span class="field-priority-badge">Required</span>
+                            </div>
+                        </div>
+                        <div class="field-arrow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </div>
+                    </div>
+                `;
+    }).join('')}
+            ` : ''}
         </div>
-        <div class="panel-footer">
+        <div class="panel-footer" style="flex-shrink: 0;">
             <div class="footer-icon">⚠️</div>
             <div class="footer-text">Confidence below 90% - verify before submitting</div>
         </div>
@@ -2339,25 +2383,23 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
         const style = document.createElement('style');
         style.id = 'lowconf-sidebar-styles';
         style.textContent = `
-#smarthirex - lowconf - panel {
+#smarthirex-lowconf-panel {
     position: fixed;
     left: 24px;
     bottom: 24px;
     width: 400px;
-    max - height: 520px;
-    background: rgba(255, 255, 255, 0.98);
-    backdrop - filter: blur(20px);
-    -webkit - backdrop - filter: blur(20px);
-    border - radius: 20px;
-    box - shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.04),
-        0 8px 16px - 4px rgba(0, 0, 0, 0.08),
-            0 20px 40px - 8px rgba(0, 0, 0, 0.12),
-                0 32px 64px - 12px rgba(0, 0, 0, 0.14);
-    z - index: 2147483647!important;
-    font - family: -apple - system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans - serif;
-    animation: slideInFromBottomLeft 0.6s cubic - bezier(0.16, 1, 0.3, 1);
-    border: 1px solid rgba(10, 102, 194, 0.1);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-radius: 2px;
+    box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    z-index: 2147483647 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
+    animation: slideInFromBottomLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid #e2e8f0;
     overflow: hidden;
 }
 
@@ -2372,24 +2414,7 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
     }
 }
 
-#smarthirex - lowconf - panel::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear - gradient(90deg, 
-                #0a66c2 0 %, 
-                #3b82f6 25 %, 
-                #60a5fa 50 %, 
-                #3b82f6 75 %, 
-                #0a66c2 100 %
-            );
-    background - size: 200 % 100 %;
-    animation: shimmer 3s linear infinite;
-    opacity: 0.5;
-}
+
 
 @keyframes shimmer {
     0 % { background- position: 200 % 0;
@@ -2511,12 +2536,12 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
 }
 
 #smarthirex - lowconf - panel.field - item:hover {
-    background: rgba(255, 255, 255, 0.9);
-    border - color: rgba(245, 158, 11, 0.3);
+    background: #e5e7eb !important;
+    border-left: 3px solid #64748b !important;
     transform: translateX(6px) scale(1.02);
     box - shadow:
     0 4px 12px rgba(0, 0, 0, 0.08),
-        0 0 0 1px rgba(245, 158, 11, 0.1);
+        0 0 0 1px rgba(100, 116, 139, 0.1);
 }
 
 #smarthirex - lowconf - panel.field - item: hover::before {
