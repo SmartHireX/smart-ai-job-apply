@@ -1210,7 +1210,7 @@ function highlightFileField(element) {
 /**
  * Ghost Typer: Simulates human typing into an element
  */
-async function simulateTyping(element, value) {
+async function simulateTyping(element, value, confidence = 1.0) {
     if (!element || !value) return;
 
     // Add typing visual state
@@ -1244,7 +1244,8 @@ async function simulateTyping(element, value) {
 
     // Remove typing state and add filled state
     element.classList.remove('smarthirex-typing');
-    element.classList.add('smarthirex-filled');
+    // Use highlightField to apply the confidence-based color persistence
+    highlightField(element, confidence);
 
     // Final events to ensure state is saved
     dispatchChangeEvents(element);
@@ -1313,13 +1314,25 @@ function fillForm(mappings) {
             // NORMALIZATION: Normalize value based on field type
             const normalizedValue = normalizeValue(value, fieldType);
 
-            // Fill based on element type using enterprise helper
-            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT') {
+            // Confidence extraction
+            const confidence = (fieldData && typeof fieldData === 'object') ? fieldData.confidence : 1.0;
+
+            // Fill based on element type
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                const type = element.type?.toLowerCase();
+                // Use typing animation for text-like inputs
+                if (!['checkbox', 'radio', 'file', 'hidden', 'color', 'range', 'date', 'datetime-local', 'time', 'week', 'month'].includes(type)) {
+                    // Fire and forget typing animation (parallel filling)
+                    simulateTyping(element, normalizedValue, confidence);
+                } else {
+                    setFieldValue(element, normalizedValue);
+                    highlightField(element, confidence);
+                }
+            } else if (element.tagName === 'SELECT') {
                 setFieldValue(element, normalizedValue);
+                highlightField(element, confidence);
             }
 
-            // Add highlight animation
-            highlightField(element);
             filledFields.push(element);
             filledCount++;
 
@@ -2017,25 +2030,56 @@ function addAccordionStyles() {
         }
 
         /* PREMIUM GHOST TYPER STYLES */
+        /* PREMIUM GHOST TYPER STYLES - "Magical Shimmer" */
         .smarthirex-typing {
-            background: linear-gradient(90deg, rgba(10, 102, 194, 0.03) 0%, rgba(10, 102, 194, 0.1) 50%, rgba(10, 102, 194, 0.03) 100%) !important;
+            background: linear-gradient(
+                90deg, 
+                rgba(10, 102, 194, 0.0) 0%, 
+                rgba(10, 102, 194, 0.1) 25%, 
+                rgba(10, 102, 194, 0.25) 50%, 
+                rgba(10, 102, 194, 0.1) 75%, 
+                rgba(10, 102, 194, 0.0) 100%
+            ) !important;
             background-size: 200% 100% !important;
-            animation: shimmerType 1.5s infinite linear !important;
+            animation: magicalShimmer 1s infinite linear !important;
             border-color: #0a66c2 !important;
-            box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.25) !important;
+            box-shadow: 
+                0 0 0 4px rgba(10, 102, 194, 0.15),
+                0 0 15px rgba(10, 102, 194, 0.2) !important;
             transition: all 0.2s ease !important;
             position: relative !important;
         }
 
-        @keyframes shimmerType {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+        @keyframes magicalShimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
         }
         
         .smarthirex-filled {
             background-color: rgba(16, 185, 129, 0.05) !important;
             border-color: #10b981 !important;
             transition: background-color 0.5s ease !important;
+        }
+
+        .smarthirex-filled-high {
+            background-color: rgba(16, 185, 129, 0.05) !important;
+            border: 2px solid #10b981 !important;
+            outline: none !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .smarthirex-filled-medium {
+            background-color: rgba(59, 130, 246, 0.05) !important;
+            border: 2px solid #3b82f6 !important;
+            outline: none !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .smarthirex-filled-low {
+            background-color: rgba(239, 68, 68, 0.05) !important;
+            border: 2px solid #ef4444 !important;
+            outline: none !important;
+            transition: all 0.3s ease !important;
         }
     `;
 
@@ -2127,13 +2171,8 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
                 </div>
                 <div class="header-subtitle">Please review and complete</div>
             </div>
-            <button class="close-btn" id="smarthirex-lowconf-close">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>
-        </div >
+            </div>
+        </div>
         <div class="panel-divider"></div>
         <div class="panel-list">
             ${fieldsWithInfo.map((item, i) => {
@@ -2173,15 +2212,7 @@ function showLowConfidenceFieldsSidebar(skippedFields) {
     document.body.appendChild(panel);
 
     // Securely attach close listener
-    const lowConfCloseBtn = panel.querySelector('#smarthirex-lowconf-close');
-    if (lowConfCloseBtn) {
-        lowConfCloseBtn.addEventListener('click', () => {
-            const p = document.getElementById('smarthirex-lowconf-panel');
-            if (p) p.remove();
-            document.querySelectorAll('.smarthirex-lowconf-overlay').forEach(el => el.remove());
-            document.querySelectorAll('.smarthirex-lowconf-highlight').forEach(el => el.classList.remove('smarthirex-lowconf-highlight'));
-        });
-    }
+
 
     // Add highlighting to low-confidence fields
     fieldsWithInfo.forEach((item, index) => {
@@ -3213,10 +3244,19 @@ function undoFormFill() {
     }
 }
 
-// Highlight filled field with animation
-function highlightField(element) {
-    // Add highlight class
-    element.classList.add('smarthirex-filled');
+// Highlight filled field with animation and confidence-based color
+function highlightField(element, confidence = 1.0) {
+    // Determine class based on confidence
+    let filledClass = 'smarthirex-filled-high'; // Default (Green)
+
+    if (confidence <= 0.5) {
+        filledClass = 'smarthirex-filled-low'; // Red
+    } else if (confidence <= 0.9) {
+        filledClass = 'smarthirex-filled-medium'; // Blue
+    }
+
+    // Add highlight class (persistent)
+    element.classList.add(filledClass);
 
     // Create ripple effect
     const rect = element.getBoundingClientRect();
@@ -3233,11 +3273,6 @@ function highlightField(element) {
     setTimeout(() => {
         ripple.remove();
     }, 1000);
-
-    // Remove highlight after delay
-    setTimeout(() => {
-        element.classList.remove('smarthirex-filled');
-    }, 3000);
 }
 
 // Highlight submit button
