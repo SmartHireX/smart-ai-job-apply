@@ -536,6 +536,30 @@ function isFieldVisible(element) {
     } catch { return false; }
 }
 
+// Helper: Universal Setter for React/Angular compatibility
+function setNativeValue(element, value) {
+    const lastValue = element.value;
+    element.value = value;
+    const event = new Event('input', { bubbles: true });
+    // React 15/16 hack
+    const tracker = element._valueTracker;
+    if (tracker) {
+        tracker.setValue(lastValue);
+    }
+    // Generic hack
+    let descriptor = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+    // Keep trying prototypes if not found (for some custom elements)
+    if (!descriptor && window.HTMLTextAreaElement) {
+        descriptor = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
+    }
+
+    if (descriptor && descriptor.set) {
+        descriptor.set.call(element, value);
+    }
+
+    element.dispatchEvent(event);
+}
+
 async function simulateTyping(element, value, confidence = 1.0) {
     if (!element || !value) return;
 
@@ -547,13 +571,16 @@ async function simulateTyping(element, value, confidence = 1.0) {
     const isText = (element.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'color', 'file', 'date', 'time'].includes(element.type)) || element.tagName === 'TEXTAREA';
 
     if (isText) {
-        element.value = '';
+        // Use Native Setter for robust filling
+        setNativeValue(element, '');
+
         const chars = String(value).split('');
         for (const char of chars) {
-            element.value += char;
-            element.dispatchEvent(new Event('input', { bubbles: true }));
-            // Random delay 10-30ms
-            await new Promise(r => setTimeout(r, Math.random() * 20 + 10)); // FAST
+            const currentVal = element.value;
+            setNativeValue(element, currentVal + char);
+
+            // Random delay 10-20ms (Human-like but fast)
+            await new Promise(r => setTimeout(r, Math.random() * 15 + 5));
         }
     } else {
         await new Promise(r => setTimeout(r, 100));
@@ -575,9 +602,9 @@ function setFieldValue(element, value) {
         else if (type === 'checkbox') setCheckboxValue(element, value);
         else if (['date', 'time', 'datetime-local'].includes(type)) setDateTimeValue(element, value);
         else if (type === 'file') highlightFileField(element);
-        else setTextValue(element, value);
+        else setNativeValue(element, value); // React Safe
     } else if (tagName === 'TEXTAREA') {
-        setTextValue(element, value);
+        setNativeValue(element, value); // React Safe
     } else if (tagName === 'SELECT') {
         setSelectValue(element, value);
     }
