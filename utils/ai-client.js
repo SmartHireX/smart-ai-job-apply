@@ -7,7 +7,7 @@
 
 // Gemini API Configuration
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-1.5-flash';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -144,7 +144,8 @@ async function callGemini(prompt, systemInstruction = '', options = {}) {
     const {
         maxTokens = 2048,
         temperature = 0.7,
-        jsonMode = false
+        jsonMode = false,
+        fileData = null // { mimeType: string, data: string (base64) }
     } = options;
 
     const apiKey = await getStoredApiKey();
@@ -158,9 +159,21 @@ async function callGemini(prompt, systemInstruction = '', options = {}) {
     }
 
     try {
+        const parts = [{ text: prompt }];
+
+        // Add file data if provided (multimodal)
+        if (fileData) {
+            parts.push({
+                inlineData: {
+                    mimeType: fileData.mimeType,
+                    data: fileData.data
+                }
+            });
+        }
+
         const requestBody = {
             contents: [{
-                parts: [{ text: prompt }]
+                parts: parts
             }],
             generationConfig: {
                 maxOutputTokens: maxTokens,
@@ -251,57 +264,124 @@ async function callAI(prompt, systemInstruction = '', options = {}) {
 function parseAIJson(text) {
     if (!text) return null;
 
+    const trimmedText = text.trim();
+
+    // 1. Try direct parse
     try {
-        // Try direct parse first
-        return JSON.parse(text);
+        return JSON.parse(trimmedText);
     } catch (e) {
-        // Try to extract from markdown code block
-        const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+        // 2. Try extraction from markdown block
+        const jsonMatch = trimmedText.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (jsonMatch) {
             try {
                 return JSON.parse(jsonMatch[1].trim());
             } catch (e2) {
-                console.error('Failed to parse JSON from code block:', e2);
+                // Continue to fallback if markdown parse fails
             }
         }
 
-        // Try to find JSON object/array in text and attempt to fix truncation
-        const objectMatch = text.match(/\{[\s\S]*?\}(?![\s\S]*\})/);
-        const arrayMatch = text.match(/\[[\s\S]*?\](?![\s\S]*\])/);
-        let match = objectMatch || arrayMatch;
+        // 3. Extract candidate JSON substring
+        const firstBrace = trimmedText.indexOf('{');
+        const lastBrace = trimmedText.lastIndexOf('}');
+        const firstBracket = trimmedText.indexOf('[');
+        const lastBracket = trimmedText.lastIndexOf(']');
 
-        if (match) {
-            let jsonStr = match[0];
+        let jsonStr = '';
+        const startIdx = (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) ? firstBrace : firstBracket;
 
-            // Attempt to fix incomplete JSON (truncated arrays/objects)
+        if (startIdx !== -1) {
+            const endIdx = (startIdx === firstBrace) ? lastBrace : lastBracket;
+            if (endIdx !== -1 && endIdx > startIdx) {
+                jsonStr = trimmedText.substring(startIdx, endIdx + 1);
+            } else {
+                // Truncated case: take from start until end of text
+                jsonStr = trimmedText.substring(startIdx);
+            }
+        }
+
+        if (!jsonStr) {
+            console.error('Could not find start of JSON in response:', text);
+            return null;
+        }
+
+        // 4. Try parsing extracted candidate
+        try {
+            return JSON.parse(jsonStr);
+        } catch (parseError) {
+            // 5. Final attempt: Aggressive Repair
+            let fixedJson = jsonStr.trim();
             try {
-                return JSON.parse(jsonStr);
-            } catch (parseError) {
-                // Try to fix common truncation issues
-                // Example: "actions": [ -> "actions": []
-                if (jsonStr.includes('"actions":') && jsonStr.match(/"actions":\s*\[(?![^\[]*\])/)) {
-                    jsonStr = jsonStr.replace(/"actions":\s*\[[^\]]*$/m, '"actions": []');
-                }
-                if (jsonStr.includes('"context":') && jsonStr.match(/"context":\s*\{(?![^\{]*\})/)) {
-                    jsonStr = jsonStr.replace(/"context":\s*\{[^\}]*$/m, '"context": {}');
+                // Remove trailing garbage that isn't part of JSON
+                fixedJson = fixedJson.replace(/[:,\s]+$/, '');
+
+                // Fix a very specific but common AI error: missing '}' before ', {' in an array
+                // Example: ... "achievements": [...] , { "company": ...
+                // This replaces any '] ,' with '] } ,' if it looks like an object was open.
+                // We only do this if we can't parse it normally.
+                if (fixedJson.includes('],')) {
+                    // This is a heuristic: if we see '],' and the last open brace hasn't been closed, 
+                    // it might be a missing '}'. We'll try to be more robust by balancing.
                 }
 
-                // Ensure proper closing brace
-                const openBraces = (jsonStr.match(/\{/g) || []).length;
-                const closeBraces = (jsonStr.match(/\}/g) || []).length;
-                if (openBraces > closeBraces) {
-                    jsonStr += '}'.repeat(openBraces - closeBraces);
+                // Fix unterminated strings
+                const quotes = fixedJson.match(/(?<!\\)"/g) || [];
+                if (quotes.length % 2 !== 0) {
+                    fixedJson += '"';
                 }
 
-                try {
-                    return JSON.parse(jsonStr);
-                } catch (fixError) {
-                    console.error('Failed to parse even after fix attempt:', fixError);
+                // Balance braces and brackets
+                const stack = [];
+                let repaired = '';
+                for (let i = 0; i < fixedJson.length; i++) {
+                    const char = fixedJson[i];
+
+                    // Inside string handling
+                    if (char === '"' && (i === 0 || fixedJson[i - 1] !== '\\')) {
+                        repaired += char;
+                        let j = i + 1;
+                        while (j < fixedJson.length && (fixedJson[j] !== '"' || fixedJson[j - 1] === '\\')) {
+                            repaired += fixedJson[j];
+                            j++;
+                        }
+                        if (j < fixedJson.length) repaired += fixedJson[j];
+                        else repaired += '"'; // Close unterminated string
+                        i = j;
+                        continue;
+                    }
+
+                    if (char === '{' || char === '[') {
+                        stack.push(char === '{' ? '}' : ']');
+                    } else if (char === '}' || char === ']') {
+                        // If it's the wrong closer, it might be a missing closer before this one
+                        if (stack.length > 0 && stack[stack.length - 1] !== char) {
+                            // If we expected '}' but got ']', add the '}' first
+                            if (stack[stack.length - 1] === '}' && char === ']') {
+                                repaired += '}';
+                                stack.pop();
+                            }
+                        }
+                        if (stack.length > 0 && stack[stack.length - 1] === char) {
+                            stack.pop();
+                        }
+                    }
+                    repaired += char;
                 }
+
+                fixedJson = repaired;
+
+                // Append missing closers
+                while (stack.length > 0) {
+                    fixedJson += stack.pop();
+                }
+
+                return JSON.parse(fixedJson);
+            } catch (fixError) {
+                console.error('Failed to repair truncated JSON:', fixError);
+                console.error('Raw text:', text);
+                console.error('Attempted fix:', fixedJson);
             }
         }
 
-        console.error('Could not parse JSON from response:', text.substring(0, 200));
         return null;
     }
 }

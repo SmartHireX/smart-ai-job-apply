@@ -441,6 +441,264 @@ async function getResumeAsText() {
 }
 
 /**
+ * Parse raw resume text into structured JSON using AI
+ * @param {string} resumeText - Raw text content of the resume
+ * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+ */
+async function parseResumeText(resumeText) {
+    if (!resumeText || resumeText.trim().length < 50) {
+        return { success: false, error: 'Resume text is too short or empty.' };
+    }
+
+    const systemInstruction = `You are a professional resume parsing assistant.
+Analyze the provided resume text and extract all information into a structured JSON format.
+
+RULES:
+1. Extract personal info, professional summary, work experience (most recent first), education, skills, and projects.
+2. Format dates as "YYYY-MM" (e.g., "2023-01") or "Present".
+3. For Work Experience, split achievements into an array of strings.
+4. Ensure technical and soft skills are categorized correctly.
+5. If a field is not found, leave it as an empty string or empty array.
+6. The output MUST be a valid JSON object matching the provided schema template.
+7. MERGE SPLIT LETTERS into complete words (e.g., "P y t h o n" -> "Python").
+8. Do NOT invent or hallucinate data. Only use what is present in the text.`;
+
+    const prompt = `Convert the following resume text into structured JSON data.
+
+SCHEMA TEMPLATE:
+{
+    "personal": {
+        "firstName": "",
+        "lastName": "",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "linkedin": "",
+        "portfolio": "",
+        "github": ""
+    },
+    "summary": "",
+    "experience": [
+        {
+            "company": "",
+            "title": "",
+            "location": "",
+            "startDate": "YYYY-MM",
+            "endDate": "YYYY-MM or Present",
+            "current": false,
+            "description": "",
+            "achievements": []
+        }
+    ],
+    "education": [
+        {
+            "school": "",
+            "degree": "",
+            "field": "",
+            "startDate": "YYYY",
+            "endDate": "YYYY",
+            "gpa": ""
+        }
+    ],
+    "skills": {
+        "technical": [],
+        "soft": [],
+        "languages": [],
+        "certifications": []
+    },
+    "projects": [
+        {
+            "name": "",
+            "description": "",
+            "technologies": [],
+            "link": ""
+        }
+    ],
+    "customFields": {
+        "salaryExpectation": "",
+        "noticePeriod": "",
+        "workAuthorization": "",
+        "sponsorshipRequired": false,
+        "willingToRelocate": null,
+        "preferredLocation": "",
+        "veteranStatus": "",
+        "disabilityStatus": "",
+        "gender": "",
+        "ethnicity": "",
+        "referralSource": ""
+    }
+}
+
+RESUME TEXT:
+${resumeText}`;
+
+    try {
+        const result = await window.AIClient.callAI(prompt, systemInstruction, {
+            jsonMode: true,
+            temperature: 0.1, // Low temperature for higher extraction accuracy
+            maxTokens: 4096
+        });
+
+        if (result.success) {
+            const parsedData = window.AIClient.parseAIJson(result.text);
+            if (parsedData) {
+                // Ensure IDs are generated for new items
+                if (parsedData.experience) {
+                    parsedData.experience.forEach(exp => { if (!exp.id) exp.id = generateId(); });
+                }
+                if (parsedData.education) {
+                    parsedData.education.forEach(edu => { if (!edu.id) edu.id = generateId(); });
+                }
+                if (parsedData.projects) {
+                    parsedData.projects.forEach(proj => { if (!proj.id) proj.id = generateId(); });
+                }
+
+                return { success: true, data: parsedData };
+            } else {
+                return { success: false, error: 'Failed to parse AI response as JSON.' };
+            }
+        } else {
+            return { success: false, error: result.error };
+        }
+    } catch (error) {
+        console.error('Error parsing resume text:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Parse a resume PDF file into structured JSON using AI
+ * @param {string} base64Data - Base64 encoded PDF content
+ * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+ */
+async function parseResumeFile(base64Data) {
+    if (!base64Data) {
+        return { success: false, error: 'No file data provided.' };
+    }
+
+    const systemInstruction = `You are a professional resume parsing assistant.
+Analyze the provided resume (PDF or image) and extract all information into a structured JSON format.
+
+RULES:
+1. Extract personal info, professional summary, work experience (most recent first), education, skills, and projects.
+2. Format dates as "YYYY-MM" (e.g., "2023-01") or "Present".
+3. For Work Experience, split achievements into an array of strings.
+4. Ensure technical and soft skills are categorized correctly.
+5. If a field is not found, leave it as an empty string or empty array.
+6. The output MUST be a valid JSON object matching the provided schema template.
+7. Do NOT invent or hallucinate data. Only use what is present in the document.
+8. If the document is NOT a resume, return an error in JSON: {"error": "Not a resume"}`;
+
+    const prompt = `Convert the attached resume document into structured JSON data.
+
+SCHEMA TEMPLATE:
+{
+    "personal": {
+        "firstName": "",
+        "lastName": "",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "linkedin": "",
+        "portfolio": "",
+        "github": ""
+    },
+    "summary": "",
+    "experience": [
+        {
+            "company": "",
+            "title": "",
+            "location": "",
+            "startDate": "YYYY-MM",
+            "endDate": "YYYY-MM or Present",
+            "current": false,
+            "description": "",
+            "achievements": []
+        }
+    ],
+    "education": [
+        {
+            "school": "",
+            "degree": "",
+            "field": "",
+            "startDate": "YYYY",
+            "endDate": "YYYY",
+            "gpa": ""
+        }
+    ],
+    "skills": {
+        "technical": [],
+        "soft": [],
+        "languages": [],
+        "certifications": []
+    },
+    "projects": [
+        {
+            "name": "",
+            "description": "",
+            "technologies": [],
+            "link": ""
+        }
+    ],
+    "customFields": {
+        "salaryExpectation": "",
+        "noticePeriod": "",
+        "workAuthorization": "",
+        "sponsorshipRequired": false,
+        "willingToRelocate": null,
+        "preferredLocation": "",
+        "veteranStatus": "",
+        "disabilityStatus": "",
+        "gender": "",
+        "ethnicity": "",
+        "referralSource": ""
+    }
+}
+`;
+
+    try {
+        const result = await window.AIClient.callAI(prompt, systemInstruction, {
+            jsonMode: true,
+            temperature: 0.1,
+            maxTokens: 4096,
+            fileData: {
+                mimeType: 'application/pdf',
+                data: base64Data
+            }
+        });
+
+        if (result.success) {
+            const parsedData = window.AIClient.parseAIJson(result.text);
+            if (parsedData) {
+                if (parsedData.error) {
+                    return { success: false, error: parsedData.error };
+                }
+
+                // Ensure IDs are generated for new items
+                if (parsedData.experience) {
+                    parsedData.experience.forEach(exp => { if (!exp.id) exp.id = generateId(); });
+                }
+                if (parsedData.education) {
+                    parsedData.education.forEach(edu => { if (!edu.id) edu.id = generateId(); });
+                }
+                if (parsedData.projects) {
+                    parsedData.projects.forEach(proj => { if (!proj.id) proj.id = generateId(); });
+                }
+
+                return { success: true, data: parsedData };
+            } else {
+                return { success: false, error: 'Failed to parse AI response as JSON.' };
+            }
+        } else {
+            return { success: false, error: result.error };
+        }
+    } catch (error) {
+        console.error('Error parsing resume file:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
  * Deep merge two objects
  * @param {Object} target 
  * @param {Object} source 
@@ -480,6 +738,8 @@ if (typeof window !== 'undefined') {
         clearResumeData,
         getFlattenedResumeData,
         getResumeAsText,
+        parseResumeText,
+        parseResumeFile,
         generateId,
         DEFAULT_RESUME_SCHEMA,
         RESUME_STORAGE_KEY
@@ -499,6 +759,8 @@ if (typeof self !== 'undefined' && typeof self.ResumeManager === 'undefined') {
         clearResumeData,
         getFlattenedResumeData,
         getResumeAsText,
+        parseResumeText,
+        parseResumeFile,
         generateId,
         DEFAULT_RESUME_SCHEMA,
         RESUME_STORAGE_KEY

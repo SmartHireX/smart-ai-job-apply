@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize buttons
     initButtons();
 
+    // Initialize AI Import
+    initAIImport();
+
     // Load existing data
     await loadAllData();
 
@@ -40,17 +43,29 @@ function initTabs() {
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
 
+    // Tab switching
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            // Update active tab
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
+            const targetTab = tab.getAttribute('data-tab');
+            const targetSection = document.getElementById(`tab-${targetTab}`);
+            const tabTitle = document.getElementById('current-tab-title');
 
-            // Show corresponding content
-            const tabId = tab.dataset.tab;
-            tabContents.forEach(content => {
-                content.classList.toggle('active', content.id === `tab-${tabId}`);
-            });
+            if (targetSection) {
+                // Update tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Update sections
+                tabContents.forEach(content => content.classList.remove('active'));
+                targetSection.classList.add('active');
+
+                // Update header title
+                if (tabTitle) {
+                    tabTitle.textContent = tab.querySelector('.tab-text') ?
+                        tab.querySelector('.tab-text').textContent :
+                        tab.textContent.replace(/[^\w\s]/g, '').trim();
+                }
+            }
         });
     });
 }
@@ -211,6 +226,19 @@ function initExperienceSection() {
     document.getElementById('add-experience-btn').addEventListener('click', () => {
         showExperienceModal();
     });
+
+    document.getElementById('experience-list').addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+
+        const index = parseInt(btn.dataset.index);
+
+        if (btn.classList.contains('btn-edit')) {
+            showExperienceModal(index);
+        } else if (btn.classList.contains('btn-delete')) {
+            deleteExperience(index);
+        }
+    });
 }
 
 function renderExperienceList() {
@@ -241,8 +269,8 @@ function renderExperienceList() {
                     </div>
                 </div>
                 <div class="item-actions">
-                    <button class="btn btn-secondary" onclick="editExperience(${index})">Edit</button>
-                    <button class="btn btn-danger-outline" onclick="deleteExperience(${index})">Delete</button>
+                    <button class="btn btn-secondary btn-edit" data-index="${index}">Edit</button>
+                    <button class="btn btn-danger-outline btn-delete" data-index="${index}">Delete</button>
                 </div>
             </div>
             ${exp.description ? `<div class="item-description">${exp.description}</div>` : ''}
@@ -334,14 +362,16 @@ function showExperienceModal(index = null) {
     };
 }
 
-window.editExperience = (index) => showExperienceModal(index);
-window.deleteExperience = (index) => {
-    if (confirm('Are you sure you want to delete this experience?')) {
+
+
+
+function deleteExperience(index) {
+    showConfirmationModal(() => {
         experienceData.splice(index, 1);
         renderExperienceList();
         showToast('Experience deleted', 'success');
-    }
-};
+    });
+}
 
 // ============================================
 // EDUCATION SECTION
@@ -352,6 +382,19 @@ let educationData = [];
 function initEducationSection() {
     document.getElementById('add-education-btn').addEventListener('click', () => {
         showEducationModal();
+    });
+
+    document.getElementById('education-list').addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+
+        const index = parseInt(btn.dataset.index);
+
+        if (btn.classList.contains('btn-edit')) {
+            showEducationModal(index);
+        } else if (btn.classList.contains('btn-delete')) {
+            deleteEducation(index);
+        }
     });
 }
 
@@ -382,8 +425,8 @@ function renderEducationList() {
                     </div>
                 </div>
                 <div class="item-actions">
-                    <button class="btn btn-secondary" onclick="editEducation(${index})">Edit</button>
-                    <button class="btn btn-danger-outline" onclick="deleteEducation(${index})">Delete</button>
+                    <button class="btn btn-secondary btn-edit" data-index="${index}">Edit</button>
+                    <button class="btn btn-danger-outline btn-delete" data-index="${index}">Delete</button>
                 </div>
             </div>
         `;
@@ -458,14 +501,15 @@ function showEducationModal(index = null) {
     };
 }
 
-window.editEducation = (index) => showEducationModal(index);
-window.deleteEducation = (index) => {
-    if (confirm('Are you sure you want to delete this education?')) {
+
+
+function deleteEducation(index) {
+    showConfirmationModal(() => {
         educationData.splice(index, 1);
         renderEducationList();
         showToast('Education deleted', 'success');
-    }
-};
+    });
+}
 
 // ============================================
 // PROJECTS SECTION
@@ -476,6 +520,19 @@ let projectsData = [];
 function initProjectsSection() {
     document.getElementById('add-project-btn').addEventListener('click', () => {
         showProjectModal();
+    });
+
+    document.getElementById('projects-list').addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+
+        const index = parseInt(btn.dataset.index);
+
+        if (btn.classList.contains('btn-edit')) {
+            showProjectModal(index);
+        } else if (btn.classList.contains('btn-delete')) {
+            deleteProject(index);
+        }
     });
 }
 
@@ -504,8 +561,8 @@ function renderProjectsList() {
                 : ''}
                 </div>
                 <div class="item-actions">
-                    <button class="btn btn-secondary" onclick="editProject(${index})">Edit</button>
-                    <button class="btn btn-danger-outline" onclick="deleteProject(${index})">Delete</button>
+                    <button class="btn btn-secondary btn-edit" data-index="${index}">Edit</button>
+                    <button class="btn btn-danger-outline btn-delete" data-index="${index}">Delete</button>
                 </div>
             </div>
             ${proj.description ? `<div class="item-description">${proj.description}</div>` : ''}
@@ -569,14 +626,15 @@ function showProjectModal(index = null) {
     };
 }
 
-window.editProject = (index) => showProjectModal(index);
-window.deleteProject = (index) => {
-    if (confirm('Are you sure you want to delete this project?')) {
+
+
+function deleteProject(index) {
+    showConfirmationModal(() => {
         projectsData.splice(index, 1);
         renderProjectsList();
         showToast('Project deleted', 'success');
-    }
-};
+    });
+}
 
 // ============================================
 // CUSTOM FIELDS SECTION
@@ -599,80 +657,68 @@ function initButtons() {
     // Save button
     document.getElementById('save-btn').addEventListener('click', saveAllData);
 
-    // Export button
-    document.getElementById('export-btn').addEventListener('click', async () => {
-        const jsonStr = await window.ResumeManager.exportResumeJSON();
-        if (!jsonStr || jsonStr === 'null') {
-            showToast('No data to export', 'warning');
-            return;
-        }
+    // Clear data button initialization
+    const clearDataBtn = document.getElementById('clear-data-btn');
+    const clearDataModal = document.getElementById('clear-data-modal');
+    const clearDataCloseBtn = clearDataModal.querySelector('.modal-close');
+    const deleteConfirmInput = document.getElementById('delete-confirmation-input');
+    const confirmDeleteBtn = document.getElementById('modal-confirm-delete');
+    const cancelClearBtn = document.getElementById('modal-cancel-clear');
 
-        const blob = new Blob([jsonStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `smart-ai-job-apply-resume-${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast('Resume exported successfully!', 'success');
-    });
+    if (clearDataBtn) {
+        clearDataBtn.addEventListener('click', () => {
+            clearDataModal.classList.remove('hidden');
+            deleteConfirmInput.value = '';
+            confirmDeleteBtn.disabled = true;
+        });
+    }
 
-    // Import button
-    document.getElementById('import-btn').addEventListener('click', () => {
-        document.getElementById('import-file').click();
-    });
+    const hideClearDataModal = () => {
+        clearDataModal.classList.add('hidden');
+        deleteConfirmInput.value = '';
+    };
 
-    document.getElementById('import-file').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    if (clearDataCloseBtn) clearDataCloseBtn.addEventListener('click', hideClearDataModal);
+    if (cancelClearBtn) cancelClearBtn.addEventListener('click', hideClearDataModal);
 
-        try {
-            const text = await file.text();
-            const result = await window.ResumeManager.importResumeJSON(text);
+    if (deleteConfirmInput) {
+        deleteConfirmInput.addEventListener('input', (e) => {
+            confirmDeleteBtn.disabled = e.target.value !== 'DELETE';
+        });
+    }
 
-            if (result.success) {
-                await loadAllData();
-                showToast('Resume imported successfully!', 'success');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', async () => {
+            if (deleteConfirmInput.value === 'DELETE') {
+                await window.ResumeManager.clearResumeData();
+                await window.AIClient.removeApiKey();
+
+                // Reset UI
+                document.getElementById('api-key').value = '';
+                document.querySelectorAll('input[data-field], textarea[data-field], select[data-field]').forEach(el => {
+                    if (el.type === 'radio' || el.type === 'checkbox') {
+                        el.checked = false;
+                    } else {
+                        el.value = '';
+                    }
+                });
+                experienceData = [];
+                educationData = [];
+                projectsData = [];
+                renderExperienceList();
+                renderEducationList();
+                renderProjectsList();
+                ['technical-skills-tags', 'soft-skills-tags', 'languages-tags', 'certifications-tags'].forEach(id => {
+                    const container = document.getElementById(id);
+                    if (container) container.innerHTML = '';
+                });
+
+                clearDataModal.classList.add('hidden');
+                showToast('All data has been cleared', 'success');
                 updateDataStatus();
-            } else {
-                showToast(`Import failed: ${result.error}`, 'error');
             }
-        } catch (error) {
-            showToast('Failed to read file', 'error');
-        }
-
-        e.target.value = ''; // Reset file input
-    });
-
-    // Clear data button
-    document.getElementById('clear-data-btn').addEventListener('click', async () => {
-        if (confirm('Are you sure you want to clear ALL data? This cannot be undone.')) {
-            await window.ResumeManager.clearResumeData();
-            await window.AIClient.removeApiKey();
-
-            // Reset UI
-            document.getElementById('api-key').value = '';
-            document.querySelectorAll('input[data-field], textarea[data-field], select[data-field]').forEach(el => {
-                if (el.type === 'radio' || el.type === 'checkbox') {
-                    el.checked = false;
-                } else {
-                    el.value = '';
-                }
-            });
-            experienceData = [];
-            educationData = [];
-            projectsData = [];
-            renderExperienceList();
-            renderEducationList();
-            renderProjectsList();
-            ['technical-skills-tags', 'soft-skills-tags', 'languages-tags', 'certifications-tags'].forEach(id => {
-                document.getElementById(id).innerHTML = '';
-            });
-
-            showToast('All data cleared', 'success');
-            updateDataStatus();
-        }
-    });
+        });
+    }
 }
 
 // ============================================
@@ -863,6 +909,241 @@ async function updateDataStatus() {
 }
 
 // ============================================
+// AI IMPORT
+// ============================================
+
+function initAIImport() {
+    const aiImportBtn = document.getElementById('ai-import-btn');
+    const aiImportModal = document.getElementById('ai-import-modal');
+    const aiCloseBtn = document.getElementById('ai-import-close');
+    const statusEl = document.getElementById('ai-import-status');
+
+    // File Upload Elements
+    const fileInput = document.getElementById('ai-resume-file');
+    const uploadZone = document.getElementById('resume-upload-zone');
+    const selectedFileName = document.getElementById('selected-file-name');
+
+    let selectedFileBase64 = null;
+
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) handleFileSelection(file);
+    });
+
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type === 'application/pdf') {
+            handleFileSelection(file);
+        } else {
+            setStatus(statusEl, 'Please upload a PDF file.', 'error');
+        }
+    });
+
+    function setPremiumStatus(message, type) {
+        statusEl.innerHTML = '';
+        if (!message) return;
+
+        const statusDiv = document.createElement('div');
+        statusDiv.className = `status-premium ${type}`;
+        statusDiv.innerHTML = `
+            <span class="status-icon">${type === 'success' ? '✅' : '⚠️'}</span>
+            <span class="status-message">${message}</span>
+        `;
+        statusEl.appendChild(statusDiv);
+
+        if (type === 'error') {
+            document.getElementById('ai-processing-state').classList.add('hidden');
+            uploadZone.classList.remove('hidden');
+        }
+    }
+
+    const hideAIModal = () => {
+        aiImportModal.classList.add('hidden');
+        fileInput.value = '';
+        selectedFileBase64 = null;
+        selectedFileName.classList.add('hidden');
+        selectedFileName.textContent = '';
+        statusEl.innerHTML = '';
+        document.getElementById('ai-processing-state').classList.add('hidden');
+        document.getElementById('ai-import-note').classList.remove('hidden');
+        uploadZone.classList.remove('hidden');
+    };
+
+    async function handleFileSelection(file) {
+        if (file.size > 5 * 1024 * 1024) {
+            setPremiumStatus('File too large (max 5MB).', 'error');
+            return;
+        }
+
+        selectedFileName.textContent = `📄 ${file.name}`;
+        selectedFileName.classList.remove('hidden');
+        setPremiumStatus('', '');
+
+        // Convert to Base64 and trigger parsing
+        const reader = new FileReader();
+        reader.onload = async () => {
+            selectedFileBase64 = reader.result.split(',')[1];
+            await startAutoParsing();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function startAutoParsing() {
+        if (!selectedFileBase64) return;
+
+        startLoading();
+        try {
+            const result = await window.ResumeManager.parseResumeFile(selectedFileBase64);
+
+            if (result && result.success) {
+                await distributeParsedData(result.data);
+                setPremiumStatus('Success! Profile updated.', 'success');
+                showToast('Resume parsed successfully! Please review and save.', 'success');
+                setTimeout(hideAIModal, 2000);
+            } else {
+                setPremiumStatus(result ? `Failed: ${result.error}` : 'Parsing failed.', 'error');
+            }
+        } catch (error) {
+            setPremiumStatus('An unexpected error occurred.', 'error');
+            console.error('Auto-parsing error:', error);
+        } finally {
+            stopLoading();
+        }
+    }
+
+    function startLoading() {
+        document.getElementById('ai-processing-state').classList.remove('hidden');
+        document.getElementById('ai-import-note').classList.add('hidden');
+        uploadZone.classList.add('hidden');
+    }
+
+    function stopLoading() {
+        // Keeps processing state visible for feedback
+    }
+
+    // Modal Visibility
+    aiImportBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        aiImportModal.classList.remove('hidden');
+    });
+
+    aiCloseBtn.addEventListener('click', hideAIModal);
+
+    // File Handling
+    uploadZone.addEventListener('click', () => fileInput.click());
+}
+
+/**
+ * Distribute parsed resume data into the UI components
+ * @param {Object} data - Parsed resume data
+ */
+async function distributeParsedData(data) {
+    if (!data) return;
+
+    // Personal Info
+    if (data.personal) {
+        Object.entries(data.personal).forEach(([key, value]) => {
+            const el = document.querySelector(`[data-field="personal.${key}"]`);
+            if (el && value) el.value = value;
+        });
+    }
+
+    // Summary
+    if (data.summary) {
+        const el = document.querySelector('[data-field="summary"]');
+        if (el) el.value = data.summary;
+    }
+
+    // Skills
+    const skillsData = data.skills || data.skillSet || data.professionalSkills;
+    if (skillsData) {
+        const technical = skillsData.technical || skillsData.technicalSkills || skillsData.hardSkills || [];
+        const soft = skillsData.soft || skillsData.softSkills || [];
+        const languages = skillsData.languages || skillsData.spokenLanguages || [];
+        const certifications = skillsData.certifications || skillsData.courses || [];
+
+        if (technical.length > 0) setTagsInContainer('technical-skills-tags', Array.isArray(technical) ? technical : [technical]);
+        if (soft.length > 0) setTagsInContainer('soft-skills-tags', Array.isArray(soft) ? soft : [soft]);
+        if (languages.length > 0) setTagsInContainer('languages-tags', Array.isArray(languages) ? languages : [languages]);
+        if (certifications.length > 0) setTagsInContainer('certifications-tags', Array.isArray(certifications) ? certifications : [certifications]);
+    }
+
+    // Experience
+    const expData = data.experience || data.workHistory || data.employment || [];
+    if (expData.length > 0) {
+        const newExp = Array.isArray(expData) ? expData : [expData];
+        experienceData = [...newExp, ...experienceData];
+        // Remove duplicates based on title and company
+        experienceData = experienceData.reduce((acc, current) => {
+            const x = acc.find(item => item.title === current.title && item.company === current.company);
+            if (!x) return acc.concat([current]);
+            else return acc;
+        }, []);
+        renderExperienceList();
+    }
+
+    // Education
+    const eduData = data.education || data.educationHistory || data.academicBackground || [];
+    if (eduData.length > 0) {
+        const newEdu = Array.isArray(eduData) ? eduData : [eduData];
+        educationData = [...newEdu, ...educationData];
+        educationData = educationData.reduce((acc, current) => {
+            const x = acc.find(item => item.school === current.school && item.degree === current.degree);
+            if (!x) return acc.concat([current]);
+            else return acc;
+        }, []);
+        renderEducationList();
+    }
+
+    // Projects
+    if (data.projects && data.projects.length > 0) {
+        projectsData = [...data.projects, ...projectsData];
+        projectsData = projectsData.reduce((acc, current) => {
+            const x = acc.find(item => item.name === current.name);
+            if (!x) return acc.concat([current]);
+            else return acc;
+        }, []);
+        renderProjectsList();
+    }
+
+    // Custom Fields
+    if (data.customFields) {
+        Object.entries(data.customFields).forEach(([key, value]) => {
+            if (value === null || value === undefined) return;
+
+            // Find all matching elements (could be a single input or a group of radios)
+            const elements = document.querySelectorAll(`[data-field="customFields.${key}"]`);
+
+            elements.forEach(el => {
+                if (el.type === 'radio') {
+                    // For radios, check if the value matches (handling both string and boolean)
+                    const val = String(value).toLowerCase();
+                    const elVal = String(el.value).toLowerCase();
+                    if (val === elVal) el.checked = true;
+                } else if (el.tagName === 'SELECT') {
+                    // For selects, find the matching option
+                    el.value = value || '';
+                } else {
+                    // Default for text, tel, email, textarea
+                    el.value = value || '';
+                }
+            });
+        });
+    }
+}
+
+// ============================================
 // MODAL HELPERS
 // ============================================
 
@@ -917,4 +1198,29 @@ function showToast(message, type = 'success') {
             setTimeout(() => toast.remove(), 300);
         }
     }, 5000);
+}
+
+function showConfirmationModal(onConfirm) {
+    const modal = document.getElementById('generic-delete-modal');
+    const confirmBtn = document.getElementById('generic-delete-confirm');
+    const cancelBtn = document.getElementById('generic-delete-cancel');
+    const closeBtn = modal.querySelector('.modal-close');
+
+    // Remove old listeners to prevent stacking
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+    const closeModal = () => {
+        modal.classList.add('hidden');
+    };
+
+    newConfirmBtn.addEventListener('click', () => {
+        onConfirm();
+        closeModal();
+    });
+
+    cancelBtn.onclick = closeModal;
+    closeBtn.onclick = closeModal;
+
+    modal.classList.remove('hidden');
 }
