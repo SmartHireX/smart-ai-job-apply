@@ -897,7 +897,7 @@ function clearAllFieldHighlights() {
         el.classList.remove('smarthirex-spotlight');
     });
 
-    showSuccessToast('Visual highlights cleared! ✨');
+    console.log('✅ Visual highlights cleared');
 }
 
 function highlightSubmitButton() {
@@ -1274,24 +1274,23 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                 </svg>
                 <span>Form Review</span>
             </div>
-            <button class="close-btn" id="smarthirex-sidebar-close" aria-label="Close Sidebar" style="
-                display: block !important;
-                width: 24px !important;
-                height: 24px !important;
-                background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%223%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M18 6L6 18M6 6l12 12%22/%3E%3C/svg%3E') !important;
-                background-repeat: no-repeat !important;
-                background-position: center !important;
-                background-size: 16px 16px !important;
-                background-color: rgba(255, 255, 255, 0.2) !important;
-                border: 1px solid rgba(255, 255, 255, 0.3) !important;
-                border-radius: 6px !important;
-                cursor: pointer !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                min-width: 24px !important;
-                color: transparent !important; /* Hide any text leak */
-            ">
-            </button>
+            <div class="header-actions">
+                <button class="action-btn clear-highlights-btn" id="smarthirex-clear-highlights" title="Clear visual highlights">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M12 17v2M12 5v2M5 12H3M21 12h-2"/>
+                    </svg>
+                </button>
+                <button class="action-btn undo-btn" id="smarthirex-undo-fill" title="Undo form fill">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M3 7v6h6M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/>
+                    </svg>
+                </button>
+                <button class="close-btn" id="smarthirex-sidebar-close" aria-label="Close Sidebar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
         </div>
         
         <div class="sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
@@ -1445,7 +1444,25 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
         });
     }
 
-    // Footer Undo Handler
+    // Clear Highlights button
+    const clearHighlightsBtn = panel.querySelector('#smarthirex-clear-highlights');
+    if (clearHighlightsBtn) {
+        clearHighlightsBtn.addEventListener('click', () => {
+            clearAllFieldHighlights();
+        });
+    }
+
+    // Undo Fill button
+    const undoFillBtn = panel.querySelector('#smarthirex-undo-fill');
+    if (undoFillBtn) {
+        undoFillBtn.addEventListener('click', async () => {
+            await undoFormFill();
+            const sidebar = document.getElementById('smarthirex-accordion-sidebar');
+            if (sidebar) sidebar.remove();
+        });
+    }
+
+    // Footer Undo Handler (legacy, if exists)
     const undoBtn = panel.querySelector('#smarthirex-sidebar-undo');
     if (undoBtn) {
         undoBtn.addEventListener('click', () => {
@@ -1761,6 +1778,36 @@ function addAccordionStyles() {
             color: white;
             transform: scale(1.05);
             border-color: rgba(255, 255, 255, 0.4);
+        }
+        
+        #smarthirex-accordion-sidebar .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #smarthirex-accordion-sidebar .action-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        #smarthirex-accordion-sidebar .action-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        #smarthirex-accordion-sidebar .action-btn svg {
+            color: white;
         }
         
         #smarthirex-accordion-sidebar .accordion-section {
