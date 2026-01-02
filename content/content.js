@@ -1277,8 +1277,10 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                     </div>
                     <div class="section-content expanded" id="needsreview-content">
                         <div class="section-inner-wrapper">
-                        ${needsReviewFields.map((item, i) => `
-                            <div class="field-item warning-field" data-field-idx="review-${i}">
+                        ${needsReviewFields.map((item, i) => {
+        const isTextBased = ['text', 'textarea', 'email', 'tel', 'url', 'search'].includes(item.fieldType);
+        return `
+                            <div class="field-item warning-field" data-field-idx="review-${i}" data-selector="${item.selector}" data-field-type="${item.fieldType}">
                                 <div class="field-info">
                                     <div class="field-label">${item.label}</div>
                                     <div class="field-meta">
@@ -1286,11 +1288,21 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                                         <span class="field-confidence ${item.confidence >= 0.7 ? 'medium' : 'low'}">${Math.round(item.confidence * 100)}%</span>
                                     </div>
                                 </div>
-                                <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <polyline points="9 18 15 12 9 6"/>
-                                </svg>
+                                <div class="field-actions">
+                                    ${isTextBased ? `
+                                        <button class="regenerate-btn" data-selector="${item.selector}" data-label="${item.label}" title="Regenerate with AI" aria-label="Regenerate field">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                            </svg>
+                                        </button>
+                                    ` : ''}
+                                    <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polyline points="9 18 15 12 9 6"/>
+                                    </svg>
+                                </div>
                             </div>
-                        `).join('')}
+                        `;
+    }).join('')}
                     </div>
                 </div>
             </div>
