@@ -1198,6 +1198,159 @@ function showSuccessToast(filled, review) {
     setTimeout(() => { if (toast.parentNode) toast.remove(); }, 8000); // Slightly longer for people to find Undo
 }
 
+/**
+ * Setup dragging and resizing for the sidebar
+ */
+function setupSidebarInteractivity(panel) {
+    const header = panel.querySelector('.sidebar-header');
+    const handles = panel.querySelectorAll('.resize-handle');
+
+    let isDragging = false;
+    let isResizing = false;
+    let currentHandle = null;
+    let startX, startY, startWidth, startHeight, startLeft, startTop;
+    let aspectRatio = 1;
+
+    // Load saved state
+    chrome.storage.local.get(['sidebarPos', 'sidebarSize'], (data) => {
+        if (data.sidebarPos) {
+            panel.style.bottom = 'auto';
+            panel.style.left = data.sidebarPos.left + 'px';
+            panel.style.top = data.sidebarPos.top + 'px';
+        }
+        if (data.sidebarSize) {
+            panel.style.width = data.sidebarSize.width + 'px';
+            if (data.sidebarSize.height) {
+                panel.style.height = data.sidebarSize.height + 'px';
+            }
+        }
+    });
+
+    // DRAG LOGIC
+    header.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.header-actions') || e.target.closest('.close-btn')) return;
+
+        isDragging = true;
+        startX = e.clientX - panel.offsetLeft;
+        startY = e.clientY - panel.offsetTop;
+
+        panel.style.transition = 'none';
+        panel.style.bottom = 'auto'; // Switch to top/left positioning
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        e.preventDefault();
+    });
+
+    // RESIZE LOGIC
+    handles.forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            currentHandle = handle.classList[1];
+            startX = e.clientX;
+            startY = e.clientY;
+            startWidth = panel.offsetWidth;
+            startHeight = panel.offsetHeight;
+            startLeft = panel.offsetLeft;
+            startTop = panel.offsetTop;
+            aspectRatio = startWidth / startHeight;
+
+            panel.style.transition = 'none';
+            panel.style.bottom = 'auto';
+
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+
+    function handleMouseMove(e) {
+        if (isDragging) {
+            let newX = e.clientX - startX;
+            let newY = e.clientY - startY;
+
+            // Constraints
+            newX = Math.max(0, Math.min(newX, window.innerWidth - panel.offsetWidth));
+            newY = Math.max(0, Math.min(newY, window.innerHeight - panel.offsetHeight));
+
+            panel.style.left = newX + 'px';
+            panel.style.top = newY + 'px';
+        }
+        else if (isResizing) {
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            let newWidth = startWidth;
+            let newHeight = startHeight;
+            let newLeft = startLeft;
+            let newTop = startTop;
+
+            const isProportional = ['top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(currentHandle);
+
+            // Calculate new dimensions based on handle
+            if (currentHandle.includes('right')) {
+                newWidth = startWidth + dx;
+            } else if (currentHandle.includes('left')) {
+                newWidth = startWidth - dx;
+                newLeft = startLeft + dx;
+            }
+
+            if (currentHandle.includes('bottom')) {
+                newHeight = startHeight + dy;
+            } else if (currentHandle.includes('top')) {
+                newHeight = startHeight - dy;
+                newTop = startTop + dy;
+            }
+
+            // Apply Proportional Scaling if corner handle
+            if (isProportional) {
+                // Determine which dimension changed more and scale relatively
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    newHeight = newWidth / aspectRatio;
+                    if (currentHandle.includes('top')) {
+                        newTop = startTop + (startHeight - newHeight);
+                    }
+                } else {
+                    newWidth = newHeight * aspectRatio;
+                    if (currentHandle.includes('left')) {
+                        newLeft = startLeft + (startWidth - newWidth);
+                    }
+                }
+            }
+
+            // Constraints
+            if (newWidth > 280 && newWidth < window.innerWidth * 0.8) {
+                panel.style.width = newWidth + 'px';
+                panel.style.left = newLeft + 'px';
+            }
+            if (newHeight > 150 && newHeight < window.innerHeight * 0.9) {
+                panel.style.height = newHeight + 'px';
+                panel.style.top = newTop + 'px';
+            }
+        }
+    }
+
+    function handleMouseUp() {
+        if (isDragging || isResizing) {
+            isDragging = false;
+            isResizing = false;
+            panel.style.transition = '';
+
+            // Save state
+            chrome.storage.local.set({
+                sidebarPos: { left: panel.offsetLeft, top: panel.offsetTop },
+                sidebarSize: { width: panel.offsetWidth, height: panel.offsetHeight }
+            });
+        }
+
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    }
+}
+
 function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
     console.log('🎯 SmartHireX: Showing accordion sidebar...');
     console.log(`High-conf: ${highConfidenceFields.length}, Low-conf: ${lowConfidenceFields.length}`);
@@ -1267,6 +1420,15 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
     const panel = document.createElement('div');
     panel.id = 'smarthirex-accordion-sidebar';
     panel.innerHTML = `
+        <div class="resize-handle top"></div>
+        <div class="resize-handle right"></div>
+        <div class="resize-handle bottom"></div>
+        <div class="resize-handle left"></div>
+        <div class="resize-handle top-left"></div>
+        <div class="resize-handle top-right"></div>
+        <div class="resize-handle bottom-left"></div>
+        <div class="resize-handle bottom-right"></div>
+
         <div class="sidebar-header">
             <div class="header-title">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -1378,6 +1540,9 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
     addAccordionStyles();
 
     document.body.appendChild(panel);
+
+    // Setup Dragging and Resizing
+    setupSidebarInteractivity(panel);
 
     // Add close handler securely
     const sidebarCloseBtn = panel.querySelector('#smarthirex-sidebar-close');
@@ -1620,16 +1785,20 @@ function addAccordionStyles() {
     style.textContent = `
         #smarthirex-accordion-sidebar {
             position: fixed;
+            top: unset;
             bottom: 24px;
             left: 24px;
             width: 360px;
-            max-height: 80vh;
+            height: auto;
+            max-height: 85vh;
+            min-width: 280px;
+            min-height: 150px;
             background: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 12px;
             box-shadow: 
-                0 4px 6px -1px rgba(0, 0, 0, 0.1),
-                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 10px 25px -5px rgba(0, 0, 0, 0.1),
+                0 8px 10px -6px rgba(0, 0, 0, 0.1),
                 0 0 0 1px rgba(0,0,0,0.05);
             z-index: 2147483647;
             font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
@@ -1637,6 +1806,83 @@ function addAccordionStyles() {
             display: flex;
             flex-direction: column;
             animation: slideInFromBottomLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none; /* Prevent text selection during drag */
+            touch-action: none;
+        }
+
+        /* Resize Handles */
+        #smarthirex-accordion-sidebar .resize-handle {
+            position: absolute;
+            background: transparent;
+            z-index: 10;
+        }
+
+        #smarthirex-accordion-sidebar .resize-handle.left {
+            left: 0;
+            top: 0;
+            width: 6px;
+            height: 100%;
+            cursor: w-resize;
+        }
+
+        #smarthirex-accordion-sidebar .resize-handle.right {
+            right: 0;
+            top: 0;
+            width: 6px;
+            height: 100%;
+            cursor: e-resize;
+        }
+
+        #smarthirex-accordion-sidebar .resize-handle.top {
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            cursor: n-resize;
+        }
+
+        #smarthirex-accordion-sidebar .resize-handle.bottom {
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            cursor: s-resize;
+        }
+
+        #smarthirex-accordion-sidebar .resize-handle.top-left {
+            top: 0;
+            left: 0;
+            width: 12px;
+            height: 12px;
+            cursor: nwse-resize;
+            z-index: 11;
+        }
+
+        #smarthirex-accordion-sidebar .resize-handle.top-right {
+            top: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            cursor: nesw-resize;
+            z-index: 11;
+        }
+
+        #smarthirex-accordion-sidebar .resize-handle.bottom-left {
+            bottom: 0;
+            left: 0;
+            width: 12px;
+            height: 12px;
+            cursor: nesw-resize;
+            z-index: 11;
+        }
+
+        #smarthirex-accordion-sidebar .resize-handle.bottom-right {
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            cursor: nwse-resize;
+            z-index: 11;
         }
 
         .sidebar-content-scroll::-webkit-scrollbar {
@@ -1680,8 +1926,13 @@ function addAccordionStyles() {
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             background: #0a66c2;
             color: white;
-            border-radius: 8px 8px 0 0;
+            border-radius: 12px 12px 0 0;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: grab;
+        }
+
+        #smarthirex-accordion-sidebar .sidebar-header:active {
+            cursor: grabbing;
         }
         
         #smarthirex-accordion-sidebar .header-title {
