@@ -555,7 +555,7 @@ function addAccordionStyles() {
             position: fixed; bottom: 24px; left: 24px; width: 360px; max-height: 80vh;
             background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 999999;
-            display: flex; flexDirection: column; overflow: hidden;
+            display: flex; flex-direction: column; overflow: hidden;
             animation: slideInFromBottomLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             font-family: system-ui, sans-serif;
         }
@@ -571,7 +571,7 @@ function addAccordionStyles() {
         .section-content.expanded { max-height: 400px; overflow-y: auto; }
         .field-item { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 13px; }
         .field-item:hover { background: #f1f5f9; }
-        .warning-field { border-left: 3px solid #f59e0b; background: #fffbeb; }
+        .warning-field { border-left: 3px solid #f59e0b; }
         .success-field { border-left: 3px solid #10b981; }
         .field-label { font-weight: 500; color: #1e293b; margin-bottom: 2px; }
         .field-meta { font-size: 11px; color: #64748b; }
