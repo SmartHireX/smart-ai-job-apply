@@ -86,6 +86,7 @@ async function processPageFormLocal() {
 
         // 3. Process Mappings for Confidence
         showProcessingWidget('Mapping your data to form...', 3);
+        await new Promise(r => setTimeout(r, 1000)); // Artificial delay for UX visibility
 
         // FormAnalyzer returns simple mapping. We need to structure it for our fill logic
         // which expects { selector: { value, confidence, ... } }
@@ -454,41 +455,121 @@ function getElementSelector(element) {
 
 function showProcessingWidget(text, step) {
     let widget = document.getElementById('smarthirex-processing-widget');
+
+    // Calculate progress percentage
+    const maxSteps = 4;
+    const progress = step > 0 ? Math.min((step / maxSteps) * 100, 100) : 0;
+
     if (!widget) {
         widget = document.createElement('div');
         widget.id = 'smarthirex-processing-widget';
         document.body.appendChild(widget);
 
-        // FANG Style
-        widget.style.cssText = `
-            position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px);
-            padding: 12px 24px; border-radius: 99px;
-            box-shadow: 0 10px 40px -10px rgba(10, 102, 194, 0.25), 0 0 0 1px rgba(10, 102, 194, 0.1);
-            display: flex; align-items: center; gap: 16px; z-index: 2147483647;
-            font-family: system-ui, sans-serif; min-width: 340px;
-            animation: widgetSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        `;
+        // Premium Neural Glass Styles
         const style = document.createElement('style');
         style.textContent = `
+            #smarthirex-processing-widget {
+                position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
+                background: rgba(15, 23, 42, 0.8); /* Dark Slate Background */
+                backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 16px 24px; border-radius: 24px;
+                box-shadow: 
+                    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    0 0 30px rgba(10, 102, 194, 0.2); /* Blue Glow */
+                display: flex; flex-direction: column; gap: 12px;
+                z-index: 2147483647; font-family: 'Inter', system-ui, sans-serif;
+                min-width: 380px; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                animation: widgetSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            
+            #smarthirex-processing-widget:hover {
+                background: rgba(15, 23, 42, 0.9);
+                box-shadow: 
+                    0 30px 60px -12px rgba(0, 0, 0, 0.5),
+                    0 0 0 1px rgba(10, 102, 194, 0.3),
+                    0 0 40px rgba(10, 102, 194, 0.3);
+            }
+
             @keyframes widgetSlideDown { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-            .sh-spinner { width:20px; height:20px; border:2px solid #0a66c2; border-right-color:transparent; border-radius:50%; animation:shSpin 1s linear infinite; }
-            @keyframes shSpin { to { transform: rotate(360deg); } }
+            
+            .sh-widget-header { display: flex; align-items: center; gap: 14px; }
+            
+            /* AI Neural Pulse Animation */
+            .sh-neural-loader { position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+            .sh-neural-core { width: 8px; height: 8px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #38bdf8; z-index: 2; }
+            .sh-neural-ring { 
+                position: absolute; inset: 0; border-radius: 50%; 
+                border: 2px solid transparent; border-top-color: #0ea5e9; border-right-color: #0ea5e9;
+                animation: spin 1.5s linear infinite; 
+            }
+            .sh-neural-ring:nth-child(2) { 
+                inset: -4px; border: 2px solid transparent; border-bottom-color: #6366f1; border-left-color: #6366f1;
+                animation: spinReverse 2s linear infinite; opacity: 0.7;
+            }
+            
+            @keyframes spin { to { transform: rotate(360deg); } }
+            @keyframes spinReverse { to { transform: rotate(-360deg); } }
+            
+            .sh-content-col { display: flex; flex-direction: column; gap: 2px; }
+            .sh-main-text { 
+                font-size: 14px; font-weight: 600; color: #f1f5f9; letter-spacing: -0.2px;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+            .sh-sub-text { font-size: 11px; color: #94a3b8; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; }
+            
+            /* Progress Bar */
+            .sh-progress-track {
+                width: 100%; height: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; overflow: hidden;
+                position: relative;
+            }
+            .sh-progress-fill {
+                height: 100%; background: linear-gradient(90deg, #38bdf8, #818cf8);
+                border-radius: 2px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+                position: relative;
+            }
+            /* Shimmer on progress bar */
+            .sh-progress-fill::after {
+                content: ''; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+                transform: translateX(-100%); animation: shimmer 1.5s infinite;
+            }
+            @keyframes shimmer { 100% { transform: translateX(100%); } }
         `;
         document.head.appendChild(style);
     }
 
     if (step === -1) {
-        widget.innerHTML = `<div style="font-size:20px">⚠️</div><div style="font-weight:600; color:#b91c1c">${text}</div>`;
+        widget.innerHTML = `
+            <div class="sh-widget-header">
+                <div style="font-size:20px">⚠️</div>
+                <div class="sh-content-col">
+                    <div class="sh-main-text" style="color:#fca5a5">${text}</div>
+                </div>
+            </div>
+        `;
         return;
     }
 
     widget.innerHTML = `
-        <div class="sh-spinner"></div>
-        <div style="display:flex; flex-direction:column">
-            <div style="font-size:14px; font-weight:600; color:#0f172a">${text}</div>
-            ${step > 0 ? `<div style="font-size:11px; color:#64748b; font-weight:500; margin-top:2px">STEP ${step} OF 4</div>` : ''}
+        <div class="sh-widget-header">
+            <div class="sh-neural-loader">
+                <div class="sh-neural-core"></div>
+                <div class="sh-neural-ring"></div>
+                <div class="sh-neural-ring"></div>
+            </div>
+            <div class="sh-content-col">
+                <div class="sh-main-text">${text}</div>
+                ${step > 0 ? `<div class="sh-sub-text">STEP ${step} OF ${maxSteps}</div>` : ''}
+            </div>
         </div>
+        ${step > 0 ? `
+            <div class="sh-progress-track">
+                <div class="sh-progress-fill" style="width: ${progress}%"></div>
+            </div>
+        ` : ''}
     `;
 }
 
@@ -835,8 +916,8 @@ function addAccordionStyles() {
         }
         
         #smarthirex-accordion-sidebar .close-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             color: #ffffff !important;
             width: 28px;
             height: 28px;
@@ -847,6 +928,10 @@ function addAccordionStyles() {
             justify-content: center;
             transition: all 0.2s;
             backdrop-filter: blur(4px);
+        }
+        
+        #smarthirex-accordion-sidebar .close-btn svg {
+            stroke: #ffffff !important;
         }
         
         #smarthirex-accordion-sidebar .close-btn:hover {
