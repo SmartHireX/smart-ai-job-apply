@@ -50,86 +50,105 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // ============ PAGE PROCESSING WORKFLOW ============
 
+// ============ PAGE PROCESSING WORKFLOW ============
+
 async function processPageFormLocal() {
     try {
-        console.log('✨ Starting local page processing...');
-        showProcessingWidget('Nova is analyzing page architecture...', 1);
+        console.log('✨ Starting 🚀 Two-Phase Fill...');
 
-        // 1. Extract HTML
+        // --- PHASE 1: INSTANT HEURISIC FILL ---
+        showProcessingWidget('Instant Match...', 1);
+
+        // 1. Get Resume Data (Fast)
+        const resumeDataPromise = window.ResumeManager.getResumeData(); // Start fetching
+
+        // 2. Extract Fields Locally (Fast)
         const formHTML = extractFormHTML();
-        if (!formHTML) {
-            throw new Error('No form found on this page');
-        }
+        if (!formHTML) throw new Error('No form found');
 
-        // 2. Analyze & Map (Using Local FormAnalyzer)
-        showProcessingWidget('AI is understanding the form...', 2);
+        // We pass the raw HTML string to extractFields, but wait, extractFieldsFromDOM expects DOM or string.
+        // Better to use document root if possible for context, but form-analyzer is library.
+        // Let's rely on FormAnalyzer.extractFieldsFromDOM handling the string or we can pass document.body
+        // But FormAnalyzer is in a separate context? No, it's injected.
+        // Ideally we pass the extraction logic.
 
-        // We need to handle AI calls. 
-        // Note: In content scripts, fetch might be blocked by CSP. 
-        // We'll wrap the AIClient call to proxy if needed, OR relies on the fact that
-        // extensions often bypass CSP for fetches initiated by content scripts (in some cases)
-        // BUT to be safe, we should probably proxy heavy lifting to background if this fails.
-        // For now, let's try direct call via FormAnalyzer which uses AIClient.
+        const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
+        const resumeData = await resumeDataPromise;
+        if (!resumeData) throw new Error('Resume data missing');
 
-        // We override AIClient.callAI to use background proxy to avoid CSP issues on strict pages
-        const originalCallAI = window.AIClient.callAI;
-        window.AIClient.callAI = async (prompt, sys, opts) => {
-            return new Promise(resolve => {
-                chrome.runtime.sendMessage({
-                    type: 'AI_REQUEST',
-                    prompt,
-                    systemInstruction: sys,
-                    options: opts
-                }, response => {
-                    resolve(response || { success: false, error: 'Background worker timeout' });
-                });
+        // 3. Heuristic Map
+        const { mappings: heuristicMappings, unmapped } = window.FormAnalyzer.mapFieldsHeuristically(fields, resumeData);
+
+        console.log(`⚡ Phase 1: ${Object.keys(heuristicMappings).length} fields mapped instantly.`);
+
+        const hasPhase2 = unmapped.length > 0;
+        let cumulativeMappings = { ...heuristicMappings };
+
+        // 4. EXECUTE PHASE 1 FILL (Non-Blocking Visuals)
+        if (Object.keys(heuristicMappings).length > 0) {
+            await executeInstantFill({
+                mappings: heuristicMappings,
+                analysis: { fields },
+                allFields: fields
+            }, {
+                resetHistory: true,
+                cumulativeMappings,
+                isFinal: !hasPhase2 // Only final if no phase 2
             });
-        };
-
-        const result = await window.FormAnalyzer.analyzeAndMapForm(formHTML);
-
-        // Restore original just in case
-        window.AIClient.callAI = originalCallAI;
-
-        if (!result.success) {
-            throw new Error(result.error || 'Analysis failed');
+        } else {
+            // If nothing found heuristically, ensure we don't clear history yet or handle it gracefully
+            // Actually we should clear history at start of a *new* overall fill session
+            activeFormUndoHistory = [];
         }
 
-        const { fields, mappings } = result;
+        // --- PHASE 2: ASYNC AI FILL ---
+        if (hasPhase2) {
+            showProcessingWidget('AI thinking...', 2);
 
-        // 3. Process Mappings for Confidence
-        showProcessingWidget('Mapping your data to form...', 3);
-        await new Promise(r => setTimeout(r, 1000)); // Artificial delay for UX visibility
+            // 5. AI Map (Slow)
+            // We use the same override/proxy trick for AI calls
+            const originalCallAI = window.AIClient.callAI;
+            window.AIClient.callAI = async (prompt, sys, opts) => {
+                return new Promise(resolve => {
+                    chrome.runtime.sendMessage({
+                        type: 'AI_REQUEST', prompt, systemInstruction: sys, options: opts
+                    }, response => resolve(response || { success: false, error: 'Timeout' }));
+                });
+            };
 
-        // FormAnalyzer returns simple mapping. We need to structure it for our fill logic
-        // which expects { selector: { value, confidence, ... } }
-        // The AI mapping should already match this structure if prompt was followed.
+            const aiResult = await window.FormAnalyzer.mapResumeToFields(unmapped, resumeData);
+            window.AIClient.callAI = originalCallAI; // Restore
 
-        console.log('Mappings received:', mappings);
+            if (aiResult.success && aiResult.mappings) {
+                console.log(`🧠 Phase 2: AI mapped ${Object.keys(aiResult.mappings).length} complex fields.`);
 
-        // 4. Execute Fill
-        showProcessingWidget('Optimization Complete.', 4);
+                // Merge mappings
+                cumulativeMappings = { ...cumulativeMappings, ...aiResult.mappings };
+
+                // 6. EXECUTE PHASE 2 FILL
+                showProcessingWidget('Finalizing...', 3);
+                await executeInstantFill({
+                    mappings: aiResult.mappings, // Only fill the NEW ones
+                    analysis: { fields },
+                    allFields: fields
+                }, {
+                    resetHistory: false,
+                    cumulativeMappings,
+                    isFinal: true // This is the end
+                }); // Don't reset history, append
+
+            }
+        }
+
+        showProcessingWidget('Done!', 4);
         setTimeout(() => removeProcessingWidget(), 800);
-
-        // Send confirmation to extension
         chrome.runtime.sendMessage({ type: 'FILL_COMPLETE' });
-
-        await executeInstantFill({
-            mappings,
-            analysis: { fields },
-            allFields: fields
-        });
 
     } catch (error) {
         console.error('Processing failed:', error);
-        showProcessingWidget('Error occurred', -1);
-        showErrorToast(error.message);
+        showProcessingWidget('Error', -1);
         setTimeout(() => removeProcessingWidget(), 2000);
-
-        chrome.runtime.sendMessage({
-            type: 'FILL_ERROR',
-            error: error.message
-        });
+        showErrorToast(error.message);
     }
 }
 
@@ -141,152 +160,104 @@ function detectForms() {
 }
 
 function extractFormHTML() {
-    // Smart Densification Strategy:
-    // We no longer guess "which form" or concat multiple forms.
-    // The densifier is efficient enough to process the entire relevant content area.
-
-    // 1. Try to find a main content wrapper to reduce noise even further
+    // Return outerHTML for analysis
     const main = document.querySelector('main') || document.querySelector('[role="main"]') || document.querySelector('#content');
-    const root = main || document.body;
-
-    // 2. The FormAnalyzer.cleanHTMLForAnalysis will handle the extraction/densification
-    // We just return the raw root, and let the analyzer do the heavy lifting
-    // But wait - the current flow expects a string here to pass to analyzeAndMapForm
-    // which then calls cleanHTMLForAnalysis.
-
-    // However, analyzeFormHTML takes a string. 
-    // And cleanHTMLForAnalysis now handles string OR element.
-    // To minimize changes to the flow, we'll return the outerHTML of the root.
-    // Ideally, we'd pass the element, but message passing needs serialization.
-
-    // Optimization: If the page is huge, innerHTML might be huge.
-    // But we are processing LOCALLY in the same context (mostly).
-    // Let's check processPageFormLocal()
-
-    // In processPageFormLocal:
-    // const formHTML = extractFormHTML();
-    // const result = await window.FormAnalyzer.analyzeAndMapForm(formHTML);
-
-    // analyzeAndMapForm calls analyzeFormHTML(html)
-    // analyzeFormHTML calls cleanHTMLForAnalysis(html)
-
-    // So passing the full body HTML string is fine IF cleanHTMLForAnalysis is fast.
-    // The new logic converts string to DOM, traverses, and returns string.
-
-    if (root) {
-        return root.outerHTML;
-    }
-    return document.body.outerHTML;
+    return (main || document.body).outerHTML;
 }
-
-// ============ FILL LOGIC (Reused/Refined) ============
 
 // ============ FILL LOGIC (Reused/Refined) ============
 
 let activeFormUndoHistory = [];
 
-async function executeInstantFill(data) {
+/**
+ * Execute Fill with support for Phases
+ * @param {Object} data - Contains mappings to fill NOW
+ * @param {Object} options - { resetHistory: boolean, cumulativeMappings: object, isFinal: boolean }
+ */
+async function executeInstantFill(data, options = { resetHistory: true, cumulativeMappings: null, isFinal: true }) {
     try {
-        console.log('🚀 SmartHireX: Starting instant fill workflow...');
-        // Reset undo history for new fill session
-        activeFormUndoHistory = [];
+        console.log('🚀 Executing Fill Batch...');
 
-        const mappings = data.mappings;
-        const HIGH_CONFIDENCE_THRESHOLD = 0.9;
+        if (options.resetHistory) {
+            activeFormUndoHistory = [];
+        }
 
-        const highConfidenceMappings = {};
-        const lowConfidenceMappings = {};
+        const mappingsToFill = data.mappings;
+        const cumulativeState = options.cumulativeMappings || mappingsToFill; // Fallback if single phase
+        const isFinal = options.isFinal !== false; // Default true
 
-        Object.entries(mappings).forEach(([selector, fieldData]) => {
-            const confidence = fieldData.confidence || 0;
-            if (confidence >= HIGH_CONFIDENCE_THRESHOLD && !fieldData.skipped) {
-                highConfidenceMappings[selector] = fieldData;
-            } else if (!fieldData.skipped) {
-                lowConfidenceMappings[selector] = fieldData;
-            }
-        });
-
-        const highConfCount = Object.keys(highConfidenceMappings).length;
-        const lowConfCount = Object.keys(lowConfidenceMappings).length;
-
-        // 1. Fill ALL fields regardless of confidence (Sequential Ghost Typer)
-        const allFieldsToFill = { ...highConfidenceMappings, ...lowConfidenceMappings };
-        const totalFillCount = Object.keys(allFieldsToFill).length;
+        // 1. Fill fields in this batch
+        const totalFillCount = Object.keys(mappingsToFill).length;
 
         if (totalFillCount > 0) {
-            console.log('👻 Starting Ghost Typer effect for ALL fields...');
-
-            // Iterate sequentially for the visual effect
-            for (const [selector, data] of Object.entries(allFieldsToFill)) {
-                // Try to find element with flexible strategy
+            // Iterate sequentially for Ghost Typer effect
+            for (const [selector, fieldData] of Object.entries(mappingsToFill)) {
+                // ... (Selector logic same as before)
                 let element = null;
-
                 try {
-                    // 1. Standard Query Selector (might fail if ID starts with digit)
                     element = document.querySelector(selector);
                 } catch (e) {
-                    // 2. Fallback for IDs starting with digits or invalid chars
                     if (selector.startsWith('#')) {
-                        try {
-                            // Escape the ID for querySelector
-                            const id = selector.substring(1);
-                            element = document.querySelector('#' + CSS.escape(id));
-                        } catch (err) {
-                            // 3. Ultimate Fallback: getElementById (doesn't care about CSS syntax)
-                            element = document.getElementById(selector.substring(1));
-                        }
+                        try { element = document.querySelector('#' + CSS.escape(selector.substring(1))); }
+                        catch (err) { element = document.getElementById(selector.substring(1)); }
                     } else if (selector.includes('#')) {
-                        // Case: "textarea#123" -> separate tag and id
                         const parts = selector.split('#');
-                        if (parts.length === 2) {
-                            element = document.getElementById(parts[1]);
-                        }
+                        if (parts.length === 2) element = document.getElementById(parts[1]);
                     }
                 }
 
                 if (element && isFieldVisible(element)) {
-                    // SAVE ORIGINAL STATE BEFORE MODIFYING
                     captureFieldState(element);
+                    element.scrollIntoView({ behavior: 'auto', block: 'center' }); // Minimal scroll
 
-                    // Use 'auto' behavior to prevent layout/ripple detachment issues
-                    element.scrollIntoView({ behavior: 'auto', block: 'center' });
-
-                    const confidence = data.confidence || 0;
-                    if (data.value) {
-                        await simulateTyping(element, data.value, confidence);
+                    const confidence = fieldData.confidence || 0;
+                    if (fieldData.value && !fieldData.skipped) {
+                        await simulateTyping(element, fieldData.value, confidence);
                     } else {
                         highlightField(element, confidence);
                     }
                 }
             }
-            console.log(`✅ Ghost Typer finished: ${totalFillCount} fields`);
         }
 
-        // 2. Show toast - REMOVED for sidebar undo flow
-        // showSuccessToast(highConfCount, lowConfCount); // DEPRECATED
-
-        // Premium Celebration ALWAYS triggers on success
-        triggerConfetti();
-
-        // 3. Show Sidebars (Always show if fields exists)
-        if (lowConfCount > 0 || highConfCount > 0) {
-            setTimeout(() => {
-                const lowConfArray = Object.entries(lowConfidenceMappings).map(
-                    ([selector, d]) => ({ selector, fieldData: d, confidence: d.confidence || 0 })
-                );
-                const highConfArray = Object.entries(highConfidenceMappings).map(
-                    ([selector, d]) => ({ selector, fieldData: d, confidence: d.confidence || 1.0 })
-                );
-                showAccordionSidebar(highConfArray, lowConfArray);
-            }, 3000); // Wait 3s so users can enjoy the Confetti Rain!
-        } else {
-            showErrorToast('Analysis complete, but no matching fields were found.');
+        // 2. Sidebar & Celebration -> ONLY if isFinal
+        if (isFinal) {
+            if (Object.keys(cumulativeState).length > 0) {
+                triggerConfetti();
+                updateSidebarWithState(cumulativeState);
+            } else {
+                showErrorToast('Analysis complete, but no matching fields were found.');
+            }
         }
 
     } catch (error) {
         console.error('Fill error:', error);
         showErrorToast('Error during filling: ' + error.message);
     }
+}
+
+// Helper to render sidebar from a state object
+function updateSidebarWithState(allMappings) {
+    const highConfArray = [];
+    const lowConfArray = [];
+
+    Object.entries(allMappings).forEach(([selector, data]) => {
+        const item = { selector, fieldData: data, confidence: data.confidence || 0 };
+        if (data.confidence >= 0.9 && !data.skipped) highConfArray.push(item);
+        else if (!data.skipped || data.isFileUpload) lowConfArray.push(item); // Include file uploads in low/review check? Or separate?
+        // Sidebar logic separates files, let's just pass raw arrays and let showAccordionSidebar sort it
+        // Wait, showAccordionSidebar expects specific separate arrays. 
+        // Let's reuse showAccordionSidebar logic but pass processed lists.
+    });
+
+    // We can just call showAccordionSidebar, but wait, showAccordionSidebar expects "highConfidenceFields" and "lowConfidenceFields" 
+    // where they are simple arrays of objects.
+
+    // We need to wait a beat for animations to finish? No, immediate update is fine.
+    // Debounce slightly to avoid flicker if phases are super fast?
+    setTimeout(() => {
+        showAccordionSidebar(highConfArray, lowConfArray);
+    }, 500);
 }
 
 function captureFieldState(element) {
@@ -822,112 +793,115 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
             </button>
         </div>
         
-        ${autoFilledFields.length > 0 ? `
-            <div class="accordion-section">
-                <div class="section-header collapsed" data-section="autofilled">
-                    <div class="section-title">
-                        <span class="section-icon">✅</span>
-                        <span class="section-label">AUTO-FILLED</span>
-                        <span class="section-count">(${autoFilledFields.length})</span>
-                    </div>
-                    <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </div>
-                <div class="section-content" id="autofilled-content">
-                    <div class="section-inner-wrapper">
-                    ${autoFilledFields.map((item, i) => `
-                        <div class="field-item success-field" data-field-idx="auto-${i}">
-                            <div class="field-info">
-                                <div class="field-label">${item.label}</div>
-                                <div class="field-meta">
-                                    <span class="field-type">${item.fieldType.toUpperCase()}</span>
-                                    <span class="field-confidence medium">${Math.round(item.confidence * 100)}%</span>
-                                </div>
-                            </div>
-                            <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
+        <div class="sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
+            ${autoFilledFields.length > 0 ? `
+                <div class="accordion-section">
+                    <div class="section-header collapsed" data-section="autofilled">
+                        <div class="section-title">
+                            <span class="section-icon">✅</span>
+                            <span class="section-label">AUTO-FILLED</span>
+                            <span class="section-count">(${autoFilledFields.length})</span>
                         </div>
-                    `).join('')}
-                </div>
-            </div>
-        ` : ''}
-        
-        ${needsReviewFields.length > 0 ? `
-            <div class="accordion-section">
-                <div class="section-header expanded" data-section="needs-review">
-                    <div class="section-title">
-                        <span class="section-icon">⚠️</span>
-                        <span class="section-label">NEEDS REVIEW</span>
-                        <span class="section-count">(${needsReviewFields.length})</span>
+                        <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
                     </div>
-                    <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </div>
-                <div class="section-content expanded" id="needsreview-content">
-                    <div class="section-inner-wrapper">
-                    ${needsReviewFields.map((item, i) => `
-                        <div class="field-item warning-field" data-field-idx="review-${i}">
-                            <div class="field-info">
-                                <div class="field-label">${item.label}</div>
-                                <div class="field-meta">
-                                    <span class="field-type">${item.fieldType.toUpperCase()}</span>
-                                    <span class="field-confidence ${item.confidence >= 0.7 ? 'medium' : 'low'}">${Math.round(item.confidence * 100)}%</span>
+                    <div class="section-content" id="autofilled-content">
+                        <div class="section-inner-wrapper">
+                        ${autoFilledFields.map((item, i) => `
+                            <div class="field-item success-field" data-field-idx="auto-${i}">
+                                <div class="field-info">
+                                    <div class="field-label">${item.label}</div>
+                                    <div class="field-meta">
+                                        <span class="field-type">${item.fieldType.toUpperCase()}</span>
+                                        <span class="field-confidence medium">${Math.round(item.confidence * 100)}%</span>
+                                    </div>
                                 </div>
+                                <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="9 18 15 12 9 6"/>
+                                </svg>
                             </div>
-                            <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        ` : ''}
-        
-        ${fileUploadFields.length > 0 ? `
-            <div class="accordion-section">
-                <div class="section-header expanded" data-section="file-uploads">
-                    <div class="section-title">
-                        <span class="section-icon">📎</span>
-                        <span class="section-label">FILE UPLOADS</span>
-                        <span class="section-count">(${fileUploadFields.length})</span>
+                        `).join('')}
                     </div>
-                    <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
                 </div>
-                <div class="section-content expanded" id="fileuploads-content">
-                    <div class="section-inner-wrapper">
-                    ${fileUploadFields.map((item, i) => `
-                        <div class="field-item file-field" data-field-idx="file-${i}">
-                            <div class="field-info">
-                                <div class="field-label">${item.label}</div>
-                                <div class="field-meta">
-                                    <span class="field-type">FILE</span>
-                                    <span class="field-badge">Required</span>
-                                </div>
-                            </div>
-                            <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
+            </div>
+            ` : ''}
+            
+            ${needsReviewFields.length > 0 ? `
+                <div class="accordion-section">
+                    <div class="section-header expanded" data-section="needs-review">
+                        <div class="section-title">
+                            <span class="section-icon">⚠️</span>
+                            <span class="section-label">NEEDS REVIEW</span>
+                            <span class="section-count">(${needsReviewFields.length})</span>
                         </div>
-                    `).join('')}
+                        <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="section-content expanded" id="needsreview-content">
+                        <div class="section-inner-wrapper">
+                        ${needsReviewFields.map((item, i) => `
+                            <div class="field-item warning-field" data-field-idx="review-${i}">
+                                <div class="field-info">
+                                    <div class="field-label">${item.label}</div>
+                                    <div class="field-meta">
+                                        <span class="field-type">${item.fieldType.toUpperCase()}</span>
+                                        <span class="field-confidence ${item.confidence >= 0.7 ? 'medium' : 'low'}">${Math.round(item.confidence * 100)}%</span>
+                                    </div>
+                                </div>
+                                <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="9 18 15 12 9 6"/>
+                                </svg>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
+            ` : ''}
+            
+            ${fileUploadFields.length > 0 ? `
+                <div class="accordion-section">
+                    <div class="section-header expanded" data-section="file-uploads">
+                        <div class="section-title">
+                            <span class="section-icon">📎</span>
+                            <span class="section-label">FILE UPLOADS</span>
+                            <span class="section-count">(${fileUploadFields.length})</span>
+                        </div>
+                        <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="section-content expanded" id="fileuploads-content">
+                        <div class="section-inner-wrapper">
+                        ${fileUploadFields.map((item, i) => `
+                            <div class="field-item file-field" data-field-idx="file-${i}">
+                                <div class="field-info">
+                                    <div class="field-label">${item.label}</div>
+                                    <div class="field-meta">
+                                        <span class="field-type">FILE</span>
+                                        <span class="field-badge">Required</span>
+                                    </div>
+                                </div>
+                                <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="9 18 15 12 9 6"/>
+                                </svg>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
-        ` : ''}
+            ` : ''}
+        </div>
 
         <div class="sidebar-footer" style="padding: 16px 20px; border-top: 1px solid #f1f5f9; background: #fff; margin-top: auto;">
              <button id="smarthirex-sidebar-undo" style="
                 width: 100%;
                 padding: 10px;
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
+                background: #fef2f2;
+                border: 1px solid #fecaca;
                 border-radius: 8px;
-                color: #64748b;
+                color: #ef4444;
                 font-weight: 600;
                 font-size: 13px;
                 display: flex;
@@ -963,8 +937,8 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
         undoBtn.addEventListener('click', () => {
             showUndoConfirmationModal();
         });
-        undoBtn.addEventListener('mouseenter', () => { undoBtn.style.background = '#f1f5f9'; undoBtn.style.color = '#0f172a'; });
-        undoBtn.addEventListener('mouseleave', () => { undoBtn.style.background = '#f8fafc'; undoBtn.style.color = '#64748b'; });
+        undoBtn.addEventListener('mouseenter', () => { undoBtn.style.background = '#fee2e2'; undoBtn.style.color = '#dc2626'; });
+        undoBtn.addEventListener('mouseleave', () => { undoBtn.style.background = '#fef2f2'; undoBtn.style.color = '#ef4444'; });
     }
 
     // Highlight fields that need review
@@ -1015,13 +989,72 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
             fieldItem.addEventListener('mouseenter', () => {
                 field.field.classList.add('smarthirex-spotlight');
                 field.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                showPointingHand(field.field);
             });
 
             fieldItem.addEventListener('mouseleave', () => {
                 field.field.classList.remove('smarthirex-spotlight');
+                hidePointingHand();
             });
         }
     });
+}
+
+function showPointingHand(targetElement) {
+    hidePointingHand(); // Clear existing
+
+    if (!targetElement || !isFieldVisible(targetElement)) return;
+
+    const rect = targetElement.getBoundingClientRect();
+    const hand = document.createElement('div');
+    hand.id = 'smarthirex-pointing-hand';
+
+    // Premium Hand SVG (White glove style / Modern Cursor)
+    hand.innerHTML = `
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+            <path d="M16.5 9.5L7.5 4.5L10.5 19.5L13.5 13.5L19.5 13.5L16.5 9.5Z" fill="#0f172a" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+    `;
+
+    // Position: To the right of the field, pointing left? 
+    // Or standard "cursor" style pointing top-left?
+    // Let's effectively place it to the LEFT of the field, pointing at it.
+    // SVG above is a cursor pointer. Let's rotate it 90deg to point right? 
+    // Or use a dedicated "Hand Pointing Right" emoji/SVG.
+
+    // Let's use a nice hand emoji for "Premium" feel or a sleek SVG arrow.
+    // User asked for "Pointing Hand".
+    hand.innerHTML = `
+        <div style="font-size: 32px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));">👈</div>
+    `;
+
+    // Let's position it to the RIGHT of the field, pointing LEFT (👈)
+    const padding = 10;
+
+    hand.style.cssText = `
+        position: fixed;
+        z-index: 2147483647;
+        pointer-events: none;
+        top: ${rect.top + (rect.height / 2) - 24}px; 
+        left: ${rect.right + padding}px;
+        animation: floatHand 1s ease-in-out infinite;
+        opacity: 0;
+        transform: translateX(10px);
+        transition: opacity 0.2s, transform 0.2s;
+    `;
+
+    document.body.appendChild(hand);
+
+    // Trigger entrance
+    requestAnimationFrame(() => {
+        hand.style.opacity = '1';
+        hand.style.transform = 'translateX(0)';
+    });
+}
+
+function hidePointingHand() {
+    const hand = document.getElementById('smarthirex-pointing-hand');
+    if (hand) hand.remove();
 }
 
 function addAccordionStyles() {
@@ -1043,13 +1076,31 @@ function addAccordionStyles() {
                 0 4px 6px -1px rgba(0, 0, 0, 0.1),
                 0 2px 4px -1px rgba(0, 0, 0, 0.06),
                 0 0 0 1px rgba(0,0,0,0.05);
-            z-index: 999999;
+            z-index: 2147483647;
             font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             animation: slideInFromBottomLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
+        .sidebar-content-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar-content-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar-content-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        @keyframes floatHand {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); } /* Bounce right */
+        }
+
+
         
         @keyframes slideInFromBottomLeft {
             from {
