@@ -1,125 +1,49 @@
-# SmartHireX Browser Extension
+# Smart AI Job Apply - Standalone Extension
 
-AI-powered form filling extension for job applications.
-
-## Installation
-
-### For Development
-
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable "Developer mode" (toggle in top right)
-3. Click "Load unpacked"
-4. Select the `smart-hirex-extension` directory
-
-### For Users
-
-*(Will be published to Chrome Web Store after testing)*
-
-## Usage
-
-1. **Login**: Click the extension icon and login to your SmartHireX account
-2. **Navigate**: Go to any job application page
-3. **Fill**: Click the extension icon → "Fill Form with AI"
-4. **Review**: Check filled fields and submit
+A standalone Chrome extension that uses your own AI API key to fill job applications and chat with your resume data.
 
 ## Features
 
-- ✅ Automatic form detection
-- ✅ AI-powered field mapping
-- ✅ Visual feedback (highlighted fields)
-- ✅ Submit button highlighting
-- ✅ Secure authentication
-- ✅ Works on any website
-- ✅ **NEW**: Automatic token sync with SmartHireX website
+- **Privacy First**: Your data stays in your browser (Local Storage).
+- **Bring Your Own Key**: Works with your Google Gemini API key (Free tier available).
+- **Smart Form Filling**: AI analyzes forms and maps your resume data automatically.
+- **AI Chat Assistant**: Ask questions about your resume or get help with application answers.
+- **Resume Manager**: Manage your profile, experience, and skills directly in the extension.
 
-## Technical Details
+## Installation
 
-### Architecture
+1. Open Chrome and navigate to `chrome://extensions/`
+2. Enable **Developer mode** in the top right corner.
+3. Click **Load unpacked**.
+4. Select the `smart-ai-job-apply` folder.
+5. The extension icon should appear in your toolbar.
 
-- **Manifest V3**: Latest Chrome extension standard
-- **Content Scripts**: Injected into web pages for form manipulation
-- **Background Worker**: Handles extension lifecycle and messaging
-- **Popup UI**: User interface for triggering AI fill
+## Setup Guide
 
-### API Integration
+1. Click the extension icon.
+2. Click **Open Settings** (or the Setup button).
+3. **API Key**: 
+   - Get a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+   - Enter it in the "API Key" tab and click Validate.
+4. **Resume**:
+   - Go to "Personal Info" and other tabs.
+   - Fill in your details or import a JSON backup.
+   - Click "Save All Changes" at the bottom.
 
-Communicates with SmartHireX backend at `http://localhost:8000`:
-- `/autofill/analyze` - Analyze form fields
-- `/autofill/map-data` - Map user data to fields
-- `/me` - Verify authentication
+## Usage
 
-### Permissions
+1. **Fill Forms**:
+   - Navigate to any job application page (e.g., specific job posting).
+   - Click the extension icon.
+   - Valid forms will be detected. Click **Fill Form with AI**.
+   - Review filled fields in the sidebar.
 
-- `activeTab`: Access current tab content
-- `storage`: Store authentication token
-- `scripting`: Inject content scripts
-
-## Development
-
-### File Structure
-
-```
-smart-hirex-extension/
-├── manifest.json           # Extension configuration
-├── popup/                  # Extension popup
-│   ├── popup.html
-│   ├── popup.css
-│   └── popup.js
-├── content/                # Content scripts
-│   ├── content.js
-│   └── content.css
-├── background/             # Background worker
-│   └── background.js
-└── icons/                  # Extension icons
-    ├── icon16.png
-    ├── icon48.png
-    └── icon128.png
-```
-
-### Testing
-
-1. Make changes to source files
-2. Go to `chrome://extensions/`
-3. Click "Reload" button for SmartHireX extension
-4. Test on a sample form page
-
-## Privacy & Security
-
-- Tokens stored locally in Chrome storage
-- No form data sent to third parties
-- HTTPS for all API communications (in production)
-- User data only accessed with permission
+2. **Chat Assistant**:
+   - Click **AI Assistant** in the popup.
+   - Ask questions like "Summarize my experience" or "Write a cover letter for this job".
 
 ## Troubleshooting
 
-**Extension not detecting forms?**
-- Refresh the page after installing extension
-- Check if page has actual `<form>` tags
-- Some dynamic forms may need manual field detection
-
-**Login not working?**
-- Make sure backend server is running at `http://localhost:8000`
-- Ensure frontend is running at `http://localhost:8080`
-- Check browser console for errors
-- Clear extension storage and try again
-
-**Forms not filling correctly?**
-- Some fields may use custom input components
-- Try filling manually then use extension for remaining fields
-- Report issues to help improve AI mapping
-
-## Recent Updates
-
-### Authentication Sync Fix (Dec 2024)
-- Fixed URL port mismatch (now correctly uses port 8080)
-- Added automatic token sync from website to extension
-- Improved authentication flow documentation
-
-## Future Features
-
-- [ ] Multi-page form support
-- [ ] File upload handling
-- [ ] Form template saving
-- [ ] Firefox support
-- [ ] Custom field mapping editor
-
+- **"No forms detected"**: Refresh the page and try again. Some complex forms (iframes) might be tricky.
+- **AI Errors**: Check your API key limits. The free tier has 60 requests/minute.
+- **Extension Error**: Check the background script console (Inspect popup > Console) for details.

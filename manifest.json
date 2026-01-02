@@ -1,16 +1,15 @@
 {
     "manifest_version": 3,
-    "name": "SmartHireX - AI Form Filler",
-    "version": "1.0.0",
-    "description": "Automatically fill job application forms with AI using your resume and profile data",
+    "name": "Smart AI Job Apply",
+    "version": "2.0.0",
+    "description": "AI-powered job application form filler. Uses your Gemini API key to intelligently fill forms with your resume data.",
     "permissions": [
         "activeTab",
         "storage",
         "scripting"
     ],
     "host_permissions": [
-        "http://localhost:8000/*",
-        "http://localhost:8080/*"
+        "https://generativelanguage.googleapis.com/*"
     ],
     "action": {
         "default_popup": "popup/popup.html",
@@ -25,6 +24,7 @@
         "48": "icons/icon48.png",
         "128": "icons/icon128.png"
     },
+    "options_page": "options/options.html",
     "background": {
         "service_worker": "background/background.js"
     },
@@ -34,6 +34,9 @@
                 "<all_urls>"
             ],
             "js": [
+                "utils/ai-client.js",
+                "utils/resume-manager.js",
+                "utils/form-analyzer.js",
                 "content/content.js"
             ],
             "css": [
@@ -47,7 +50,10 @@
             "resources": [
                 "chat/chat.html",
                 "chat/chat.css",
-                "chat/chat.js"
+                "chat/chat.js",
+                "utils/ai-client.js",
+                "utils/resume-manager.js",
+                "utils/form-analyzer.js"
             ],
             "matches": [
                 "<all_urls>"

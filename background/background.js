@@ -1,70 +1,85 @@
-// Background service worker
-console.log('SmartHireX background service worker started');
+/**
+ * Background Service Worker for Smart AI Job Apply Extension
+ * 
+ * Handles extension lifecycle events and can proxy AI requests if needed.
+ */
 
-// Listen for messages from content scripts or popup
+// Import utility modules
+importScripts('../utils/ai-client.js', '../utils/resume-manager.js');
+
+console.log('Smart AI Job Apply background service worker started');
+
 // Listen for messages from content scripts or popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'STORE_TOKEN') {
-        // Store authentication token and fetch user info
-        const token = message.token;
 
-        // Fetch user info from backend
-        fetch('http://localhost:8000/me', {
-            headers: {
-                'Authorization': `Bearer ${token}`
+    // AI Request Proxy (for cases where content script can't make direct calls)
+    if (message.type === 'AI_REQUEST') {
+        (async () => {
+            try {
+                const result = await self.AIClient.callAI(
+                    message.prompt,
+                    message.systemInstruction || '',
+                    message.options || {}
+                );
+                sendResponse(result);
+            } catch (error) {
+                console.error('AI request error:', error);
+                sendResponse({ success: false, error: error.message });
             }
-        })
-            .then(response => response.json())
-            .then(user => {
-                // Store token and email
-                chrome.storage.local.set({
-                    token: token,
-                    email: user.email
-                }, () => {
-                    console.log('Token and user info stored');
-                    // Notify popup to refresh
-                    chrome.runtime.sendMessage({ type: 'TOKEN_STORED' });
-                    sendResponse({ success: true });
-                });
-            })
-            .catch(error => {
-                console.error('Failed to fetch user info:', error);
-                // Store token anyway
-                chrome.storage.local.set({ token: token }, () => {
-                    chrome.runtime.sendMessage({ type: 'TOKEN_STORED' });
-                    sendResponse({ success: false, error: error.message });
-                });
-            });
-
+        })();
         return true; // Keep message channel open for async response
     }
 
-    if (message.type === 'PROXY_REQ') {
-        // Proxy API requests from content script to avoid CORS
-        const { url, method, headers, body } = message;
+    // Check setup status
+    if (message.type === 'CHECK_SETUP') {
+        (async () => {
+            try {
+                const status = await self.AIClient.checkSetupStatus();
+                sendResponse(status);
+            } catch (error) {
+                sendResponse({ ready: false, hasApiKey: false, hasResume: false });
+            }
+        })();
+        return true;
+    }
 
-        console.log(`Proxying ${method} request to: ${url}`);
-
-        fetch(url, {
-            method,
-            headers,
-            body: body ? JSON.stringify(body) : undefined
-        })
-            .then(async (response) => {
-                const data = await response.json();
-                sendResponse({
-                    success: response.ok,
-                    data,
-                    status: response.status,
-                    error: !response.ok ? (data.detail || data.error || 'Request failed') : undefined
-                });
-            })
-            .catch(error => {
-                console.error('Proxy request failed:', error);
+    // Get resume data
+    if (message.type === 'GET_RESUME') {
+        (async () => {
+            try {
+                const data = await self.ResumeManager.getResumeData();
+                sendResponse({ success: true, data });
+            } catch (error) {
                 sendResponse({ success: false, error: error.message });
-            });
+            }
+        })();
+        return true;
+    }
 
-        return true; // Keep message channel open
+    // Get flattened resume data
+    if (message.type === 'GET_FLAT_RESUME') {
+        (async () => {
+            try {
+                const data = await self.ResumeManager.getFlattenedResumeData();
+                sendResponse({ success: true, data });
+            } catch (error) {
+                sendResponse({ success: false, error: error.message });
+            }
+        })();
+        return true;
+    }
+
+    // Get resume as text
+    if (message.type === 'GET_RESUME_TEXT') {
+        (async () => {
+            try {
+                const text = await self.ResumeManager.getResumeAsText();
+                sendResponse({ success: true, text });
+            } catch (error) {
+                sendResponse({ success: false, error: error.message });
+            }
+        })();
+        return true;
     }
 });
 
@@ -72,22 +87,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Listen for extension installation
 chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason === 'install') {
-        console.log('SmartHireX extension installed');
-        // Open welcome page
-        chrome.tabs.create({
-            url: 'http://localhost:8080/?extension=installed'
-        });
+        console.log('Smart AI Job Apply extension installed');
+        // Open options page for initial setup
+        chrome.runtime.openOptionsPage();
     } else if (details.reason === 'update') {
-        console.log('SmartHireX extension updated');
+        console.log('Smart AI Job Apply extension updated to version 2.0');
+        // Could show changelog or new features here
     }
 });
 
 
-// Listen for tab updates to inject content script if needed
+// Listen for tab updates (for future page-specific behavior)
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status === 'complete' && tab.url) {
-        // Content script should already be injected via manifest
-        // This is just for additional handling if needed
+        // Could inject setup prompts for job sites here
         console.log('Page loaded:', tab.url);
     }
+});
+
+// Handle extension icon click when popup is closed
+chrome.action.onClicked.addListener((tab) => {
+    // This only fires if there's no default_popup
+    // With our popup, this won't fire normally
 });

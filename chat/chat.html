@@ -35,9 +35,9 @@
         </div>
 
         <!-- Chat Messages Area -->
-        <div class="chat-messages" id="chat-messages">
-            <!-- Welcome message -->
-            <!-- Initial Greeting will be injected by JS -->
+        <div class="chat-messages" id="chat-output">
+            <!-- Welcome message will be added by JS -->
+
             <!-- Loading indicator -->
             <div class="typing-indicator hidden" id="typing-indicator">
                 <div class="message-wrapper bot-message">
@@ -61,8 +61,8 @@
         <!-- Input Area -->
         <div class="chat-input-wrapper">
             <div class="chat-input-container">
-                <textarea id="message-input" placeholder="Message Nova..." rows="1" autocomplete="off"></textarea>
-                <button id="send-button" disabled>
+                <textarea id="chat-input" placeholder="Message Nova..." rows="1" autocomplete="off"></textarea>
+                <button id="send-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="22" y1="2" x2="11" y2="13"></line>
                         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -73,6 +73,10 @@
 
     </div>
 
+    <!-- Utility Scripts -->
+    <script src="../utils/ai-client.js"></script>
+    <script src="../utils/resume-manager.js"></script>
+    <script src="../utils/form-analyzer.js"></script>
     <script src="chat.js"></script>
 </body>
 

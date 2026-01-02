@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart AI Job Apply - Settings</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" />
+                        <path d="M2 17L12 22L22 17" />
+                        <path d="M2 12L12 17L22 12" />
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>Smart AI Job Apply</h1>
+                    <span class="tagline">Settings & Resume Manager</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span id="save-status" class="save-status"></span>
+                <button id="export-btn" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Export
+                </button>
+                <button id="import-btn" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Import
+                </button>
+                <input type="file" id="import-file" accept=".json" style="display: none;">
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab active" data-tab="api">🔑 API Key</button>
+            <button class="tab" data-tab="personal">👤 Personal Info</button>
+            <button class="tab" data-tab="experience">💼 Experience</button>
+            <button class="tab" data-tab="education">🎓 Education</button>
+            <button class="tab" data-tab="skills">⚡ Skills</button>
+            <button class="tab" data-tab="projects">🚀 Projects</button>
+            <button class="tab" data-tab="custom">📝 Custom Fields</button>
+        </nav>
+
+        <!-- Tab Content -->
+        <main class="content">
+
+            <!-- API Key Tab -->
+            <section id="tab-api" class="tab-content active">
+                <div class="section-header">
+                    <h2>Gemini API Configuration</h2>
+                    <p>Get your free API key from <a href="https://aistudio.google.com/app/apikey"
+                            target="_blank">Google AI Studio</a></p>
+                </div>
+
+                <div class="card">
+                    <div class="form-group">
+                        <label for="api-key">Gemini API Key</label>
+                        <div class="input-with-button">
+                            <input type="password" id="api-key"
+                                placeholder="Enter your Gemini API key (starts with AIza...)">
+                            <button id="toggle-key-visibility" class="btn btn-icon" title="Show/Hide">
+                                <svg id="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                            <button id="validate-key-btn" class="btn btn-primary">Validate</button>
+                        </div>
+                        <div id="api-key-status" class="input-status"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="api-model">Gemini Model Name</label>
+                        <p class="field-hint">Default: gemini-2.5-flash. Use specific ID if needed.</p>
+                        <input type="text" id="api-model" placeholder="gemini-2.5-flash" value="gemini-2.5-flash">
+                    </div>
+
+                    <div class="info-box">
+                        <h4>🔒 Privacy Note</h4>
+                        <p>Your API key is stored locally in your browser and never sent to our servers. All AI
+                            processing happens directly between your browser and Google's API.</p>
+                    </div>
+
+                    <div class="info-box info-box-tip">
+                        <h4>💡 Getting Your Free API Key</h4>
+                        <ol>
+                            <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI
+                                    Studio</a></li>
+                            <li>Sign in with your Google account</li>
+                            <li>Click "Create API Key"</li>
+                            <li>Copy and paste the key here</li>
+                        </ol>
+                        <p><strong>Free tier:</strong> 60 requests per minute, plenty for job applications!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Personal Info Tab -->
+            <section id="tab-personal" class="tab-content">
+                <div class="section-header">
+                    <h2>Personal Information</h2>
+                    <p>Basic contact information for job applications</p>
+                </div>
+
+                <div class="card">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name *</label>
+                            <input type="text" id="firstName" data-field="personal.firstName" placeholder="John">
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name *</label>
+                            <input type="text" id="lastName" data-field="personal.lastName" placeholder="Doe">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email *</label>
+                            <input type="email" id="email" data-field="personal.email" placeholder="john.doe@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone *</label>
+                            <input type="tel" id="phone" data-field="personal.phone" placeholder="+1 (555) 123-4567">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input type="text" id="location" data-field="personal.location" placeholder="San Francisco, CA">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="linkedin">LinkedIn URL</label>
+                            <input type="url" id="linkedin" data-field="personal.linkedin"
+                                placeholder="https://linkedin.com/in/johndoe">
+                        </div>
+                        <div class="form-group">
+                            <label for="github">GitHub URL</label>
+                            <input type="url" id="github" data-field="personal.github"
+                                placeholder="https://github.com/johndoe">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="portfolio">Portfolio / Website</label>
+                        <input type="url" id="portfolio" data-field="personal.portfolio"
+                            placeholder="https://johndoe.dev">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="summary">Professional Summary</label>
+                        <textarea id="summary" data-field="summary" rows="4"
+                            placeholder="Brief professional summary highlighting your experience and career goals..."></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Experience Tab -->
+            <section id="tab-experience" class="tab-content">
+                <div class="section-header">
+                    <h2>Work Experience</h2>
+                    <p>Add your work history, most recent first</p>
+                    <button id="add-experience-btn" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Experience
+                    </button>
+                </div>
+
+                <div id="experience-list" class="items-list">
+                    <!-- Experience items will be added here dynamically -->
+                </div>
+
+                <div id="experience-empty" class="empty-state">
+                    <div class="empty-icon">💼</div>
+                    <h3>No experience added yet</h3>
+                    <p>Click "Add Experience" to add your work history</p>
+                </div>
+            </section>
+
+            <!-- Education Tab -->
+            <section id="tab-education" class="tab-content">
+                <div class="section-header">
+                    <h2>Education</h2>
+                    <p>Add your educational background</p>
+                    <button id="add-education-btn" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Education
+                    </button>
+                </div>
+
+                <div id="education-list" class="items-list">
+                    <!-- Education items will be added here dynamically -->
+                </div>
+
+                <div id="education-empty" class="empty-state">
+                    <div class="empty-icon">🎓</div>
+                    <h3>No education added yet</h3>
+                    <p>Click "Add Education" to add your educational background</p>
+                </div>
+            </section>
+
+            <!-- Skills Tab -->
+            <section id="tab-skills" class="tab-content">
+                <div class="section-header">
+                    <h2>Skills</h2>
+                    <p>Add your technical and soft skills</p>
+                </div>
+
+                <div class="card">
+                    <div class="form-group">
+                        <label for="technical-skills">Technical Skills</label>
+                        <p class="field-hint">Programming languages, frameworks, tools (comma-separated)</p>
+                        <input type="text" id="technical-skills" placeholder="JavaScript, Python, React, Node.js, AWS">
+                        <div id="technical-skills-tags" class="tags-container"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="soft-skills">Soft Skills</label>
+                        <p class="field-hint">Leadership, communication, teamwork (comma-separated)</p>
+                        <input type="text" id="soft-skills" placeholder="Leadership, Communication, Problem Solving">
+                        <div id="soft-skills-tags" class="tags-container"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="languages">Languages</label>
+                        <p class="field-hint">Spoken languages with proficiency (comma-separated)</p>
+                        <input type="text" id="languages" placeholder="English (Native), Spanish (Fluent)">
+                        <div id="languages-tags" class="tags-container"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="certifications">Certifications</label>
+                        <p class="field-hint">Professional certifications (comma-separated)</p>
+                        <input type="text" id="certifications" placeholder="AWS Solutions Architect, PMP">
+                        <div id="certifications-tags" class="tags-container"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Projects Tab -->
+            <section id="tab-projects" class="tab-content">
+                <div class="section-header">
+                    <h2>Projects</h2>
+                    <p>Showcase your notable projects</p>
+                    <button id="add-project-btn" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Project
+                    </button>
+                </div>
+
+                <div id="projects-list" class="items-list">
+                    <!-- Project items will be added here dynamically -->
+                </div>
+
+                <div id="projects-empty" class="empty-state">
+                    <div class="empty-icon">🚀</div>
+                    <h3>No projects added yet</h3>
+                    <p>Click "Add Project" to showcase your work</p>
+                </div>
+            </section>
+
+            <!-- Custom Fields Tab -->
+            <section id="tab-custom" class="tab-content">
+                <div class="section-header">
+                    <h2>Custom Fields</h2>
+                    <p>Common job application questions</p>
+                </div>
+
+                <div class="card">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="salaryExpectation">Salary Expectation</label>
+                            <input type="text" id="salaryExpectation" data-field="customFields.salaryExpectation"
+                                placeholder="$120,000 - $150,000">
+                        </div>
+                        <div class="form-group">
+                            <label for="noticePeriod">Notice Period</label>
+                            <input type="text" id="noticePeriod" data-field="customFields.noticePeriod"
+                                placeholder="2 weeks">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="workAuthorization">Work Authorization</label>
+                        <select id="workAuthorization" data-field="customFields.workAuthorization">
+                            <option value="">Select...</option>
+                            <option value="US Citizen">US Citizen</option>
+                            <option value="Permanent Resident">Permanent Resident (Green Card)</option>
+                            <option value="H1B Visa">H1B Visa</option>
+                            <option value="F1 OPT">F1 OPT/CPT</option>
+                            <option value="TN Visa">TN Visa</option>
+                            <option value="Other Work Visa">Other Work Visa</option>
+                            <option value="UK - British Citizen">UK - British Citizen</option>
+                            <option value="UK - Settled Status">UK - Settled Status</option>
+                            <option value="EU - Citizen">EU - Citizen</option>
+                            <option value="Canada - Citizen">Canada - Citizen</option>
+                            <option value="Canada - PR">Canada - Permanent Resident</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Sponsorship Required?</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="sponsorshipRequired" value="false"
+                                        data-field="customFields.sponsorshipRequired"> No
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="sponsorshipRequired" value="true"
+                                        data-field="customFields.sponsorshipRequired"> Yes
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Willing to Relocate?</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="willingToRelocate" value="true"
+                                        data-field="customFields.willingToRelocate"> Yes
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="willingToRelocate" value="false"
+                                        data-field="customFields.willingToRelocate"> No
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="preferredLocation">Preferred Work Location(s)</label>
+                        <p class="field-hint">Cities, States, or Countries you are targeting (comma-separated)</p>
+                        <input type="text" id="preferredLocation" data-field="customFields.preferredLocation"
+                            placeholder="New York, NY, Austin, TX, Remote">
+                    </div>
+
+                    <hr class="divider">
+                    <h4>Equal Opportunity Information (Optional)</h4>
+                    <p class="section-note">This information is often requested on applications. Fill in if you wish to
+                        auto-fill these fields.</p>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="veteranStatus">Veteran Status</label>
+                            <select id="veteranStatus" data-field="customFields.veteranStatus">
+                                <option value="">Select...</option>
+                                <option value="Not a Veteran">Not a Veteran</option>
+                                <option value="Veteran">Veteran</option>
+                                <option value="Protected Veteran">Protected Veteran</option>
+                                <option value="Decline to Self-Identify">Decline to Self-Identify</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="disabilityStatus">Disability Status</label>
+                            <select id="disabilityStatus" data-field="customFields.disabilityStatus">
+                                <option value="">Select...</option>
+                                <option value="No">No, I don't have a disability</option>
+                                <option value="Yes">Yes, I have a disability</option>
+                                <option value="Decline to Self-Identify">Decline to Self-Identify</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gender">Gender</label>
+                            <select id="gender" data-field="customFields.gender">
+                                <option value="">Select...</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Non-Binary">Non-Binary</option>
+                                <option value="Other">Other</option>
+                                <option value="Decline to Self-Identify">Decline to Self-Identify</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ethnicity">Ethnicity</label>
+                            <select id="ethnicity" data-field="customFields.ethnicity">
+                                <option value="">Select...</option>
+                                <option value="American Indian or Alaska Native">American Indian or Alaska Native
+                                </option>
+                                <option value="Asian">Asian</option>
+                                <option value="Black or African American">Black or African American</option>
+                                <option value="Hispanic or Latino">Hispanic or Latino</option>
+                                <option value="Native Hawaiian or Pacific Islander">Native Hawaiian or Pacific Islander
+                                </option>
+                                <option value="White">White</option>
+                                <option value="Two or More Races">Two or More Races</option>
+                                <option value="Decline to Self-Identify">Decline to Self-Identify</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="referralSource">Default Referral Source</label>
+                        <input type="text" id="referralSource" data-field="customFields.referralSource"
+                            placeholder="LinkedIn, Indeed, Company Website, etc.">
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-left">
+                <span id="data-status">Loading...</span>
+            </div>
+            <div class="footer-right">
+                <button id="clear-data-btn" class="btn btn-danger-outline">Clear All Data</button>
+                <button id="save-btn" class="btn btn-primary btn-large">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Save All Changes
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal Template for Experience/Education/Projects -->
+    <div id="item-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Item</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div id="modal-body" class="modal-body">
+                <!-- Dynamic form content -->
+            </div>
+            <div class="modal-footer">
+                <button id="modal-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="modal-save" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="../utils/ai-client.js"></script>
+    <script src="../utils/resume-manager.js"></script>
+    <script src="options.js"></script>
+</body>
+
+</html>
