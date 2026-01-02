@@ -231,16 +231,16 @@ async function processPageFormLocal() {
                             continue; // Retry
                         }
 
-                        console.error('AI Error (No Retry):', result?.error);
-                        return null;
+                        console.error('AI Error (No Retry):', result?.error || 'Unknown error');
+                        return { success: false, error: result?.error || 'AI request failed' };
 
                     } catch (e) {
                         console.error('AI Comms Error:', e);
-                        return null;
+                        return { success: false, error: `Communication error: ${e.message}` };
                     }
                 }
                 showErrorToast('AI is busy (Rate Limit). Please try again in a minute.');
-                return null;
+                return { success: false, error: 'Rate limit exceeded after retries' };
             };
 
             const aiResult = await window.FormAnalyzer.mapResumeToFields(unmapped, resumeData, pageContext);
