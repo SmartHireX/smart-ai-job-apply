@@ -988,73 +988,139 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
             // Spotlight Hover Effect
             fieldItem.addEventListener('mouseenter', () => {
                 field.field.classList.add('smarthirex-spotlight');
+                // Scroll if needed, but maybe less aggressive? Keep gentle scroll.
                 field.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                showPointingHand(field.field);
+                showConnectionBeam(fieldItem, field.field);
             });
 
             fieldItem.addEventListener('mouseleave', () => {
                 field.field.classList.remove('smarthirex-spotlight');
-                hidePointingHand();
+                hideConnectionBeam();
             });
         }
     });
 }
 
-function showPointingHand(targetElement) {
-    hidePointingHand(); // Clear existing
+// Global variable to manage the animation loop
+let beamAnimationFrameId = null;
 
-    if (!targetElement || !isFieldVisible(targetElement)) return;
+function showConnectionBeam(sourceEl, targetEl) {
+    hideConnectionBeam(); // Clear existing
 
-    const rect = targetElement.getBoundingClientRect();
-    const hand = document.createElement('div');
-    hand.id = 'smarthirex-pointing-hand';
+    if (!sourceEl || !targetEl || !isFieldVisible(targetEl)) return;
 
-    // Premium Hand SVG (White glove style / Modern Cursor)
-    hand.innerHTML = `
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
-            <path d="M16.5 9.5L7.5 4.5L10.5 19.5L13.5 13.5L19.5 13.5L16.5 9.5Z" fill="#0f172a" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
-        </svg>
-    `;
-
-    // Position: To the right of the field, pointing left? 
-    // Or standard "cursor" style pointing top-left?
-    // Let's effectively place it to the LEFT of the field, pointing at it.
-    // SVG above is a cursor pointer. Let's rotate it 90deg to point right? 
-    // Or use a dedicated "Hand Pointing Right" emoji/SVG.
-
-    // Let's use a nice hand emoji for "Premium" feel or a sleek SVG arrow.
-    // User asked for "Pointing Hand".
-    hand.innerHTML = `
-        <div style="font-size: 32px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));">👈</div>
-    `;
-
-    // Let's position it to the RIGHT of the field, pointing LEFT (👈)
-    const padding = 10;
-
-    hand.style.cssText = `
+    // Create SVG Overlay
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.id = 'smarthirex-connection-beam';
+    svg.style.cssText = `
         position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 2147483646; /* Just below the sidebar */
+        overflow: visible;
+    `;
+
+    // Create Path
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "url(#beamGradient)");
+    path.setAttribute("stroke-width", "2"); // Thinner, more elegant
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-dasharray", "4, 6"); // Dotted/Dashed pattern
+    path.setAttribute("filter", "url(#glow)");
+    path.style.transition = "opacity 0.2s ease";
+
+    // Continuous flowing data effect (FANG style)
+    path.style.animation = "flowBeam 1s linear infinite";
+
+    // Create Gradient Definition
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    defs.innerHTML = `
+        <linearGradient id="beamGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.8" />
+            <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0.8" />
+        </linearGradient>
+        <filter id="glow">
+            <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+    `;
+
+    svg.appendChild(defs);
+    svg.appendChild(path);
+    document.body.appendChild(svg);
+
+    // Add glowing dot at target
+    const targetDot = document.createElement('div');
+    targetDot.id = 'smarthirex-beam-target';
+    targetDot.style.cssText = `
+        position: fixed;
+        width: 8px;
+        height: 8px;
+        background: #8b5cf6;
+        border-radius: 50%;
+        box-shadow: 0 0 8px #8b5cf6, 0 0 16px #8b5cf6;
         z-index: 2147483647;
         pointer-events: none;
-        top: ${rect.top + (rect.height / 2) - 24}px; 
-        left: ${rect.right + padding}px;
-        animation: floatHand 1s ease-in-out infinite;
-        opacity: 0;
-        transform: translateX(10px);
-        transition: opacity 0.2s, transform 0.2s;
+        transform: scale(0);
+        opacity: 0; 
+        animation: popIn 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67) 0.1s forwards;
     `;
+    document.body.appendChild(targetDot);
 
-    document.body.appendChild(hand);
+    // Animation / Tracking Loop
+    function updateBeam() {
+        if (!sourceEl || !targetEl || !document.getElementById('smarthirex-connection-beam')) {
+            cancelAnimationFrame(beamAnimationFrameId);
+            return;
+        }
 
-    // Trigger entrance
-    requestAnimationFrame(() => {
-        hand.style.opacity = '1';
-        hand.style.transform = 'translateX(0)';
-    });
+        const sourceRect = sourceEl.getBoundingClientRect();
+        const targetRect = targetEl.getBoundingClientRect();
+
+        const startX = sourceRect.right;
+        const startY = sourceRect.top + (sourceRect.height / 2);
+        const endX = targetRect.left;
+        const endY = targetRect.top + (targetRect.height / 2);
+
+        // Control points
+        const deltaX = endX - startX;
+        const cp1x = startX + (deltaX * 0.4);
+        const cp1y = startY;
+        const cp2x = endX - (deltaX * 0.4);
+        const cp2y = endY;
+
+        const d = `M ${startX} ${startY} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${endX} ${endY}`;
+        path.setAttribute("d", d);
+
+        // Update target dot position
+        targetDot.style.left = `${endX - 4}px`;
+        targetDot.style.top = `${endY - 4}px`;
+
+        // Request next frame
+        beamAnimationFrameId = requestAnimationFrame(updateBeam);
+    }
+
+    // Start tracking
+    updateBeam();
 }
 
-function hidePointingHand() {
-    const hand = document.getElementById('smarthirex-pointing-hand');
-    if (hand) hand.remove();
+function hideConnectionBeam() {
+    if (beamAnimationFrameId) {
+        cancelAnimationFrame(beamAnimationFrameId);
+        beamAnimationFrameId = null;
+    }
+    const beam = document.getElementById('smarthirex-connection-beam');
+    if (beam) beam.remove();
+
+    const dot = document.getElementById('smarthirex-beam-target');
+    if (dot) dot.remove();
 }
 
 function addAccordionStyles() {
@@ -1095,9 +1161,13 @@ function addAccordionStyles() {
             border-radius: 3px;
         }
 
-        @keyframes floatHand {
-            0%, 100% { transform: translateX(0); }
-            50% { transform: translateX(5px); } /* Bounce right */
+        @keyframes flowBeam {
+            to { stroke-dashoffset: -20; }
+        }
+        
+        @keyframes popIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
 
