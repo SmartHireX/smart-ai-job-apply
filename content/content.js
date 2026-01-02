@@ -1351,6 +1351,38 @@ function setupSidebarInteractivity(panel) {
     }
 }
 
+/**
+ * Shows a small floating trigger to reopen the sidebar
+ */
+function showReopenTrigger(highFields, lowFields) {
+    if (document.getElementById('smarthirex-reopen-trigger')) return;
+
+    // Remove existing if any (just in case)
+    const existing = document.getElementById('smarthirex-reopen-trigger');
+    if (existing) existing.remove();
+
+    const trigger = document.createElement('div');
+    trigger.id = 'smarthirex-reopen-trigger';
+    trigger.innerHTML = `
+        <div class="trigger-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+        </div>
+        <span>Open Form Review</span>
+    `;
+
+    trigger.addEventListener('click', () => {
+        trigger.remove();
+        showAccordionSidebar(highFields, lowFields);
+    });
+
+    document.body.appendChild(trigger);
+
+    // Auto-remove after some time or on navigation? 
+    // For now, keep it until they undo or refresh.
+}
+
 function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
     console.log('🎯 SmartHireX: Showing accordion sidebar...');
     console.log(`High-conf: ${highConfidenceFields.length}, Low-conf: ${lowConfidenceFields.length}`);
@@ -1415,6 +1447,10 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
         console.log('No fields to show in sidebar');
         return;
     }
+
+    // Remove existing reopen trigger if showing
+    const existingTrigger = document.getElementById('smarthirex-reopen-trigger');
+    if (existingTrigger) existingTrigger.remove();
 
     // Create accordion sidebar panel
     const panel = document.createElement('div');
@@ -1550,6 +1586,10 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
         sidebarCloseBtn.addEventListener('click', () => {
             const sidebar = document.getElementById('smarthirex-accordion-sidebar');
             if (sidebar) sidebar.remove();
+
+            // Show the reopen trigger
+            showReopenTrigger(highConfidenceFields, lowConfidenceFields);
+
             document.querySelectorAll('.smarthirex-field-highlight').forEach(el => el.classList.remove('smarthirex-field-highlight'));
             hideConnectionBeam(); // Clean up beam
         });
@@ -2060,6 +2100,49 @@ function addAccordionStyles() {
             opacity: 1;
             visibility: visible;
         }
+
+        /* Reopen Sidebar Trigger */
+        #smarthirex-reopen-trigger {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            height: 44px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #0073b1;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 10px;
+            cursor: pointer;
+            z-index: 2147483647;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            color: #1e293b;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: popIn 0.3s ease-out;
+            user-select: none;
+        }
+
+        #smarthirex-reopen-trigger:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 12px 28px -5px rgba(0, 0, 0, 0.15);
+            background: #f8fafc;
+        }
+
+        #smarthirex-reopen-trigger .trigger-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: #eef2ff;
+            color: #0073b1;
+            border-radius: 6px;
+        }
         
         #smarthirex-accordion-sidebar .accordion-section {
             border-bottom: 1px solid #e5e7eb;
@@ -2405,6 +2488,10 @@ function undoFormFill() {
 
     // Ensure beam is gone
     hideConnectionBeam();
+
+    // Remove reopen trigger if it exists
+    const reopenTrigger = document.getElementById('smarthirex-reopen-trigger');
+    if (reopenTrigger) reopenTrigger.remove();
 
     return { success: true };
 }
