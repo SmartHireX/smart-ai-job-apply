@@ -18,6 +18,9 @@ USER PROFILE DATA:
 USER RESUME DATA (Primary Resume):
 {{RESUME_DATA}}
 
+JOB CONTEXT (Page Title, Job Description, Company):
+{{JOB_CONTEXT}}
+
 FORM FIELDS TO FILL:
 {{FORM_FIELDS}}
 
@@ -31,11 +34,17 @@ USE FIELD CONTEXT FOR BETTER UNDERSTANDING:
 - Context helps disambiguate similar field names (e.g., "start date" could be availability or last job)
 - If context.hint exists, use it for formatting (e.g., "Format: MM/DD/YYYY", "Enter as integer")
 
+USE JOB CONTEXT FOR TAILORED ANSWERS:
+- If a question asks "Why do you want to work here?" use the **Company Name** and **Job Title** from the Job Context.
+- If a question asks "Why are you a good fit?" highlight skills from the Resume that match the **Job Description** in the Job Context.
+- Mention specific keywords found in the Job Context to increase ATS compatibility.
+
 CONFIDENCE SCORING RULES:
 - **1.0 (Perfect Match)**: Exact match found in user profile (e.g., email → user.email)
 - **0.95 (Profile Match)**: Direct profile field with high certainty (e.g., name, phone)
 - **0.90 (Resume Match)**: Data directly from resume with minor formatting (e.g., education, experience)
 - **0.80 (Inferred from Resume)**: Derived from resume context (e.g., years of experience calculated from work history)
+- **0.75 (Context Tailored)**: Answer specifically tailored to the Job Description (High Value).
 - **0.70 (AI Generated - High Context)**: Generated answer using rich resume context (e.g., "Why this company?" using resume summary + skills)
 - **0.60 (AI Generated - Medium Context)**: Generated with some context (e.g., cover letter intro)
 - **0.50 (AI Generated - Low Context)**: Generic AI generation with minimal context
@@ -54,11 +63,11 @@ MAPPING INSTRUCTIONS:
    - Calculate years of experience from work history
    - Derive current company from most recent job
    - Extract degree/university from education
-4. **AI Generation for Open-Ended Questions**:
-   - "Why do you want to work here?" → Use resume summary + relevant skills
-   - "Tell us about yourself" → Professional summary from resume
-   - "Cover letter" → Generate using resume highlights
-   - "Why are you a good fit?" → Match resume skills to common job requirements
+4. **AI Generation for Open-Ended Questions (TAILORED)**:
+   - "Why do you want to work here?" → Connect resume goals to **Job Context** (Company Mission/Product).
+   - "Tell us about yourself" → Professional summary + relevance to **Job Context**.
+   - "Cover letter" → Generate using resume highlights matching **Job Context** requirements.
+   - "Why are you a good fit?" → Match resume skills to **Job Context** requirements.
 5. **File Upload Detection**:
    - Mark file upload fields with skip=true and instructions
    - Common file field purposes: resume_upload, cover_letter_upload, portfolio_upload
@@ -318,25 +327,29 @@ function mapFieldsHeuristically(fields, resumeData) {
  * @param {Object} resumeData - Resume data from ResumeManager
  * @returns {Promise<{success: boolean, mappings?: Object, error?: string}>}
  */
-async function mapResumeToFields(fields, resumeData) {
-    // Get flattened resume for easier mapping context
-    const flatResume = await window.ResumeManager.getFlattenedResumeData();
-    const resumeText = await window.ResumeManager.getResumeAsText();
+/**
+ * Step 3: Map resume data to remaining fields using AI
+ * @param {Array} fields - List of unmapped field objects
+ * @param {Object} resumeData - Parsed resume data
+ * @param {string} pageContext - Scraped context (Title, JD, Company)
+ */
+async function mapResumeToFields(fields, resumeData, pageContext = '') {
+    // 1. Check if we have fields to map
+    if (!fields || fields.length === 0) return { success: true, mappings: {} };
 
-    // Prepare separate User Data and Resume Data for the prompt
-    // In standalone mode, we mostly have resume data.
-    // We can infer "User Data" (Profile) from resume personal info
+    // 2. Prepare user data (Manual construction from resume)
     const userData = {
-        name: resumeData.personal?.firstName + ' ' + resumeData.personal?.lastName,
+        name: (resumeData.personal?.firstName || '') + ' ' + (resumeData.personal?.lastName || ''),
         email: resumeData.personal?.email,
         phone: resumeData.personal?.phone,
         location: resumeData.personal?.location,
         linkedin: resumeData.personal?.linkedin,
         github: resumeData.personal?.github,
         portfolio: resumeData.personal?.portfolio,
-        custom: resumeData.customFields
+        custom: resumeData.customFields || {}
     };
 
+    // 3. Construct Prompt
     const prompt = PROMPTS.MAP_DATA
         .replace('{{USER_DATA}}', JSON.stringify(userData, null, 2))
         .replace('{{RESUME_DATA}}', JSON.stringify({
@@ -346,6 +359,7 @@ async function mapResumeToFields(fields, resumeData) {
             projects: resumeData.projects,
             summary: resumeData.summary
         }, null, 2))
+        .replace('{{JOB_CONTEXT}}', pageContext || 'No specific job context available. Infer from field labels.')
         .replace('{{FORM_FIELDS}}', JSON.stringify(fields, null, 2));
 
     const result = await window.AIClient.callAI(prompt, '', {

@@ -195,12 +195,18 @@ async function processPageFormLocal() {
             // Use global FormAnalyzer but inject local context
             const originalCallAI = window.AIClient.callAI;
 
-            // 4. Extract Page Context (Job Desc, Company Name) - Lightweight
+            // 4. Extract Page Context (Job Desc, Company Name) - Robust
             let pageContext = '';
             try {
-                const jobTitle = document.querySelector('h1')?.innerText || '';
-                const company = document.querySelector('h2')?.innerText || '';
-                pageContext = `Job: ${jobTitle}, Company: ${company}`;
+                const title = document.title;
+                const h1 = document.querySelector('h1')?.innerText || '';
+                const h2 = document.querySelector('h2')?.innerText || '';
+                const metaDesc = document.querySelector('meta[name="description"]')?.content || '';
+                // Grab some body text to find keywords (limited to 1500 chars)
+                const bodyText = document.body.innerText.substring(0, 1500).replace(/\s+/g, ' ');
+
+                pageContext = `Page Title: ${title}\nHeader: ${h1} - ${h2}\nSummary: ${metaDesc}\nContent Snippet: ${bodyText}`;
+                console.log('🧠 Scraped Job Context:', pageContext.substring(0, 100) + '...');
             } catch (e) { pageContext = 'Context unavailable'; }
 
             console.log('🧠 Invoking AI for Contextual Filling...');
@@ -247,7 +253,7 @@ async function processPageFormLocal() {
                 return null;
             };
 
-            const aiResult = await window.FormAnalyzer.mapResumeToFields(unmapped, resumeData);
+            const aiResult = await window.FormAnalyzer.mapResumeToFields(unmapped, resumeData, pageContext);
             window.AIClient.callAI = originalCallAI; // Restore
 
             if (aiResult.success && aiResult.mappings) {
