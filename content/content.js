@@ -685,11 +685,23 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                 </svg>
                 <span>Form Review</span>
             </div>
-            <button class="close-btn" id="smarthirex-sidebar-close">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
+            <button class="close-btn" id="smarthirex-sidebar-close" aria-label="Close Sidebar" style="
+                display: block !important;
+                width: 24px !important;
+                height: 24px !important;
+                background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%223%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M18 6L6 18M6 6l12 12%22/%3E%3C/svg%3E') !important;
+                background-repeat: no-repeat !important;
+                background-position: center !important;
+                background-size: 16px 16px !important;
+                background-color: rgba(255, 255, 255, 0.2) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                border-radius: 6px !important;
+                cursor: pointer !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                min-width: 24px !important;
+                color: transparent !important; /* Hide any text leak */
+            ">
             </button>
         </div>
         
@@ -706,6 +718,7 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                     </svg>
                 </div>
                 <div class="section-content" id="autofilled-content">
+                    <div class="section-inner-wrapper">
                     ${autoFilledFields.map((item, i) => `
                         <div class="field-item success-field" data-field-idx="auto-${i}">
                             <div class="field-info">
@@ -737,6 +750,7 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                     </svg>
                 </div>
                 <div class="section-content expanded" id="needsreview-content">
+                    <div class="section-inner-wrapper">
                     ${needsReviewFields.map((item, i) => `
                         <div class="field-item warning-field" data-field-idx="review-${i}">
                             <div class="field-info">
@@ -768,6 +782,7 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                     </svg>
                 </div>
                 <div class="section-content expanded" id="fileuploads-content">
+                    <div class="section-inner-wrapper">
                     ${fileUploadFields.map((item, i) => `
                         <div class="field-item file-field" data-field-idx="file-${i}">
                             <div class="field-info">
@@ -991,14 +1006,25 @@ function addAccordionStyles() {
         }
         
         #smarthirex-accordion-sidebar .section-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         #smarthirex-accordion-sidebar .section-content.expanded {
-            max-height: 500px;
-            overflow-y: auto;
+            grid-template-rows: 1fr;
+        }
+
+        #smarthirex-accordion-sidebar .section-inner-wrapper {
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #smarthirex-accordion-sidebar .section-content.expanded .section-inner-wrapper {
+            opacity: 1;
+            transform: translateY(0);
         }
         
         #smarthirex-accordion-sidebar .field-item {
