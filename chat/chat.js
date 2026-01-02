@@ -207,9 +207,9 @@ ${JSON.stringify(resumeData, null, 2)}
 
         const prompt = `Analyze my resume fit for this job position in detail.`;
 
-        // Call AI with increased token limit for detailed response
+        // Call AI with moderate token limit to enable continue functionality
         const result = await window.AIClient.callAI(prompt, systemPrompt, {
-            maxTokens: 2500,  // Increased for comprehensive analysis
+            maxTokens: 1200,  // Reduced to trigger continue button
             temperature: 0.4   // Lower for more focused, factual analysis
         });
 
@@ -217,6 +217,16 @@ ${JSON.stringify(resumeData, null, 2)}
 
         if (result.success) {
             addMessage('bot', result.text);
+
+            // Check if response was truncated (common indicators)
+            const isTruncated = result.text.length > 2000 ||
+                result.text.endsWith('...') ||
+                !result.text.includes('📝 Summary') ||
+                !result.text.includes('### 💡');
+
+            if (isTruncated) {
+                addContinueButton();
+            }
         } else {
             addMessage('error', `Analysis failed: ${result.error}`);
         }
@@ -270,7 +280,7 @@ async function handleStandardChat(text) {
 
     // Call AI
     const result = await window.AIClient.callAI(fullPrompt, '', {
-        maxTokens: 1024,
+        maxTokens: 800,  // Reduced to enable continue button
         temperature: 0.7
     });
 
@@ -278,6 +288,16 @@ async function handleStandardChat(text) {
 
     if (result.success) {
         addMessage('bot', result.text);
+
+        // Check if response seems truncated
+        const seemsTruncated = result.text.length > 900 && (
+            result.text.endsWith('...') ||
+            !result.text.match(/[.!?][\s]*$/) // Doesn't end with proper punctuation
+        );
+
+        if (seemsTruncated) {
+            addContinueButton();
+        }
     } else {
         addMessage('error', `Sorry, I encountered an issue: ${result.error}`);
     }
@@ -333,6 +353,68 @@ function addActionChips(actions) {
     scrollToBottom();
 }
 
+/**
+ * Add continue button when response is truncated
+ */
+function addContinueButton() {
+    const continueContainer = document.createElement('div');
+    continueContainer.className = 'continue-button-container';
+    continueContainer.style.cssText = `
+        display: flex;
+        justify-content: flex-start;
+        margin: 8px 0 16px 0;
+        padding: 0 12px 0 54px;
+    `;
+
+    const continueBtn = document.createElement('button');
+    continueBtn.textContent = '↓ Continue';
+    continueBtn.className = 'continue-button';
+    continueBtn.style.cssText = `
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    `;
+
+    continueBtn.onmouseover = () => {
+        continueBtn.style.transform = 'translateY(-2px)';
+        continueBtn.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.5)';
+    };
+
+    continueBtn.onmouseout = () => {
+        continueBtn.style.transform = 'translateY(0)';
+        continueBtn.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.3)';
+    };
+
+    continueBtn.onclick = async () => {
+        continueBtn.disabled = true;
+        continueBtn.style.opacity = '0.6';
+        continueBtn.textContent = 'Continuing...';
+
+        // Remove the continue button
+        continueContainer.remove();
+
+        // Send continuation request
+        chatInput.value = 'Please continue from where you left off.';
+        await handleSendMessage();
+    };
+
+    continueContainer.appendChild(continueBtn);
+
+    // Insert before typing indicator
+    chatOutput.insertBefore(continueContainer, typingIndicator);
+    scrollToBottom();
+}
+
 function addMessage(role, content) {
     const wrapper = document.createElement('div');
     wrapper.className = `message-wrapper ${role}-message`;
@@ -366,17 +448,28 @@ function addMessage(role, content) {
         msgContent.innerHTML = `<div class="message-text">${content}</div>`;
         if (role === 'error') msgContent.style.color = '#ef4444';
     } else {
-        // Parse markdown-like syntax
-        let formatted = content
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/`(.*?)`/g, '<code>$1</code>')
-            .replace(/\n/g, '<br>');
+        // For bot messages, create empty container for streaming
+        const messageText = document.createElement('div');
+        messageText.className = 'message-text';
+        msgContent.appendChild(messageText);
 
-        msgContent.innerHTML = `<div class="message-text">${formatted}</div>`;
+        // If it's a bot message, stream it
+        if (role === 'bot') {
+            // Insert before typing indicator
+            wrapper.appendChild(msgContent);
+            chatOutput.insertBefore(wrapper, typingIndicator);
+
+            // Stream the text
+            streamText(messageText, content);
+
+            // Add to history after streaming starts
+            chatHistory.push({ role, content });
+            scrollToBottom();
+            return; // Exit early for bot messages
+        } else {
+            // For user messages, show immediately
+            messageText.textContent = content;
+        }
     }
 
     wrapper.appendChild(msgContent);
@@ -388,6 +481,53 @@ function addMessage(role, content) {
     }
 
     scrollToBottom();
+}
+
+/**
+ * Stream text with typewriter effect
+ */
+function streamText(element, text, speed = 20) {
+    let index = 0;
+    let buffer = '';
+
+    // Format markdown-like syntax
+    const formatted = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        .replace(/\n/g, '<br>');
+
+    function typeNextChar() {
+        if (index < formatted.length) {
+            // Handle HTML tags - add them all at once
+            if (formatted[index] === '<') {
+                const tagEnd = formatted.indexOf('>', index);
+                if (tagEnd !== -1) {
+                    buffer += formatted.substring(index, tagEnd + 1);
+                    index = tagEnd + 1;
+                } else {
+                    buffer += formatted[index];
+                    index++;
+                }
+            } else {
+                buffer += formatted[index];
+                index++;
+            }
+
+            element.innerHTML = buffer + '<span class="cursor">▋</span>';
+            scrollToBottom();
+            setTimeout(typeNextChar, speed);
+        } else {
+            // Remove cursor when done
+            element.innerHTML = buffer;
+            scrollToBottom();
+        }
+    }
+
+    typeNextChar();
 }
 
 function startTyping() {

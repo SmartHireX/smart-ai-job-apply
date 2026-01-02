@@ -17,6 +17,27 @@ body {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
+/* Typing cursor animation */
+.cursor {
+    display: inline-block;
+    animation: blink 1s infinite;
+    margin-left: 2px;
+    color: #667eea;
+}
+
+@keyframes blink {
+
+    0%,
+    50% {
+        opacity: 1;
+    }
+
+    51%,
+    100% {
+        opacity: 0;
+    }
+}
+
 /* Header */
 .chat-header {
     background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
