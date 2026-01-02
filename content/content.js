@@ -416,8 +416,35 @@ function highlightSubmitButton() {
 }
 
 function getFieldLabel(element) {
-    if (element.labels?.[0]) return element.labels[0].textContent;
-    return element.placeholder || element.name || 'Field';
+    if (element.labels && element.labels[0]) {
+        return element.labels[0].textContent.trim();
+    } else if (element.placeholder) {
+        return element.placeholder;
+    } else if (element.name) {
+        return element.name.replace(/[_-]/g, ' ');
+    } else if (element.id) {
+        return element.id.replace(/[_-]/g, ' ');
+    }
+    return 'Field';
+}
+
+function getElementSelector(element) {
+    if (element.id) {
+        return `#${element.id}`;
+    }
+    if (element.name) {
+        return `input[name="${element.name}"]`;
+    }
+    // Fallback: use tag + nth-of-type
+    const parent = element.parentElement;
+    if (parent) {
+        const siblings = Array.from(parent.children).filter(child =>
+            child.tagName === element.tagName
+        );
+        const index = siblings.indexOf(element) + 1;
+        return `${element.tagName.toLowerCase()}:nth-of-type(${index})`;
+    }
+    return element.tagName.toLowerCase();
 }
 
 
@@ -501,103 +528,524 @@ function showSuccessToast(filled, review) {
     setTimeout(() => { if (toast.parentNode) toast.remove(); }, 6000);
 }
 
-function showAccordionSidebar(highConfArray, lowConfArray) {
-    addAccordionStyles();
+function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
+    console.log('🎯 SmartHireX: Showing accordion sidebar...');
+    console.log(`High-conf: ${highConfidenceFields.length}, Low-conf: ${lowConfidenceFields.length}`);
 
+    // Remove existing sidebar if any
     const existing = document.getElementById('smarthirex-accordion-sidebar');
     if (existing) existing.remove();
 
+    // Prepare high-confidence field info
+    const autoFilledFields = highConfidenceFields.map(item => {
+        const element = document.querySelector(item.selector);
+        if (!element || !isFieldVisible(element)) return null;
+
+        let label = item.fieldData.label || getFieldLabel(element);
+        return {
+            field: element,
+            selector: item.selector,
+            label,
+            confidence: item.confidence,
+            fieldType: item.fieldData.field_type || element.type || 'text',
+            isFileUpload: false
+        };
+    }).filter(Boolean);
+
+    // Prepare low-confidence field info  
+    const needsReviewFields = lowConfidenceFields.map(item => {
+        const element = document.querySelector(item.selector);
+        if (!element || !isFieldVisible(element)) return null;
+
+        let label = item.fieldData.label || getFieldLabel(element);
+        return {
+            field: element,
+            selector: item.selector,
+            label,
+            confidence: item.confidence,
+            fieldType: item.fieldData.field_type || element.type || 'text',
+            isFileUpload: false
+        };
+    }).filter(Boolean);
+
+    // Detect file upload fields
+    const fileUploadFields = [];
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(fileInput => {
+        if (!isFieldVisible(fileInput)) return;
+
+        let label = getFieldLabel(fileInput) || 'File Upload';
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            fileUploadFields.push({
+                field: fileInput,
+                selector: getElementSelector(fileInput),
+                label,
+                confidence: 1.0,
+                fieldType: 'file',
+                isFileUpload: true
+            });
+        }
+    });
+
+    if (autoFilledFields.length === 0 && needsReviewFields.length === 0 && fileUploadFields.length === 0) {
+        console.log('No fields to show in sidebar');
+        return;
+    }
+
+    // Create accordion sidebar panel
     const panel = document.createElement('div');
     panel.id = 'smarthirex-accordion-sidebar';
-
-    const createSection = (title, icon, items, cls) => {
-        if (items.length === 0) return '';
-        return `
-            <div class="accordion-section expanded">
-                <div class="section-header expanded" onclick="this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('expanded')">
-                    <div class="section-title"><span class="section-icon">${icon}</span> <span>${title} (${items.length})</span></div>
-                    <div style="font-size:10px">▼</div>
+    panel.innerHTML = `
+        <div class="sidebar-header">
+            <div class="header-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+                <span>Form Review</span>
+            </div>
+            <button class="close-btn" id="smarthirex-sidebar-close">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        
+        ${autoFilledFields.length > 0 ? `
+            <div class="accordion-section">
+                <div class="section-header collapsed" data-section="autofilled">
+                    <div class="section-title">
+                        <span class="section-icon">✅</span>
+                        <span class="section-label">AUTO-FILLED</span>
+                        <span class="section-count">(${autoFilledFields.length})</span>
+                    </div>
+                    <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
                 </div>
-                <div class="section-content expanded">
-                    ${items.map(item => `
-                        <div class="field-item ${cls}" onclick="document.querySelector('${item.selector}').scrollIntoView({behavior:'smooth',block:'center'}); document.querySelector('${item.selector}').focus()">
+                <div class="section-content" id="autofilled-content">
+                    ${autoFilledFields.map((item, i) => `
+                        <div class="field-item success-field" data-field-idx="auto-${i}">
                             <div class="field-info">
-                                <div class="field-label">${item.fieldData.source || 'Field'}</div>
+                                <div class="field-label">${item.label}</div>
                                 <div class="field-meta">
-                                    <span class="field-confidence">${Math.round((item.confidence || 0) * 100)}%</span>
+                                    <span class="field-type">${item.fieldType.toUpperCase()}</span>
+                                    <span class="field-confidence medium">${Math.round(item.confidence * 100)}%</span>
                                 </div>
                             </div>
+                            <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
                         </div>
                     `).join('')}
                 </div>
             </div>
-        `;
-    };
-
-    panel.innerHTML = `
-        <div class="sidebar-header">
-            <div class="header-title"><span>Form Review</span></div>
-            <button class="close-btn" onclick="this.closest('#smarthirex-accordion-sidebar').remove()">×</button>
-        </div>
-        ${createSection('AUTO-FILLED', '✅', highConfArray, 'success-field')}
-        ${createSection('NEEDS REVIEW', '⚠️', lowConfArray, 'warning-field')}
+        ` : ''}
+        
+        ${needsReviewFields.length > 0 ? `
+            <div class="accordion-section">
+                <div class="section-header expanded" data-section="needs-review">
+                    <div class="section-title">
+                        <span class="section-icon">⚠️</span>
+                        <span class="section-label">NEEDS REVIEW</span>
+                        <span class="section-count">(${needsReviewFields.length})</span>
+                    </div>
+                    <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </div>
+                <div class="section-content expanded" id="needsreview-content">
+                    ${needsReviewFields.map((item, i) => `
+                        <div class="field-item warning-field" data-field-idx="review-${i}">
+                            <div class="field-info">
+                                <div class="field-label">${item.label}</div>
+                                <div class="field-meta">
+                                    <span class="field-type">${item.fieldType.toUpperCase()}</span>
+                                    <span class="field-confidence ${item.confidence >= 0.7 ? 'medium' : 'low'}">${Math.round(item.confidence * 100)}%</span>
+                                </div>
+                            </div>
+                            <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${fileUploadFields.length > 0 ? `
+            <div class="accordion-section">
+                <div class="section-header expanded" data-section="file-uploads">
+                    <div class="section-title">
+                        <span class="section-icon">📎</span>
+                        <span class="section-label">FILE UPLOADS</span>
+                        <span class="section-count">(${fileUploadFields.length})</span>
+                    </div>
+                    <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </div>
+                <div class="section-content expanded" id="fileuploads-content">
+                    ${fileUploadFields.map((item, i) => `
+                        <div class="field-item file-field" data-field-idx="file-${i}">
+                            <div class="field-info">
+                                <div class="field-label">${item.label}</div>
+                                <div class="field-meta">
+                                    <span class="field-type">FILE</span>
+                                    <span class="field-badge">Required</span>
+                                </div>
+                            </div>
+                            <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
     `;
 
+    // Add accordion styles
+    addAccordionStyles();
+
     document.body.appendChild(panel);
+
+    // Add close handler securely
+    const sidebarCloseBtn = panel.querySelector('#smarthirex-sidebar-close');
+    if (sidebarCloseBtn) {
+        sidebarCloseBtn.addEventListener('click', () => {
+            const sidebar = document.getElementById('smarthirex-accordion-sidebar');
+            if (sidebar) sidebar.remove();
+            document.querySelectorAll('.smarthirex-field-highlight').forEach(el => el.classList.remove('smarthirex-field-highlight'));
+        });
+    }
+
+    // Highlight fields that need review
+    needsReviewFields.forEach(item => {
+        item.field.classList.add('smarthirex-field-highlight');
+    });
+
+    // Add toggle handlers for accordion sections
+    const headers = panel.querySelectorAll('.section-header');
+    headers.forEach(header => {
+        header.addEventListener('click', () => {
+            const content = header.nextElementSibling;
+            const isExpanded = header.classList.contains('expanded');
+
+            if (isExpanded) {
+                // Close this section
+                header.classList.remove('expanded');
+                header.classList.add('collapsed');
+                content.classList.remove('expanded');
+            } else {
+                // Close all other sections first
+                headers.forEach(otherHeader => {
+                    const otherContent = otherHeader.nextElementSibling;
+                    otherHeader.classList.remove('expanded');
+                    otherHeader.classList.add('collapsed');
+                    otherContent.classList.remove('expanded');
+                });
+
+                // Then open this section
+                header.classList.remove('collapsed');
+                header.classList.add('expanded');
+                content.classList.add('expanded');
+            }
+        });
+    });
+
+    // Add click handlers for field items  
+    const allFields = [...autoFilledFields, ...needsReviewFields, ...fileUploadFields];
+    panel.querySelectorAll('.field-item').forEach((fieldItem, index) => {
+        const field = allFields[Math.min(index, allFields.length - 1)];
+        if (field) {
+            fieldItem.addEventListener('click', () => {
+                field.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                field.field.focus();
+            });
+        }
+    });
 }
 
 function addAccordionStyles() {
     if (document.getElementById('smarthirex-accordion-styles')) return;
+
     const style = document.createElement('style');
     style.id = 'smarthirex-accordion-styles';
     style.textContent = `
         #smarthirex-accordion-sidebar {
-            position: fixed; bottom: 24px; left: 24px; width: 360px; max-height: 80vh;
-            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 999999;
-            display: flex; flex-direction: column; overflow: hidden;
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            width: 360px;
+            max-height: 80vh;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0,0,0,0.05);
+            z-index: 999999;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
             animation: slideInFromBottomLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            font-family: system-ui, sans-serif;
         }
+        
         @keyframes slideInFromBottomLeft {
-            from { opacity: 0; transform: translateY(40px) translateX(-20px); }
-            to { opacity: 1; transform: translateY(0) translateX(0); }
+            from {
+                opacity: 0;
+                transform: translateY(40px) translateX(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) translateX(0) scale(1);
+            }
         }
-        .sidebar-header { background: #0a66c2; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; }
-        .close-btn { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 4px; cursor: pointer; }
-        .accordion-section { border-bottom: 1px solid #e5e7eb; }
-        .section-header { padding: 12px 16px; background: #f8fafc; cursor: pointer; display: flex; justify-content: space-between; font-weight: 600; font-size: 13px; color: #334155; }
-        .section-content { max-height: 0; overflow: hidden; transition: max-height 0.3s; }
-        .section-content.expanded { max-height: 400px; overflow-y: auto; }
-        .field-item { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 13px; }
-        .field-item:hover { background: #f1f5f9; }
-        .warning-field { border-left: 3px solid #f59e0b; }
-        .success-field { border-left: 3px solid #10b981; }
-        .field-label { font-weight: 500; color: #1e293b; margin-bottom: 2px; }
-        .field-meta { font-size: 11px; color: #64748b; }
         
-        /* Highlight Classes - Using OUTLINE to avoid layout shifts */
-        .smarthirex-filled-high { background-color: rgba(16, 185, 129, 0.05) !important; outline: 2px solid #10b981 !important; outline-offset: -2px; }
-        .smarthirex-filled-medium { background-color: rgba(59, 130, 246, 0.05) !important; outline: 2px solid #3b82f6 !important; outline-offset: -2px; }
-        .smarthirex-filled-low { background-color: rgba(239, 68, 68, 0.05) !important; outline: 2px solid #ef4444 !important; outline-offset: -2px; }
-        
-        .smarthirex-typing { 
-            background: linear-gradient(90deg, transparent 0%, rgba(10,102,194,0.1) 50%, transparent 100%);
-            background-size: 200% 100%; animation: shimmer 1.5s infinite;
-            outline: 2px solid #0a66c2 !important; outline-offset: -2px;
+        #smarthirex-accordion-sidebar .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: #0a66c2;
+            color: white;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         
-        /* Ripple Effect */
-        .smarthirex-ripple {
-            pointer-events: none; background: rgba(16, 185, 129, 0.2);
-            animation: rippleEffect 0.6s ease-out forwards; z-index: 10000;
+        #smarthirex-accordion-sidebar .header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            color: white;
+            letter-spacing: -0.01em;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
-        @keyframes rippleEffect {
-            from { transform: scale(1); opacity: 0.8; }
-            to { transform: scale(1.4); opacity: 0; }
+
+        #smarthirex-accordion-sidebar .header-title svg {
+            color: white;
+            opacity: 0.9;
+        }
+        
+        #smarthirex-accordion-sidebar .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff !important;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            backdrop-filter: blur(4px);
+        }
+        
+        #smarthirex-accordion-sidebar .close-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        
+        #smarthirex-accordion-sidebar .accordion-section {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        #smarthirex-accordion-sidebar .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px 14px 17px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            background: #f8fafc;
+            border: 1px solid rgba(10,102,194,0.15);
+            border-left: 3px solid #0a66c2;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        
+        #smarthirex-accordion-sidebar .section-header:hover {
+            background: #f9fafb;
+        }
+        
+        #smarthirex-accordion-sidebar .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #374151;
+        }
+        
+        #smarthirex-accordion-sidebar .section-icon {
+            font-size: 16px;
+        }
+        
+        #smarthirex-accordion-sidebar .section-count {
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        #smarthirex-accordion-sidebar .toggle-icon {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #9ca3af;
+        }
+        
+        #smarthirex-accordion-sidebar .section-header.expanded .toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        #smarthirex-accordion-sidebar .section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        #smarthirex-accordion-sidebar .section-content.expanded {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        #smarthirex-accordion-sidebar .field-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            border-bottom: 1px solid #f3f4f6;
+            background: #f9fafb;
+        }
+        
+        #smarthirex-accordion-sidebar .field-item:hover {
+            background: #eff0f3ff;
+            border-left-color: #64748b;
+        }
+        
+        #smarthirex-accordion-sidebar .field-info {
+            flex: 1;
+        }
+        
+        #smarthirex-accordion-sidebar .field-meta {
+            display: flex;
+            gap: 8px;
+            font-size: 11px;
+        }
+        
+        #smarthirex-accordion-sidebar .field-type {
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        #smarthirex-accordion-sidebar .field-confidence {
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        
+        #smarthirex-accordion-sidebar .field-confidence.low {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+        
+        #smarthirex-accordion-sidebar .field-confidence.medium {
+            background: #eff6ff;
+            color: #0a66c2;
+            border: 1px solid #dbeafe;
+        }
+        
+        #smarthirex-accordion-sidebar .field-badge {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        #smarthirex-accordion-sidebar .field-arrow {
+            color: #d1d5db;
+            transition: all 0.2s;
+        }
+        
+        #smarthirex-accordion-sidebar .field-item:hover .field-arrow {
+            color: #8b5cf6;
+            transform: translateX(4px);
+        }
+        
+        .smarthirex-field-highlight {
+            outline: 2px solid #f59e0b !important;
+            outline-offset: 2px !important;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { outline-color: #f59e0b; }
+            50% { outline-color: #fbbf24; }
+        }
+
+        /* PREMIUM GHOST TYPER STYLES - "Magical Shimmer" */
+        .smarthirex-typing {
+            background: linear-gradient(
+                90deg, 
+                rgba(10, 102, 194, 0.0) 0%, 
+                rgba(10, 102, 194, 0.1) 25%, 
+                rgba(10, 102, 194, 0.25) 50%, 
+                rgba(10, 102, 194, 0.1) 75%, 
+                rgba(10, 102, 194, 0.0) 100%
+            ) !important;
+            background-size: 200% 100% !important;
+            animation: magicalShimmer 1s infinite linear !important;
+            border-color: #0a66c2 !important;
+            box-shadow: 
+                0 0 0 4px rgba(10, 102, 194, 0.15),
+                0 0 15px rgba(10, 102, 194, 0.2) !important;
+            transition: all 0.2s ease !important;
+            position: relative !important;
+        }
+
+        @keyframes magicalShimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        .smarthirex-filled {
+            background-color: rgba(16, 185, 129, 0.05) !important;
+            border-color: #10b981 !important;
+            transition: background-color 0.5s ease !important;
+        }
+
+        .smarthirex-filled-high {
+            background-color: rgba(16, 185, 129, 0.05) !important;
+            border: 2px solid #10b981 !important;
+            outline: none !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .smarthirex-filled-medium {
+            background-color: rgba(59, 130, 246, 0.05) !important;
+            border: 2px solid #3b82f6 !important;
+            outline: none !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .smarthirex-filled-low {
+            background-color: rgba(239, 68, 68, 0.05) !important;
+            border: 2px solid #ef4444 !important;
+            outline: none !important;
+            transition: all 0.3s ease !important;
         }
     `;
+
     document.head.appendChild(style);
 }
 
