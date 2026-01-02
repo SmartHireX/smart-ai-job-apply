@@ -141,27 +141,42 @@ function detectForms() {
 }
 
 function extractFormHTML() {
-    // Basic extraction - improved to focus on main content area if possible
-    // or just return body if forms are scattered
-    const forms = document.querySelectorAll('form');
-    let html = '';
+    // Smart Densification Strategy:
+    // We no longer guess "which form" or concat multiple forms.
+    // The densifier is efficient enough to process the entire relevant content area.
 
-    if (forms.length > 0) {
-        forms.forEach((f, i) => {
-            html += `<!-- Form ${i} -->\n${f.outerHTML}\n`;
-        });
-    } else {
-        // Fallback to inputs
-        const inputs = document.querySelectorAll('input, select, textarea, label');
-        // Get common parents? Too complex. Just dump body but cleaned by FormAnalyzer
-        html = document.body.innerHTML;
+    // 1. Try to find a main content wrapper to reduce noise even further
+    const main = document.querySelector('main') || document.querySelector('[role="main"]') || document.querySelector('#content');
+    const root = main || document.body;
+
+    // 2. The FormAnalyzer.cleanHTMLForAnalysis will handle the extraction/densification
+    // We just return the raw root, and let the analyzer do the heavy lifting
+    // But wait - the current flow expects a string here to pass to analyzeAndMapForm
+    // which then calls cleanHTMLForAnalysis.
+
+    // However, analyzeFormHTML takes a string. 
+    // And cleanHTMLForAnalysis now handles string OR element.
+    // To minimize changes to the flow, we'll return the outerHTML of the root.
+    // Ideally, we'd pass the element, but message passing needs serialization.
+
+    // Optimization: If the page is huge, innerHTML might be huge.
+    // But we are processing LOCALLY in the same context (mostly).
+    // Let's check processPageFormLocal()
+
+    // In processPageFormLocal:
+    // const formHTML = extractFormHTML();
+    // const result = await window.FormAnalyzer.analyzeAndMapForm(formHTML);
+
+    // analyzeAndMapForm calls analyzeFormHTML(html)
+    // analyzeFormHTML calls cleanHTMLForAnalysis(html)
+
+    // So passing the full body HTML string is fine IF cleanHTMLForAnalysis is fast.
+    // The new logic converts string to DOM, traverses, and returns string.
+
+    if (root) {
+        return root.outerHTML;
     }
-
-    // Limit size mostly handled by FormAnalyzer.cleanHTMLForAnalysis
-    // But we check here for empty
-    if (!html || html.trim().length < 10) return null;
-
-    return html;
+    return document.body.outerHTML;
 }
 
 // ============ FILL LOGIC (Reused/Refined) ============
@@ -204,9 +219,29 @@ async function executeInstantFill(data) {
             // Iterate sequentially for the visual effect
             for (const [selector, data] of Object.entries(allFieldsToFill)) {
                 // Try to find element with flexible strategy
-                let element = document.querySelector(selector);
-                if (!element && selector.startsWith('#')) {
-                    element = document.getElementById(selector.substring(1));
+                let element = null;
+
+                try {
+                    // 1. Standard Query Selector (might fail if ID starts with digit)
+                    element = document.querySelector(selector);
+                } catch (e) {
+                    // 2. Fallback for IDs starting with digits or invalid chars
+                    if (selector.startsWith('#')) {
+                        try {
+                            // Escape the ID for querySelector
+                            const id = selector.substring(1);
+                            element = document.querySelector('#' + CSS.escape(id));
+                        } catch (err) {
+                            // 3. Ultimate Fallback: getElementById (doesn't care about CSS syntax)
+                            element = document.getElementById(selector.substring(1));
+                        }
+                    } else if (selector.includes('#')) {
+                        // Case: "textarea#123" -> separate tag and id
+                        const parts = selector.split('#');
+                        if (parts.length === 2) {
+                            element = document.getElementById(parts[1]);
+                        }
+                    }
                 }
 
                 if (element && isFieldVisible(element)) {

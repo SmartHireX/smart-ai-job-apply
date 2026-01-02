@@ -9,35 +9,7 @@
 
 // Prompt templates for AI operations (Ported from backend/ai/prompts.py)
 const PROMPTS = {
-
-    ANALYZE_FORM: `You are an expert in web scraping and form analysis.
-Analyze the following HTML snippet and extract all interactive form fields (inputs, selects, textareas).
-
-HTML:
-{{HTML}}
-
-For each field, identify:
-1. **type**: The HTML input type (text, email, tel, number, select, radio, checkbox, etc.)
-2. **purpose**: The semantic purpose of the field (e.g., first_name, last_name, email, phone, city, github_url, linkedin_url, resume_upload, etc.)
-3. **label**: The visible label or placeholder text associated with the field
-4. **required**: Whether the field is marked as required
-5. **selector**: A unique CSS selector to target this field
-6. **options**: For select fields, a list of available option values
-
-Respond ONLY with valid JSON in this format:
-[
-  {
-    "type": "text",
-    "purpose": "first_name",
-    "label": "First Name",
-    "required": true,
-    "selector": "input#first-name",
-    "options": []
-  },
-  ...
-]
-`,
-
+    // ANALYZE_FORM REMOVED - We use local logic now
     MAP_DATA: `You are an intelligent form-filling assistant that maps user profile and resume data to job application form fields.
 
 USER PROFILE DATA:
@@ -143,6 +115,31 @@ CRITICAL RULES:
 8. Calculate confidence_summary accurately
 
 Respond with ONLY valid JSON - no explanations or additional text.
+`, // Optimization: We will construct a minimal prompt for just the "hard" fields dynamically.
+
+    HARD_FIELDS_MAP: `You are an expert form filler.
+    
+USER PROFILE:
+{{USER_DATA}}
+
+RESUME SUMMARY:
+{{RESUME_SUMMARY}}
+
+COMPLEX FORM FIELDS TO FILL:
+{{FORM_FIELDS}}
+
+INSTRUCTIONS:
+For each field, provide the best answer from the user's data.
+- If it's a "Why us?" question, generate a short, professional answer.
+- If it's a cover letter, keep it brief and relevant.
+- Return JSON mappings with value and confidence.
+
+FORMAT:
+{
+  "mappings": {
+    "selector_1": { "value": "Answer...", "confidence": 0.8 }
+  }
+}
 `,
 
     GENERATE_ANSWER: `You are helping a job applicant answer a question on a job application form. 
@@ -179,43 +176,144 @@ Write the answer:
 2. Use the provided **User Profile/Resume** to answer accurately.
 3. Be concise (under 150 words) and helpful.
 4. If the user asks for a cover letter or resume tailoring, use the resume data provided.
-
-Response:
 `
 };
 
+// ==========================================
+// HEURISTIC ENGINE
+// ==========================================
+
+const HEURISTIC_PATTERNS = {
+    name_first: [/first.*name/i, /fname/i, /given.*name/i],
+    name_last: [/last.*name/i, /lname/i, /surname/i, /family.*name/i],
+    name_full: [/full.*name/i, /^name$/i, /your.*name/i],
+    email: [/email/i, /e-mail/i],
+    phone: [/phone/i, /mobile/i, /contact.*number/i, /cell/i],
+    linkedin: [/linkedin/i],
+    github: [/github/i, /git/i],
+    portfolio: [/portfolio/i, /website/i, /personal.*site/i],
+    city: [/city/i, /location/i],
+    resume: [/resume/i, /cv/i, /upload.*resume/i],
+    cover_letter: [/cover.*letter/i]
+};
+
 /**
- * Analyze form HTML and extract field information
- * @param {string} html - HTML content of the form
- * @returns {Promise<{success: boolean, fields?: Array, error?: string}>}
+ * Extract form fields from HTML using DOM traversal (Local Logic)
+ * Replaces the expensive "ANALYZE_FORM" AI call.
+ * @param {string|HTMLElement} source
+ * @returns {Array} Array of field objects
  */
-async function analyzeFormHTML(html) {
-    // First, do basic HTML parsing to help the AI
-    const cleanedHtml = cleanHTMLForAnalysis(html);
+function extractFieldsFromDOM(source) {
+    let root = source;
+    if (typeof source === 'string') {
+        const temp = document.createElement('div');
+        temp.innerHTML = source;
+        root = temp;
+    }
 
-    const prompt = PROMPTS.ANALYZE_FORM.replace('{{HTML}}', cleanedHtml);
+    const fields = [];
+    // Select all inputs except hidden/submit/button
+    const inputs = root.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]), select, textarea');
 
-    const result = await window.AIClient.callAI(prompt, '', {
-        maxTokens: 16000,
-        temperature: 0.1,
-        jsonMode: true
+    inputs.forEach(input => {
+        // Generate a unique selector
+        let selector = '';
+        if (input.id) selector = `#${CSS.escape(input.id)}`;
+        else if (input.name) selector = `[name="${CSS.escape(input.name)}"]`;
+        else {
+            // Fallback: This is tricky for detached DOM. 
+            // Ideally we rely on IDs/Names. 
+            return; // Skip unverifiable fields
+        }
+
+        // Determine Label / Context
+        let label = '';
+        // 1. Label tag
+        if (input.id) {
+            const labelTag = root.querySelector(`label[for="${CSS.escape(input.id)}"]`);
+            if (labelTag) label = labelTag.innerText;
+        }
+        // 2. Aria Label
+        if (!label && input.getAttribute('aria-label')) label = input.getAttribute('aria-label');
+        if (!label && input.getAttribute('placeholder')) label = input.getAttribute('placeholder');
+
+        // 3. Parent Text (naive)
+        if (!label && input.parentElement) {
+            // Get text of parent matching heuristics often helps
+            label = input.parentElement.innerText.replace(input.value, '').trim().substring(0, 50);
+        }
+
+        fields.push({
+            type: input.tagName === 'TEXTAREA' ? 'textarea' : (input.tagName === 'SELECT' ? 'select' : input.type),
+            label: label.trim(),
+            name: input.name || '',
+            id: input.id || '',
+            selector: selector,
+            options: input.tagName === 'SELECT' ? Array.from(input.options).map(o => o.value) : []
+        });
     });
 
-    if (!result.success) {
-        return { success: false, error: result.error };
-    }
-
-    const fields = window.AIClient.parseAIJson(result.text);
-
-    if (!fields || !Array.isArray(fields)) {
-        return { success: false, error: 'Failed to parse form analysis result' };
-    }
-
-    return { success: true, fields };
+    return fields;
 }
 
 /**
- * Map resume data to form fields
+ * Apply heuristics to map fields locally
+ * @param {Array} fields 
+ * @param {Object} resumeData 
+ * @returns {Object} mapped and unmapped fields
+ */
+function mapFieldsHeuristically(fields, resumeData) {
+    const mappings = {};
+    const unmapped = [];
+    const personal = resumeData.personal || {};
+
+    // Helper map for heuristic targets -> mapping logic
+    const dataMap = {
+        name_first: { val: personal.firstName, conf: 0.95 },
+        name_last: { val: personal.lastName, conf: 0.95 },
+        name_full: { val: `${personal.firstName} ${personal.lastName}`, conf: 0.95 },
+        email: { val: personal.email, conf: 1 },
+        phone: { val: personal.phone, conf: 0.95 },
+        linkedin: { val: personal.linkedin, conf: 0.95 },
+        github: { val: personal.github, conf: 0.95 },
+        portfolio: { val: personal.portfolio, conf: 0.9 },
+        city: { val: personal.location, conf: 0.8 },
+        resume: { val: '', conf: 0, skip: true, instruction: "Please upload resume manually" }
+    };
+
+    fields.forEach(field => {
+        let matched = false;
+
+        // Combine label, name, id for checking
+        const signature = `${field.label} ${field.name} ${field.id}`;
+
+        for (const [key, patterns] of Object.entries(HEURISTIC_PATTERNS)) {
+            if (patterns.some(p => p.test(signature))) {
+                const mapLogic = dataMap[key];
+                if (mapLogic) {
+                    mappings[field.selector] = {
+                        value: mapLogic.val,
+                        confidence: mapLogic.conf,
+                        source: 'heuristic',
+                        skipped: mapLogic.skip
+                    };
+                    matched = true;
+                    break;
+                }
+            }
+        }
+
+        if (!matched) {
+            unmapped.push(field);
+        }
+    });
+
+    return { mappings, unmapped };
+}
+
+
+/**
+ * Map resume data to form fields via AI (for unmapped fields)
  * @param {Array} fields - Form fields from analyzeFormHTML
  * @param {Object} resumeData - Resume data from ResumeManager
  * @returns {Promise<{success: boolean, mappings?: Object, error?: string}>}
@@ -308,111 +406,160 @@ async function getChatSystemPrompt() {
 }
 
 /**
- * Clean HTML for better AI analysis
- * Removes scripts, styles, and unnecessary attributes
- * @param {string} html 
- * @returns {string}
+ * Clean HTML for better AI analysis using Smart DOM Densification
+ * Creates a semantic skeleton of the form, removing >90% of noise.
+ * @param {string|HTMLElement} source - HTML string or Element
+ * @returns {string} Densified HTML string
  */
-function cleanHTMLForAnalysis(html) {
-    // Create a temporary div to parse HTML
-    const temp = document.createElement('div');
-    temp.innerHTML = html;
-
-    // Remove scripts and styles
-    temp.querySelectorAll('script, style, link, meta').forEach(el => el.remove());
-
-    // Remove hidden elements
-    temp.querySelectorAll('[type="hidden"], [style*="display: none"], [style*="display:none"]')
-        .forEach(el => el.remove());
-
-    // Keep only form-relevant elements
-    const formElements = temp.querySelectorAll('input, select, textarea, label, form, fieldset, legend, button, datalist, option');
-
-    if (formElements.length === 0) {
-        // If no form elements found via querySelector, return cleaned HTML
-        return temp.innerHTML.substring(0, 15000); // Limit size
+function cleanHTMLForAnalysis(source) {
+    // 1. Convert string to DOM if needed
+    let root = source;
+    if (typeof source === 'string') {
+        const temp = document.createElement('div');
+        temp.innerHTML = source;
+        root = temp;
     }
 
-    // Build a minimal HTML with just form elements and their context
-    let result = '';
-    formElements.forEach(el => {
-        // Get parent context for labels
-        const parent = el.parentElement;
-        if (parent && parent.tagName !== 'DIV') {
-            result += parent.outerHTML + '\n';
-        } else {
-            result += el.outerHTML + '\n';
-        }
-    });
+    // 2. Attributes we want to KEEP (denylist everything else)
+    const ATTR_ALLOWLIST = new Set([
+        'id', 'name', 'type', 'value', 'placeholder', 'for',
+        'aria-label', 'aria-describedby', 'role', 'title', 'required', 'checked'
+    ]);
 
-    return result.substring(0, 15000); // Limit size for API
+    // 3. Tags we want to KEEP as structural blocks
+    const TAG_ALLOWLIST = new Set([
+        'FORM', 'INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'LABEL', 'FIELDSET', 'LEGEND',
+        'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'LI', 'OPTION', 'OPTGROUP'
+    ]);
+
+    // 4. Helper to check if a node is "noise" (script, style, etc.)
+    const isNoise = (node) => {
+        const tag = node.tagName;
+        return ['SCRIPT', 'STYLE', 'SVG', 'PATH', 'NOSCRIPT', 'IFRAME', 'LINK', 'META'].includes(tag);
+    };
+
+    // 5. Build the text output
+
+    // Recursive Approach (Cleanest for hierarchical output)
+    function serializeNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent.replace(/\s+/g, ' ').trim();
+            return text ? `${text} ` : '';
+        }
+
+        if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+        const tag = node.tagName;
+        if (isNoise(node)) return '';
+
+        // Is this a hidden input?
+        if (tag === 'INPUT' && node.type === 'hidden') return '';
+
+        let innerHTML = '';
+        node.childNodes.forEach(child => {
+            innerHTML += serializeNode(child);
+        });
+
+        if (TAG_ALLOWLIST.has(tag)) {
+            let attrStr = '';
+            if (node.hasAttributes()) {
+                for (const attr of node.attributes) {
+                    if (ATTR_ALLOWLIST.has(attr.name)) {
+                        attrStr += ` ${attr.name}="${attr.value}"`;
+                    }
+                }
+            }
+            // Don't close void elements
+            if (['INPUT', 'BR', 'HR'].includes(tag)) {
+                return `<${tag.toLowerCase()}${attrStr}>\n`;
+            }
+            return `<${tag.toLowerCase()}${attrStr}> ${innerHTML}</${tag.toLowerCase()}>\n`;
+        } else {
+            // Flatten: just return children, maybe with spacing
+            const isBlock = ['DIV', 'SECTION', 'TR', 'LI'].includes(tag);
+            return (isBlock ? '\n' : '') + innerHTML + (isBlock ? '\n' : '');
+        }
+    }
+
+    return serializeNode(root).trim();
 }
 
 /**
  * Complete form analysis and mapping workflow
- * Combines analyzeFormHTML and mapResumeToFields
- * @param {string} html - Form HTML
- * @returns {Promise<{success: boolean, fields?: Array, mappings?: Object, error?: string}>}
+ * Combines extractFieldsFromDOM and mapFieldsHeuristically (Local First)
  */
 async function analyzeAndMapForm(html) {
-    // Step 1: Analyze form
-    const analysisResult = await analyzeFormHTML(html);
+    // Phase 1: Local Heuristic Analysis (Fast, Cheap)
+    console.log('🚀 Phase 1: Local Heuristic Analysis...');
 
-    if (!analysisResult.success) {
-        return { success: false, error: `Form analysis failed: ${analysisResult.error}` };
-    }
-
-    const fields = analysisResult.fields;
+    // In hybrid mode, we need DOM access. If html is string, extractFieldsFromDOM handles it.
+    // Ideally, for better context, we should pass the document structure if possible, 
+    // but here we likely only have the outerHTML string passed from content.js.
+    const fields = extractFieldsFromDOM(html);
 
     if (!fields || fields.length === 0) {
-        return { success: false, error: 'No form fields detected' };
+        return { success: false, error: 'No form fields detected locally.' };
     }
 
-    // Step 2: Get resume data
+    // Get Resume Data
     const resumeData = await window.ResumeManager.getResumeData();
-
     if (!resumeData) {
-        return {
-            success: false,
-            error: 'No resume data found. Please set up your resume in settings.'
-        };
+        return { success: false, error: 'No resume data found.' };
     }
 
-    // Step 3: Map data to fields
-    const mappingResult = await mapResumeToFields(fields, resumeData);
+    // Apply Heuristics
+    const { mappings, unmapped } = mapFieldsHeuristically(fields, resumeData);
+    console.log(`✅ Heuristics Mapped: ${Object.keys(mappings).length}, Unmapped: ${unmapped.length}`);
 
-    if (!mappingResult.success) {
-        return { success: false, error: `Data mapping failed: ${mappingResult.error}` };
+    // Phase 2: AI Analysis for Unmapped Fields (Slow, Smart)
+    if (unmapped.length > 0) {
+        console.log('🧠 Phase 2: Delegating complex fields to AI...');
+
+        // We only send the unmapped fields to AI to save tokens
+        // BUT AI needs context. We can send the Densified HTML 
+        // OR we can send just the list of unmapped fields with their context (label/surrounding text).
+        // Sending just the field list is much cheaper but might lose "page structure" clues.
+        // Let's rely on the field objects we already extracted which contain 'label'.
+
+        const aiResult = await mapResumeToFields(unmapped, resumeData);
+        if (aiResult.success && aiResult.mappings) {
+            // Merge AI mappings
+            Object.assign(mappings, aiResult.mappings);
+        } else {
+            console.error('AI Mapping failed:', aiResult.error);
+        }
     }
 
     return {
         success: true,
         fields: fields,
-        mappings: mappingResult.mappings
+        mappings: mappings
     };
 }
 
 // Export for use in other modules
 if (typeof window !== 'undefined') {
     window.FormAnalyzer = {
-        analyzeFormHTML,
         mapResumeToFields,
         generateSmartAnswer,
         getChatSystemPrompt,
         analyzeAndMapForm,
         cleanHTMLForAnalysis,
+        extractFieldsFromDOM,
+        mapFieldsHeuristically,
         PROMPTS
     };
 }
 
 if (typeof self !== 'undefined' && typeof self.FormAnalyzer === 'undefined') {
     self.FormAnalyzer = {
-        analyzeFormHTML,
         mapResumeToFields,
         generateSmartAnswer,
         getChatSystemPrompt,
         analyzeAndMapForm,
         cleanHTMLForAnalysis,
+        extractFieldsFromDOM,
+        mapFieldsHeuristically,
         PROMPTS
     };
 }
