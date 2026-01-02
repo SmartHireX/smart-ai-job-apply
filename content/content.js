@@ -1258,7 +1258,7 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
         }
     });
 
-    if (autoFilledFields.length === 0 && needsReviewFields.length === 0 && fileUploadFields.length === 0) {
+    if (autoFilledFields.length === 0 && needsReviewFields.length === 0) {
         console.log('No fields to show in sidebar');
         return;
     }
@@ -1371,39 +1371,6 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                 </div>
             </div>
             ` : ''}
-            
-            ${fileUploadFields.length > 0 ? `
-                <div class="accordion-section">
-                    <div class="section-header expanded" data-section="file-uploads">
-                        <div class="section-title">
-                            <span class="section-icon">📎</span>
-                            <span class="section-label">FILE UPLOADS</span>
-                            <span class="section-count">(${fileUploadFields.length})</span>
-                        </div>
-                        <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <polyline points="6 9 12 15 18 9"/>
-                        </svg>
-                    </div>
-                    <div class="section-content expanded" id="fileuploads-content">
-                        <div class="section-inner-wrapper">
-                        ${fileUploadFields.map((item, i) => `
-                            <div class="field-item file-field" data-field-idx="file-${i}">
-                                <div class="field-info">
-                                    <div class="field-label">${item.label}</div>
-                                    <div class="field-meta">
-                                        <span class="field-type">FILE</span>
-                                        <span class="field-badge">Required</span>
-                                    </div>
-                                </div>
-                                <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <polyline points="9 18 15 12 9 6"/>
-                                </svg>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-            ` : ''}
         </div>
     `;
 
@@ -1486,7 +1453,7 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
     });
 
     // Add click handlers for field items  
-    const allFields = [...autoFilledFields, ...needsReviewFields, ...fileUploadFields];
+    const allFields = [...autoFilledFields, ...needsReviewFields];
     panel.querySelectorAll('.field-item').forEach((fieldItem, index) => {
         const field = allFields[Math.min(index, allFields.length - 1)];
         if (field) {
