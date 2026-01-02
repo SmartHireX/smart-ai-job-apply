@@ -108,7 +108,7 @@ async function processPageFormLocal() {
                         fieldLabel = field.label || '';
                     }
 
-                    fieldLabel = fieldLabel.toLowerCase().trim();
+                    fieldLabel = normalizeSmartMemoryKey(fieldLabel); // Robust Key
                     console.log(`🧠 Checking Field: "${fieldLabel}" against cache...`);
 
                     if (fieldLabel.length > 2) {
@@ -205,13 +205,46 @@ async function processPageFormLocal() {
 
             console.log('🧠 Invoking AI for Contextual Filling...');
 
-            // 5. Call AI
+            // 5. Call AI (Robust with Retry)
             window.AIClient.callAI = async (prompt, sys, opts) => {
-                return new Promise(resolve => {
-                    chrome.runtime.sendMessage({
-                        type: 'AI_REQUEST', prompt, systemInstruction: sys, options: opts
-                    }, response => resolve(response || { success: false, error: 'Timeout' }));
-                });
+                const maxRetries = 3;
+                let attempt = 0;
+
+                while (attempt < maxRetries) {
+                    try {
+                        const result = await new Promise(resolve => {
+                            chrome.runtime.sendMessage({
+                                type: 'ANALYZE_WITH_AI',
+                                payload: { prompt, system: sys, ...opts }
+                            }, response => {
+                                resolve(response);
+                            });
+                        });
+
+                        // Check for success
+                        if (result && result.success) return result.data;
+
+                        // Check for Rate Limit explicitly
+                        const errorMsg = (result?.error || '').toLowerCase();
+                        if (errorMsg.includes('rate limit') || errorMsg.includes('quota')) {
+                            console.warn(`⚡ AI Rate Limit Hit (Attempt ${attempt + 1}/${maxRetries}). Waiting...`);
+                            showProcessingWidget(`Rate Limit... Waiting (${attempt + 1})`, 2);
+                            const waitTime = 2000 * Math.pow(2, attempt); // 2s, 4s, 8s
+                            await new Promise(r => setTimeout(r, waitTime));
+                            attempt++;
+                            continue; // Retry
+                        }
+
+                        console.error('AI Error (No Retry):', result?.error);
+                        return null;
+
+                    } catch (e) {
+                        console.error('AI Comms Error:', e);
+                        return null;
+                    }
+                }
+                showErrorToast('AI is busy (Rate Limit). Please try again in a minute.');
+                return null;
             };
 
             const aiResult = await window.FormAnalyzer.mapResumeToFields(unmapped, resumeData);
@@ -236,15 +269,21 @@ async function processPageFormLocal() {
                 });
 
                 // --- SMART MEMORY SAVE ---
-                console.log('🧠 Starting Smart Memory Save...');
+                console.log('🧠 Starting Smart Memory Save (Text-Only Mode)...');
                 const newCacheEntries = {};
+
+                // Allowed types for caching (High-value, low-noise)
+                const ALLOWED_CACHE_TYPES = new Set(['text', 'textarea', 'email', 'tel', 'url', 'search']);
+
                 Object.entries(aiResult.mappings).forEach(([selector, data]) => {
-                    if (data.value && String(data.value).length < 500) { // Cache reasonable length answers
+                    if (data.value && String(data.value).length < 500) {
                         const el = document.querySelector(selector);
-                        if (el) {
-                            const label = getFieldLabel(el); // Now robust with parent text
+
+                        // TEXT-ONLY FILTER: Prevents caching "Yes/No" radios or file inputs
+                        if (el && ALLOWED_CACHE_TYPES.has(el.type || 'text')) {
+                            const label = getFieldLabel(el);
                             if (label && label.length > 2) {
-                                const key = label.toLowerCase();
+                                const key = normalizeSmartMemoryKey(label); // Robust Key
                                 console.log(`🧠 Learning New Answer: "${key}" -> "${data.value.substring(0, 20)}..."`);
                                 newCacheEntries[key] = {
                                     answer: data.value,
@@ -253,8 +292,8 @@ async function processPageFormLocal() {
                             } else {
                                 console.log(`🧠 Skipped Learning (Weak Label): Selector ${selector}, Label "${label}"`);
                             }
-                        } else {
-                            console.log(`🧠 Skipped Learning (Element Not Found): Selector ${selector}`);
+                        } else if (el) {
+                            console.log(`🧠 Skipped Learning (Ignored Type): ${el.type}`);
                         }
                     }
                 });
@@ -272,8 +311,13 @@ async function processPageFormLocal() {
             console.log('⚡ Phase 2 Skipped: All fields mapped locally.');
         }
 
+        // Finalize
         showProcessingWidget('Done!', 4);
         setTimeout(() => removeProcessingWidget(), 800);
+
+        // ENTERPRISE UPGRADE: Enable Global Learning on ALL fields (filled or skipped)
+        activateSmartMemoryLearning();
+
         chrome.runtime.sendMessage({ type: 'FILL_COMPLETE' });
 
     } catch (error) {
@@ -289,6 +333,53 @@ async function processPageFormLocal() {
 
 function detectForms() {
     return document.querySelectorAll('form, input, select, textarea').length > 0 ? 1 : 0;
+}
+
+// Self-Correction Logic: Learn from user edits
+function attachSelfCorrectionTrigger(element) {
+    if (!element) return;
+
+    // Only text inputs (Filter noise)
+    const ALLOWED_CACHE_TYPES = new Set(['text', 'textarea', 'email', 'tel', 'url', 'search']);
+    if (!ALLOWED_CACHE_TYPES.has(element.type || 'text')) return;
+
+    // Remove old listener to avoid dupes 
+    if (element.dataset.hasSmartListener) return;
+
+    element.addEventListener('change', (e) => {
+        const newVal = e.target.value;
+        if (newVal && newVal.trim().length > 0) {
+            const label = getFieldLabel(e.target);
+            if (label && label.length > 2) {
+                const key = normalizeSmartMemoryKey(label);
+
+                // Prevent learning "Profile Data" keys (heuristic check)
+                // e.g. if key is "first name", "email", "phone" -> Ignore
+                const IGNORED_KEYS = new Set(['first name', 'last name', 'email', 'phone', 'phone number', 'zip', 'city']);
+                if (IGNORED_KEYS.has(key)) return;
+
+                console.log(`🧠 Self-Correction: Updating "${key}" -> "${newVal.substring(0, 15)}..."`);
+
+                const update = {};
+                update[key] = { answer: newVal, timestamp: Date.now() };
+                updateSmartMemoryCache(update);
+
+                // Visual Feedback (Enterprise Polish)
+                showSuccessToast('Smart Memory Learned 🧠');
+                element.style.transition = 'box-shadow 0.3s';
+                const originalShadow = element.style.boxShadow;
+                element.style.boxShadow = '0 0 0 2px #10b981'; // Green flash
+                setTimeout(() => element.style.boxShadow = originalShadow, 1000);
+            }
+        }
+    });
+    element.dataset.hasSmartListener = 'true';
+}
+
+function activateSmartMemoryLearning() {
+    console.log('🧠 Activating Global Smart Learning...');
+    const allInputs = document.querySelectorAll('input, textarea');
+    allInputs.forEach(el => attachSelfCorrectionTrigger(el));
 }
 
 function extractFormHTML() {
@@ -345,12 +436,17 @@ async function executeInstantFill(data, options = { resetHistory: true, cumulati
                     const confidence = fieldData.confidence || 0;
                     if (fieldData.value && !fieldData.skipped) {
                         await simulateTyping(element, fieldData.value, confidence);
+
+                        // NEW: Attach Self-Correction Listener
+                        attachSelfCorrectionTrigger(element);
+
                     } else {
                         highlightField(element, confidence);
                     }
                 }
             }
         }
+
 
         // 2. Sidebar & Celebration -> ONLY if isFinal
         if (isFinal) {
@@ -609,6 +705,16 @@ function highlightSubmitButton() {
         sub.style.boxShadow = '0 0 0 4px rgba(16, 185, 129, 0.4)';
         sub.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+}
+
+// Helper: Normalize keys for robust matching
+function normalizeSmartMemoryKey(text) {
+    if (!text) return '';
+    return text.toLowerCase()
+        .replace(/[^\w\s]|_/g, ' ') // Replace punctuation with space
+        .replace(/\s+/g, ' ')       // Collapse spaces
+        .replace(/^(please\s+|enter\s+|provide\s+|kindly\s+|input\s+)/, '') // Remove command prefixes
+        .trim();
 }
 
 function getFieldLabel(element) {
