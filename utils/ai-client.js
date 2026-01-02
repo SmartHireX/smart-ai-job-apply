@@ -265,16 +265,39 @@ function parseAIJson(text) {
             }
         }
 
-        // Try to find JSON object/array in text
-        const objectMatch = text.match(/\{[\s\S]*\}/);
-        const arrayMatch = text.match(/\[[\s\S]*\]/);
-        const match = objectMatch || arrayMatch;
+        // Try to find JSON object/array in text and attempt to fix truncation
+        const objectMatch = text.match(/\{[\s\S]*?\}(?![\s\S]*\})/);
+        const arrayMatch = text.match(/\[[\s\S]*?\](?![\s\S]*\])/);
+        let match = objectMatch || arrayMatch;
 
         if (match) {
+            let jsonStr = match[0];
+
+            // Attempt to fix incomplete JSON (truncated arrays/objects)
             try {
-                return JSON.parse(match[0]);
-            } catch (e3) {
-                console.error('Failed to parse extracted JSON:', e3);
+                return JSON.parse(jsonStr);
+            } catch (parseError) {
+                // Try to fix common truncation issues
+                // Example: "actions": [ -> "actions": []
+                if (jsonStr.includes('"actions":') && jsonStr.match(/"actions":\s*\[(?![^\[]*\])/)) {
+                    jsonStr = jsonStr.replace(/"actions":\s*\[[^\]]*$/m, '"actions": []');
+                }
+                if (jsonStr.includes('"context":') && jsonStr.match(/"context":\s*\{(?![^\{]*\})/)) {
+                    jsonStr = jsonStr.replace(/"context":\s*\{[^\}]*$/m, '"context": {}');
+                }
+
+                // Ensure proper closing brace
+                const openBraces = (jsonStr.match(/\{/g) || []).length;
+                const closeBraces = (jsonStr.match(/\}/g) || []).length;
+                if (openBraces > closeBraces) {
+                    jsonStr += '}'.repeat(openBraces - closeBraces);
+                }
+
+                try {
+                    return JSON.parse(jsonStr);
+                } catch (fixError) {
+                    console.error('Failed to parse even after fix attempt:', fixError);
+                }
             }
         }
 

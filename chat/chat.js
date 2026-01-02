@@ -14,17 +14,15 @@ const typingIndicator = document.getElementById('typing-indicator');
 // Chat State
 let chatHistory = [];
 let isProcessing = false;
+let pageContext = null; // Store classified page context
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    // Load initial welcome
-    addMessage('bot', "Hello! I'm Nova, your AI career assistant. I have access to your resume. How can I help you today?");
+    // Show typing indicator while initializing
+    startTyping();
 
-    // Check if resume is available
-    const resume = await window.ResumeManager.getResumeData();
-    if (!resume) {
-        addMessage('system', "No resume found. Please configure your resume in settings.");
-    }
+    // Initialize chat with page context
+    await initChat();
 
     // Bind events
     sendBtn.addEventListener('click', handleSendMessage);
@@ -38,6 +36,74 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Auto-focus input
     chatInput.focus();
 });
+
+/**
+ * Initialize chat with contextual greeting
+ */
+async function initChat() {
+    try {
+        // Get page context from parent page via content script
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs.length === 0) {
+            addMessage('bot', "Hello! I'm Nova, your AI career assistant. How can I help you today?");
+            stopTyping();
+            return;
+        }
+
+        const tabId = tabs[0].id;
+
+        // Request page context with timeout
+        const contextPromise = new Promise((resolve) => {
+            chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_CONTEXT' }, (response) => {
+                if (chrome.runtime.lastError) {
+                    resolve(null);
+                } else {
+                    resolve(response);
+                }
+            });
+            setTimeout(() => resolve(null), 2000);
+        });
+
+        const contextData = await contextPromise;
+
+        if (contextData) {
+            // Classify the page using AI
+            const classification = await window.ContextClassifier.classifyPageContext(contextData);
+
+            // Store context for future messages
+            pageContext = {
+                ...classification,
+                url: contextData.url,
+                title: contextData.title
+            };
+
+            stopTyping();
+
+            // Show contextual greeting
+            addMessage('bot', classification.greeting);
+
+            // Show action chips if available
+            if (classification.actions && classification.actions.length > 0) {
+                addActionChips(classification.actions);
+            }
+        } else {
+            // Fallback for non-web pages or when content script isn't available
+            stopTyping();
+            addMessage('bot', "Hello! I'm Nova, your AI career assistant. How can I help you today?");
+        }
+
+        // Check if resume is available
+        const resume = await window.ResumeManager.getResumeData();
+        if (!resume) {
+            addMessage('system', "📝 Tip: Configure your resume in settings for better assistance.");
+        }
+
+    } catch (error) {
+        console.error('Init chat error:', error);
+        stopTyping();
+        addMessage('bot', "Hello! I'm Nova, your AI career assistant. How can I help you today?");
+    }
+}
 
 async function handleSendMessage() {
     if (isProcessing) return;
@@ -57,13 +123,23 @@ async function handleSendMessage() {
 
     try {
         // Prepare context
-        const systemPrompt = await window.FormAnalyzer.getChatSystemPrompt();
+        let systemPrompt = await window.FormAnalyzer.getChatSystemPrompt();
+
+        // Add page context if available
+        if (pageContext) {
+            systemPrompt += `\n\nCURRENT PAGE CONTEXT:\n`;
+            systemPrompt += `Page Type: ${pageContext.pageType}\n`;
+            systemPrompt += `URL: ${pageContext.url}\n`;
+            systemPrompt += `Title: ${pageContext.title}\n`;
+            if (pageContext.context?.jobTitle) {
+                systemPrompt += `Job Title: ${pageContext.context.jobTitle}\n`;
+            }
+            if (pageContext.context?.company) {
+                systemPrompt += `Company: ${pageContext.context.company}\n`;
+            }
+        }
 
         // Build conversation history for context (last 10 messages)
-        // Note: Gemini API maintains context if using chat session, but for REST simple call we append manually
-        // Or we can use just the system prompt + user message if stateless
-        // Efficient way: Append history to prompt
-
         let conversationText = `\n\nRecent conversation:\n`;
         chatHistory.slice(-5).forEach(msg => {
             conversationText += `${msg.role === 'user' ? 'User' : 'Nova'}: ${msg.content}\n`;
@@ -73,7 +149,6 @@ async function handleSendMessage() {
         const fullPrompt = systemPrompt + conversationText;
 
         // Call AI
-        // Chat iframe is an extension page, so fetch works without CORS blocking usually
         const result = await window.AIClient.callAI(fullPrompt, '', {
             maxTokens: 1024,
             temperature: 0.7
@@ -94,6 +169,62 @@ async function handleSendMessage() {
         isProcessing = false;
         scrollToBottom();
     }
+}
+
+/**
+ * Add action chips for suggested actions
+ */
+function addActionChips(actions) {
+    const chipsContainer = document.createElement('div');
+    chipsContainer.className = 'action-chips-container';
+    chipsContainer.style.cssText = `
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0 16px 0;
+        padding: 0 12px;
+    `;
+
+    actions.forEach(action => {
+        const chip = document.createElement('button');
+        chip.textContent = action;
+        chip.className = 'action-chip';
+        chip.style.cssText = `
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        `;
+
+        chip.onmouseover = () => {
+            chip.style.transform = 'translateY(-2px)';
+            chip.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.5)';
+        };
+
+        chip.onmouseout = () => {
+            chip.style.transform = 'translateY(0)';
+            chip.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)';
+        };
+
+        chip.onclick = () => {
+            chatInput.value = action;
+            chip.disabled = true;
+            chip.style.opacity = '0.6';
+            handleSendMessage();
+        };
+
+        chipsContainer.appendChild(chip);
+    });
+
+    // Insert before typing indicator
+    chatOutput.insertBefore(chipsContainer, typingIndicator);
+    scrollToBottom();
 }
 
 function addMessage(role, content) {

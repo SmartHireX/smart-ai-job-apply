@@ -5,27 +5,40 @@ console.log('SmartHireX local extension loaded');
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
-    // 1. Detect Forms
+    // 1. Get Page Context (for Chat Interface)
+    if (message.type === 'GET_PAGE_CONTEXT') {
+        const text = document.body.innerText || "";
+        const selection = window.getSelection().toString();
+        sendResponse({
+            content: text,
+            selectedText: selection,
+            url: window.location.href,
+            title: document.title
+        });
+        return true;
+    }
+
+    // 2. Detect Forms
     if (message.type === 'DETECT_FORMS') {
         const formCount = detectForms();
         sendResponse({ formCount });
         return true;
     }
 
-    // 2. Start Local Processing (Triggered by Popup)
+    // 3. Start Local Processing (Triggered by Popup)
     if (message.type === 'START_LOCAL_PROCESSING') {
         processPageFormLocal();
         return false; // Async work happens but we don't keep the channel open for this simple trigger
     }
 
-    // 3. Undo Fill
+    // 4. Undo Fill
     if (message.type === 'UNDO_FILL') {
         const result = undoFormFill();
         sendResponse(result);
         return true;
     }
 
-    // 4. Toggle Chat
+    // 5. Toggle Chat
     if (message.type === 'TOGGLE_CHAT') {
         console.log('Received TOGGLE_CHAT command');
         toggleChatInterface();

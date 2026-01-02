@@ -53,7 +53,8 @@
                 "chat/chat.js",
                 "utils/ai-client.js",
                 "utils/resume-manager.js",
-                "utils/form-analyzer.js"
+                "utils/form-analyzer.js",
+                "utils/context-classifier.js"
             ],
             "matches": [
                 "<all_urls>"
