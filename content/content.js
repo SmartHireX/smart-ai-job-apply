@@ -1405,27 +1405,6 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
             </div>
             ` : ''}
         </div>
-
-        <div class="sidebar-footer" style="padding: 16px 20px; border-top: 1px solid #f1f5f9; background: #fff; margin-top: auto;">
-             <button id="smarthirex-sidebar-undo" style="
-                width: 100%;
-                padding: 10px;
-                background: #fef2f2;
-                border: 1px solid #fecaca;
-                border-radius: 8px;
-                color: #ef4444;
-                font-weight: 600;
-                font-size: 13px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                cursor: pointer;
-                transition: all 0.2s;
-            ">
-                <span style="font-size: 14px;">↩️</span> Undo Fill
-            </button>
-        </div>
     `;
 
     // Add accordion styles
