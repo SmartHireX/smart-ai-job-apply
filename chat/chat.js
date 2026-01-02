@@ -70,19 +70,21 @@ async function initChat() {
             // Classify the page using AI
             const classification = await window.ContextClassifier.classifyPageContext(contextData);
 
-            // Store context for future messages
+            // Store context for future messages INCLUDING FULL PAGE CONTENT
             pageContext = {
                 ...classification,
                 url: contextData.url,
-                title: contextData.title
+                title: contextData.title,
+                content: contextData.content,  // Store full page text for ATS analysis
+                selectedText: contextData.selectedText
             };
 
             stopTyping();
 
-            // Show contextual greeting
+            // Show contextual greeting FIRST
             addMessage('bot', classification.greeting);
 
-            // Show action chips if available
+            // THEN show action chips below the message
             if (classification.actions && classification.actions.length > 0) {
                 addActionChips(classification.actions);
             }
@@ -122,44 +124,15 @@ async function handleSendMessage() {
     isProcessing = true;
 
     try {
-        // Prepare context
-        let systemPrompt = await window.FormAnalyzer.getChatSystemPrompt();
+        // Check if this is a Job Fit / ATS Analysis request
+        const isJobFitAnalysis = /job fit|analyze.*(match|fit)|ats|match score/i.test(text);
 
-        // Add page context if available
-        if (pageContext) {
-            systemPrompt += `\n\nCURRENT PAGE CONTEXT:\n`;
-            systemPrompt += `Page Type: ${pageContext.pageType}\n`;
-            systemPrompt += `URL: ${pageContext.url}\n`;
-            systemPrompt += `Title: ${pageContext.title}\n`;
-            if (pageContext.context?.jobTitle) {
-                systemPrompt += `Job Title: ${pageContext.context.jobTitle}\n`;
-            }
-            if (pageContext.context?.company) {
-                systemPrompt += `Company: ${pageContext.context.company}\n`;
-            }
-        }
-
-        // Build conversation history for context (last 10 messages)
-        let conversationText = `\n\nRecent conversation:\n`;
-        chatHistory.slice(-5).forEach(msg => {
-            conversationText += `${msg.role === 'user' ? 'User' : 'Nova'}: ${msg.content}\n`;
-        });
-        conversationText += `User: ${text}\nNova:`;
-
-        const fullPrompt = systemPrompt + conversationText;
-
-        // Call AI
-        const result = await window.AIClient.callAI(fullPrompt, '', {
-            maxTokens: 1024,
-            temperature: 0.7
-        });
-
-        stopTyping();
-
-        if (result.success) {
-            addMessage('bot', result.text);
+        if (isJobFitAnalysis && pageContext && pageContext.pageType === 'job_posting') {
+            // Use specialized ATS analysis prompt
+            await handleATSAnalysis(text);
         } else {
-            addMessage('error', `Sorry, I encountered an issue: ${result.error}`);
+            // Standard chat flow
+            await handleStandardChat(text);
         }
 
     } catch (error) {
@@ -168,6 +141,145 @@ async function handleSendMessage() {
     } finally {
         isProcessing = false;
         scrollToBottom();
+    }
+}
+
+/**
+ * Handle ATS Job Fit Analysis with specialized prompt
+ */
+async function handleATSAnalysis(userMessage) {
+    try {
+        // Get resume data
+        const resumeData = await window.ResumeManager.getResumeData();
+        if (!resumeData) {
+            stopTyping();
+            addMessage('bot', "⚠️ Please configure your resume in settings first to analyze job fit.");
+            return;
+        }
+
+        // Get actual job description from page content
+        const jobDescription = pageContext.content || pageContext.title || 'No job description available';
+
+        // Truncate if too long (keep first 10000 chars for better analysis)
+        const truncatedJobDesc = jobDescription.length > 10000
+            ? jobDescription.substring(0, 10000) + '...[truncated]'
+            : jobDescription;
+
+        // Build professional ATS analysis prompt (matching backend)
+        const systemPrompt = `You are an expert ATS (Applicant Tracking System) scanner and career advisor.
+Analyze the following Candidate Data (Resume) against the Job Description and provide a COMPREHENSIVE, DETAILED analysis.
+
+**Job Description**:
+${truncatedJobDesc}
+
+**Candidate Resume**:
+${JSON.stringify(resumeData, null, 2)}
+
+**Instructions**:
+1. Calculate a realistic **Match Score** (0-100%) based on how well the resume aligns with the job requirements.
+2. Identify **ALL Critical Missing Keywords** (Skills, Technologies, Qualifications, Certifications, Years of Experience) that appear in the job description but are missing or not clearly demonstrated in the resume.
+3. Identify **Strong Matching Points** where the candidate's experience, skills, and background align well with job requirements.
+4. Provide **Detailed, Actionable Recommendations** on how to improve the match.
+5. Be thorough and explain WHY each gap matters and HOW each strong point helps.
+
+**Output Format (Markdown)**:
+## 🎯 Match Score: [Score]%
+
+[1-2 sentence overall assessment of the candidate's fit]
+
+### ⚠️ Gap Analysis - Missing or Weak Areas
+- **[Keyword/Requirement]**: [Detailed explanation of why this matters for the role and how it impacts the match]
+- **[Another gap]**: [Explanation]
+- ... (List ALL significant gaps)
+
+### ✅ Strong Matching Points  
+- **[Specific skill/experience]**: [How this aligns with the job requirements]
+- **[Another strength]**: [Explanation]
+- ... (List ALL strong points)
+
+### 💡 Detailed Recommendations
+1. **[Specific action]**: [Why this will help and how to implement it]
+2. **[Another recommendation]**: [Explanation]
+3. ... (Provide 3-5 actionable recommendations)
+
+### 📝 Summary
+[2-3 sentence summary of overall candidacy and likelihood of success]`;
+
+        const prompt = `Analyze my resume fit for this job position in detail.`;
+
+        // Call AI with increased token limit for detailed response
+        const result = await window.AIClient.callAI(prompt, systemPrompt, {
+            maxTokens: 2500,  // Increased for comprehensive analysis
+            temperature: 0.4   // Lower for more focused, factual analysis
+        });
+
+        stopTyping();
+
+        if (result.success) {
+            addMessage('bot', result.text);
+        } else {
+            addMessage('error', `Analysis failed: ${result.error}`);
+        }
+
+    } catch (error) {
+        stopTyping();
+        console.error('ATS Analysis error:', error);
+        addMessage('error', 'Failed to analyze job fit. Please try again.');
+    }
+}
+
+/**
+ * Handle standard chat messages
+ */
+async function handleStandardChat(text) {
+    // Prepare context
+    let systemPrompt = await window.FormAnalyzer.getChatSystemPrompt();
+
+    // Add page context if available
+    if (pageContext) {
+        systemPrompt += `\n\nCURRENT PAGE CONTEXT:\n`;
+        systemPrompt += `Page Type: ${pageContext.pageType}\n`;
+        systemPrompt += `URL: ${pageContext.url}\n`;
+        systemPrompt += `Title: ${pageContext.title}\n`;
+
+        if (pageContext.context?.jobTitle) {
+            systemPrompt += `Job Title: ${pageContext.context.jobTitle}\n`;
+        }
+        if (pageContext.context?.company) {
+            systemPrompt += `Company: ${pageContext.context.company}\n`;
+        }
+
+        // Include actual page content for detailed answers (truncated to avoid token limits)
+        if (pageContext.content) {
+            const truncatedContent = pageContext.content.length > 6000
+                ? pageContext.content.substring(0, 6000) + '...[content truncated]'
+                : pageContext.content;
+            systemPrompt += `\nPAGE CONTENT:\n${truncatedContent}\n`;
+            systemPrompt += `\nIMPORTANT: Use the above page content to answer questions about this page. Provide detailed, accurate information based on what's actually on the page.\n`;
+        }
+    }
+
+    // Build conversation history for context (last 5 messages)
+    let conversationText = `\n\nRecent conversation:\n`;
+    chatHistory.slice(-5).forEach(msg => {
+        conversationText += `${msg.role === 'user' ? 'User' : 'Nova'}: ${msg.content}\n`;
+    });
+    conversationText += `User: ${text}\nNova:`;
+
+    const fullPrompt = systemPrompt + conversationText;
+
+    // Call AI
+    const result = await window.AIClient.callAI(fullPrompt, '', {
+        maxTokens: 1024,
+        temperature: 0.7
+    });
+
+    stopTyping();
+
+    if (result.success) {
+        addMessage('bot', result.text);
+    } else {
+        addMessage('error', `Sorry, I encountered an issue: ${result.error}`);
     }
 }
 
@@ -181,49 +293,43 @@ function addActionChips(actions) {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin: 12px 0 16px 0;
+        margin: 8px 0 16px 0;
         padding: 0 12px;
     `;
 
     actions.forEach(action => {
         const chip = document.createElement('button');
         chip.textContent = action;
-        chip.className = 'action-chip';
         chip.style.cssText = `
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
+            background: #f0f4ff;
+            border: 1px solid #e0e7ff;
+            color: #4f46e5;
+            padding: 6px 12px;
+            border-radius: 16px;
             font-size: 13px;
-            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            transition: all 0.2s;
         `;
-
-        chip.onmouseover = () => {
-            chip.style.transform = 'translateY(-2px)';
-            chip.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.5)';
-        };
-
-        chip.onmouseout = () => {
-            chip.style.transform = 'translateY(0)';
-            chip.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)';
-        };
-
+        chip.onmouseover = () => { chip.style.background = '#e0e7ff'; };
+        chip.onmouseout = () => { chip.style.background = '#f0f4ff'; };
         chip.onclick = () => {
             chatInput.value = action;
-            chip.disabled = true;
-            chip.style.opacity = '0.6';
             handleSendMessage();
+            chip.disabled = true;
         };
-
         chipsContainer.appendChild(chip);
     });
 
-    // Insert before typing indicator
-    chatOutput.insertBefore(chipsContainer, typingIndicator);
+    // Find all message wrappers and insert chips after the last one
+    const messageWrappers = chatOutput.querySelectorAll('.message-wrapper');
+    if (messageWrappers.length > 0) {
+        const lastMessage = messageWrappers[messageWrappers.length - 1];
+        lastMessage.insertAdjacentElement('afterend', chipsContainer);
+    } else {
+        // Fallback: insert before typing indicator
+        chatOutput.insertBefore(chipsContainer, typingIndicator);
+    }
+
     scrollToBottom();
 }
 
