@@ -210,8 +210,10 @@ async function processPageFormLocal() {
                     try {
                         const result = await new Promise(resolve => {
                             chrome.runtime.sendMessage({
-                                type: 'ANALYZE_WITH_AI',
-                                payload: { prompt, system: sys, ...opts }
+                                type: 'AI_REQUEST',
+                                prompt: prompt,
+                                systemInstruction: sys,
+                                options: opts
                             }, response => {
                                 resolve(response);
                             });
