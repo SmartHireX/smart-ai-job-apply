@@ -97,19 +97,53 @@ async function handleSendMessage() {
 }
 
 function addMessage(role, content) {
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `message message-${role}`;
+    const wrapper = document.createElement('div');
+    wrapper.className = `message-wrapper ${role}-message`;
 
-    if (role === 'system' || role === 'error') {
-        msgDiv.innerHTML = `<div class="message-content">${content}</div>`;
+    // Avatar
+    const avatar = document.createElement('div');
+    avatar.className = `message-avatar ${role}-avatar`;
+
+    if (role === 'bot') {
+        avatar.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" />
+                <path d="M2 17L12 22L22 17" />
+                <path d="M2 12L12 17L22 12" />
+            </svg>`;
     } else {
-        // Markdown parsing could go here (e.g. bold, lists)
-        // Basic formatting: newlines
-        const formatted = content.replace(/\n/g, '<br>');
-        msgDiv.innerHTML = `<div class="message-content">${formatted}</div>`;
+        avatar.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>`;
     }
 
-    chatOutput.appendChild(msgDiv);
+    wrapper.appendChild(avatar);
+
+    // Content
+    const msgContent = document.createElement('div');
+    msgContent.className = `message-content ${role}-content`;
+
+    if (role === 'system' || role === 'error') {
+        msgContent.innerHTML = `<div class="message-text">${content}</div>`;
+        if (role === 'error') msgContent.style.color = '#ef4444';
+    } else {
+        // Parse markdown-like syntax
+        let formatted = content
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
+
+        msgContent.innerHTML = `<div class="message-text">${formatted}</div>`;
+    }
+
+    wrapper.appendChild(msgContent);
+    chatOutput.appendChild(wrapper);
 
     // Add to history if valid role
     if (role === 'user' || role === 'bot') {

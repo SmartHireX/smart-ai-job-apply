@@ -236,6 +236,7 @@ async function handleChatOpen() {
 
     } catch (error) {
         console.error('Failed to open chat:', error);
+        showError('Connection error. Please reload the webpage.');
     }
 }
 

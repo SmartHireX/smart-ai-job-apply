@@ -196,7 +196,7 @@ async function analyzeFormHTML(html) {
     const prompt = PROMPTS.ANALYZE_FORM.replace('{{HTML}}', cleanedHtml);
 
     const result = await window.AIClient.callAI(prompt, '', {
-        maxTokens: 4096,
+        maxTokens: 16000,
         temperature: 0.1,
         jsonMode: true
     });
@@ -251,7 +251,7 @@ async function mapResumeToFields(fields, resumeData) {
         .replace('{{FORM_FIELDS}}', JSON.stringify(fields, null, 2));
 
     const result = await window.AIClient.callAI(prompt, '', {
-        maxTokens: 4096,
+        maxTokens: 16000,
         temperature: 0.2,
         jsonMode: true
     });
