@@ -174,7 +174,7 @@ Applicant's Resume:
 Write the answer:
 `,
 
-    CHAT_SYSTEM: `You are SmartHireX, an AI career assistant residing in a browser extension.
+    CHAT_SYSTEM: `You are Nova, an AI career assistant residing in a browser extension.
 
 **Context**:
 - **User Profile/Resume**: {{RESUME}}

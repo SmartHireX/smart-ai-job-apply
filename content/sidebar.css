@@ -1,4 +1,4 @@
-/* SmartHireX - Global Sidebar & Content UI Styles */
+/* Nova AI - Global Sidebar & Content UI Styles */
 
 /* 1. Accordion Sidebar Styles */
 #smarthirex-accordion-sidebar {
@@ -412,8 +412,7 @@
 }
 
 #smarthirex-accordion-sidebar .field-item:hover {
-    background: #eff0f3ff;
-    border-left-color: #64748b;
+    background: #eff1f5ff;
 }
 
 #smarthirex-accordion-sidebar .field-info {
@@ -496,9 +495,51 @@
 }
 
 .smarthirex-field-highlight {
-    outline: 2px solid #f59e0b !important;
-    outline-offset: 2px !important;
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+    outline: none !important;
+    border: 2px solid #f59e0b !important;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2) !important;
+    animation: fieldPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+.smarthirex-filled {
+    transition: all 0.3s ease;
+    outline: none !important;
+}
+
+/* High Confidence - Deep Green */
+.smarthirex-filled-high {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Medium Confidence - Blue */
+.smarthirex-filled-medium {
+    border-color: #0a66c2 !important;
+    box-shadow: 0 0 0 2px rgba(10, 102, 194, 0.3) !important;
+}
+
+/* Low Confidence - Orange/Red */
+.smarthirex-filled-low {
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3) !important;
+}
+
+.smarthirex-spotlight {
+    position: relative;
+    z-index: 10000;
+    transition: all 0.2s ease;
+}
+
+@keyframes fieldPulse {
+
+    0%,
+    100% {
+        outline-color: rgba(245, 158, 11, 1);
+    }
+
+    50% {
+        outline-color: rgba(245, 158, 11, 0.4);
+    }
 }
 
 @keyframes pulse {

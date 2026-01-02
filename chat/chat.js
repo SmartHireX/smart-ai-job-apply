@@ -82,11 +82,11 @@ async function initChat() {
             stopTyping();
 
             // Show contextual greeting FIRST
-            addMessage('bot', classification.greeting);
+            const greetingMsg = addMessage('bot', classification.greeting);
 
             // THEN show action chips below the message
             if (classification.actions && classification.actions.length > 0) {
-                addActionChips(classification.actions);
+                addActionChips(classification.actions, greetingMsg);
             }
         } else {
             // Fallback for non-web pages or when content script isn't available
@@ -247,7 +247,7 @@ async function handleStandardChat(text) {
 
     // Add page context if available
     if (pageContext) {
-        systemPrompt += `\n\nCURRENT PAGE CONTEXT:\n`;
+        systemPrompt += `\\n\\nCURRENT PAGE CONTEXT:\\n`;
         systemPrompt += `Page Type: ${pageContext.pageType}\n`;
         systemPrompt += `URL: ${pageContext.url}\n`;
         systemPrompt += `Title: ${pageContext.title}\n`;
@@ -304,9 +304,13 @@ async function handleStandardChat(text) {
 }
 
 /**
- * Add action chips for suggested actions
+ * Add suggestion chips for quick actions
+ * @param {string[]} actions 
+ * @param {HTMLElement} targetMessage Optional: attach chips specifically after this message
  */
-function addActionChips(actions) {
+function addActionChips(actions, targetMessage = null) {
+    if (!actions || actions.length === 0) return;
+
     const chipsContainer = document.createElement('div');
     chipsContainer.className = 'action-chips-container';
     chipsContainer.style.cssText = `
@@ -335,19 +339,24 @@ function addActionChips(actions) {
         chip.onclick = () => {
             chatInput.value = action;
             handleSendMessage();
-            chip.disabled = true;
+            // Optional: disable all chips after click
+            chipsContainer.querySelectorAll('button').forEach(btn => btn.disabled = true);
         };
         chipsContainer.appendChild(chip);
     });
 
-    // Find all message wrappers and insert chips after the last one
-    const messageWrappers = chatOutput.querySelectorAll('.message-wrapper');
-    if (messageWrappers.length > 0) {
-        const lastMessage = messageWrappers[messageWrappers.length - 1];
-        lastMessage.insertAdjacentElement('afterend', chipsContainer);
+    if (targetMessage) {
+        targetMessage.insertAdjacentElement('afterend', chipsContainer);
     } else {
-        // Fallback: insert before typing indicator
-        chatOutput.insertBefore(chipsContainer, typingIndicator);
+        // Fallback: Find all message wrappers and insert chips after the last one
+        const messageWrappers = chatOutput.querySelectorAll('.message-wrapper');
+        if (messageWrappers.length > 0) {
+            const lastMessage = messageWrappers[messageWrappers.length - 1];
+            lastMessage.insertAdjacentElement('afterend', chipsContainer);
+        } else {
+            // Fallback: insert before typing indicator
+            chatOutput.insertBefore(chipsContainer, typingIndicator);
+        }
     }
 
     scrollToBottom();
@@ -465,7 +474,7 @@ function addMessage(role, content) {
             // Add to history after streaming starts
             chatHistory.push({ role, content });
             scrollToBottom();
-            return; // Exit early for bot messages
+            return wrapper; // Exit early for bot messages
         } else {
             // For user messages, show immediately
             messageText.textContent = content;
@@ -481,6 +490,7 @@ function addMessage(role, content) {
     }
 
     scrollToBottom();
+    return wrapper;
 }
 
 /**

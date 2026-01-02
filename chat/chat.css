@@ -38,35 +38,12 @@ body {
     }
 }
 
-/* Header */
-.chat-header {
-    background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
-    padding: 16px 20px;
-    color: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: relative;
-    z-index: 10;
-}
-
-.header-content {
+/* Header spacing removal */
+.chat-container {
     display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.ai-icon-wrapper {
-    position: relative;
-    width: 40px;
-    height: 40px;
-}
-
-.ai-icon-glow {
-    position: absolute;
-    inset: -4px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
-    border-radius: 12px;
-    filter: blur(8px);
-    animation: pulse 2s ease-in-out infinite;
+    flex-direction: column;
+    height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 @keyframes pulse {

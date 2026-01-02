@@ -9,7 +9,7 @@
  * - ui-components.js: UI construction and element manipulation
  */
 
-console.log('SmartHireX local extension loaded');
+console.log('Nova AI Extension Loaded');
 
 // ============ GLOBAL STATE ============
 let activeFormUndoHistory = [];

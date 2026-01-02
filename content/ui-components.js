@@ -5,7 +5,7 @@
 
 function updateSidebarWithState(allMappings) {
     const sidebar = document.getElementById('smarthirex-accordion-sidebar');
-    if (!sidebar) return;
+    // Prepare mappings even if sidebar isn't open yet
 
     // Split into high and low confidence for re-rendering
     const high = [];
@@ -293,7 +293,7 @@ function showReopenTrigger(highFields, lowFields) {
 }
 
 function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
-    console.log('🎯 SmartHireX: Showing accordion sidebar...');
+    console.log('🎯 Nova AI: Showing Form Review...');
     console.log(`High-conf: ${highConfidenceFields.length}, Low-conf: ${lowConfidenceFields.length}`);
 
     // Remove existing sidebar if any
@@ -731,7 +731,7 @@ function toggleChatInterface() {
         width: 380px;
         height: 600px;
         background: #ffffff;
-        border-radius: 20px;
+        border-radius: 12px;
         box-shadow: 
             0 12px 28px rgba(0,0,0,0.12),
             0 8px 10px rgba(0,0,0,0.08),
@@ -746,8 +746,8 @@ function toggleChatInterface() {
         min-height: 400px;
     `;
 
-    // Add Resizers
-    const resizers = ['n', 'w', 'nw'];
+    // Add 8-Way Resizers
+    const resizers = ['n', 's', 'e', 'w', 'nw', 'ne', 'sw', 'se'];
     resizers.forEach(dir => {
         const resizer = document.createElement('div');
         resizer.className = `chat-resizer resizer-${dir}`;
@@ -756,24 +756,35 @@ function toggleChatInterface() {
             z-index: 100;
         `;
 
+        // Position and cursor
         if (dir === 'n') {
             resizer.style.top = '0'; resizer.style.left = '0'; resizer.style.width = '100%'; resizer.style.height = '6px'; resizer.style.cursor = 'ns-resize';
+        } else if (dir === 's') {
+            resizer.style.bottom = '0'; resizer.style.left = '0'; resizer.style.width = '100%'; resizer.style.height = '6px'; resizer.style.cursor = 'ns-resize';
+        } else if (dir === 'e') {
+            resizer.style.right = '0'; resizer.style.top = '0'; resizer.style.width = '6px'; resizer.style.height = '100%'; resizer.style.cursor = 'ew-resize';
         } else if (dir === 'w') {
-            resizer.style.top = '0'; resizer.style.left = '0'; resizer.style.width = '6px'; resizer.style.height = '100%'; resizer.style.cursor = 'ew-resize';
+            resizer.style.left = '0'; resizer.style.top = '0'; resizer.style.width = '6px'; resizer.style.height = '100%'; resizer.style.cursor = 'ew-resize';
         } else if (dir === 'nw') {
             resizer.style.top = '0'; resizer.style.left = '0'; resizer.style.width = '12px'; resizer.style.height = '12px'; resizer.style.cursor = 'nwse-resize';
+        } else if (dir === 'ne') {
+            resizer.style.top = '0'; resizer.style.right = '0'; resizer.style.width = '12px'; resizer.style.height = '12px'; resizer.style.cursor = 'nesw-resize';
+        } else if (dir === 'sw') {
+            resizer.style.bottom = '0'; resizer.style.left = '0'; resizer.style.width = '12px'; resizer.style.height = '12px'; resizer.style.cursor = 'nesw-resize';
+        } else if (dir === 'se') {
+            resizer.style.bottom = '0'; resizer.style.right = '0'; resizer.style.width = '12px'; resizer.style.height = '12px'; resizer.style.cursor = 'nwse-resize';
         }
 
         container.appendChild(resizer);
         setupResizer(resizer, dir);
     });
 
-    // Add Header for Dragging
+    // Add Header for Dragging (Theme Restoration)
     const header = document.createElement('div');
     header.id = 'smarthirex-chat-header';
     header.style.cssText = `
         padding: 16px 20px;
-        background: #0a66c2;
+        background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
         color: white;
         display: flex;
         justify-content: space-between;
@@ -782,13 +793,33 @@ function toggleChatInterface() {
         user-select: none;
     `;
     header.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></div>
-            <span style="font-weight: 700; font-size: 15px;">SmartHireX AI Assistant</span>
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.15); border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);">
+                <div style="position: absolute; inset: -4px; background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%); border-radius: 50%; opacity: 0.6; animation: iconGlow 3s infinite alternate;"></div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: white; filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" />
+                    <path d="M2 17L12 22L22 17" />
+                    <path d="M2 12L12 17L22 12" />
+                </svg>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-weight: 800; font-size: 16px; letter-spacing: -0.01em; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Nova AI</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px rgba(16, 185, 129, 0.8), 0 0 16px rgba(16, 185, 129, 0.4); animation: statusPulse 2s infinite;"></div>
+                    <span style="font-size: 11px; font-weight: 600; opacity: 0.9; letter-spacing: 0.02em;">Online & Ready</span>
+                </div>
+            </div>
         </div>
-        <button id="smarthirex-chat-close" style="background: none; border: none; color: white; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="smarthirex-chat-close" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.1); color: white; cursor: pointer; width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; hover: background: rgba(255,255,255,0.25);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <style>
+            @keyframes iconGlow { 0% { opacity: 0.4; transform: scale(0.9); } 100% { opacity: 0.8; transform: scale(1.1); } }
+            @keyframes statusPulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+            #smarthirex-chat-close:hover { background: rgba(255,255,255,0.25) !important; transform: translateY(-1px); }
+        </style>
     `;
 
     // Iframe for Chat Interface
@@ -818,7 +849,6 @@ function toggleChatInterface() {
     header.addEventListener('touchstart', dragStart, { passive: false });
 
     function dragStart(e) {
-        if (e.target.closest('#smarthirex-chat-close')) return;
         isDragging = true;
         header.style.cursor = 'grabbing';
 
@@ -864,7 +894,6 @@ function toggleChatInterface() {
         });
     }
 
-    // Resizing Logic
     function setupResizer(resizer, direction) {
         resizer.addEventListener('mousedown', function (e) {
             e.preventDefault();
@@ -875,26 +904,45 @@ function toggleChatInterface() {
             const startLeft = container.offsetLeft;
             const startTop = container.offsetTop;
 
+            // Prevent iframe from capturing mouse events during resize
+            iframe.style.pointerEvents = 'none';
+
             function onMouseMove(e) {
-                if (direction.includes('w')) {
-                    const newWidth = startWidth - (e.clientX - startX);
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                if (direction.includes('e')) {
+                    const newWidth = startWidth + dx;
                     if (newWidth >= 300) {
                         container.style.width = newWidth + 'px';
-                        container.style.left = startLeft + (e.clientX - startX) + 'px';
+                    }
+                }
+                if (direction.includes('w')) {
+                    const newWidth = startWidth - dx;
+                    if (newWidth >= 300) {
+                        container.style.width = newWidth + 'px';
+                        container.style.left = (startLeft + dx) + 'px';
                         container.style.right = 'auto';
                     }
                 }
-                if (direction.includes('n')) {
-                    const newHeight = startHeight - (e.clientY - startY);
+                if (direction.includes('s')) {
+                    const newHeight = startHeight + dy;
                     if (newHeight >= 400) {
                         container.style.height = newHeight + 'px';
-                        container.style.top = startTop + (e.clientY - startY) + 'px';
+                    }
+                }
+                if (direction.includes('n')) {
+                    const newHeight = startHeight - dy;
+                    if (newHeight >= 400) {
+                        container.style.height = newHeight + 'px';
+                        container.style.top = (startTop + dy) + 'px';
                         container.style.bottom = 'auto';
                     }
                 }
             }
 
             function onMouseUp() {
+                iframe.style.pointerEvents = 'auto';
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
                 chrome.storage.local.set({
