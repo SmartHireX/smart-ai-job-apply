@@ -869,6 +869,37 @@ function highlightField(element, confidence = 1.0) {
     }
 }
 
+/**
+ * Clear all field highlights (borders, backgrounds) applied during fill
+ */
+function clearAllFieldHighlights() {
+    console.log('Clearing all field highlights...');
+
+    // Remove all highlight classes
+    const highlightClasses = ['smarthirex-filled-high', 'smarthirex-filled-medium', 'smarthirex-filled-low'];
+
+    highlightClasses.forEach(cls => {
+        document.querySelectorAll(`.${cls}`).forEach(el => {
+            el.classList.remove(cls);
+            // Also clear inline styles if they were applied as fallback
+            el.style.border = '';
+            el.style.backgroundColor = '';
+        });
+    });
+
+    // Remove typing classes too
+    document.querySelectorAll('.smarthirex-typing').forEach(el => {
+        el.classList.remove('smarthirex-typing');
+    });
+
+    // Remove spotlight classes
+    document.querySelectorAll('.smarthirex-spotlight').forEach(el => {
+        el.classList.remove('smarthirex-spotlight');
+    });
+
+    showSuccessToast('Visual highlights cleared! ✨');
+}
+
 function highlightSubmitButton() {
     const btns = Array.from(document.querySelectorAll('button, input[type="submit"]'));
     const sub = btns.find(b => /submit|apply|next/i.test(b.textContent || b.value));
@@ -1114,20 +1145,32 @@ function showSuccessToast(filled, review) {
             `<div style="color:#059669; font-size:13px; font-weight:500">All fields filled!</div>`}
         </div>
         ${filled > 0 ? `
-            <button id="smarthirex-undo-btn" style="
-                background: #f1f5f9; border: none; padding: 8px 12px;
-                border-radius: 8px; font-size: 13px; font-weight: 600; color: #475569;
-                cursor: pointer; transition: all 0.2s; align-self: center;
-                display: flex; align-items: center; gap: 4px;
-            ">
-                ↩️ Undo
-            </button>
+            <div style="display: flex; gap: 8px; align-self: center;">
+                <button id="smarthirex-undo-highlight-btn" style="
+                    background: #fef3c7; border: none; padding: 8px 12px;
+                    border-radius: 8px; font-size: 13px; font-weight: 600; color: #92400e;
+                    cursor: pointer; transition: all 0.2s;
+                    display: flex; align-items: center; gap: 4px;
+                ">
+                    ✨ Clear Highlights
+                </button>
+                <button id="smarthirex-undo-btn" style="
+                    background: #f1f5f9; border: none; padding: 8px 12px;
+                    border-radius: 8px; font-size: 13px; font-weight: 600; color: #475569;
+                    cursor: pointer; transition: all 0.2s;
+                    display: flex; align-items: center; gap: 4px;
+                ">
+                    ↩️ Undo
+                </button>
+            </div>
         ` : ''}
     `;
     document.body.appendChild(toast);
 
-    // Add Event Listener
+    // Add Event Listeners
     const undoBtn = toast.querySelector('#smarthirex-undo-btn');
+    const undoHighlightBtn = toast.querySelector('#smarthirex-undo-highlight-btn');
+
     if (undoBtn) {
         undoBtn.addEventListener('click', async () => {
             undoBtn.innerHTML = 'Thinking...';
@@ -1138,6 +1181,18 @@ function showSuccessToast(filled, review) {
 
         undoBtn.addEventListener('mouseenter', () => { undoBtn.style.background = '#e2e8f0'; });
         undoBtn.addEventListener('mouseleave', () => { undoBtn.style.background = '#f1f5f9'; });
+    }
+
+    if (undoHighlightBtn) {
+        undoHighlightBtn.addEventListener('click', () => {
+            clearAllFieldHighlights();
+            undoHighlightBtn.innerHTML = '✅ Cleared';
+            undoHighlightBtn.style.opacity = '0.7';
+            setTimeout(() => toast.remove(), 1000);
+        });
+
+        undoHighlightBtn.addEventListener('mouseenter', () => { undoHighlightBtn.style.background = '#fde68a'; });
+        undoHighlightBtn.addEventListener('mouseleave', () => { undoHighlightBtn.style.background = '#fef3c7'; });
     }
 
     setTimeout(() => { if (toast.parentNode) toast.remove(); }, 8000); // Slightly longer for people to find Undo
