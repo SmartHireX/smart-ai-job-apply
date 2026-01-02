@@ -1668,22 +1668,22 @@ function toggleChatInterface() {
 
     // 1. Top-Left (NW)
     const resizerNW = document.createElement('div');
-    resizerNW.style.cssText = `${resizerStyles} top: -5px; left: -5px; cursor: nw-resize;`;
+    resizerNW.style.cssText = `${resizerStyles} top: -5px; left: -5px; cursor: nw-resize; z-index: 210;`;
     container.appendChild(resizerNW);
 
     // 2. Top-Right (NE)
     const resizerNE = document.createElement('div');
-    resizerNE.style.cssText = `${resizerStyles} top: -5px; right: -5px; cursor: ne-resize;`;
+    resizerNE.style.cssText = `${resizerStyles} top: -5px; right: -5px; cursor: ne-resize; z-index: 210;`;
     container.appendChild(resizerNE);
 
     // 3. Bottom-Left (SW)
     const resizerSW = document.createElement('div');
-    resizerSW.style.cssText = `${resizerStyles} bottom: -5px; left: -5px; cursor: sw-resize;`;
+    resizerSW.style.cssText = `${resizerStyles} bottom: -5px; left: -5px; cursor: sw-resize; z-index: 210;`;
     container.appendChild(resizerSW);
 
     // 4. Bottom-Right (SE)
     const resizerSE = document.createElement('div');
-    resizerSE.style.cssText = `${resizerStyles} bottom: -5px; right: -5px; cursor: se-resize;`;
+    resizerSE.style.cssText = `${resizerStyles} bottom: -5px; right: -5px; cursor: se-resize; z-index: 210;`;
     container.appendChild(resizerSE);
 
     // 5. Top (N)
