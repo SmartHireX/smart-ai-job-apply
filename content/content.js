@@ -54,30 +54,116 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function processPageFormLocal() {
     try {
-        console.log('✨ Starting 🚀 Two-Phase Fill...');
+        console.log('✨ Starting 🚀 Two-Phase Fill with Smart Memory...');
 
         // --- PHASE 1: INSTANT HEURISIC FILL ---
         showProcessingWidget('Instant Match...', 1);
 
-        // 1. Get Resume Data (Fast)
-        const resumeDataPromise = window.ResumeManager.getResumeData(); // Start fetching
+        // 1. Get Resume & Smart Memory (Parallel)
+        const [resumeData, smartMemory] = await Promise.all([
+            window.ResumeManager.getResumeData(),
+            getSmartMemoryCache()
+        ]);
 
         // 2. Extract Fields Locally (Fast)
         const formHTML = extractFormHTML();
         if (!formHTML) throw new Error('No form found');
-
-        // We pass the raw HTML string to extractFields, but wait, extractFieldsFromDOM expects DOM or string.
-        // Better to use document root if possible for context, but form-analyzer is library.
-        // Let's rely on FormAnalyzer.extractFieldsFromDOM handling the string or we can pass document.body
-        // But FormAnalyzer is in a separate context? No, it's injected.
-        // Ideally we pass the extraction logic.
-
         const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
-        const resumeData = await resumeDataPromise;
+
         if (!resumeData) throw new Error('Resume data missing');
 
         // 3. Heuristic Map
-        const { mappings: heuristicMappings, unmapped } = window.FormAnalyzer.mapFieldsHeuristically(fields, resumeData);
+        let { mappings: heuristicMappings, unmapped } = window.FormAnalyzer.mapFieldsHeuristically(fields, resumeData);
+
+        // --- SMART MEMORY CHECK (Phase 1.5) ---
+        if (unmapped.length > 0) {
+            // Log raw status
+            const memorySize = smartMemory ? Object.keys(smartMemory).length : 0;
+            console.log(`🧠 Smart Memory Check. Cache Size: ${memorySize}`);
+            if (memorySize > 0) {
+                console.log('🧠 FULL SMART MEMORY CACHE:', smartMemory); // REQUESTED LOG
+            }
+
+            if (memorySize > 0) {
+                const memoryHits = {};
+                const stillUnmapped = [];
+
+                unmapped.forEach(field => {
+                    let foundAnswer = null;
+                    let fieldLabel = '';
+
+                    try {
+                        let liveEl = null;
+                        if (field.selector) liveEl = document.querySelector(field.selector);
+                        else if (field.id) liveEl = document.getElementById(field.id);
+                        else if (field.name) liveEl = document.querySelector(`[name="${CSS.escape(field.name)}"]`);
+
+                        if (liveEl) {
+                            fieldLabel = getFieldLabel(liveEl);
+                        } else {
+                            fieldLabel = field.label || field.name || field.id || '';
+                        }
+                    } catch (e) {
+                        // Fallback
+                        fieldLabel = field.label || '';
+                    }
+
+                    fieldLabel = fieldLabel.toLowerCase().trim();
+                    console.log(`🧠 Checking Field: "${fieldLabel}" against cache...`);
+
+                    if (fieldLabel.length > 2) {
+                        for (const [cachedLabel, cachedData] of Object.entries(smartMemory)) {
+                            // 1. Exact Match
+                            if (cachedLabel === fieldLabel) {
+                                console.log(`🧠 MATCH (Exact): "${fieldLabel}"`);
+                                foundAnswer = cachedData.answer;
+                                break;
+                            }
+
+                            // 2. Substring Match (High Confidence if one contains other)
+                            if (cachedLabel.includes(fieldLabel) || fieldLabel.includes(cachedLabel)) {
+                                // Length ratio check to avoid matching "Name" with "First Name" (too broad)
+                                // But "Work Authorization" vs "Are you authorized to work...?" is good.
+                                // Actually, for "Same Form", exact match is expected. Substring helps for variations.
+                                const lenRatio = Math.min(cachedLabel.length, fieldLabel.length) / Math.max(cachedLabel.length, fieldLabel.length);
+                                if (lenRatio > 0.5) { // At least 50% similar length structure
+                                    console.log(`🧠 MATCH (Substring): "${fieldLabel}" ~= "${cachedLabel}"`);
+                                    foundAnswer = cachedData.answer;
+                                    break;
+                                }
+                            }
+
+                            // 3. Fuzzy Match (Jaccard > 0.6) - Significantly Relaxed
+                            const score = calculateUsingJaccardSimilarity(cachedLabel, fieldLabel);
+                            if (score > 0.6) {
+                                console.log(`🧠 MATCH (Fuzzy ${Math.round(score * 100)}%): "${fieldLabel}" ~= "${cachedLabel}"`);
+                                foundAnswer = cachedData.answer;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (foundAnswer) {
+                        const selector = field.selector || (field.id ? `#${CSS.escape(field.id)}` : `[name="${CSS.escape(field.name)}"]`);
+                        memoryHits[selector] = {
+                            value: foundAnswer,
+                            confidence: 0.99,
+                            source: 'smart-memory'
+                        };
+                    } else {
+                        stillUnmapped.push(field);
+                    }
+                });
+
+                if (Object.keys(memoryHits).length > 0) {
+                    console.log(`🧠 Smart Memory rescued ${Object.keys(memoryHits).length} fields!`);
+                    heuristicMappings = { ...heuristicMappings, ...memoryHits };
+                    unmapped = stillUnmapped;
+                }
+            } else {
+                console.log('🧠 Smart Memory is empty.');
+            }
+        }
 
         console.log(`⚡ Phase 1: ${Object.keys(heuristicMappings).length} fields mapped instantly.`);
 
@@ -96,18 +182,30 @@ async function processPageFormLocal() {
                 isFinal: !hasPhase2 // Only final if no phase 2
             });
         } else {
-            // If nothing found heuristically, ensure we don't clear history yet or handle it gracefully
-            // Actually we should clear history at start of a *new* overall fill session
+            // New session start
             activeFormUndoHistory = [];
         }
 
-        // --- PHASE 2: ASYNC AI FILL ---
-        if (hasPhase2) {
-            showProcessingWidget('AI thinking...', 2);
+        // --- PHASE 2: AI REASONING (If needed) ---
+        if (unmapped.length > 0) {
+            console.log(`⚡ Phase 2: AI Needed for ${unmapped.length} complex fields:`, unmapped.map(f => f.name || f.id));
 
-            // 5. AI Map (Slow)
-            // We use the same override/proxy trick for AI calls
+            showProcessingWidget('Thinking...', 2);
+
+            // Use global FormAnalyzer but inject local context
             const originalCallAI = window.AIClient.callAI;
+
+            // 4. Extract Page Context (Job Desc, Company Name) - Lightweight
+            let pageContext = '';
+            try {
+                const jobTitle = document.querySelector('h1')?.innerText || '';
+                const company = document.querySelector('h2')?.innerText || '';
+                pageContext = `Job: ${jobTitle}, Company: ${company}`;
+            } catch (e) { pageContext = 'Context unavailable'; }
+
+            console.log('🧠 Invoking AI for Contextual Filling...');
+
+            // 5. Call AI
             window.AIClient.callAI = async (prompt, sys, opts) => {
                 return new Promise(resolve => {
                     chrome.runtime.sendMessage({
@@ -120,7 +218,7 @@ async function processPageFormLocal() {
             window.AIClient.callAI = originalCallAI; // Restore
 
             if (aiResult.success && aiResult.mappings) {
-                console.log(`🧠 Phase 2: AI mapped ${Object.keys(aiResult.mappings).length} complex fields.`);
+                console.log(`🧠 Phase 2: AI mapped ${Object.keys(aiResult.mappings).length} complex fields.`, aiResult.mappings);
 
                 // Merge mappings
                 cumulativeMappings = { ...cumulativeMappings, ...aiResult.mappings };
@@ -132,12 +230,46 @@ async function processPageFormLocal() {
                     analysis: { fields },
                     allFields: fields
                 }, {
-                    resetHistory: false,
+                    resetHistory: false, // Append to history
                     cumulativeMappings,
                     isFinal: true // This is the end
-                }); // Don't reset history, append
+                });
 
+                // --- SMART MEMORY SAVE ---
+                console.log('🧠 Starting Smart Memory Save...');
+                const newCacheEntries = {};
+                Object.entries(aiResult.mappings).forEach(([selector, data]) => {
+                    if (data.value && String(data.value).length < 500) { // Cache reasonable length answers
+                        const el = document.querySelector(selector);
+                        if (el) {
+                            const label = getFieldLabel(el); // Now robust with parent text
+                            if (label && label.length > 2) {
+                                const key = label.toLowerCase();
+                                console.log(`🧠 Learning New Answer: "${key}" -> "${data.value.substring(0, 20)}..."`);
+                                newCacheEntries[key] = {
+                                    answer: data.value,
+                                    timestamp: Date.now()
+                                };
+                            } else {
+                                console.log(`🧠 Skipped Learning (Weak Label): Selector ${selector}, Label "${label}"`);
+                            }
+                        } else {
+                            console.log(`🧠 Skipped Learning (Element Not Found): Selector ${selector}`);
+                        }
+                    }
+                });
+
+                if (Object.keys(newCacheEntries).length > 0) {
+                    updateSmartMemoryCache(newCacheEntries);
+                } else {
+                    console.log('🧠 No valid entries to save to Smart Memory.');
+                }
+
+            } else {
+                console.warn('⚡ Phase 2: AI returned no mappings.', aiResult);
             }
+        } else {
+            console.log('⚡ Phase 2 Skipped: All fields mapped locally.');
         }
 
         showProcessingWidget('Done!', 4);
@@ -480,16 +612,53 @@ function highlightSubmitButton() {
 }
 
 function getFieldLabel(element) {
-    if (element.labels && element.labels[0]) {
-        return element.labels[0].textContent.trim();
-    } else if (element.placeholder) {
-        return element.placeholder;
-    } else if (element.name) {
-        return element.name.replace(/[_-]/g, ' ');
-    } else if (element.id) {
-        return element.id.replace(/[_-]/g, ' ');
+    let label = '';
+    const type = element.type;
+    const isGroup = type === 'radio' || type === 'checkbox';
+
+    // 0. Group Label (Legend) - Highest Priority for Radios/Checkboxes
+    if (isGroup) {
+        const fieldset = element.closest('fieldset');
+        if (fieldset) {
+            const legend = fieldset.querySelector('legend');
+            if (legend && legend.innerText.trim().length > 0) {
+                return legend.innerText.trim();
+            }
+        }
     }
-    return 'Field';
+
+    // 1. Explicit Label
+    if (element.labels && element.labels[0]) {
+        label = element.labels[0].textContent;
+    }
+    // 2. Aria Label
+    if (!label && element.getAttribute('aria-label')) {
+        label = element.getAttribute('aria-label');
+    }
+    // 3. Placeholder
+    if (!label && element.placeholder) {
+        label = element.placeholder;
+    }
+    // 4. Name/ID (secondary fallback)
+    if (!label) {
+        label = (element.name || element.id || '').replace(/[_-]/g, ' ');
+    }
+
+    // 5. Parent Text Fallback (Crucial for Textareas without distinct labels)
+    // Same heuristic as FormAnalyzer
+    if ((!label || label.length < 3) && element.parentElement) {
+        // Don't do this for radios/checkboxes as they usually have "Option Label" as parent text
+        if (!isGroup) {
+            const parentText = element.parentElement.innerText || '';
+            // Remove own value/text to avoid noise
+            const cleanText = parentText.replace(element.value || '', '').trim();
+            if (cleanText.length > 0 && cleanText.length < 100) {
+                label = cleanText;
+            }
+        }
+    }
+
+    return label.trim() || 'Field';
 }
 
 function getElementSelector(element) {
@@ -928,6 +1097,7 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
             const sidebar = document.getElementById('smarthirex-accordion-sidebar');
             if (sidebar) sidebar.remove();
             document.querySelectorAll('.smarthirex-field-highlight').forEach(el => el.classList.remove('smarthirex-field-highlight'));
+            hideConnectionBeam(); // Clean up beam
         });
     }
 
@@ -1542,9 +1712,11 @@ function undoFormFill() {
     removeProcessingWidget();
 
     // Close sidebar if open
-    // Close sidebar if open
     const sidebar = document.getElementById('smarthirex-accordion-sidebar');
     if (sidebar) sidebar.remove();
+
+    // Ensure beam is gone
+    hideConnectionBeam();
 
     return { success: true };
 }
@@ -2063,3 +2235,75 @@ function toggleChatInterface() {
         document.head.appendChild(style);
     }
 }
+// ============ SMART MEMORY UTILS ============
+
+async function getSmartMemoryCache() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(['smart_memory_cache'], (result) => {
+            resolve(result.smart_memory_cache || {});
+        });
+    });
+}
+
+function updateSmartMemoryCache(newEntries) {
+    chrome.storage.local.get(['smart_memory_cache'], (result) => {
+        let cache = result.smart_memory_cache || {};
+
+        // Add new entries
+        cache = { ...cache, ...newEntries };
+
+        // PRUNE: Keep only top 50 recently used
+        const keys = Object.keys(cache);
+        if (keys.length > 50) {
+            // Sort by timestamp ASC (oldest first)
+            const sortedKeys = keys.sort((a, b) => {
+                return (cache[a].timestamp || 0) - (cache[b].timestamp || 0);
+            });
+
+            // Delete oldest until 50 left
+            const deleteCount = keys.length - 50;
+            for (let i = 0; i < deleteCount; i++) {
+                delete cache[sortedKeys[i]];
+            }
+        }
+
+        chrome.storage.local.set({ smart_memory_cache: cache });
+        console.log('🧠 Smart Memory updated. Current Size:', Object.keys(cache).length);
+    });
+}
+
+/**
+ * Calculates Jaccard Similarity between two strings (Token Overlap)
+ */
+function calculateUsingJaccardSimilarity(str1, str2) {
+    if (!str1 || !str2) return 0;
+
+    // Tokenize: Lowercase -> Remove non-alphanumeric -> Split -> Filter empty
+    const tokenize = (s) => s.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '') // Keep spaces to split
+        .split(/\s+/)
+        .filter(w => w.length > 2); // Ignore 'a', 'is' (stop words simple filter)
+
+    const set1 = new Set(tokenize(str1));
+    const set2 = new Set(tokenize(str2));
+
+    if (set1.size === 0 || set2.size === 0) return 0;
+
+    // Intersection
+    const intersection = new Set([...set1].filter(x => set2.has(x)));
+
+    // Union
+    const union = new Set([...set1, ...set2]);
+
+    return intersection.size / union.size;
+}
+
+// Re-apply Beam Cleanup listener here if needed, but since we are at end of file,
+// we rely on the implementation in setupSidebarListeners if it exists.
+// Note: setupSidebarListeners is not defined in this file (it was in the deleted snippet), 
+// so we should probably add it back or ensure it's called.
+// Wait, setupSidebarListeners IS missing now because of the revert.
+// I should add it back here or where it was.
+// The previous code had `showAccordionSidebar` calling it... wait, no.
+// `showAccordionSidebar` generates HTML string. It needs to attach listeners AFTER inserting into DOM.
+// Let's modify `showAccordionSidebar` to call a setup function.
