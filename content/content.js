@@ -216,9 +216,9 @@ async function executeInstantFill(data) {
 
         // 2. Show toast - REMOVED for sidebar undo flow
         // showSuccessToast(highConfCount, lowConfCount); // DEPRECATED
-        if (highConfCount / totalFillCount > 0.8) {
-            triggerConfetti(); // Premium Celebration only if substantial success
-        }
+
+        // Premium Celebration ALWAYS triggers on success
+        triggerConfetti();
 
         // 3. Show Sidebars (Always show if fields exists)
         if (lowConfCount > 0 || highConfCount > 0) {
@@ -230,7 +230,7 @@ async function executeInstantFill(data) {
                     ([selector, d]) => ({ selector, fieldData: d, confidence: d.confidence || 1.0 })
                 );
                 showAccordionSidebar(highConfArray, lowConfArray);
-            }, 500);
+            }, 3000); // Wait 3s so users can enjoy the Confetti Rain!
         } else {
             showErrorToast('Analysis complete, but no matching fields were found.');
         }
@@ -255,7 +255,17 @@ function captureFieldState(element) {
             element: element,
             value: originalValue,
             type: type,
-            isCheckbox: isCheckbox
+            isCheckbox: isCheckbox,
+            // Capture original inline styles to restore later
+            originalStyles: {
+                border: element.style.border,
+                borderColor: element.style.borderColor,
+                borderWidth: element.style.borderWidth,
+                borderStyle: element.style.borderStyle,
+                boxShadow: element.style.boxShadow,
+                backgroundColor: element.style.backgroundColor,
+                transition: element.style.transition
+            }
         });
     } catch (e) {
         console.warn('Failed to capture state for', element);
@@ -1311,19 +1321,52 @@ function undoFormFill() {
             el.dispatchEvent(new Event('change', { bubbles: true }));
 
             // Remove highlight classes
-            el.classList.remove('smarthirex-filled-high', 'smarthirex-filled-medium', 'smarthirex-filled-low', 'smarthirex-filled');
+            el.classList.remove(
+                'smarthirex-filled-high',
+                'smarthirex-filled-medium',
+                'smarthirex-filled-low',
+                'smarthirex-filled',
+                'smarthirex-field-highlight', // Fix: remove yellow border
+                'smarthirex-spotlight',       // Fix: remove hover effect if stuck
+                'smarthirex-typing'           // Fix: remove typing effect if stuck
+            );
 
-            // Fast visual feedback
+            // Restore original inline styles
+            if (item.originalStyles) {
+                el.style.border = item.originalStyles.border;
+                el.style.borderColor = item.originalStyles.borderColor;
+                el.style.borderWidth = item.originalStyles.borderWidth;
+                el.style.borderStyle = item.originalStyles.borderStyle;
+                el.style.boxShadow = item.originalStyles.boxShadow;
+                el.style.backgroundColor = item.originalStyles.backgroundColor;
+                el.style.transition = item.originalStyles.transition;
+            } else {
+                // Fallback if no styles captured
+                el.style.border = '';
+                el.style.boxShadow = '';
+                el.style.backgroundColor = '';
+            }
+
+            // Fast visual feedback (blink red then revert)
             el.style.transition = 'all 0.2s';
-            el.style.boxShadow = '0 0 0 2px #ef4444';
-            // setTimeout(() => el.style.boxShadow = '', 200); // Syntax fix in next line
+            const originalBoxShadow = item.originalStyles?.boxShadow || '';
+            el.style.boxShadow = `0 0 0 2px #ef4444, ${originalBoxShadow}`;
+
+            setTimeout(() => {
+                if (el) {
+                    el.style.boxShadow = item.originalStyles?.boxShadow || '';
+                    // Ensure transition is reset to original
+                    if (item.originalStyles && item.originalStyles.transition) {
+                        el.style.transition = item.originalStyles.transition;
+                    } else {
+                        el.style.transition = '';
+                    }
+                }
+            }, 300);
 
         } catch (e) {
             console.error('Undo failed for element', el);
         }
-
-        // Use timeout correctly
-        setTimeout(() => { if (el) el.style.boxShadow = ''; }, 200);
     }
 
     activeFormUndoHistory = []; // Clear history
@@ -1419,25 +1462,54 @@ function showUndoConfirmationModal() {
 }
 
 function triggerConfetti() {
-    const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
-    for (let i = 0; i < 50; i++) {
+    console.log('🎉 SmartHireX: Triggering Full-Screen Celebration!');
+    const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
+    const particleCount = 150;
+
+    for (let i = 0; i < particleCount; i++) {
         const confetti = document.createElement('div');
         confetti.className = 'smarthirex-confetti';
-        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.left = '50%';
-        confetti.style.top = '50%';
 
-        // Random trajectory
-        const angle = Math.random() * Math.PI * 2;
-        const velocity = 2 + Math.random() * 4;
-        const tx = Math.cos(angle) * 100 * velocity;
-        const ty = Math.sin(angle) * 100 * velocity;
+        // Random properties
+        const bg = colors[Math.floor(Math.random() * colors.length)];
+        const left = Math.random() * 100; // 0% to 100% width
+        const animDuration = 3 + Math.random() * 2; // 3-5s fall
+        const animDelay = Math.random() * 0.5; // Stagger start
 
-        confetti.style.setProperty('--tx', `${tx}px`);
-        confetti.style.setProperty('--ty', `${ty}px`);
+        confetti.style.cssText = `
+            position: fixed;
+            top: -20px;
+            left: ${left}vw;
+            width: 10px; height: 10px;
+            background-color: ${bg};
+            border-radius: 2px;
+            z-index: 2147483647;
+            pointer-events: none;
+            opacity: 0;
+            transform: rotate(${Math.random() * 360}deg);
+            animation: confettiFall ${animDuration}s linear ${animDelay}s forwards;
+        `;
+
+        // Random shapes (circles and squares)
+        if (Math.random() > 0.5) confetti.style.borderRadius = '50%';
 
         document.body.appendChild(confetti);
-        setTimeout(() => confetti.remove(), 1000);
+
+        // Cleanup after animation
+        setTimeout(() => confetti.remove(), (animDuration + animDelay) * 1000);
+    }
+
+    // Ensure animation keyframes exist
+    if (!document.getElementById('smarthirex-confetti-anim')) {
+        const s = document.createElement('style');
+        s.id = 'smarthirex-confetti-anim';
+        s.textContent = `
+            @keyframes confettiFall {
+                0% { opacity: 1; top: -10vh; transform: translateX(0) rotate(0deg); }
+                100% { opacity: 0; top: 110vh; transform: translateX(${Math.random() * 200 - 100}px) rotate(720deg); }
+            }
+        `;
+        document.head.appendChild(s);
     }
 }
 
