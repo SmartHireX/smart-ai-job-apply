@@ -40,7 +40,8 @@
                 "content/content.js"
             ],
             "css": [
-                "content/content.css"
+                "content/content.css",
+                "content/sidebar.css"
             ],
             "run_at": "document_idle"
         }

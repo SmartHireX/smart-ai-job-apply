@@ -1,0 +1,866 @@
+/* SmartHireX - Global Sidebar & Content UI Styles */
+
+/* 1. Accordion Sidebar Styles */
+#smarthirex-accordion-sidebar {
+    position: fixed;
+    top: unset;
+    bottom: 24px;
+    left: 24px;
+    width: 360px;
+    height: auto;
+    max-height: 85vh;
+    min-width: 280px;
+    min-height: 150px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow:
+        0 10px 25px -5px rgba(0, 0, 0, 0.1),
+        0 8px 10px -6px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+    z-index: 2147483647;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: slideInFromBottomLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+    touch-action: none;
+}
+
+#smarthirex-accordion-sidebar .resize-handle {
+    position: absolute;
+    background: transparent;
+    z-index: 10;
+}
+
+#smarthirex-accordion-sidebar .resize-handle.left {
+    left: 0;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    cursor: w-resize;
+}
+
+#smarthirex-accordion-sidebar .resize-handle.right {
+    right: 0;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    cursor: e-resize;
+}
+
+#smarthirex-accordion-sidebar .resize-handle.top {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    cursor: n-resize;
+}
+
+#smarthirex-accordion-sidebar .resize-handle.bottom {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    cursor: s-resize;
+}
+
+#smarthirex-accordion-sidebar .resize-handle.top-left {
+    top: 0;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize;
+    z-index: 11;
+}
+
+#smarthirex-accordion-sidebar .resize-handle.top-right {
+    top: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    cursor: nesw-resize;
+    z-index: 11;
+}
+
+#smarthirex-accordion-sidebar .resize-handle.bottom-left {
+    bottom: 0;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    cursor: nesw-resize;
+    z-index: 11;
+}
+
+#smarthirex-accordion-sidebar .resize-handle.bottom-right {
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize;
+    z-index: 11;
+}
+
+.sidebar-content-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-content-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-content-scroll::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 3px;
+}
+
+@keyframes flowBeam {
+    to {
+        stroke-dashoffset: -20;
+    }
+}
+
+@keyframes popIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInFromBottomLeft {
+    from {
+        opacity: 0;
+        transform: translateY(40px) translateX(-20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) translateX(0) scale(1);
+    }
+}
+
+#smarthirex-accordion-sidebar .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: #0a66c2;
+    color: white;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    cursor: grab;
+}
+
+#smarthirex-accordion-sidebar .sidebar-header:active {
+    cursor: grabbing;
+}
+
+#smarthirex-accordion-sidebar .header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 15px;
+    color: white;
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+#smarthirex-accordion-sidebar .header-title svg {
+    color: white;
+    opacity: 0.9;
+}
+
+#smarthirex-accordion-sidebar .close-btn {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #ffffff !important;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+}
+
+#smarthirex-accordion-sidebar .close-btn svg {
+    stroke: #ffffff !important;
+}
+
+#smarthirex-accordion-sidebar .close-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+#smarthirex-accordion-sidebar .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#smarthirex-accordion-sidebar .action-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+#smarthirex-accordion-sidebar .action-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+#smarthirex-accordion-sidebar .action-btn svg {
+    color: white;
+}
+
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -34px;
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: #1e293b;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.1s, transform 0.1s;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    z-index: 1000;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #1e293b transparent;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.1s;
+    z-index: 1000;
+}
+
+[data-tooltip]:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+#smarthirex-reopen-trigger {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    height: 44px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #0073b1;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 10px;
+    cursor: pointer;
+    z-index: 2147483647;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e293b;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: popIn 0.3s ease-out;
+    user-select: none;
+}
+
+#smarthirex-reopen-trigger:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 28px -5px rgba(0, 0, 0, 0.15);
+    background: #f8fafc;
+}
+
+#smarthirex-reopen-trigger .trigger-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #eef2ff;
+    color: #0073b1;
+    border-radius: 6px;
+}
+
+#smarthirex-accordion-sidebar .accordion-section {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+#smarthirex-accordion-sidebar .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px 14px 17px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    background: #f8fafc;
+    border: 1px solid rgba(10, 102, 194, 0.15);
+    border-left: 3px solid #0a66c2;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+#smarthirex-accordion-sidebar .section-header:hover {
+    background: #f9fafb;
+}
+
+#smarthirex-accordion-sidebar .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    color: #374151;
+}
+
+#smarthirex-accordion-sidebar .section-icon {
+    font-size: 16px;
+}
+
+#smarthirex-accordion-sidebar .section-count {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+#smarthirex-accordion-sidebar .toggle-icon {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #9ca3af;
+}
+
+#smarthirex-accordion-sidebar .section-header.expanded .toggle-icon {
+    transform: rotate(180deg);
+}
+
+#smarthirex-accordion-sidebar .section-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#smarthirex-accordion-sidebar .section-content.expanded {
+    grid-template-rows: 1fr;
+}
+
+#smarthirex-accordion-sidebar .section-inner-wrapper {
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#smarthirex-accordion-sidebar .section-content.expanded .section-inner-wrapper {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#smarthirex-accordion-sidebar .field-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+    border-bottom: 1px solid #f3f4f6;
+    background: #f9fafb;
+}
+
+#smarthirex-accordion-sidebar .field-item:hover {
+    background: #eff0f3ff;
+    border-left-color: #64748b;
+}
+
+#smarthirex-accordion-sidebar .field-info {
+    flex: 1;
+}
+
+#smarthirex-accordion-sidebar .field-meta {
+    display: flex;
+    gap: 8px;
+    font-size: 11px;
+}
+
+#smarthirex-accordion-sidebar .field-type {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+#smarthirex-accordion-sidebar .field-confidence {
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+#smarthirex-accordion-sidebar .field-confidence.low {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+#smarthirex-accordion-sidebar .field-confidence.medium {
+    background: #eff6ff;
+    color: #0a66c2;
+    border: 1px solid #dbeafe;
+}
+
+#smarthirex-accordion-sidebar .field-badge {
+    color: #10b981;
+    font-weight: 600;
+}
+
+#smarthirex-accordion-sidebar .field-arrow {
+    color: #d1d5db;
+    transition: all 0.2s;
+}
+
+#smarthirex-accordion-sidebar .field-item:hover .field-arrow {
+    color: #8b5cf6;
+    transform: translateX(4px);
+}
+
+#smarthirex-accordion-sidebar .field-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#smarthirex-accordion-sidebar .regenerate-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+}
+
+#smarthirex-accordion-sidebar .regenerate-btn:hover {
+    transform: scale(1.1) rotate(180deg);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+}
+
+#smarthirex-accordion-sidebar .regenerate-btn svg {
+    color: white;
+}
+
+.smarthirex-field-highlight {
+    outline: 2px solid #f59e0b !important;
+    outline-offset: 2px !important;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        outline-color: #f59e0b;
+    }
+
+    50% {
+        outline-color: #fbbf24;
+    }
+}
+
+.smarthirex-typing {
+    background: linear-gradient(90deg, transparent 0%, rgba(10, 102, 194, 0.1) 25%, rgba(10, 102, 194, 0.25) 50%, rgba(10, 102, 194, 0.1) 75%, transparent 100%) !important;
+    background-size: 200% 100% !important;
+    animation: magicalShimmer 1s infinite linear !important;
+    border-color: #0a66c2 !important;
+    box-shadow: 0 0 0 4px rgba(10, 102, 194, 0.15), 0 0 15px rgba(10, 102, 194, 0.2) !important;
+    transition: all 0.2s ease !important;
+}
+
+@keyframes magicalShimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* 2. Processing Widget Styles */
+#smarthirex-processing-widget {
+    position: fixed;
+    top: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 16px 24px;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 30px rgba(10, 102, 194, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 2147483647;
+    font-family: 'Inter', system-ui, sans-serif;
+    min-width: 380px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: widgetSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes widgetSlideDown {
+    from {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
+.sh-widget-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.sh-neural-loader {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sh-neural-core {
+    width: 8px;
+    height: 8px;
+    background: #38bdf8;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #38bdf8;
+}
+
+.sh-neural-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: #0ea5e9;
+    border-right-color: #0ea5e9;
+    animation: spin 1.5s linear infinite;
+}
+
+.sh-neural-ring:nth-child(2) {
+    inset: -4px;
+    border: 2px solid transparent;
+    border-bottom-color: #6366f1;
+    border-left-color: #6366f1;
+    animation: spinReverse 2s linear infinite;
+    opacity: 0.7;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spinReverse {
+    to {
+        transform: rotate(-360deg);
+    }
+}
+
+.sh-content-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sh-main-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f1f5f9;
+    letter-spacing: -0.2px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.sh-sub-text {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.sh-progress-track {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+
+.sh-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #38bdf8, #818cf8);
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 3. Modal Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes slideDownFade {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+/* 4. Confetti */
+@keyframes confettiFall {
+    0% {
+        opacity: 1;
+        top: -10vh;
+        transform: translateX(0) rotate(0deg);
+    }
+
+    100% {
+        opacity: 0;
+        top: 110vh;
+        transform: rotate(720deg);
+    }
+}
+
+/* 5. Connection Beam Animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* 6. Regenerate Modal Styles */
+#smarthirex-regenerate-modal .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+
+#smarthirex-regenerate-modal .modal-container {
+    background: white;
+    width: 450px;
+    max-width: 90vw;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+#smarthirex-regenerate-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f8fafc;
+}
+
+#smarthirex-regenerate-modal .modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#smarthirex-regenerate-modal .modal-close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#smarthirex-regenerate-modal .modal-body {
+    padding: 24px;
+}
+
+#smarthirex-regenerate-modal .field-preview {
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border-left: 3px solid #8b5cf6;
+}
+
+#smarthirex-regenerate-modal .field-preview label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+#smarthirex-regenerate-modal .field-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+}
+
+#smarthirex-regenerate-modal .instruction-input label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+#smarthirex-regenerate-modal textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    transition: all 0.2s;
+}
+
+#smarthirex-regenerate-modal textarea:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+#smarthirex-regenerate-modal .modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+#smarthirex-regenerate-modal .btn-secondary,
+#smarthirex-regenerate-modal .btn-primary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#smarthirex-regenerate-modal .btn-secondary {
+    background: white;
+    color: #6b7280;
+    border: 2px solid #e5e7eb;
+}
+
+#smarthirex-regenerate-modal .btn-primary {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
