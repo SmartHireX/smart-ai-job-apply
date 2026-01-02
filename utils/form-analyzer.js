@@ -368,8 +368,8 @@ async function mapResumeToFields(fields, resumeData, pageContext = '') {
         jsonMode: true
     });
 
-    if (!result.success) {
-        return { success: false, error: result.error };
+    if (!result || !result.success) {
+        return { success: false, error: result?.error || 'AI call returned no response' };
     }
 
     const parseResult = window.AIClient.parseAIJson(result.text);

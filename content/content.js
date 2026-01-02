@@ -288,7 +288,7 @@ async function processPageFormLocal() {
                                     timestamp: Date.now()
                                 };
                             } else {
-                                console.log(`🧠 Skipped Learning (Weak Label): Selector ${selector}, Label "${label}"`);
+                                console.log(`🧠 Skipped Learning (Weak Label): ${label}`);
                             }
                         } else if (el) {
                             console.log(`🧠 Skipped Learning (Ignored Type): ${el.type}`);
@@ -303,7 +303,15 @@ async function processPageFormLocal() {
                 }
 
             } else {
-                console.warn('⚡ Phase 2: AI returned no mappings.', aiResult);
+                console.warn('⚡ Phase 2: AI failed. Showing Phase 1 results only.', aiResult);
+                showErrorToast(`AI Processing Error: ${aiResult?.error || 'Unknown error'}. Showing basic fill results.`);
+
+                // Still show what we have from Phase 1
+                if (Object.keys(heuristicMappings).length > 0) {
+                    // Trigger final display with Phase 1 only
+                    triggerConfetti();
+                    updateSidebarWithState(heuristicMappings);
+                }
             }
         } else {
             console.log('⚡ Phase 2 Skipped: All fields mapped locally.');
