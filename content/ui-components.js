@@ -49,6 +49,13 @@ function showProcessingWidget(text, step) {
         return;
     }
 
+    // Convert step to actual progress percentage
+    // Step 1 (Instant Match) = 33%
+    // Step 2 (AI Thinking) = 66%
+    // Step 3 (Finalizing) = 100%
+    const progressMap = { 1: 33, 2: 66, 3: 100 };
+    const progressPercent = progressMap[step] || 0;
+
     widget.innerHTML = `
         <div class="sh-widget-header">
             <div class="sh-neural-loader">
@@ -62,7 +69,7 @@ function showProcessingWidget(text, step) {
             </div>
         </div>
         <div class="sh-progress-track">
-            <div class="sh-progress-fill" style="width: ${step}%"></div>
+            <div class="sh-progress-fill" style="width: ${progressPercent}%; transition: width 0.6s ease;"></div>
         </div>
     `;
 }
