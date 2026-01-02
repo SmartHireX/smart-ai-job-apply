@@ -1437,17 +1437,17 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                 <span>Form Review</span>
             </div>
             <div class="header-actions">
-                <button class="action-btn clear-highlights-btn" id="smarthirex-clear-highlights" title="Clear visual highlights">
+                <button class="action-btn clear-highlights-btn" id="smarthirex-clear-highlights" data-tooltip="Remove visual highlights" title="Clear visual highlights">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M12 17v2M12 5v2M5 12H3M21 12h-2"/>
                     </svg>
                 </button>
-                <button class="action-btn undo-btn" id="smarthirex-undo-fill" title="Undo form fill">
+                <button class="action-btn undo-btn" id="smarthirex-undo-fill" data-tooltip="Undo fill & Close" title="Undo form fill">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M3 7v6h6M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/>
                     </svg>
                 </button>
-                <button class="close-btn" id="smarthirex-sidebar-close" aria-label="Close Sidebar">
+                <button class="close-btn" id="smarthirex-sidebar-close" data-tooltip="Close sidebar" aria-label="Close Sidebar">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                         <path d="M18 6L6 18M6 6l12 12"/>
                     </svg>
@@ -2005,6 +2005,60 @@ function addAccordionStyles() {
         
         #smarthirex-accordion-sidebar .action-btn svg {
             color: white;
+        }
+
+        /* Immediate Tooltips */
+        [data-tooltip] {
+            position: relative;
+        }
+
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -34px;
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: #1e293b;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.1s, transform 0.1s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        [data-tooltip]:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Tooltip arrow */
+        [data-tooltip]::before {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent transparent #1e293b transparent;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.1s;
+            z-index: 1000;
+        }
+
+        [data-tooltip]:hover::before {
+            opacity: 1;
+            visibility: visible;
         }
         
         #smarthirex-accordion-sidebar .accordion-section {
