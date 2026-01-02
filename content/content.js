@@ -153,9 +153,16 @@ function extractFormHTML() {
 
 // ============ FILL LOGIC (Reused/Refined) ============
 
+// ============ FILL LOGIC (Reused/Refined) ============
+
+let activeFormUndoHistory = [];
+
 async function executeInstantFill(data) {
     try {
         console.log('🚀 SmartHireX: Starting instant fill workflow...');
+        // Reset undo history for new fill session
+        activeFormUndoHistory = [];
+
         const mappings = data.mappings;
         const HIGH_CONFIDENCE_THRESHOLD = 0.9;
 
@@ -190,6 +197,9 @@ async function executeInstantFill(data) {
                 }
 
                 if (element && isFieldVisible(element)) {
+                    // SAVE ORIGINAL STATE BEFORE MODIFYING
+                    captureFieldState(element);
+
                     // Use 'auto' behavior to prevent layout/ripple detachment issues
                     element.scrollIntoView({ behavior: 'auto', block: 'center' });
 
@@ -204,8 +214,11 @@ async function executeInstantFill(data) {
             console.log(`✅ Ghost Typer finished: ${totalFillCount} fields`);
         }
 
-        // 2. Show toast
-        showSuccessToast(highConfCount, lowConfCount);
+        // 2. Show toast - REMOVED for sidebar undo flow
+        // showSuccessToast(highConfCount, lowConfCount); // DEPRECATED
+        if (highConfCount / totalFillCount > 0.8) {
+            triggerConfetti(); // Premium Celebration only if substantial success
+        }
 
         // 3. Show Sidebars (Always show if fields exists)
         if (lowConfCount > 0 || highConfCount > 0) {
@@ -225,6 +238,27 @@ async function executeInstantFill(data) {
     } catch (error) {
         console.error('Fill error:', error);
         showErrorToast('Error during filling: ' + error.message);
+    }
+}
+
+function captureFieldState(element) {
+    try {
+        let originalValue = element.value;
+        const type = element.type;
+        const isCheckbox = type === 'checkbox' || type === 'radio';
+
+        if (isCheckbox) {
+            originalValue = element.checked;
+        }
+
+        activeFormUndoHistory.push({
+            element: element,
+            value: originalValue,
+            type: type,
+            isCheckbox: isCheckbox
+        });
+    } catch (e) {
+        console.warn('Failed to capture state for', element);
     }
 }
 
@@ -597,16 +631,41 @@ function showSuccessToast(filled, review) {
     `;
     toast.innerHTML = `
         <div style="font-size:24px">${filled > 0 ? '✅' : '📋'}</div>
-        <div>
+        <div style="flex:1">
             <div style="font-weight:700; color:#0f172a; font-size:15px; margin-bottom:4px">
                 ${filled > 0 ? `Filled ${filled} fields` : 'Ready to review'}
             </div>
             ${review > 0 ? `<div style="color:#d97706; font-size:13px; font-weight:500">Action required: ${review} fields</div>` :
             `<div style="color:#059669; font-size:13px; font-weight:500">All fields filled!</div>`}
         </div>
+        ${filled > 0 ? `
+            <button id="smarthirex-undo-btn" style="
+                background: #f1f5f9; border: none; padding: 8px 12px;
+                border-radius: 8px; font-size: 13px; font-weight: 600; color: #475569;
+                cursor: pointer; transition: all 0.2s; align-self: center;
+                display: flex; align-items: center; gap: 4px;
+            ">
+                ↩️ Undo
+            </button>
+        ` : ''}
     `;
     document.body.appendChild(toast);
-    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 6000);
+
+    // Add Event Listener
+    const undoBtn = toast.querySelector('#smarthirex-undo-btn');
+    if (undoBtn) {
+        undoBtn.addEventListener('click', async () => {
+            undoBtn.innerHTML = 'Thinking...';
+            undoBtn.style.opacity = '0.7';
+            await undoFormFill();
+            toast.remove();
+        });
+
+        undoBtn.addEventListener('mouseenter', () => { undoBtn.style.background = '#e2e8f0'; });
+        undoBtn.addEventListener('mouseleave', () => { undoBtn.style.background = '#f1f5f9'; });
+    }
+
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 8000); // Slightly longer for people to find Undo
 }
 
 function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
@@ -799,7 +858,30 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                     `).join('')}
                 </div>
             </div>
+                </div>
+            </div>
         ` : ''}
+
+        <div class="sidebar-footer" style="padding: 16px 20px; border-top: 1px solid #f1f5f9; background: #fff; margin-top: auto;">
+             <button id="smarthirex-sidebar-undo" style="
+                width: 100%;
+                padding: 10px;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                color: #64748b;
+                font-weight: 600;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                cursor: pointer;
+                transition: all 0.2s;
+            ">
+                <span style="font-size: 14px;">↩️</span> Undo Fill
+            </button>
+        </div>
     `;
 
     // Add accordion styles
@@ -815,6 +897,16 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
             if (sidebar) sidebar.remove();
             document.querySelectorAll('.smarthirex-field-highlight').forEach(el => el.classList.remove('smarthirex-field-highlight'));
         });
+    }
+
+    // Footer Undo Handler
+    const undoBtn = panel.querySelector('#smarthirex-sidebar-undo');
+    if (undoBtn) {
+        undoBtn.addEventListener('click', () => {
+            showUndoConfirmationModal();
+        });
+        undoBtn.addEventListener('mouseenter', () => { undoBtn.style.background = '#f1f5f9'; undoBtn.style.color = '#0f172a'; });
+        undoBtn.addEventListener('mouseleave', () => { undoBtn.style.background = '#f8fafc'; undoBtn.style.color = '#64748b'; });
     }
 
     // Highlight fields that need review
@@ -859,6 +951,16 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
             fieldItem.addEventListener('click', () => {
                 field.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 field.field.focus();
+            });
+
+            // Spotlight Hover Effect
+            fieldItem.addEventListener('mouseenter', () => {
+                field.field.classList.add('smarthirex-spotlight');
+                field.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+
+            fieldItem.addEventListener('mouseleave', () => {
+                field.field.classList.remove('smarthirex-spotlight');
             });
         }
     });
@@ -1155,13 +1257,232 @@ function addAccordionStyles() {
             outline: none !important;
             transition: all 0.3s ease !important;
         }
+
+        .smarthirex-spotlight {
+            /* box-shadow: removed as per request */
+            transform: scale(1.02);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            z-index: 10000;
+            position: relative;
+        }
+
+        .smarthirex-confetti {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100000;
+            animation: confetti-explode 0.8s ease-out forwards;
+        }
+
+        @keyframes confetti-explode {
+            0% { transform: translate(0,0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
     `;
 
     document.head.appendChild(style);
 }
 
 function undoFormFill() {
+    if (activeFormUndoHistory.length === 0) {
+        showErrorToast('Nothing to undo.');
+        return { success: false };
+    }
+
+    showProcessingWidget('Reverting changes...', 0); // 0 step basically just shows text
+
+    console.log(`Rewinding ${activeFormUndoHistory.length} changes...`);
+
+    // Reverse iterate to undo in reverse order
+    for (let i = activeFormUndoHistory.length - 1; i >= 0; i--) {
+        const item = activeFormUndoHistory[i];
+        const el = item.element;
+
+        try {
+            if (item.isCheckbox) {
+                el.checked = item.value;
+            } else {
+                el.value = item.value;
+            }
+            // Trigger events to notify page scripts
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // Remove highlight classes
+            el.classList.remove('smarthirex-filled-high', 'smarthirex-filled-medium', 'smarthirex-filled-low', 'smarthirex-filled');
+
+            // Fast visual feedback
+            el.style.transition = 'all 0.2s';
+            el.style.boxShadow = '0 0 0 2px #ef4444';
+            // setTimeout(() => el.style.boxShadow = '', 200); // Syntax fix in next line
+
+        } catch (e) {
+            console.error('Undo failed for element', el);
+        }
+
+        // Use timeout correctly
+        setTimeout(() => { if (el) el.style.boxShadow = ''; }, 200);
+    }
+
+    activeFormUndoHistory = []; // Clear history
+    removeProcessingWidget();
+
+    // Close sidebar if open
+    // Close sidebar if open
+    const sidebar = document.getElementById('smarthirex-accordion-sidebar');
+    if (sidebar) sidebar.remove();
+
     return { success: true };
+}
+
+function showUndoConfirmationModal() {
+    const existing = document.getElementById('smarthirex-undo-modal-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'smarthirex-undo-modal-overlay';
+    overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px);
+        z-index: 2147483647; display: flex; align-items: center; justify-content: center;
+        animation: fadeIn 0.2s ease-out;
+        font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    `;
+
+    overlay.innerHTML = `
+        <div id="smarthirex-undo-modal" style="
+            background: white; width: 400px; max-width: 90%;
+            border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden; animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        ">
+            <div style="padding: 24px; text-align: center;">
+                <div style="
+                    width: 48px; height: 48px; background: #fee2e2; color: #ef4444;
+                    border-radius: 50%; font-size: 24px; display: flex; align-items: center; justify-content: center;
+                    margin: 0 auto 16px auto;
+                ">
+                    ↩️
+                </div>
+                <h3 style="margin: 0 0 8px 0; color: #1e293b; font-size: 18px; font-weight: 700;">Revert AI Changes?</h3>
+                <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.5;">
+                    This will clear all fields filled by SmartHireX and restore the form to its original state. Are you sure?
+                </p>
+            </div>
+            <div style="
+                background: #f8fafc; padding: 16px 24px; border-top: 1px solid #e2e8f0;
+                display: flex; gap: 12px; justify-content: flex-end;
+            ">
+                <button id="smarthirex-modal-cancel" style="
+                    padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0;
+                    background: white; color: #64748b; font-weight: 600; cursor: pointer;
+                    font-size: 14px; transition: all 0.2s;
+                ">Cancel</button>
+                <button id="smarthirex-modal-confirm" style="
+                    padding: 10px 20px; border-radius: 8px; border: none;
+                    background: #ef4444; color: white; font-weight: 600; cursor: pointer;
+                    font-size: 14px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+                ">Yes, Revert</button>
+            </div>
+        </div>
+    `;
+
+    // Animation Styles
+    if (!document.getElementById('smarthirex-modal-styles')) {
+        const style = document.createElement('style');
+        style.id = 'smarthirex-modal-styles';
+        style.textContent = `
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+            #smarthirex-modal-cancel:hover { background: #f1f5f9; color: #475569; }
+            #smarthirex-modal-confirm:hover { background: #dc2626; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3); }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.body.appendChild(overlay);
+
+    // Event Listeners
+    const cancelBtn = overlay.querySelector('#smarthirex-modal-cancel');
+    const confirmBtn = overlay.querySelector('#smarthirex-modal-confirm');
+
+    cancelBtn.onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    confirmBtn.onclick = async () => {
+        confirmBtn.innerHTML = 'Reverting...';
+        confirmBtn.style.opacity = '0.8';
+        await undoFormFill();
+        overlay.remove();
+    };
+}
+
+function triggerConfetti() {
+    const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
+    for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'smarthirex-confetti';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.left = '50%';
+        confetti.style.top = '50%';
+
+        // Random trajectory
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = 2 + Math.random() * 4;
+        const tx = Math.cos(angle) * 100 * velocity;
+        const ty = Math.sin(angle) * 100 * velocity;
+
+        confetti.style.setProperty('--tx', `${tx}px`);
+        confetti.style.setProperty('--ty', `${ty}px`);
+
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 1000);
+    }
+}
+
+function showErrorToast(message) {
+    const existing = document.getElementById('smarthirex-error-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'smarthirex-error-toast';
+    toast.style.cssText = `
+        position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+        background: #ef4444; color: white;
+        padding: 16px 24px; border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+        z-index: 2147483647; display: flex; align-items: center; gap: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+        font-weight: 600; font-size: 14px;
+        animation: slideDownFade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        min-width: 320px; justify-content: center;
+    `;
+
+    toast.innerHTML = `
+        <span style="font-size: 18px; background: rgba(255,255,255,0.2); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">✕</span>
+        <span>${message}</span>
+    `;
+
+    // Inject animation
+    if (!document.getElementById('smarthirex-error-anim')) {
+        const s = document.createElement('style');
+        s.id = 'smarthirex-error-anim';
+        s.textContent = `@keyframes slideDownFade { from { opacity:0; transform:translate(-50%, -20px); } to { opacity:1; transform:translate(-50%, 0); } }`;
+        document.head.appendChild(s);
+    }
+
+    document.body.appendChild(toast);
+
+    // 5 seconds timeout as requested
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translate(-50%, -20px)';
+            toast.style.transition = 'all 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 5000);
 }
 
 
