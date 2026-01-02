@@ -1686,14 +1686,38 @@ function toggleChatInterface() {
     resizerSE.style.cssText = `${resizerStyles} bottom: -5px; right: -5px; cursor: se-resize;`;
     container.appendChild(resizerSE);
 
+    // 5. Top (N)
+    const resizerN = document.createElement('div');
+    resizerN.style.cssText = `${resizerStyles} top: -5px; left: 0; width: 100%; cursor: n-resize;`;
+    container.appendChild(resizerN);
+
+    // 6. Bottom (S)
+    const resizerS = document.createElement('div');
+    resizerS.style.cssText = `${resizerStyles} bottom: -5px; left: 0; width: 100%; cursor: s-resize;`;
+    container.appendChild(resizerS);
+
+    // 7. Left (W)
+    const resizerW = document.createElement('div');
+    resizerW.style.cssText = `${resizerStyles} top: 0; left: -5px; height: 100%; cursor: w-resize;`;
+    container.appendChild(resizerW);
+
+    // 8. Right (E)
+    const resizerE = document.createElement('div');
+    resizerE.style.cssText = `${resizerStyles} top: 0; right: -5px; height: 100%; cursor: e-resize;`;
+    container.appendChild(resizerE);
+
     // Resize Logic
     setupResizer(resizerNW, 'nw');
     setupResizer(resizerNE, 'ne');
     setupResizer(resizerSW, 'sw');
     setupResizer(resizerSE, 'se');
+    setupResizer(resizerN, 'n');
+    setupResizer(resizerS, 's');
+    setupResizer(resizerW, 'w');
+    setupResizer(resizerE, 'e');
 
     function setupResizer(resizer, direction) {
-        let startX, startY, startWidth, startHeight, startRight, startBottom;
+        let startX, startY, startWidth, startHeight, startRight, startBottom, aspectRatio;
 
         resizer.addEventListener('mousedown', (e) => {
             e.preventDefault();
@@ -1705,8 +1729,9 @@ function toggleChatInterface() {
             const rect = container.getBoundingClientRect();
             startWidth = rect.width;
             startHeight = rect.height;
+            aspectRatio = startWidth / startHeight;
 
-            // Get computed styles for right/bottom
+            // Get computed styles for right/bottom because we might need to modify them for E/S resize
             const computedStyle = window.getComputedStyle(container);
             startRight = parseFloat(computedStyle.right);
             startBottom = parseFloat(computedStyle.bottom);
@@ -1719,43 +1744,71 @@ function toggleChatInterface() {
                 const deltaX = e.clientX - startX;
                 const deltaY = e.clientY - startY;
 
+                // CORNER RESIZING (PROPORTIONAL)
+
                 // NW: Drag Left/Up -> Increase Width/Height (Anchored Right/Bottom)
                 if (direction === 'nw') {
-                    container.style.width = `${startWidth - deltaX}px`;
-                    container.style.height = `${startHeight - deltaY}px`;
+                    const newWidth = startWidth - deltaX;
+                    const newHeight = newWidth / aspectRatio;
+                    container.style.width = `${newWidth}px`;
+                    container.style.height = `${newHeight}px`;
                 }
 
-                // NE: Drag Right/Up -> Increase Width/Height
+                // NE: Drag Right/Up -> Increase Width -> Adjust Height proportionally
                 if (direction === 'ne') {
-                    // Increase Width by deltaX (move right)
-                    container.style.width = `${startWidth + deltaX}px`;
-                    // Decrease Right by deltaX (since right is fixed, increasing width to right means right pos stays, so width grows left? No. fixed right means Left edge moves.
-                    // Wait. If right is fixed. Width increases. Box grows to LEFT.
-                    // But we want box to grow to RIGHT.
-                    // So we must DECREASE 'Right' property by deltaX?
-                    // Original code:
-                    container.style.width = `${startWidth + deltaX}px`;
-                    container.style.right = `${startRight - deltaX}px`;
+                    const newWidth = startWidth + deltaX;
+                    const newHeight = newWidth / aspectRatio;
+                    container.style.width = `${newWidth}px`;
+                    container.style.height = `${newHeight}px`;
+
+                    // Adjust Right to grow outward to the right
+                    container.style.right = `${startRight - (newWidth - startWidth)}px`;
+                }
+
+                // SW: Drag Left/Down -> Increase Width -> Adjust Height proportionally
+                if (direction === 'sw') {
+                    const newWidth = startWidth - deltaX;
+                    const newHeight = newWidth / aspectRatio;
+                    container.style.width = `${newWidth}px`;
+                    container.style.height = `${newHeight}px`;
+
+                    // Adjust Bottom to grow outward to the bottom
+                    container.style.bottom = `${startBottom - (newHeight - startHeight)}px`;
+                }
+
+                // SE: Drag Right/Down -> Increase Width -> Adjust Height proportionally
+                if (direction === 'se') {
+                    const newWidth = startWidth + deltaX;
+                    const newHeight = newWidth / aspectRatio;
+                    container.style.width = `${newWidth}px`;
+                    container.style.height = `${newHeight}px`;
+
+                    container.style.right = `${startRight - (newWidth - startWidth)}px`;
+                    container.style.bottom = `${startBottom - (newHeight - startHeight)}px`;
+                }
+
+                // SIDE RESIZING (FREE FORM)
+
+                // N: Drag Up -> Increase Height
+                if (direction === 'n') {
                     container.style.height = `${startHeight - deltaY}px`;
                 }
 
-                // SW: Drag Left/Down -> Increase Width.
-                if (direction === 'sw') {
-                    container.style.width = `${startWidth - deltaX}px`; // Move Left increases width
-                    container.style.height = `${startHeight + deltaY}px`; // Move Down increases height
-                    container.style.bottom = `${startBottom - deltaY}px`; // Move Down decreases bottom? 
-                    // If bottom is anchored, moving mouse down means height increases DOWNWARDS?
-                    // No, 'bottom' property fixes bottom edge. Increasing Height grows UPWARDS.
-                    // If we want to grow DOWNWARDS, we must Decrease Bottom.
-                    // Correct.
-                }
-
-                // SE: Drag Right/Down -> Increase Width/Height.
-                if (direction === 'se') {
-                    container.style.width = `${startWidth + deltaX}px`;
-                    container.style.right = `${startRight - deltaX}px`;
+                // S: Drag Down -> Increase Height (and shift bottom)
+                if (direction === 's') {
                     container.style.height = `${startHeight + deltaY}px`;
                     container.style.bottom = `${startBottom - deltaY}px`;
+                }
+
+                // W: Drag Left -> Increase Width
+                if (direction === 'w') {
+                    container.style.width = `${startWidth - deltaX}px`;
+                }
+
+                // E: Drag Right -> Increase Width (and shift right)
+                if (direction === 'e') {
+                    container.style.width = `${startWidth + deltaX}px`;
+                    container.style.right = `${startRight - deltaX}px`;
                 }
             }
 

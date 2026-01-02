@@ -154,6 +154,8 @@ function addMessage(role, content) {
 }
 
 function startTyping() {
+    // Move indicator to the bottom
+    chatOutput.appendChild(typingIndicator);
     typingIndicator.classList.remove('hidden');
     scrollToBottom();
 }
