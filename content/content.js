@@ -272,6 +272,27 @@ async function processPageFormLocal() {
                     }
 
                     const normalizedLabel = normalizeSmartMemoryKey(label);
+
+                    // Quality validation: reject poor cache keys
+                    const isGeneric = /^(yes|no|ok|submit|cancel|true|false)$/i.test(normalizedLabel);
+                    const isSingleWord = !normalizedLabel.includes(' ');
+                    const isNumberHeavy = (normalizedLabel.match(/\d/g) || []).length > normalizedLabel.length / 3;
+
+                    if (isGeneric) {
+                        console.log(`⏭️ Skipping cache (generic label '${normalizedLabel}'): ${selector}`);
+                        return;
+                    }
+
+                    if (isSingleWord && normalizedLabel.length < 4) {
+                        console.log(`⏭️ Skipping cache (too short single word '${normalizedLabel}'): ${selector}`);
+                        return;
+                    }
+
+                    if (isNumberHeavy) {
+                        console.log(`⏭️ Skipping cache (number-heavy label '${normalizedLabel}'): ${selector}`);
+                        return;
+                    }
+
                     newCacheEntries[normalizedLabel] = {
                         answer: data.value,
                         timestamp: Date.now()
