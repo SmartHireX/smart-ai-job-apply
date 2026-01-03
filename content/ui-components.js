@@ -377,7 +377,7 @@ function showAccordionSidebar(allFields) {
             manualFields.push(fieldInfo);
         } else if (item.source === 'smart-memory') {
             cacheFields.push(fieldInfo);
-        } else if (item.confidence >= 0.85 && (item.source === 'heuristic' || !item.source || item.source === undefined)) {
+        } else if (item.confidence >= 0.85 && (item.source === 'heuristic' || item.source === 'local_heuristic' || !item.source || item.source === undefined)) {
             // High confidence heuristic matches = App Fill
             appFillFields.push(fieldInfo);
         } else {
@@ -753,6 +753,27 @@ function setTextValue(element, value) {
 
 function setSelectValue(element, value) {
     const options = Array.from(element.options);
+
+    // Context: Handle Multi-Select (LocalMatcher returns array for skills)
+    if (element.multiple && Array.isArray(value)) {
+        let changed = false;
+        options.forEach(opt => {
+            // Check if this option matches ANY of the target values
+            const isMatch = value.some(target => {
+                const textSim = calculateUsingJaccardSimilarity(opt.text, target);
+                const valSim = calculateUsingJaccardSimilarity(opt.value, target);
+                return Math.max(textSim, valSim) > 0.6; // Threshold for multi-select
+            });
+            if (isMatch && !opt.selected) {
+                opt.selected = true;
+                changed = true;
+            }
+        });
+        if (changed) dispatchChangeEvents(element);
+        return;
+    }
+
+    // Single Select Logic
     let bestMatch = options[0];
     let maxSim = 0;
 

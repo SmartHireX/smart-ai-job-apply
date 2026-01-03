@@ -15,17 +15,30 @@ const LocalMatcher = {
      */
     resolveFields(fields, resumeData) {
         const resolved = {};
+        const resolvedGroups = new Set();
         const remaining = [];
 
         // Pre-calculate facts
         const facts = this.extractFacts(resumeData);
         console.log('🧠 [LocalMatcher] extracted facts:', facts);
 
+        // First pass: Resolve fields
         fields.forEach(field => {
             let answer = null;
+
+            // Skip if group already resolved (for radios)
+            if (field.name && resolvedGroups.has(field.name)) {
+                return; // Already handled this group
+            }
+
             const labelLower = (field.label || '').toLowerCase();
             const nameLower = (field.name || '').toLowerCase();
             const context = `${labelLower} ${nameLower}`;
+
+            // DEBUG LOGGING
+            if (context.includes('visa') || context.includes('skill') || context.includes('relocate') || context.includes('sponsor')) {
+                console.log(`[LocalMatcher] TRACE "${field.name}":`, { label: field.label, context, type: field.type, value: field.value });
+            }
 
             // 1. Experience
             if (context.includes('experience') || context.includes('years')) {
@@ -33,17 +46,21 @@ const LocalMatcher = {
             }
             // 2. Visa / Sponsorship
             else if (context.includes('sponsorship') || context.includes('visa') || context.includes('authorized')) {
-                answer = this.matchVisa(field, facts);
+                answer = this.matchVisa(field, facts, context);
             }
             // 3. Relocation / Remote
-            else if (context.includes('relocate') || context.includes('remote')) {
-                answer = this.matchLogistics(field, facts);
+            else if (context.includes('relocate') || context.includes('remote') || context.includes('travel')) {
+                answer = this.matchLogistics(field, facts, context);
+            }
+            // 3.5 Skills
+            else if (context.includes('skill')) {
+                answer = this.matchSkills(field, facts);
             }
             // 4. Education
             else if (context.includes('degree') || context.includes('education')) {
                 answer = this.matchEducation(field, facts);
             }
-            // 5. Gender / Veteran / Disability (Demographics)
+            // 5. Gender / Veteran / Disability
             else if (['gender', 'sex', 'male', 'female'].some(k => context.includes(k))) {
                 answer = this.matchDemographics(field, facts, 'gender');
             }
@@ -54,17 +71,58 @@ const LocalMatcher = {
                 answer = this.matchDemographics(field, facts, 'disability');
             }
 
+            // 6. Employment Status & Notice Period
+            else if (context.includes('employed') && (context.includes('currently') || context.includes('now'))) {
+                answer = this.matchEmploymentStatus(field, facts);
+            }
+            else if (context.includes('notice') && (context.includes('period') || context.includes('days'))) {
+                answer = this.matchNoticePeriod(field, facts);
+            }
 
-            if (answer) {
+            // 7. Ethnicity / Race
+            else if (context.includes('race') || context.includes('ethnicity')) {
+                answer = this.matchEthnicity(field, facts);
+            }
+
+            // 6. Generic Types (Date, Time, Number) -> Implied Local by Prompt Rules
+            else if (field.type === 'date') {
+                answer = new Date().toISOString().split('T')[0]; // Today
+            }
+            else if (field.type === 'time') {
+                answer = '09:00';
+            }
+            else if (field.type === 'number') {
+                if (context.includes('salary')) answer = '60000'; // Safe default
+                else if (context.includes('notice')) {
+                    // Try to extract number from notice period string "30 days" -> "30"
+                    const np = parseInt(facts.noticePeriod) || 0;
+                    answer = np > 0 ? np.toString() : '0';
+                }
+                else if (context.includes('experience')) answer = Math.floor(facts.totalYearsExp).toString();
+                else answer = '0'; // Default safe fallback
+            }
+
+
+            if (answer !== null) {
                 resolved[field.selector] = {
                     value: answer,
-                    confidence: 1.0, // Absolute certainty
+                    confidence: 1.0,
                     source: 'local_heuristic',
                     field_type: field.type
                 };
-            } else {
-                remaining.push(field);
+
+                if (field.name) {
+                    resolvedGroups.add(field.name);
+                }
             }
+        });
+
+        // Second pass: Populate remaining, filtering out resolved groups
+        fields.forEach(field => {
+            if (resolved[field.selector]) return; // Already resolved
+            if (field.name && resolvedGroups.has(field.name)) return; // Group resolved
+
+            remaining.push(field);
         });
 
         console.log(`⚡ [LocalMatcher] Resolved ${Object.keys(resolved).length} fields locally.`);
@@ -82,8 +140,12 @@ const LocalMatcher = {
             demographics: {
                 gender: resumeData.customFields?.gender || '',
                 veteran: resumeData.customFields?.veteranStatus || '',
-                disability: resumeData.customFields?.disabilityStatus || ''
-            }
+                disability: resumeData.customFields?.disabilityStatus || '',
+                race: resumeData.customFields?.race || resumeData.customFields?.ethnicity || ''
+            },
+            skills: (resumeData.skills?.technical || []).map(s => s.toLowerCase()),
+            noticePeriod: resumeData.customFields?.noticePeriod || null, // e.g. "30 days" or "1 month"
+            isEmployed: (resumeData.experience || []).some(j => j.current === true)
         };
     },
 
@@ -131,14 +193,16 @@ const LocalMatcher = {
         return null;
     },
 
-    matchVisa(field, facts) {
+    matchVisa(field, facts, context) {
         const text = (field.label + ' ' + (field.value || '')).toLowerCase();
+        const valueLower = (field.value || '').toLowerCase(); // Strict value check
+        const isYes = valueLower === 'yes' || valueLower === 'true' || valueLower === 'on';
+        const isNo = valueLower === 'no' || valueLower === 'false' || valueLower === 'off';
 
-        // Q: "Do you need sponsorship?"
-        if (text.includes('sponsorship') || text.includes('sponsor')) {
-            // Need sponsorship?
-            const isYes = text === 'yes' || text === 'true';
-            const isNo = text === 'no' || text === 'false';
+        // 1. Sponsorship Question: "Do you require sponsorship?"
+        if (context.includes('sponsorship') || text.includes('sponsorship')) {
+            // "Will you now or in future require..." -> If sponsorshipRequired=false, answer NO.
+            // If sponsorshipRequired=true, answer YES.
 
             if (facts.sponsorshipRequired) {
                 if (isYes) return field.value;
@@ -147,34 +211,108 @@ const LocalMatcher = {
             }
         }
 
-        // Q: "Are you authorized?"
-        if (text.includes('authorized') || text.includes('authorization') || text.includes('legally')) {
-            const isYes = text === 'yes' || text === 'true';
-            const isNo = text === 'no' || text === 'false';
+        // 2. Authorization Question: "Are you authorized?", "Legally allowed?"
+        if (context.includes('authorized') || context.includes('authorization') || context.includes('legally')) {
+            // "Are you authorized to work?" -> If sponsorshipRequired=false (meaning authorized based on assumption), answer YES.
+            // Note: This logic assumes if you don't need sponsorship, you are authorized.
+            // Real world: You might be authorized BUT need sponsorship later (OPT).
+            // But usually: Authorized = YES.
 
-            // If NOT sponsorship required, assume authorized (simplification)
-            if (!facts.sponsorshipRequired) {
+            // If authorized (default to true if not specified, or checks field)
+            const authorized = facts.workAuthorization === 'Authorized' || !facts.sponsorshipRequired;
+
+            if (authorized) {
                 if (isYes) return field.value;
+            } else {
+                if (isNo) return field.value;
+            }
+        }
+
+        // Select logic (simplified)
+        if (field.type === 'select' && field.options) {
+            const target = facts.sponsorshipRequired ? 'yes' : 'no';
+            if (context.includes('sponsorship')) {
+                return field.options.find(opt => opt.toLowerCase().includes(target)) || null;
+            }
+            if (context.includes('authorized')) {
+                const authTarget = !facts.sponsorshipRequired ? 'yes' : 'no';
+                return field.options.find(opt => opt.toLowerCase().includes(authTarget)) || null;
             }
         }
 
         return null;
     },
 
-    matchLogistics(field, facts) {
+    matchLogistics(field, facts, context) {
         const text = (field.label + ' ' + (field.value || '')).toLowerCase();
-        const isYes = text === 'yes' || text === 'true' || text === 'on';
+        // Loose check for "Yes" in label or value
+        const isYes = text.includes('yes') || text.includes('true') || (field.value === 'on');
 
-        if (text.includes('relocate')) {
-            if (facts.willingToRelocate === true && isYes) return field.value;
-            if (facts.willingToRelocate === false && !isYes) return field.value; // "No" option
+        // Context-aware checking
+        // "Relocate"
+        if (context.includes('relocate')) {
+            if (facts.willingToRelocate === true) {
+                // If Checkbox ("Willing to relocate"), check it
+                if (field.type === 'checkbox') return field.value;
+                // If Radio "Yes", select it
+                if (isYes) return field.value;
+            } else if (facts.willingToRelocate === false) {
+                // If Radio "No" (implied if not Yes), select it
+                if (!isYes && field.type === 'radio') return field.value;
+            }
         }
 
-        if (text.includes('remote')) {
-            // If preferred location has 'remote'
-            if (facts.preferredLocation.includes('remote')) {
+        // "Remote"
+        if (context.includes('remote')) {
+            // Check if profile mentions "remote" in location preference
+            const wantsRemote = facts.preferredLocation.includes('remote');
+
+            if (wantsRemote) {
+                if (field.type === 'checkbox') return field.value;
                 if (isYes) return field.value;
+            } else {
+                if (!isYes && field.type === 'radio') return field.value;
             }
+        }
+
+        if (context.includes('travel')) {
+            // Optimistic handling: If it's a checkbox "Willing to travel", check it?
+            // Safer: Leave for AI if not explicit. But let's check it for now if simple boolean.
+            if (field.type === 'checkbox') return field.value;
+        }
+
+        return null;
+    },
+
+
+    matchSkills(field, facts) {
+        // Multi-select or Checkbox group
+        // If Select
+        if (field.type === 'select' && field.options) {
+            // Return ARRAY of matching values
+            const matches = field.options.filter(opt => {
+                const optLower = opt.toLowerCase();
+                return facts.skills.some(skill => optLower.includes(skill) || skill.includes(optLower));
+            });
+            return matches.length > 0 ? matches : null;
+        }
+        // If Checkbox
+        if (field.type === 'checkbox') {
+            const val = (field.value || '').toLowerCase();
+            // If value is present, use it directly (e.g. "javascript")
+            if (val.length > 1) {
+                const isMatch = facts.skills.some(skill => val.includes(skill) || skill.includes(val));
+                return isMatch ? field.value : null;
+            }
+
+            // Fallback: Use label if value is generic/empty, but strip common prefixes
+            let text = (field.label || '').toLowerCase();
+            // Remove group label if present (heuristic)
+            const commonPrefixes = ['skills', 'technologies', 'proficiency', 'select', ':'];
+            commonPrefixes.forEach(p => text = text.replace(p, ''));
+
+            const isMatch = facts.skills.some(skill => text.includes(skill) || skill.includes(text));
+            return isMatch ? field.value : null;
         }
         return null;
     },
@@ -191,23 +329,36 @@ const LocalMatcher = {
         const targetLevel = levels[facts.highestDegree] || 0;
         if (targetLevel === 0) return null;
 
-        const text = (field.label + ' ' + (field.value || '')).toLowerCase();
-        let optionLevel = 0;
-        for (const [key, lvl] of Object.entries(levels)) {
-            if (text.includes(key)) {
-                optionLevel = lvl;
-                break;
+        // Helper: get level from string
+        const getLevel = (str) => {
+            if (!str) return 0;
+            str = str.toLowerCase();
+            for (const [key, lvl] of Object.entries(levels)) {
+                if (str.includes(key)) return lvl;
             }
+            return 0;
+        };
+
+        const text = (field.label + ' ' + (field.value || '')).toLowerCase();
+
+        // Select: Iterate options
+        if (field.type === 'select' && field.options) {
+            // Find option with closest matching level
+            // Note: options might be values. If values are codes (e.g. "deg_1"), this fails.
+            // But usually they are "bachelors", "masters".
+            return field.options.find(opt => getLevel(opt) === targetLevel) || null;
         }
 
-        // Exact match or closest? 
-        // For radio, we select if equal.
-        if (optionLevel === targetLevel) return field.value;
+        // Radio: Check if THIS option matches
+        if (field.type === 'radio') {
+            if (getLevel(text) === targetLevel) return field.value;
+        }
+
         return null;
     },
 
     matchDemographics(field, facts, key) {
-        const userVal = (facts.demographics[key] || '').toLowerCase();
+        let userVal = (facts.demographics[key] || '').toLowerCase();
         if (!userVal) return null;
 
         const text = (field.label + ' ' + (field.value || '')).toLowerCase();
@@ -215,8 +366,43 @@ const LocalMatcher = {
         // Direct match
         if (text.includes(userVal)) return field.value;
 
-        // "Decline to identify" fallback?
-        // Only if no userVal provided? Logic above returns null if no userVal.
+        return null;
+    },
+
+    matchEthnicity(field, facts) {
+        return this.matchDemographics(field, facts, 'race');
+    },
+
+    matchEmploymentStatus(field, facts) {
+        const text = (field.label + ' ' + (field.value || '')).toLowerCase();
+        const isYes = text === 'yes' || text === 'true';
+        const isNo = text === 'no' || text === 'false';
+
+        // "Are you currently employed?"
+        if (facts.isEmployed) {
+            if (isYes) return field.value;
+        } else {
+            if (isNo) return field.value;
+        }
+        return null;
+    },
+
+    matchNoticePeriod(field, facts) {
+        if (!facts.noticePeriod) return null;
+
+        // Example fact: "30 days"
+        // Options: "Immedate", "15 days", "30 days", "60 days"
+
+        // Simple strategy: check if fact is contained in option
+        const factLower = facts.noticePeriod.toLowerCase();
+        const text = (field.label + ' ' + (field.value || '')).toLowerCase();
+
+        if (text.includes(factLower)) return field.value;
+
+        // Number matching? e.g. fact="30" matches "30 days"
+        const factNum = parseInt(factLower) || 0;
+        if (factNum > 0 && text.includes(factNum.toString())) return field.value;
+
         return null;
     },
 
@@ -292,4 +478,5 @@ const LocalMatcher = {
 // Export
 if (typeof window !== 'undefined') {
     window.LocalMatcher = LocalMatcher;
+    window.LocalMatcherDebug = LocalMatcher; // Alias for debug
 }

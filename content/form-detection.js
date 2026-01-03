@@ -152,68 +152,136 @@ function getFieldLabel(element) {
     const type = element.type;
     const isGroup = type === 'radio' || type === 'checkbox';
 
-    // 0. Group Label (Legend) - Highest Priority for Radios/Checkboxes
+    // Helper: Clean text
+    const clean = (txt) => (txt || '').replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+
+    // 0. Group Label Strategy (Highest Priority for Radios/Checkboxes)
     if (isGroup) {
+        // 0a. Fieldset Legend
         const fieldset = element.closest('fieldset');
         if (fieldset) {
             const legend = fieldset.querySelector('legend');
-            if (legend && legend.innerText.trim().length > 0) {
-                return legend.innerText.trim();
+            if (legend) return clean(legend.innerText);
+        }
+
+        // 0b. Container Header Strategy (Common in React/Div soups)
+        // Look up up to 3 parents
+        let parent = element.parentElement;
+        for (let i = 0; i < 3; i++) {
+            if (!parent || parent.tagName === 'FORM' || parent.tagName === 'BODY') break;
+
+            // Look for a preceding sibling that looks like a label (h* tag, label, or bold span)
+            let sibling = parent.previousElementSibling;
+            if (sibling) {
+                // Heuristic: Short text, header, or 'label' class
+                const text = clean(sibling.innerText);
+                if (text.length > 2 && text.length < 150) {
+                    // Strong signal: Heading tag or explicit class
+                    if (/H[1-6]|LABEL|LEGEND/.test(sibling.tagName) ||
+                        (sibling.className && typeof sibling.className === 'string' && sibling.className.toLowerCase().includes('label'))) {
+                        return text;
+                    }
+                    // Medium signal: Just text before a likely group container
+                    return text;
+                }
             }
+
+            // Look for a distinct header INSIDE the parent (if it's a wrapper)
+            const internalHeader = parent.querySelector('h1, h2, h3, h4, h5, h6, label, .label, .question');
+            if (internalHeader && !internalHeader.contains(element)) {
+                return clean(internalHeader.innerText);
+            }
+
+            parent = parent.parentElement;
         }
     }
 
-    // 1. Explicit Label
-    if (element.labels && element.labels[0]) {
-        label = element.labels[0].textContent;
-    }
-    // 2. Aria Label
-    if (!label && element.getAttribute('aria-label')) {
-        label = element.getAttribute('aria-label');
-    }
-    // 3. Placeholder
-    if (!label && element.placeholder) {
-        label = element.placeholder;
-    }
-    // 4. Name/ID (secondary fallback)
-    if (!label) {
-        label = (element.name || element.id || '').replace(/[_-]/g, ' ');
+    // 1. Explicit Label (Standard)
+    if (element.labels && element.labels.length > 0) {
+        return clean(element.labels[0].textContent);
     }
 
-    // 5. Parent Text Fallback (Crucial for Textareas without distinct labels)
-    if ((!label || label.length < 3) && element.parentElement) {
-        if (!isGroup) {
-            const parentText = element.parentElement.innerText || '';
-            const cleanText = parentText.replace(element.value || '', '').trim();
-            if (cleanText.length > 0 && cleanText.length < 100) {
-                label = cleanText;
-            }
-        }
+    // 2. ARIA Label (Direct)
+    if (element.hasAttribute('aria-label')) {
+        return clean(element.getAttribute('aria-label'));
     }
 
-    return label.trim() || 'Field';
+    // 3. ARIA LabelledBy (Indirect)
+    if (element.hasAttribute('aria-labelledby')) {
+        const id = element.getAttribute('aria-labelledby');
+        const labelEl = document.getElementById(id);
+        if (labelEl) return clean(labelEl.textContent);
+    }
+
+    // 4. Placeholder (for Text Inputs)
+    if (!isGroup && element.placeholder) {
+        return clean(element.placeholder);
+    }
+
+    // 5. Nearby Text Strategy (Visual Adjacency for non-groups or failed groups)
+    // Check previous sibling directly
+    let prev = element.previousElementSibling;
+    if (prev && clean(prev.innerText).length > 0 && clean(prev.innerText).length < 50) {
+        return clean(prev.innerText);
+    }
+
+    // Check parent text (minus input value)
+    if (element.parentElement) {
+        const parentText = element.parentElement.innerText || '';
+        // Remove own value to avoid "Name Name"
+        const val = element.value || '';
+        const textWithoutVal = parentText.replace(val, '').trim();
+        if (textWithoutVal.length > 2 && textWithoutVal.length < 50) return clean(textWithoutVal);
+    }
+
+    // 6. Name/ID Fallback (Last Resort)
+    const fallback = element.name || element.id;
+    if (fallback) {
+        return clean(fallback.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1')); // camelCaese -> camel Case
+    }
+
+    return 'Unknown Field';
 }
 
 function getElementSelector(element) {
-    if (element.id) {
+    // 1. ID - The Gold Standard (if valid and not dynamic gibberish)
+    if (element.id && !/\d{5,}/.test(element.id)) { // Avoid auto-generated IDs like "input-12345"
         return `#${CSS.escape(element.id)}`;
     }
-    if (element.name) {
-        if ((element.type === 'radio' || element.type === 'checkbox') && element.value) {
-            return `input[name="${CSS.escape(element.name)}"][value="${CSS.escape(element.value)}"]`;
+
+    // 2. Stable QA/Automation Attributes ("FANG" style)
+    const attributes = ['data-testid', 'data-cy', 'data-automation-id', 'name'];
+    for (const attr of attributes) {
+        if (element.hasAttribute(attr)) {
+            const val = element.getAttribute(attr);
+            if (attr === 'name') {
+                // Special handling for Radio/Checkbox groups
+                if ((element.type === 'radio' || element.type === 'checkbox') && element.value) {
+                    return `input[name="${CSS.escape(val)}"][value="${CSS.escape(element.value)}"]`;
+                }
+                return `input[name="${CSS.escape(val)}"]`;
+            }
+            return `[${attr}="${CSS.escape(val)}"]`;
         }
-        return `input[name="${CSS.escape(element.name)}"]`;
     }
-    // Fallback: use tag + nth-of-type
-    const parent = element.parentElement;
-    if (parent) {
-        const siblings = Array.from(parent.children).filter(child =>
-            child.tagName === element.tagName
-        );
-        const index = siblings.indexOf(element) + 1;
-        return `${element.tagName.toLowerCase()}:nth-of-type(${index})`;
+
+    // 3. Fallback: Stable Hierarchical Path
+    // Go up 2 levels
+    let path = element.tagName.toLowerCase();
+    let current = element;
+
+    for (let i = 0; i < 2; i++) {
+        const parent = current.parentElement;
+        if (!parent || parent.tagName === 'BODY' || parent.tagName === 'HTML') break;
+
+        const siblings = Array.from(parent.children).filter(c => c.tagName === current.tagName);
+        const idx = siblings.indexOf(current) + 1;
+
+        path = `${parent.tagName.toLowerCase()} > ${path}:nth-of-type(${idx})`;
+        current = parent;
     }
-    return element.tagName.toLowerCase();
+
+    return path;
 }
 
 function isFieldVisible(element) {
@@ -238,4 +306,14 @@ function findLabelText(element) {
         if (l) return l.textContent;
     }
     return '';
+}
+
+// Export to window for global access
+if (typeof window !== 'undefined') {
+    window.getJobContext = getJobContext;
+    window.detectForms = detectForms;
+    window.extractFormHTML = extractFormHTML;
+    window.getFieldLabel = getFieldLabel;
+    window.getElementSelector = getElementSelector;
+    window.isFieldVisible = isFieldVisible;
 }
