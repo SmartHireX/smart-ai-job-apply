@@ -261,8 +261,10 @@ async function processPageFormLocal() {
                     updateSmartMemoryCache(newCacheEntries);
                 }
             } else {
-                console.warn('⚡ Phase 2: AI failed.');
-                showErrorToast(`AI Processing Error. Showing basic results.`);
+                const errorMsg = aiResult?.error || 'Unknown error';
+                console.error('⚡ Phase 2: AI failed.', errorMsg);
+                console.error('Full AI Result:', aiResult);
+                showErrorToast(`AI Processing Error: ${errorMsg}`);
                 if (Object.keys(heuristicMappings).length > 0) {
                     triggerConfetti();
                     updateSidebarWithState(heuristicMappings);
