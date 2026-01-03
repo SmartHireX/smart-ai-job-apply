@@ -265,23 +265,30 @@
 [data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
-    bottom: -34px;
+    bottom: 100%;
     left: 50%;
-    transform: translateX(-50%) translateY(4px);
+    transform: translateX(-50%) translateY(-8px);
     background: #1e293b;
     color: white;
-    padding: 5px 10px;
+    padding: 6px 12px;
     border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 500;
     white-space: nowrap;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.1s, transform 0.1s;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    z-index: 1000;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s;
+    z-index: 10000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+transition: opacity 0.1s,
+transform 0.1s;
+box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+0 2px 4px -1px rgba(0, 0, 0, 0.06);
+z-index: 1000;
+border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Tab Navigation */
@@ -422,8 +429,8 @@
     background: #0a66c2;
     color: white;
     border-color: #0a66c2;
-    transform: scale(1.08) rotate(180deg);
-    box-shadow: 0 2px 8px rgba(10, 102, 194, 0.25);
+    transform: scale(1.05);
+    box-shadow: 0 2px 6px rgba(10, 102, 194, 0.25);
 }
 
 #smarthirex-accordion-sidebar .empty-state {
