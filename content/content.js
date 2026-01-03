@@ -162,7 +162,55 @@ async function processPageFormLocal() {
             }
         }
 
-        // --- PHASE 1.8: LOCAL SEMANTIC MATCHER (NEW) ---
+        // --- PHASE 1.7: SELECTION CACHE (NEW) ---
+        // Check selection cache for radio/checkbox/select fields before LocalMatcher
+        // This gives instant fills for previously selected values
+        if (unmapped.length > 0 && window.SelectionCache) {
+            console.log('💾 Phase 1.7: Checking Selection Cache...');
+            const cacheHits = {};
+            const cacheMisses = [];
+
+            for (const item of unmapped) {
+                const element = document.querySelector(item.selector);
+                if (!element) {
+                    cacheMisses.push(item);
+                    continue;
+                }
+
+                const fieldType = item.fieldData?.field_type || element.type || element.tagName?.toLowerCase();
+                const isNonTextInput = fieldType === 'radio' || fieldType === 'checkbox' ||
+                    fieldType === 'select' || fieldType === 'select-one' ||
+                    fieldType === 'select-multiple' || element.tagName === 'SELECT';
+
+                if (isNonTextInput) {
+                    const label = item.fieldData?.label || element.placeholder || element.name || '';
+                    const cached = await window.SelectionCache.getCachedValue(element, label);
+
+                    if (cached) {
+                        cacheHits[item.selector] = {
+                            value: cached.value,
+                            confidence: cached.confidence,
+                            source: cached.source,
+                            field_type: fieldType
+                        };
+                        console.log(`💾 [SelectionCache] HIT: "${label}" → ${cached.value} (${cached.semanticType})`);
+                    } else {
+                        cacheMisses.push(item);
+                    }
+                } else {
+                    // Not a selection field - skip cache
+                    cacheMisses.push(item);
+                }
+            }
+
+            if (Object.keys(cacheHits).length > 0) {
+                console.log(`✅ [SelectionCache] Resolved ${Object.keys(cacheHits).length} fields from cache.`);
+                heuristicMappings = { ...heuristicMappings, ...cacheHits };
+                unmapped = cacheMisses;
+            }
+        }
+
+        // --- PHASE 1.8: LOCAL SEMANTIC MATCHER ---
         // Resolve structured fields (Radio/Checkbox/Select) using deterministic logic
         // This runs BEFORE Phase 1 ends, so these are filled instantly.
         if (unmapped.length > 0 && window.LocalMatcher) {
