@@ -696,9 +696,9 @@ function showAccordionSidebar(allFields) {
             finalManualFields.push(field);
         } else {
             // Filled groups - categorize by source/confidence
-            if (field.source === 'smart-memory') {
+            if (field.source === 'smart-memory' || field.source === 'selection_cache') {
                 finalCacheFields.push(field);
-            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || field.source === 'selection_cache' || !field.source || field.source === undefined)) {
+            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
                 finalAppFillFields.push(field);
             } else {
                 finalAiFields.push(field);
@@ -714,9 +714,9 @@ function showAccordionSidebar(allFields) {
             finalManualFields.push(field);
         } else if (field.isSelectGroup && field.filled) {
             // Fully filled groups - categorize by source/confidence
-            if (field.source === 'smart-memory') {
+            if (field.source === 'smart-memory' || field.source === 'selection_cache') {
                 finalCacheFields.push(field);
-            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || field.source === 'selection_cache' || !field.source || field.source === undefined)) {
+            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
                 finalAppFillFields.push(field);
             } else {
                 finalAiFields.push(field);
@@ -726,9 +726,9 @@ function showAccordionSidebar(allFields) {
             const isEmpty = !field.value || String(field.value).trim() === '';
             if (isEmpty) {
                 finalManualFields.push(field);
-            } else if (field.source === 'smart-memory') {
+            } else if (field.source === 'smart-memory' || field.source === 'selection_cache') {
                 finalCacheFields.push(field);
-            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || field.source === 'selection_cache' || !field.source || field.source === undefined)) {
+            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
                 finalAppFillFields.push(field);
             } else {
                 finalAiFields.push(field);
@@ -742,9 +742,9 @@ function showAccordionSidebar(allFields) {
 
         if (field.isFileUpload || isEmpty) {
             finalManualFields.push(field);
-        } else if (field.source === 'smart-memory') {
+        } else if (field.source === 'smart-memory' || field.source === 'selection_cache') {
             finalCacheFields.push(field);
-        } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || field.source === 'selection_cache' || !field.source || field.source === undefined)) {
+        } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
             finalAppFillFields.push(field);
         } else {
             finalAiFields.push(field);
