@@ -1221,19 +1221,45 @@ function attachSelfCorrectionTrigger(element) {
     if (element.dataset.shLearningAttached) return;
     element.dataset.shLearningAttached = 'true';
 
-    element.addEventListener('change', () => {
+    element.addEventListener('change', async () => {
         const label = getFieldLabel(element);
-        const newValue = element.type === 'checkbox' ? element.checked : element.value;
-        const key = normalizeSmartMemoryKey(label);
+        const fieldType = element.type || element.tagName?.toLowerCase();
 
-        if (newValue && String(newValue).length > 1) {
+        // Determine if this is a non-text input (for SelectionCache)
+        const isNonTextInput = fieldType === 'radio' || fieldType === 'checkbox' ||
+            fieldType === 'select' || fieldType === 'select-one' ||
+            fieldType === 'select-multiple' || element.tagName === 'SELECT';
+
+        // Get the value
+        let newValue;
+        if (fieldType === 'checkbox') {
+            newValue = element.checked ? (element.value || 'true') : '';
+        } else if (fieldType === 'radio') {
+            // For radio, only cache if checked
+            if (!element.checked) return;
+            newValue = element.value;
+        } else if (element.tagName === 'SELECT') {
+            const selectedOption = element.options[element.selectedIndex];
+            newValue = selectedOption ? selectedOption.value : element.value;
+        } else {
+            newValue = element.value;
+        }
+
+        // Save to appropriate cache
+        if (isNonTextInput && newValue && window.SelectionCache) {
+            // Save to SelectionCache for radio/checkbox/select
+            await window.SelectionCache.cacheSelection(element, label, newValue);
+            console.log(`💾 [SelectionCache] Learned: "${label}" → ${newValue}`);
+        } else if (newValue && String(newValue).length > 1) {
+            // Save to SmartMemory for text fields
+            const key = normalizeSmartMemoryKey(label);
             updateSmartMemoryCache({
                 [key]: {
                     answer: newValue,
                     timestamp: Date.now()
                 }
             });
-            console.log(`🧠 Smart Memory: Learned value for "${label}"`);
+            console.log(`🧠 [SmartMemory] Learned: "${label}" → ${newValue}`);
         }
     });
 }
