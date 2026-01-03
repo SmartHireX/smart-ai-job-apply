@@ -98,6 +98,10 @@ const FIELD_PATTERNS = {
     background_check: /background.?check|criminal.*record/i,
     drug_test: /drug.*(test|screen)/i,
 
+    // Location & Office
+    current_location: /current.*location|are.*you.*located|live.*in|reside/i,
+    office_preference: /willing.*to.*work.*(office|site|hybrid)|commute|office.*location/i,
+
     // Generic catchalls (lower priority)
     yes_no: /\b(yes|no)\b/i,
 };
