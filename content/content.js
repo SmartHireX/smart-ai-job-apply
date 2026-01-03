@@ -201,7 +201,7 @@ async function processPageFormLocal() {
                             }, resolve);
                         });
 
-                        if (result && result.success) return result.data;
+                        if (result && result.success) return result; // FIX: return result, not result.data
 
                         const errorMsg = (result?.error || '').toLowerCase();
                         if (errorMsg.includes('rate limit') || errorMsg.includes('quota')) {
