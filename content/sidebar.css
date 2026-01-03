@@ -347,52 +347,56 @@
     box-shadow: 0 2px 8px rgba(10, 102, 194, 0.3);
 }
 
-/* Field Items */
+/* Field Items - Premium Design */
 #smarthirex-accordion-sidebar .field-item {
-    padding: 16px;
-    border-bottom: 1px solid #f3f4f6;
+    padding: 18px 20px;
+    border-bottom: 1px solid #e5e7eb;
     background: white;
-    transition: background 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    cursor: pointer;
 }
 
 #smarthirex-accordion-sidebar .field-item:hover {
-    background: #f9fafb;
+    background: linear-gradient(to right, #f8f9fa, #ffffff);
+    transform: translateX(4px);
+    box-shadow: -2px 0 0 #0a66c2, 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+#smarthirex-accordion-sidebar .field-item:last-child {
+    border-bottom: none;
 }
 
 #smarthirex-accordion-sidebar .field-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
 }
 
 #smarthirex-accordion-sidebar .field-label {
     font-weight: 600;
     font-size: 14px;
-    color: #1f2937;
+    color: #111827;
     flex: 1;
-}
-
-#smarthirex-accordion-sidebar .field-value {
-    font-size: 14px;
-    color: #6b7280;
-    padding: 8px 12px;
-    background: #f9fafb;
-    border-radius: 6px;
-    word-break: break-word;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
 }
 
 #smarthirex-accordion-sidebar .field-confidence {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: #10b981;
-    text-align: right;
+    margin-top: 6px;
+    display: inline-block;
+    padding: 4px 8px;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 4px;
 }
 
 #smarthirex-accordion-sidebar .recalculate-btn {
-    padding: 6px 10px;
-    background: rgba(10, 102, 194, 0.1);
-    border: 1px solid rgba(10, 102, 194, 0.3);
+    padding: 6px 12px;
+    background: rgba(10, 102, 194, 0.08);
+    border: 1px solid rgba(10, 102, 194, 0.2);
     border-radius: 6px;
     font-size: 14px;
     cursor: pointer;

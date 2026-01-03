@@ -389,18 +389,17 @@ function showAccordionSidebar(allFields) {
         </div>
         
         <div class="sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
-            <!-- App Fill Tab (Read-only) -->
+            <!-- App Fill Tab (Read-only, name only) -->
             <div class="tab-content active" data-tab="app">
                 ${appFillFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-label">${item.label}</div>
-                        <div class="field-value">${item.value || ''}</div>
                     </div>
                 `).join('')}
                 ${appFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
             </div>
 
-            <!-- Cache Tab (With recalculate) -->
+            <!-- Cache Tab (Name only, with recalculate) -->
             <div class="tab-content" data-tab="cache" style="display: none;">
                 ${cacheFields.length > 0 ? `
                     <div class="tab-actions">
@@ -413,13 +412,12 @@ function showAccordionSidebar(allFields) {
                             <div class="field-label">${item.label}</div>
                             <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}">🔄</button>
                         </div>
-                        <div class="field-value">${item.value || ''}</div>
                     </div>
                 `).join('')}
                 ${cacheFields.length === 0 ? '<div class="empty-state">No cached fields</div>' : ''}
             </div>
 
-            <!-- AI Tab (Confidence only, with recalculate) -->
+            <!-- AI Tab (Name + confidence, with recalculate) -->
             <div class="tab-content" data-tab="ai" style="display: none;">
                 ${aiFields.length > 0 ? `
                     <div class="tab-actions">
