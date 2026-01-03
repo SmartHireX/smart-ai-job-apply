@@ -323,7 +323,7 @@ function showAccordionSidebar(allFields) {
         // Group by source
         if (item.source === 'smart-memory') {
             cacheFields.push(fieldInfo);
-        } else if (item.confidence >= 0.85 && !item.source) {
+        } else if (item.confidence >= 0.85 && (item.source === 'heuristic' || !item.source || item.source === undefined)) {
             // High confidence heuristic matches = App Fill
             appFillFields.push(fieldInfo);
         } else {
@@ -364,11 +364,15 @@ function showAccordionSidebar(allFields) {
                 <span>Form Review</span>
             </div>
             <div class="header-actions">
-                <button class="action-btn-text" id="smarthirex-clear-highlights" title="Clear visual highlights">
-                    💡 Remove Highlights
+                <button class="action-btn-icon" id="smarthirex-clear-highlights" data-tooltip="Remove Highlights" title="Clear visual highlights">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M12 17v2M12 5v2M5 12H3M21 12h-2"/>
+                    </svg>
                 </button>
-                <button class="action-btn-text" id="smarthirex-undo-fill" title="Undo form fill">
-                    ↩️ Undo All
+                <button class="action-btn-icon" id="smarthirex-undo-fill" data-tooltip="Undo All" title="Undo form fill">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M3 7v6h6M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/>
+                    </svg>
                 </button>
                 <button class="close-btn-x" id="smarthirex-sidebar-close" aria-label="Close Sidebar">
                     ✕

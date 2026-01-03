@@ -207,27 +207,33 @@
 #smarthirex-accordion-sidebar .header-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
-/* Text-based action buttons */
-#smarthirex-accordion-sidebar .action-btn-text {
+/* Icon-only action buttons */
+#smarthirex-accordion-sidebar .action-btn-icon {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.2s;
-    white-space: nowrap;
+    position: relative;
 }
 
-#smarthirex-accordion-sidebar .action-btn-text:hover {
+#smarthirex-accordion-sidebar .action-btn-icon:hover {
     background: rgba(255, 255, 255, 0.25);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+#smarthirex-accordion-sidebar .action-btn-icon svg {
+    stroke: white;
 }
 
 /* Close button (X) */
