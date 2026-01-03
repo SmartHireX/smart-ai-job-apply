@@ -374,12 +374,12 @@ function showAccordionSidebar(allFields) {
             </div>
             <div class="header-actions">
                 <button class="action-btn-icon" id="smarthirex-clear-highlights" data-tooltip="Remove Highlights" title="Clear visual highlights">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
                         <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M12 17v2M12 5v2M5 12H3M21 12h-2"/>
                     </svg>
                 </button>
                 <button class="action-btn-icon" id="smarthirex-undo-fill" data-tooltip="Undo All" title="Undo form fill">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
                         <path d="M3 7v6h6M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/>
                     </svg>
                 </button>
