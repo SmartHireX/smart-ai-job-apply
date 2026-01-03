@@ -389,85 +389,61 @@ function showAccordionSidebar(allFields) {
         </div>
         
         <div class="sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
-            ${autoFilledFields.length > 0 ? `
-                <div class="accordion-section">
-                    <div class="section-header collapsed" data-section="autofilled">
-                        <div class="section-title">
-                            <span class="section-icon">✅</span>
-                            <span class="section-label">AUTO-FILLED</span>
-                            <span class="section-count">(${autoFilledFields.length})</span>
-                        </div>
-                        <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <polyline points="6 9 12 15 18 9"/>
-                        </svg>
+            <!-- App Fill Tab (Read-only) -->
+            <div class="tab-content active" data-tab="app">
+                ${appFillFields.map(item => `
+                    <div class="field-item" data-selector="${item.selector}">
+                        <div class="field-label">${item.label}</div>
+                        <div class="field-value">${item.value || ''}</div>
                     </div>
-                    <div class="section-content" id="autofilled-content">
-                        <div class="section-inner-wrapper">
-                        ${autoFilledFields.map((item, i) => `
-                            <div class="field-item success-field" data-field-idx="auto-${i}">
-                                <div class="field-info">
-                                    <div class="field-label">${item.label}</div>
-                                    <div class="field-meta">
-                                        <span class="field-type">${item.fieldType.toUpperCase()}</span>
-                                        <span class="field-confidence medium">${Math.round(item.confidence * 100)}%</span>
-                                    </div>
-                                </div>
-                                <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <polyline points="9 18 15 12 9 6"/>
-                                </svg>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
+                `).join('')}
+                ${appFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
             </div>
-            ` : ''}
-            
-            ${needsReviewFields.length > 0 ? `
-                <div class="accordion-section">
-                    <div class="section-header expanded" data-section="needs-review">
-                        <div class="section-title">
-                            <span class="section-icon">⚠️</span>
-                            <span class="section-label">NEEDS REVIEW</span>
-                            <span class="section-count">(${needsReviewFields.length})</span>
+
+            <!-- Cache Tab (With recalculate) -->
+            <div class="tab-content" data-tab="cache" style="display: none;">
+                ${cacheFields.length > 0 ? `
+                    <div class="tab-actions">
+                        <button class="recalculate-all-btn" data-tab="cache">Recalculate All (${cacheFields.length})</button>
+                    </div>
+                ` : ''}
+                ${cacheFields.map(item => `
+                    <div class="field-item" data-selector="${item.selector}">
+                        <div class="field-header">
+                            <div class="field-label">${item.label}</div>
+                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}">🔄</button>
                         </div>
-                        <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <polyline points="6 9 12 15 18 9"/>
-                        </svg>
+                        <div class="field-value">${item.value || ''}</div>
                     </div>
-                    <div class="section-content expanded" id="needsreview-content">
-                        <div class="section-inner-wrapper">
-                        ${needsReviewFields.map((item, i) => {
-        const isTextBased = ['text', 'textarea', 'email', 'tel', 'url', 'search'].includes(item.fieldType);
-        return `
-                                <div class="field-item warning-field" data-field-idx="review-${i}" data-selector="${item.selector}" data-field-type="${item.fieldType}">
-                                    <div class="field-info">
-                                        <div class="field-label">${item.label}</div>
-                                        <div class="field-meta">
-                                            <span class="field-type">${item.fieldType.toUpperCase()}</span>
-                                            <span class="field-confidence ${item.confidence >= 0.7 ? 'medium' : 'low'}">${Math.round(item.confidence * 100)}%</span>
-                                        </div>
-                                    </div>
-                                    <div class="field-actions">
-                                        ${isTextBased ? `
-                                            <button class="regenerate-btn" data-selector="${item.selector}" data-label="${item.label}" title="Regenerate with AI" aria-label="Regenerate field">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                                                </svg>
-                                            </button>
-                                        ` : ''}
-                                        <svg class="field-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                            <polyline points="9 18 15 12 9 6"/>
-                                        </svg>
-                                    </div>
-                                </div>
-                            `;
-    }).join('')}
-                    </div>
-                </div>
+                `).join('')}
+                ${cacheFields.length === 0 ? '<div class="empty-state">No cached fields</div>' : ''}
             </div>
-            ` : ''}
+
+            <!-- AI Tab (Confidence only, with recalculate) -->
+            <div class="tab-content" data-tab="ai" style="display: none;">
+                ${aiFields.length > 0 ? `
+                    <div class="tab-actions">
+                        <button class="recalculate-all-btn" data-tab="ai">Recalculate All (${aiFields.length})</button>
+                    </div>
+                ` : ''}
+                ${aiFields.map(item => `
+                    <div class="field-item" data-selector="${item.selector}">
+                        <div class="field-header">
+                            <div class="field-label">${item.label}</div>
+                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}">🔄</button>
+                        </div>
+                        <div class="field-confidence">⚡ ${Math.round(item.confidence * 100)}%</div>
+                    </div>
+                `).join('')}
+                ${aiFields.length === 0 ? '<div class="empty-state">No AI-generated fields</div>' : ''}
+            </div>
         </div>
     `;
+
+    // Update tab counts
+    panel.querySelector('[data-tab="app"] .tab-count').textContent = `(${appFillFields.length})`;
+    panel.querySelector('[data-tab="cache"] .tab-count').textContent = `(${cacheFields.length})`;
+    panel.querySelector('[data-tab="ai"] .tab-count').textContent = `(${aiFields.length})`;
 
     document.body.appendChild(panel);
 
