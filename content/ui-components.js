@@ -7,21 +7,14 @@ function updateSidebarWithState(allMappings) {
     const sidebar = document.getElementById('smarthirex-accordion-sidebar');
     // Prepare mappings even if sidebar isn't open yet
 
-    // Split into high and low confidence for re-rendering
-    const high = [];
-    const low = [];
+    // Convert mappings object to array of fields
+    const allFields = Object.keys(allMappings).map(selector => ({
+        selector,
+        ...allMappings[selector]
+    }));
 
-    Object.keys(allMappings).forEach(selector => {
-        const item = allMappings[selector];
-        if (item.confidence >= 0.85) {
-            high.push({ selector, ...item });
-        } else {
-            low.push({ selector, ...item });
-        }
-    });
-
-    // Re-render
-    showAccordionSidebar(high, low);
+    // Re-render with new tab-based UI
+    showAccordionSidebar(allFields);
 }
 
 function showProcessingWidget(text, step) {
@@ -299,47 +292,49 @@ function showReopenTrigger(highFields, lowFields) {
     document.body.appendChild(trigger);
 }
 
-function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
+function showAccordionSidebar(allFields) {
     console.log('🎯 Nova AI: Showing Form Review...');
-    console.log(`High-conf: ${highConfidenceFields.length}, Low-conf: ${lowConfidenceFields.length}`);
+    console.log(`Total fields: ${allFields.length}`);
 
     // Remove existing sidebar if any
     const existing = document.getElementById('smarthirex-accordion-sidebar');
     if (existing) existing.remove();
 
-    // Prepare high-confidence field info
-    const autoFilledFields = highConfidenceFields.map(item => {
-        const element = document.querySelector(item.selector);
-        if (!element || !isFieldVisible(element)) return null;
+    // Group fields by source type
+    const appFillFields = [];   // Heuristic matches (high confidence, no specific source)
+    const cacheFields = [];      // From smart memory
+    const aiFields = [];         // AI-generated or low confidence
 
-        let label = item.fieldData?.label || getFieldLabel(element);
-        return {
+    allFields.forEach(item => {
+        const element = document.querySelector(item.selector);
+        if (!element || !isFieldVisible(element)) return;
+
+        const label = item.fieldData?.label || getFieldLabel(element);
+        const fieldInfo = {
             field: element,
             selector: item.selector,
             label,
             confidence: item.confidence,
             fieldType: item.fieldData?.field_type || element.type || 'text',
-            isFileUpload: false
+            source: item.source || 'heuristic',
+            value: item.value || element.value
         };
-    }).filter(Boolean);
 
-    // Prepare low-confidence field info  
-    const needsReviewFields = lowConfidenceFields.map(item => {
-        const element = document.querySelector(item.selector);
-        if (!element || !isFieldVisible(element)) return null;
+        // Group by source
+        if (item.source === 'smart-memory') {
+            cacheFields.push(fieldInfo);
+        } else if (item.confidence >= 0.85 && !item.source) {
+            // High confidence heuristic matches = App Fill
+            appFillFields.push(fieldInfo);
+        } else {
+            // Low confidence or AI-generated = AI tab
+            aiFields.push(fieldInfo);
+        }
+    });
 
-        let label = item.fieldData?.label || getFieldLabel(element);
-        return {
-            field: element,
-            selector: item.selector,
-            label,
-            confidence: item.confidence,
-            fieldType: item.fieldData?.field_type || element.type || 'text',
-            isFileUpload: false
-        };
-    }).filter(Boolean);
+    console.log(`📄 App Fill: ${appFillFields.length}, 🧠 Cache: ${cacheFields.length}, 🤖 AI: ${aiFields.length}`);
 
-    if (autoFilledFields.length === 0 && needsReviewFields.length === 0) {
+    if (appFillFields.length === 0 && cacheFields.length === 0 && aiFields.length === 0) {
         console.log('No fields to show in sidebar');
         return;
     }
