@@ -139,7 +139,31 @@ function getJobContext() {
 }
 
 function detectForms() {
-    return document.querySelectorAll('form, [role="form"], [data-automation-id="form-container"]');
+    // Broaden search to include semantic IDs and Classes common in ATS platforms
+    const selectors = [
+        'form',
+        '[role="form"]',
+        '[data-automation-id="form-container"]',
+        '#application_form',
+        '.application-form',
+        '[id*="job-application"]',
+        '[class*="job-application"]'
+    ];
+
+    const candidates = document.querySelectorAll(selectors.join(', '));
+
+    // Filter out obvious false positives (search bars, nav forms)
+    return Array.from(candidates).filter(el => {
+        // Exclude if it looks like a search bar
+        const isSearch = el.getAttribute('role') === 'search' ||
+            el.classList.contains('search-form') ||
+            (el.id && el.id.includes('search'));
+
+        // Ensure it has at least one input/select/textarea
+        const hasInputs = el.querySelectorAll('input, select, textarea').length > 0;
+
+        return !isSearch && hasInputs;
+    });
 }
 
 function extractFormHTML() {
