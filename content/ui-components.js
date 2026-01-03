@@ -1127,7 +1127,16 @@ function setRadioValue(element, value) {
 
     radios.forEach(r => {
         const label = findLabelText(r);
-        const sim = calculateUsingJaccardSimilarity(label, value);
+        const val = r.value;
+
+        const labelSim = calculateUsingJaccardSimilarity(label, value);
+        const valSim = calculateUsingJaccardSimilarity(val, value);
+
+        // Exact match override
+        const exactMatch = (val === value || label === value) ? 1.0 : 0;
+
+        const sim = Math.max(labelSim, valSim, exactMatch);
+
         if (sim > maxSim) {
             maxSim = sim;
             bestMatch = r;
@@ -1141,8 +1150,35 @@ function setRadioValue(element, value) {
 }
 
 function setCheckboxValue(element, value) {
-    element.checked = (value === true || String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'yes');
-    dispatchChangeEvents(element);
+    if (Array.isArray(value)) {
+        // Handle Multi-Checkbox Group (AI/Batch context)
+        const name = element.name;
+        if (!name) return; // Cannot handle group without name
+
+        const checkboxes = document.querySelectorAll(`input[name="${name}"]`);
+        checkboxes.forEach(cb => {
+            const label = findLabelText(cb) || '';
+            const val = cb.value || '';
+
+            // Check if this checkbox matches ANY value in the array
+            const isMatch = value.some(target => {
+                // Exact value match
+                if (val === target) return true;
+                // Text/Label match (loose)
+                const textSim = calculateUsingJaccardSimilarity(label, target);
+                return textSim > 0.8;
+            });
+
+            if (isMatch) {
+                cb.checked = true;
+                dispatchChangeEvents(cb);
+            }
+        });
+    } else {
+        // Standard Single Boolean
+        element.checked = (value === true || String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'yes');
+        dispatchChangeEvents(element);
+    }
 }
 
 function setDateTimeValue(element, value) {

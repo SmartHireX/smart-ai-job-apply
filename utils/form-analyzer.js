@@ -16,9 +16,10 @@ Your task is to generate values ONLY for unresolved TEXT-BASED form fields
 (e.g., textarea, long text input).
 
 ⚠️ IMPORTANT:
-- DO NOT handle radio buttons, checkboxes, dropdowns, dates, numbers, or yes/no fields.
-- Those fields are already processed by a local semantic engine.
-- You will ONLY receive text fields that could not be resolved locally.
+- DO NOT fabricate experience or facts.
+- For "select" or "radio" fields, YOU MUST PICK A VALID VALUE from the provided "options" array.
+- If no option fits well, return null for that field.
+- You will receive a mix of text and structured fields that local logic missed.
 
 ────────────────────────────
 USER CONTEXT (COMPRESSED FACTS)
@@ -80,14 +81,31 @@ RESPONSE FORMAT (JSON ONLY)
 ────────────────────────────
 {
   "mappings": {
-    "<css_selector>": {
+    "<css_selector_1>": {
       "value": "<generated_text>",
       "confidence": <0.6 - 0.8>,
       "source": "ai_generated",
       "field_type": "textarea"
+    },
+    "<css_selector_2>": {
+      "value": "<exact_option_value>", 
+      "confidence": 0.9,
+      "source": "ai_generated",
+      "field_type": "select" 
+    },
+    "<css_selector_3>": {
+      "value": true, 
+      "confidence": 0.9,
+      "source": "ai_generated",
+      "field_type": "checkbox" 
     }
   }
 }
+
+⚠️ SPECIFIC OUTPUT RULES:
+- **Select/Radio**: value MUST be one of the 'value' strings from the provided options array.
+- **Checkbox (Single)**: value MUST be 'true' or 'false'.
+- **Checkbox (Group)**: value MUST be an Array of matching values, e.g. ["remote", "contract"].
 
 ⚠️ RULES:
 - Return mappings ONLY for provided selectors
@@ -167,58 +185,83 @@ function extractFieldsFromDOM(source) {
     }
 
     const fields = [];
+    const processedGroups = new Map(); // Map<name, groupObject>
+
     // Select all inputs except hidden/submit/button
     const inputs = root.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]), select, textarea');
 
     inputs.forEach(input => {
-        // Generate a unique selector
-        let selector = '';
         const safeName = input.name ? CSS.escape(input.name) : '';
-        const safeId = input.id ? CSS.escape(input.id) : '';
         const safeValue = CSS.escape(input.value || '');
+        const tagName = input.tagName;
+        const type = (input.type || 'text').toLowerCase();
 
-        if (input.id) selector = `#${safeId}`;
-        else if (input.name) {
-            if ((input.type === 'radio' || input.type === 'checkbox') && input.value) {
-                // For radio/checkbox groups, we need a unique selector for each option
-                selector = `input[name="${safeName}"][value="${safeValue}"]`;
-            } else {
-                selector = `[name="${safeName}"]`;
-            }
-        }
-        else {
-            // Fallback: This is tricky for detached DOM. 
-            // Ideally we rely on IDs/Names. 
-            return; // Skip unverifiable fields
-        }
-
-        // Determine Label / Context
+        // Determine Label
         let label = '';
-        // Use robust global scraper if available
         if (typeof window.getFieldLabel === 'function') {
             label = window.getFieldLabel(input);
         } else {
-            // Fallback to basic logic if form-detection.js isn't loaded
             const safeId = input.id ? CSS.escape(input.id) : '';
             if (safeId) {
                 const labelTag = root.querySelector(`label[for="${safeId}"]`);
                 if (labelTag) label = labelTag.innerText;
             }
             if (!label && input.getAttribute('aria-label')) label = input.getAttribute('aria-label');
-            if (!label && input.getAttribute('placeholder')) label = input.getAttribute('placeholder');
             if (!label && input.parentElement) {
                 label = input.parentElement.innerText.replace(input.value, '').trim().substring(0, 50);
             }
         }
+        label = (label || '').trim();
+
+        // GROUPING LOGIC for Radios and Checkboxes
+        if ((type === 'radio' || type === 'checkbox') && input.name) {
+            if (processedGroups.has(input.name)) {
+                // Add option to existing group
+                const group = processedGroups.get(input.name);
+                group.options.push({
+                    label: label,
+                    value: input.value,
+                    selector: input.id ? `#${CSS.escape(input.id)}` : `input[name="${safeName}"][value="${safeValue}"]`
+                });
+                // Update group label if current is better/longer (heuristic) or if group has generic label?
+                // Actually keep the first label found or try to find a common legend? 
+                // Ideally we'd find the fieldset legend. For now, keep first.
+                return;
+            } else {
+                // Create new Group
+                const groupObj = {
+                    type: type, // 'radio' or 'checkbox' (implies group)
+                    name: input.name,
+                    id: input.id || '', // First ID
+                    label: label, // Initial label
+                    value: '', // No default value for group
+                    selector: `input[name="${safeName}"]`, // selector points to the group (name)
+                    options: [{
+                        label: label,
+                        value: input.value,
+                        selector: input.id ? `#${CSS.escape(input.id)}` : `input[name="${safeName}"][value="${safeValue}"]`
+                    }]
+                };
+                processedGroups.set(input.name, groupObj);
+                fields.push(groupObj);
+                return;
+            }
+        }
+
+        // Standard Single Field
+        let selector = '';
+        if (input.id) selector = `#${CSS.escape(input.id)}`;
+        else if (input.name) selector = `[name="${safeName}"]`;
+        else return; // Skip unverifiable
 
         fields.push({
-            type: input.tagName === 'TEXTAREA' ? 'textarea' : (input.tagName === 'SELECT' ? 'select' : input.type),
-            label: (label || '').trim(),
+            type: tagName === 'TEXTAREA' ? 'textarea' : (tagName === 'SELECT' ? 'select' : type),
+            label: label,
             name: input.name || '',
             id: input.id || '',
-            value: input.value || '', // Capture current/default value (Crucial for Radios)
+            value: input.value || '',
             selector: selector,
-            options: input.tagName === 'SELECT' ? Array.from(input.options).map(o => o.value) : []
+            options: tagName === 'SELECT' ? Array.from(input.options).map(o => ({ value: o.value, label: o.text.trim() })) : []
         });
     });
 
