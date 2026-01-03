@@ -13,6 +13,7 @@ let progressFill, progressTitle, progressText;
 
 // State
 let isReady = false;
+let activeFrameId = 0; // Default to main frame
 
 // Initialize popup
 document.addEventListener('DOMContentLoaded', async () => {
@@ -125,6 +126,9 @@ function openSettings() {
 /**
  * Detect forms on current page
  */
+/**
+ * Detect forms on current page (checking ALL frames)
+ */
 async function detectForms() {
     console.log('Detecting forms on page...');
     try {
@@ -143,14 +147,36 @@ async function detectForms() {
             return;
         }
 
-        const response = await chrome.tabs.sendMessage(tab.id, {
-            type: 'DETECT_FORMS'
+        // Use scripting to check ALL frames
+        const results = await chrome.scripting.executeScript({
+            target: { tabId: tab.id, allFrames: true },
+            func: () => {
+                if (window.detectForms) {
+                    const forms = window.detectForms();
+                    return forms.length;
+                }
+                return 0;
+            }
         });
 
-        console.log('Form detection response:', response);
+        // Analyze results to find frame with forms
+        let totalForms = 0;
+        let foundFrameId = 0;
 
-        if (response && response.formCount > 0) {
-            formStatus.textContent = `${response.formCount} form(s) detected`;
+        for (const res of results) {
+            if (res.result > 0) {
+                totalForms += res.result;
+                // Prefer the first frame found, or the one with most forms?
+                // Usually just one frame has the main application form
+                if (foundFrameId === 0) foundFrameId = res.frameId;
+            }
+        }
+
+        console.log(`Forms detected: ${totalForms}, Target Frame ID: ${foundFrameId}`);
+        activeFrameId = foundFrameId;
+
+        if (totalForms > 0) {
+            formStatus.textContent = `${totalForms} form(s) detected`;
             statusIcon.textContent = '✓';
             statusIcon.style.background = 'var(--success)';
             fillBtn.disabled = false;
@@ -163,14 +189,7 @@ async function detectForms() {
 
     } catch (error) {
         console.error('Form detection error:', error);
-
-        if (error.message.includes('Receiving end does not exist') ||
-            error.message.includes('Could not establish connection')) {
-            formStatus.textContent = 'Please refresh the page';
-        } else {
-            formStatus.textContent = 'Could not detect forms';
-        }
-
+        formStatus.textContent = 'Could not detect forms';
         statusIcon.textContent = '!';
         statusIcon.style.background = 'var(--danger)';
         fillBtn.disabled = true;
@@ -198,10 +217,11 @@ async function handleFillForm() {
         }
 
         // Send message to content script to start local processing
-        console.log('🚀 Triggering local AI form processing...');
+        console.log(`🚀 Triggering local AI form processing locally in frame ${activeFrameId}...`);
+
         chrome.tabs.sendMessage(tab.id, {
             type: 'START_LOCAL_PROCESSING'
-        });
+        }, { frameId: activeFrameId }); // Target the specific frame with the form
 
         // Close popup to let animation take over on page
         window.close();
