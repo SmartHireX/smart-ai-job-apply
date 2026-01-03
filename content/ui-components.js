@@ -468,8 +468,10 @@ function showAccordionSidebar(allFields) {
                     }
                 }
 
-                // Get the GROUP question label (shared by all radios in this group)
-                let groupLabel = getGroupQuestionLabel(radios[0].field);
+                // Get the GROUP label from field name (capitalized and formatted)
+                const fieldName = radios[0].field.name || 'Radio';
+                let groupLabel = fieldName.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').trim();
+                groupLabel = groupLabel.charAt(0).toUpperCase() + groupLabel.slice(1);
 
                 groupedFields.push({
                     ...selectedRadio,
@@ -810,7 +812,7 @@ function showAccordionSidebar(allFields) {
             <!-- App Fill Tab (Read-only, name only) -->
             <div class="tab-content active" data-tab="app">
                 ${finalAppFillFields.map(item => `
-                    <div class="field-item" data-selector="${item.selector}">
+                    <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
                     </div>
                 `).join('')}
@@ -828,10 +830,10 @@ function showAccordionSidebar(allFields) {
                     </div>
                 ` : ''}
                 ${finalCacheFields.map(item => `
-                    <div class="field-item" data-selector="${item.selector}">
+                    <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
                             <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
-                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>
+                            <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>
                         </div>
                     </div>
                 `).join('')}
@@ -849,10 +851,10 @@ function showAccordionSidebar(allFields) {
                     </div>
                 ` : ''}
                 ${finalAiFields.map(item => `
-                    <div class="field-item" data-selector="${item.selector}">
+                    <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
                             <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
-                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">
+                            <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
                             </button>
                         </div>
@@ -865,7 +867,7 @@ function showAccordionSidebar(allFields) {
             <!-- Manual Tab (Unfilled and file uploads) -->
             <div class="tab-content" data-tab="manual" style="display: none;">
                 ${finalManualFields.map(item => `
-                    <div class="field-item" data-selector="${item.selector}">
+                    <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
                             <div class="field-label">
                                 ${item.isFileUpload ? '📁 ' : ''}${item.label}
@@ -1027,7 +1029,8 @@ function showAccordionSidebar(allFields) {
                     element.focus();
                 }
             } catch (e) {
-                console.warn('Skipping invalid selector click:', selector);
+                console.warn('Skipping invalid selector click:', selector, 'Error:', e.message);
+                console.log('Field info:', { label: item.textContent, selector: selector, length: selector?.length });
                 showErrorToast('Could not scroll to field (Invalid Selector)');
             }
         });
