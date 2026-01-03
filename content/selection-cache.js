@@ -61,6 +61,9 @@ function generateFieldSignature(field, label) {
  * Based on Chrome's autofill heuristics
  */
 const FIELD_PATTERNS = {
+    // Skills & Competencies
+    skills: /skill|competenc|technical.*skill|programming|technolog|proficien/i,
+
     // Employment & Work
     relocate: /relocat(e|ion)|willing.*(move|transfer)|relocation/i,
     visa: /visa|sponsor(ship)?|work.*(author|permit|eligibility)|authorized.*work/i,
