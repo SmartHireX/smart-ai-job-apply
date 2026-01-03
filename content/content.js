@@ -90,6 +90,7 @@ async function processPageFormLocal() {
         // --- SMART MEMORY CHECK (Phase 1.5) ---
         if (unmapped.length > 0 && smartMemory && Object.keys(smartMemory).length > 0) {
             console.log(`🧠 Smart Memory Check. Cache Size: ${Object.keys(smartMemory).length}`);
+            console.log('📋 Current Cache Contents:', Object.entries(smartMemory).map(([label, data]) => `"${label}" => "${data.answer}"`).join('\n  '));
 
             const memoryHits = {};
             const stillUnmapped = [];
