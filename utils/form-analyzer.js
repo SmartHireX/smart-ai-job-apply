@@ -26,8 +26,24 @@ USER CONTEXT (COMPRESSED FACTS)
 Name: {{name}}
 Current Role: {{current_role}}
 Total Experience: {{total_years_experience}} years
-Primary Skills: {{top_skills}}
-Education: {{highest_degree}} at {{college_name}}
+
+────────────────────────────
+FULL APPLICANT PROFILE
+────────────────────────────
+## Personal Details
+{{full_personal_info}}
+
+## Work Experience
+{{work_experience_details}}
+
+## Education
+{{education_details}}
+
+## Skills
+{{all_skills_details}}
+
+## Projects
+{{project_details}}
 
 ────────────────────────────
 JOB CONTEXT
@@ -278,39 +294,64 @@ async function mapResumeToFields(fields, resumeData, pageContext = '') {
     // 1. Check if we have fields to map
     if (!fields || fields.length === 0) return { success: true, mappings: {} };
 
-    // 2. Prepare Compressed Facts (Local Helpers)
+    // 2. Prepare Detailed Facts for Prompt
+
+    // -- Personal Info --
     const personal = resumeData.personal || {};
     const name = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
+    const fullPersonalInfo = Object.entries(personal)
+        .filter(([_, v]) => v && String(v).trim())
+        .map(([k, v]) => `- ${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`)
+        .join('\n');
 
+    // -- Work Experience --
     const jobs = resumeData.experience || [];
     const currentJob = jobs.find(j => j.current) || jobs[0] || {};
     const currentRole = currentJob.title || 'Candidate';
+    const workExperienceDetails = jobs.map(j => {
+        const dates = `${j.startDate || ''} - ${j.current ? 'Present' : (j.endDate || '')}`;
+        return `### ${j.title} at ${j.company} (${dates})\n${j.location ? `Location: ${j.location}\n` : ''}${j.description || ''}`;
+    }).join('\n\n');
+
+    // -- Education --
+    const education = resumeData.education || [];
+    const educationDetails = education.map(e => {
+        const dates = `${e.startDate || ''} - ${e.endDate || ''}`;
+        return `### ${e.degree} in ${e.field} from ${e.school} (${dates})\n${e.gpa ? `GPA: ${e.gpa}` : ''}`;
+    }).join('\n\n');
+
+    // -- Skills --
+    const skillsData = resumeData.skills || {};
+    const allSkillsDetails = Object.entries(skillsData)
+        .filter(([_, v]) => Array.isArray(v) && v.length > 0)
+        .map(([category, items]) => `- ${category.charAt(0).toUpperCase() + category.slice(1)}: ${items.join(', ')}`)
+        .join('\n');
+
+    // -- Projects --
+    const projects = resumeData.projects || [];
+    const projectDetails = projects.map(p => {
+        return `### ${p.name}\n${p.description || ''}\nTechnologies: ${(p.technologies || []).join(', ')}`;
+    }).join('\n\n');
 
     // Calculate Experience (Simplified or use LocalMatcher if available)
     let totalYears = 0;
     if (window.LocalMatcher && window.LocalMatcher.calculateTotalExperience) {
         totalYears = window.LocalMatcher.calculateTotalExperience(jobs);
     } else {
-        // Fallback simple calc
         totalYears = jobs.length * 1.5; // Rough estimate
     }
-
-    const skills = (resumeData.skills?.technical || []).slice(0, 15).join(', ');
-
-    const edu = (resumeData.education || [])[0] || {};
-    const degree = edu.degree || 'Degree';
-    const college = edu.school || 'University';
-
-    const achievements = []; // Achievements removed per user request
 
     // 3. Construct Prompt
     const prompt = PROMPTS.MAP_DATA
         .replace('{{name}}', name)
         .replace('{{current_role}}', currentRole)
         .replace('{{total_years_experience}}', totalYears)
-        .replace('{{top_skills}}', skills)
-        .replace('{{highest_degree}}', degree)
-        .replace('{{college_name}}', college)
+
+        .replace('{{full_personal_info}}', fullPersonalInfo || 'N/A')
+        .replace('{{work_experience_details}}', workExperienceDetails || 'N/A')
+        .replace('{{education_details}}', educationDetails || 'N/A')
+        .replace('{{all_skills_details}}', allSkillsDetails || 'N/A')
+        .replace('{{project_details}}', projectDetails || 'N/A')
 
         .replace('{{job_context}}', pageContext || 'No specific job description found.')
         .replace('{{text_fields_array}}', JSON.stringify(fields, null, 2));
