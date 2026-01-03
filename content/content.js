@@ -522,9 +522,17 @@ Generate an appropriate, professional answer for this field.`;
         setNativeValue(element, newValue);
         dispatchChangeEvents(element);
 
-        updateSmartMemoryCache({
-            [normalizeSmartMemoryKey(label)]: { answer: newValue, timestamp: Date.now() }
-        });
+        // Only cache text fields to SmartMemory (non-text fields use SelectionCache)
+        const fieldType = (element.type || 'text').toLowerCase();
+        const isTextType = ['text', 'textarea', 'email', 'tel', 'url', 'search'].includes(fieldType) ||
+            element.tagName === 'TEXTAREA';
+
+        if (isTextType) {
+            updateSmartMemoryCache({
+                [normalizeSmartMemoryKey(label)]: { answer: newValue, timestamp: Date.now() }
+            });
+            console.log(`🧠 [SmartMemory] Cached regenerated value for "${label}"`);
+        }
 
         element.classList.add('smarthirex-typing');
         setTimeout(() => element.classList.remove('smarthirex-typing'), 1000);
