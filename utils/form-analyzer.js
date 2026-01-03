@@ -45,6 +45,9 @@ FULL APPLICANT PROFILE
 ## Projects
 {{project_details}}
 
+## Preferences & Additional Info
+{{custom_fields_details}}
+
 ────────────────────────────
 JOB CONTEXT
 ────────────────────────────
@@ -333,6 +336,13 @@ async function mapResumeToFields(fields, resumeData, pageContext = '') {
         return `### ${p.name}\n${p.description || ''}\nTechnologies: ${(p.technologies || []).join(', ')}`;
     }).join('\n\n');
 
+    // -- Custom Fields (Preferences) --
+    const customFields = resumeData.customFields || {};
+    const customFieldsDetails = Object.entries(customFields)
+        .filter(([_, v]) => v !== null && v !== '' && v !== undefined)
+        .map(([k, v]) => `- ${k.replace(/([A-Z])/g, ' $1').trim().replace(/^\w/, c => c.toUpperCase())}: ${v}`)
+        .join('\n');
+
     // Calculate Experience (Simplified or use LocalMatcher if available)
     let totalYears = 0;
     if (window.LocalMatcher && window.LocalMatcher.calculateTotalExperience) {
@@ -352,6 +362,7 @@ async function mapResumeToFields(fields, resumeData, pageContext = '') {
         .replace('{{education_details}}', educationDetails || 'N/A')
         .replace('{{all_skills_details}}', allSkillsDetails || 'N/A')
         .replace('{{project_details}}', projectDetails || 'N/A')
+        .replace('{{custom_fields_details}}', customFieldsDetails || 'N/A')
 
         .replace('{{job_context}}', pageContext || 'No specific job description found.')
         .replace('{{text_fields_array}}', JSON.stringify(fields, null, 2));
