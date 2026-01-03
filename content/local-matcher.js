@@ -14,6 +14,31 @@ const LocalMatcher = {
      * @returns {Object} { defined: mappingObject, remaining: unmappedArray }
      */
     resolveFields(fields, resumeData) {
+        // ========== DETAILED INPUT LOGGING ==========
+        console.log('🔵 ============================================');
+        console.log('🔵 LOCAL MATCHER - ALL INPUT FIELDS');
+        console.log('🔵 ============================================');
+        console.log(`📊 Total fields received: ${fields.length}`);
+        console.log('');
+
+        fields.forEach((field, index) => {
+            console.log(`📝 Field #${index + 1}:`);
+            console.log(`   Type: ${field.type}`);
+            console.log(`   Label: ${field.label || '(no label)'}`);
+            console.log(`   Name: ${field.name || '(no name)'}`);
+            console.log(`   ID: ${field.id || '(no id)'}`);
+            console.log(`   Selector: ${field.selector || '(no selector)'}`);
+            console.log(`   Value: ${field.value || '(no value)'}`);
+            if (field.options && field.options.length > 0) {
+                console.log(`   Options: [${field.options.join(', ')}]`);
+            }
+            console.log('   ---');
+        });
+
+        console.log('🔵 ============================================');
+        console.log('');
+        // ========== END OF INPUT LOGGING ==========
+
         const resolved = {};
         const remaining = [];
 

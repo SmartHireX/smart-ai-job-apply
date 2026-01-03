@@ -205,7 +205,17 @@ function getFieldLabel(element) {
     }
 
     // 1. Explicit Label (Standard)
-    if (element.labels && element.labels.length > 0) {
+    // For radio/checkbox: Find the label WITH for="id" to get the SPECIFIC option label
+    // element.labels[0] can return the GROUP question label which is wrong!
+    if (isGroup && element.id) {
+        const specificLabel = document.querySelector(`label[for="${element.id}"]`);
+        if (specificLabel) {
+            return clean(specificLabel.textContent);
+        }
+    }
+
+    // For non-group fields, labels[0] is fine
+    if (!isGroup && element.labels && element.labels.length > 0) {
         return clean(element.labels[0].textContent);
     }
 

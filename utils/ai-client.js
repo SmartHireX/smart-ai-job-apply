@@ -7,7 +7,7 @@
 
 // Gemini API Configuration
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const DEFAULT_GEMINI_MODEL = 'gemini-1.5-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
 
 // Storage keys
 const STORAGE_KEYS = {

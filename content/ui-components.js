@@ -388,6 +388,85 @@ function showAccordionSidebar(allFields) {
 
     console.log(`📄 App Fill: ${appFillFields.length}, 🧠 Cache: ${cacheFields.length}, 🤖 AI: ${aiFields.length}, ✋ Manual: ${manualFields.length}`);
 
+    // ========== GROUP RADIO BUTTONS BY NAME ==========
+    // Helper function to group radio/checkbox fields by their name attribute
+    function groupRadioCheckboxFields(fieldArray, isManualTab = false) {
+        const radioGroups = {};  // name -> array of radio fields
+        const otherFields = [];
+
+        fieldArray.forEach(fieldInfo => {
+            if (fieldInfo.fieldType === 'radio') {
+                const name = fieldInfo.field.name;
+                if (name) {
+                    if (!radioGroups[name]) radioGroups[name] = [];
+                    radioGroups[name].push(fieldInfo);
+                } else {
+                    otherFields.push(fieldInfo);  // Radio without name - keep as is
+                }
+            } else {
+                otherFields.push(fieldInfo);  // Not a radio - keep as is
+            }
+        });
+
+        // Create single entry for each radio group
+        const groupedRadios = Object.entries(radioGroups).map(([name, radios]) => {
+            // Find the selected (checked) radio
+            const selectedRadio = radios.find(r => r.field.checked);
+
+            if (selectedRadio) {
+                // Use the selected radio's info, but update label to show selection
+                const selectedValue = getFieldLabel(selectedRadio.field) || selectedRadio.value || selectedRadio.field.value;
+
+                // Try to get a clean group label from the first radio's label
+                // Remove the specific option text to get the question
+                let groupLabel = radios[0].label;
+
+                // Clean up label - remove the actual selection value if it's part of the label
+                // E.g. "Years of Experience (0-2 years)" -> "Years of Experience"
+                groupLabel = groupLabel.replace(/\s*\([^)]*\)\s*$/g, '').trim();
+                groupLabel = groupLabel.replace(/\s*:\s*[^:]+$/g, '').trim();
+
+                return {
+                    ...selectedRadio,
+                    label: groupLabel,
+                    displayValue: selectedValue,  // Store for display
+                    isRadioGroup: true,
+                    groupName: name,
+                    originalRadios: radios  // Keep reference for debugging
+                };
+            } else {
+                // No selection in this group
+                // For Manual tab: DON'T show unselected radio groups
+                // For other tabs: Show as "(Not selected)"
+                if (isManualTab) {
+                    return null;  // Will be filtered out below
+                }
+
+                const firstRadio = radios[0];
+                let groupLabel = firstRadio.label.replace(/\s*\([^)]*\)\s*$/g, '').trim();
+
+                return {
+                    ...firstRadio,
+                    label: groupLabel,
+                    displayValue: '(Not selected)',
+                    isRadioGroup: true,
+                    groupName: name,
+                    originalRadios: radios
+                };
+            }
+        }).filter(Boolean);  // Remove nulls from unselected Manual tab groups
+
+        return [...otherFields, ...groupedRadios];
+    }
+
+    // Apply grouping to each tab
+    const groupedAppFillFields = groupRadioCheckboxFields(appFillFields);
+    const groupedCacheFields = groupRadioCheckboxFields(cacheFields);
+    const groupedAiFields = groupRadioCheckboxFields(aiFields);
+    const groupedManualFields = groupRadioCheckboxFields(manualFields, true);  // true = isManualTab
+
+    console.log(`📄 After Grouping - App Fill: ${groupedAppFillFields.length}, Cache: ${groupedCacheFields.length}, AI: ${groupedAiFields.length}, Manual: ${groupedManualFields.length}`);
+
     if (appFillFields.length === 0 && cacheFields.length === 0 && aiFields.length === 0) {
         console.log('No fields to show in sidebar');
         return;
@@ -446,49 +525,49 @@ function showAccordionSidebar(allFields) {
         <div class="sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
             <!-- App Fill Tab (Read-only, name only) -->
             <div class="tab-content active" data-tab="app">
-                ${appFillFields.map(item => `
+                ${groupedAppFillFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
-                        <div class="field-label">${item.label}</div>
+                        <div class="field-label">${item.label}${item.isRadioGroup ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
                     </div>
                 `).join('')}
-                ${appFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
+                ${groupedAppFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
             </div>
 
             <!-- Cache Tab (Name only, with recalculate) -->
             <div class="tab-content" data-tab="cache" style="display: none;">
-                ${cacheFields.length > 0 ? `
+                ${groupedCacheFields.length > 0 ? `
                     <div class="tab-actions">
                         <button class="recalculate-all-btn" data-tab="cache" data-tooltip="Regenerate all cached fields using AI">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                            Regenerate All (${cacheFields.length})
+                            Regenerate All (${groupedCacheFields.length})
                         </button>
                     </div>
                 ` : ''}
-                ${cacheFields.map(item => `
+                ${groupedCacheFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
-                            <div class="field-label">${item.label}</div>
+                            <div class="field-label">${item.label}${item.isRadioGroup ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
                             <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>
                         </div>
                     </div>
                 `).join('')}
-                ${cacheFields.length === 0 ? '<div class="empty-state">No cached fields</div>' : ''}
+                ${groupedCacheFields.length === 0 ? '<div class="empty-state">No cached fields</div>' : ''}
             </div>
 
             <!-- AI Tab (Name + confidence, with recalculate) -->
             <div class="tab-content" data-tab="ai" style="display: none;">
-                ${aiFields.length > 0 ? `
+                ${groupedAiFields.length > 0 ? `
                     <div class="tab-actions">
                         <button class="recalculate-all-btn" data-tab="ai" data-tooltip="Regenerate all AI fields with fresh context">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                            Regenerate All (${aiFields.length})
+                            Regenerate All (${groupedAiFields.length})
                         </button>
                     </div>
                 ` : ''}
-                ${aiFields.map(item => `
+                ${groupedAiFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
-                            <div class="field-label">${item.label}</div>
+                            <div class="field-label">${item.label}${item.isRadioGroup ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
                             <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
                             </button>
@@ -496,31 +575,31 @@ function showAccordionSidebar(allFields) {
                         <div class="field-confidence">⚡ ${Math.round(item.confidence * 100)}%</div>
                     </div>
                 `).join('')}
-                ${aiFields.length === 0 ? '<div class="empty-state">No AI-generated fields</div>' : ''}
+                ${groupedAiFields.length === 0 ? '<div class="empty-state">No AI-generated fields</div>' : ''}
             </div>
 
             <!-- Manual Tab (Unfilled and file uploads) -->
             <div class="tab-content" data-tab="manual" style="display: none;">
-                ${manualFields.map(item => `
+                ${groupedManualFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
                             <div class="field-label">
-                                ${item.isFileUpload ? '📁 ' : ''}${item.label}
+                                ${item.isFileUpload ? '📁 ' : ''}${item.label}${item.isRadioGroup ? `: <span style="color: #94a3b8;">${item.displayValue}</span>` : ''}
                             </div>
                         </div>
                         ${item.isFileUpload ? '<div class="field-note">File upload required</div>' : '<div class="field-note">Not filled</div>'}
                     </div>
                 `).join('')}
-                ${manualFields.length === 0 ? '<div class="empty-state">All fields filled!</div>' : ''}
+                ${groupedManualFields.length === 0 ? '<div class="empty-state">All fields filled!</div>' : ''}
             </div>
         </div>
     `;
 
     // Update tab counts
-    panel.querySelector('[data-tab="app"] .tab-count').textContent = `(${appFillFields.length})`;
-    panel.querySelector('[data-tab="cache"] .tab-count').textContent = `(${cacheFields.length})`;
-    panel.querySelector('[data-tab="ai"] .tab-count').textContent = `(${aiFields.length})`;
-    panel.querySelector('[data-tab="manual"] .tab-count').textContent = `(${manualFields.length})`;
+    panel.querySelector('[data-tab="app"] .tab-count').textContent = `(${groupedAppFillFields.length})`;
+    panel.querySelector('[data-tab="cache"] .tab-count').textContent = `(${groupedCacheFields.length})`;
+    panel.querySelector('[data-tab="ai"] .tab-count').textContent = `(${groupedAiFields.length})`;
+    panel.querySelector('[data-tab="manual"] .tab-count').textContent = `(${groupedManualFields.length})`;
 
     document.body.appendChild(panel);
 
