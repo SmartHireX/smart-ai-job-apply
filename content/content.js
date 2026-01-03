@@ -116,6 +116,7 @@ async function processPageFormLocal() {
 
                 fieldLabel = normalizeSmartMemoryKey(fieldLabel);
 
+                console.log(`🔍 Searching cache for field: "${fieldLabel}"`);
                 if (fieldLabel.length > 2) {
                     for (const [cachedLabel, cachedData] of Object.entries(smartMemory)) {
                         // 1. Exact Match
