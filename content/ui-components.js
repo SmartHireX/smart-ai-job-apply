@@ -351,6 +351,10 @@ function showAccordionSidebar(allFields) {
     const aiFields = [];         // AI-generated or low confidence
     const manualFields = [];     // Unfilled or file uploads
 
+    // ========== SEPARATE RADIO/CHECKBOX FIELDS FROM OTHERS ==========
+    const radioCheckboxFields = [];
+    const otherFieldsRaw = [];
+
     allFields.forEach(item => {
         const element = document.querySelector(item.selector);
         if (!element || !isFieldVisible(element)) return;
@@ -358,7 +362,6 @@ function showAccordionSidebar(allFields) {
         const label = item.fieldData?.label || getFieldLabel(element);
         const fieldType = item.fieldData?.field_type || element.type || 'text';
         const isFileUpload = fieldType === 'file' || element.type === 'file';
-        const isEmpty = !item.value || String(item.value).trim() === '';
 
         const fieldInfo = {
             field: element,
@@ -371,103 +374,211 @@ function showAccordionSidebar(allFields) {
             isFileUpload
         };
 
-        // Group by source and type
-        if (isFileUpload || isEmpty) {
-            // File uploads and empty fields go to Manual
-            manualFields.push(fieldInfo);
-        } else if (item.source === 'smart-memory') {
-            cacheFields.push(fieldInfo);
-        } else if (item.confidence >= 0.85 && (item.source === 'heuristic' || item.source === 'local_heuristic' || !item.source || item.source === undefined)) {
-            // High confidence heuristic matches = App Fill
-            appFillFields.push(fieldInfo);
+        // Separate radio/checkbox from other fields
+        if (fieldType === 'radio' || fieldType === 'checkbox') {
+            radioCheckboxFields.push(fieldInfo);
         } else {
-            // Low confidence or AI-generated = AI tab
-            aiFields.push(fieldInfo);
+            otherFieldsRaw.push(fieldInfo);
         }
     });
 
-    console.log(`📄 App Fill: ${appFillFields.length}, 🧠 Cache: ${cacheFields.length}, 🤖 AI: ${aiFields.length}, ✋ Manual: ${manualFields.length}`);
+    // ========== GROUP RADIO/CHECKBOX FIELDS BY NAME ==========
+    function groupRadioCheckboxFields(fields) {
+        const radioGroups = {};
+        const checkboxGroups = {};
+        const ungroupedFields = [];
 
-    // ========== GROUP RADIO BUTTONS BY NAME ==========
-    // Helper function to group radio/checkbox fields by their name attribute
-    function groupRadioCheckboxFields(fieldArray, isManualTab = false) {
-        const radioGroups = {};  // name -> array of radio fields
-        const otherFields = [];
-
-        fieldArray.forEach(fieldInfo => {
+        fields.forEach(fieldInfo => {
             if (fieldInfo.fieldType === 'radio') {
                 const name = fieldInfo.field.name;
                 if (name) {
                     if (!radioGroups[name]) radioGroups[name] = [];
                     radioGroups[name].push(fieldInfo);
                 } else {
-                    otherFields.push(fieldInfo);  // Radio without name - keep as is
+                    ungroupedFields.push(fieldInfo);
                 }
-            } else {
-                otherFields.push(fieldInfo);  // Not a radio - keep as is
+            } else if (fieldInfo.fieldType === 'checkbox') {
+                const name = fieldInfo.field.name;
+                if (name) {
+                    if (!checkboxGroups[name]) checkboxGroups[name] = [];
+                    checkboxGroups[name].push(fieldInfo);
+                } else {
+                    ungroupedFields.push(fieldInfo);
+                }
             }
         });
 
-        // Create single entry for each radio group
-        const groupedRadios = Object.entries(radioGroups).map(([name, radios]) => {
-            // Find the selected (checked) radio
+        const groupedFields = [];
+
+        // Helper to extract the GROUP question label (not individual option labels)
+        function getGroupQuestionLabel(field) {
+            // Try fieldset legend first
+            const fieldset = field.closest('fieldset');
+            if (fieldset) {
+                const legend = fieldset.querySelector('legend');
+                if (legend) return legend.textContent.trim();
+            }
+
+            // Look for a parent container with a header or label
+            let parent = field.parentElement;
+            for (let i = 0; i < 4; i++) {
+                if (!parent || parent.tagName === 'FORM' || parent.tagName === 'BODY') break;
+
+                // Look for headers in this parent
+                const headers = parent.querySelectorAll('h1, h2, h3, h4, h5, h6, legend, .form-label, .question');
+                for (const header of headers) {
+                    if (header.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING) {
+                        const text = header.textContent.trim();
+                        if (text.length > 5 && text.length < 200) return text;
+                    }
+                }
+
+                parent = parent.parentElement;
+            }
+
+            // Fallback: use the name attribute formatted
+            return field.name.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').trim();
+        }
+
+        // Process radio groups
+        Object.entries(radioGroups).forEach(([name, radios]) => {
             const selectedRadio = radios.find(r => r.field.checked);
 
             if (selectedRadio) {
-                // Use the selected radio's info, but update label to show selection
-                const selectedValue = getFieldLabel(selectedRadio.field) || selectedRadio.value || selectedRadio.field.value;
+                // Get the SPECIFIC option label (not the group question)
+                // Use label[for="id"] or adjacent text, NOT getFieldLabel which returns group question
+                let selectedValue = selectedRadio.value || selectedRadio.field.value;
 
-                // Try to get a clean group label from the first radio's label
-                // Remove the specific option text to get the question
-                let groupLabel = radios[0].label;
-
-                // Clean up label - remove the actual selection value if it's part of the label
-                // E.g. "Years of Experience (0-2 years)" -> "Years of Experience"
-                groupLabel = groupLabel.replace(/\s*\([^)]*\)\s*$/g, '').trim();
-                groupLabel = groupLabel.replace(/\s*:\s*[^:]+$/g, '').trim();
-
-                return {
-                    ...selectedRadio,
-                    label: groupLabel,
-                    displayValue: selectedValue,  // Store for display
-                    isRadioGroup: true,
-                    groupName: name,
-                    originalRadios: radios  // Keep reference for debugging
-                };
-            } else {
-                // No selection in this group
-                // For Manual tab: DON'T show unselected radio groups
-                // For other tabs: Show as "(Not selected)"
-                if (isManualTab) {
-                    return null;  // Will be filtered out below
+                // Try to get the option's specific label text
+                if (selectedRadio.field.id) {
+                    const optionLabel = document.querySelector(`label[for="${selectedRadio.field.id}"]`);
+                    if (optionLabel) {
+                        selectedValue = optionLabel.textContent.trim();
+                    }
                 }
 
-                const firstRadio = radios[0];
-                let groupLabel = firstRadio.label.replace(/\s*\([^)]*\)\s*$/g, '').trim();
+                // Get the GROUP question label (shared by all radios in this group)
+                let groupLabel = getGroupQuestionLabel(radios[0].field);
 
-                return {
+                groupedFields.push({
+                    ...selectedRadio,
+                    label: groupLabel,
+                    displayValue: selectedValue,
+                    isRadioGroup: true,
+                    filled: true,
+                    groupName: name
+                });
+            } else {
+                const firstRadio = radios[0];
+                let groupLabel = getGroupQuestionLabel(firstRadio.field);
+
+                groupedFields.push({
                     ...firstRadio,
                     label: groupLabel,
-                    displayValue: '(Not selected)',
+                    displayValue: null,
                     isRadioGroup: true,
-                    groupName: name,
-                    originalRadios: radios
-                };
+                    filled: false,
+                    groupName: name
+                });
             }
-        }).filter(Boolean);  // Remove nulls from unselected Manual tab groups
+        });
 
-        return [...otherFields, ...groupedRadios];
+        // Process checkbox groups
+        Object.entries(checkboxGroups).forEach(([name, checkboxes]) => {
+            const checkedBoxes = checkboxes.filter(c => c.field.checked);
+
+            if (checkedBoxes.length > 0) {
+                // Get SPECIFIC checkbox option labels, not group question
+                const selectedValues = checkedBoxes.map(cb => {
+                    let value = cb.value || cb.field.value;
+
+                    // Try to get the option's specific label
+                    if (cb.field.id) {
+                        const optionLabel = document.querySelector(`label[for="${cb.field.id}"]`);
+                        if (optionLabel) {
+                            value = optionLabel.textContent.trim();
+                        }
+                    }
+
+                    return value;
+                });
+
+                let groupLabel = getGroupQuestionLabel(checkboxes[0].field);
+
+                groupedFields.push({
+                    ...checkedBoxes[0],
+                    label: groupLabel,
+                    displayValue: selectedValues.join(', '),
+                    isCheckboxGroup: true,
+                    filled: true,
+                    groupName: name,
+                    checkedCount: checkedBoxes.length,
+                    totalCount: checkboxes.length
+                });
+            } else {
+                const firstCheckbox = checkboxes[0];
+                let groupLabel = getGroupQuestionLabel(firstCheckbox.field);
+
+                groupedFields.push({
+                    ...firstCheckbox,
+                    label: groupLabel,
+                    displayValue: null,
+                    isCheckboxGroup: true,
+                    filled: false,
+                    groupName: name,
+                    checkedCount: 0,
+                    totalCount: checkboxes.length
+                });
+            }
+        });
+
+        return [...ungroupedFields, ...groupedFields];
     }
 
-    // Apply grouping to each tab
-    const groupedAppFillFields = groupRadioCheckboxFields(appFillFields);
-    const groupedCacheFields = groupRadioCheckboxFields(cacheFields);
-    const groupedAiFields = groupRadioCheckboxFields(aiFields);
-    const groupedManualFields = groupRadioCheckboxFields(manualFields, true);  // true = isManualTab
+    // Group all radio/checkbox fields
+    const groupedRadioCheckbox = groupRadioCheckboxFields(radioCheckboxFields);
 
-    console.log(`📄 After Grouping - App Fill: ${groupedAppFillFields.length}, Cache: ${groupedCacheFields.length}, AI: ${groupedAiFields.length}, Manual: ${groupedManualFields.length}`);
+    // ========== CATEGORIZE ALL FIELDS INTO TABS ==========
+    const finalAppFillFields = [];
+    const finalCacheFields = [];
+    const finalAiFields = [];
+    const finalManualFields = [];
 
-    if (appFillFields.length === 0 && cacheFields.length === 0 && aiFields.length === 0) {
+    // Process grouped radio/checkbox fields
+    groupedRadioCheckbox.forEach(field => {
+        // Unfilled groups go to Manual
+        if ((field.isRadioGroup || field.isCheckboxGroup) && !field.filled) {
+            finalManualFields.push(field);
+        } else {
+            // Filled groups - categorize by source/confidence
+            if (field.source === 'smart-memory') {
+                finalCacheFields.push(field);
+            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
+                finalAppFillFields.push(field);
+            } else {
+                finalAiFields.push(field);
+            }
+        }
+    });
+
+    // Process other (non-radio/checkbox) fields
+    otherFieldsRaw.forEach(field => {
+        const isEmpty = !field.value || String(field.value).trim() === '';
+
+        if (field.isFileUpload || isEmpty) {
+            finalManualFields.push(field);
+        } else if (field.source === 'smart-memory') {
+            finalCacheFields.push(field);
+        } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
+            finalAppFillFields.push(field);
+        } else {
+            finalAiFields.push(field);
+        }
+    });
+
+    console.log(`📄 After Grouping & Re-routing - App Fill: ${finalAppFillFields.length}, Cache: ${finalCacheFields.length}, AI: ${finalAiFields.length}, Manual: ${finalManualFields.length}`);
+
+    if (finalAppFillFields.length === 0 && finalCacheFields.length === 0 && finalAiFields.length === 0) {
         console.log('No fields to show in sidebar');
         return;
     }
@@ -525,49 +636,49 @@ function showAccordionSidebar(allFields) {
         <div class="sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
             <!-- App Fill Tab (Read-only, name only) -->
             <div class="tab-content active" data-tab="app">
-                ${groupedAppFillFields.map(item => `
+                ${finalAppFillFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
-                        <div class="field-label">${item.label}${item.isRadioGroup ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
+                        <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
                     </div>
                 `).join('')}
-                ${groupedAppFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
+                ${finalAppFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
             </div>
 
             <!-- Cache Tab (Name only, with recalculate) -->
             <div class="tab-content" data-tab="cache" style="display: none;">
-                ${groupedCacheFields.length > 0 ? `
+                ${finalCacheFields.length > 0 ? `
                     <div class="tab-actions">
                         <button class="recalculate-all-btn" data-tab="cache" data-tooltip="Regenerate all cached fields using AI">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                            Regenerate All (${groupedCacheFields.length})
+                            Regenerate All (${finalCacheFields.length})
                         </button>
                     </div>
                 ` : ''}
-                ${groupedCacheFields.map(item => `
+                ${finalCacheFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
-                            <div class="field-label">${item.label}${item.isRadioGroup ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
+                            <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
                             <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>
                         </div>
                     </div>
                 `).join('')}
-                ${groupedCacheFields.length === 0 ? '<div class="empty-state">No cached fields</div>' : ''}
+                ${finalCacheFields.length === 0 ? '<div class="empty-state">No cached fields</div>' : ''}
             </div>
 
             <!-- AI Tab (Name + confidence, with recalculate) -->
             <div class="tab-content" data-tab="ai" style="display: none;">
-                ${groupedAiFields.length > 0 ? `
+                ${finalAiFields.length > 0 ? `
                     <div class="tab-actions">
                         <button class="recalculate-all-btn" data-tab="ai" data-tooltip="Regenerate all AI fields with fresh context">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                            Regenerate All (${groupedAiFields.length})
+                            Regenerate All (${finalAiFields.length})
                         </button>
                     </div>
                 ` : ''}
-                ${groupedAiFields.map(item => `
+                ${finalAiFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
-                            <div class="field-label">${item.label}${item.isRadioGroup ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
+                            <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
                             <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
                             </button>
@@ -575,31 +686,31 @@ function showAccordionSidebar(allFields) {
                         <div class="field-confidence">⚡ ${Math.round(item.confidence * 100)}%</div>
                     </div>
                 `).join('')}
-                ${groupedAiFields.length === 0 ? '<div class="empty-state">No AI-generated fields</div>' : ''}
+                ${finalAiFields.length === 0 ? '<div class="empty-state">No AI-generated fields</div>' : ''}
             </div>
 
             <!-- Manual Tab (Unfilled and file uploads) -->
             <div class="tab-content" data-tab="manual" style="display: none;">
-                ${groupedManualFields.map(item => `
+                ${finalManualFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
                             <div class="field-label">
-                                ${item.isFileUpload ? '📁 ' : ''}${item.label}${item.isRadioGroup ? `: <span style="color: #94a3b8;">${item.displayValue}</span>` : ''}
+                                ${item.isFileUpload ? '📁 ' : ''}${item.label}
                             </div>
                         </div>
                         ${item.isFileUpload ? '<div class="field-note">File upload required</div>' : '<div class="field-note">Not filled</div>'}
                     </div>
                 `).join('')}
-                ${groupedManualFields.length === 0 ? '<div class="empty-state">All fields filled!</div>' : ''}
+                ${finalManualFields.length === 0 ? '<div class="empty-state">All fields filled!</div>' : ''}
             </div>
         </div>
     `;
 
     // Update tab counts
-    panel.querySelector('[data-tab="app"] .tab-count').textContent = `(${groupedAppFillFields.length})`;
-    panel.querySelector('[data-tab="cache"] .tab-count').textContent = `(${groupedCacheFields.length})`;
-    panel.querySelector('[data-tab="ai"] .tab-count').textContent = `(${groupedAiFields.length})`;
-    panel.querySelector('[data-tab="manual"] .tab-count').textContent = `(${groupedManualFields.length})`;
+    panel.querySelector('[data-tab="app"] .tab-count').textContent = `(${finalAppFillFields.length})`;
+    panel.querySelector('[data-tab="cache"] .tab-count').textContent = `(${finalCacheFields.length})`;
+    panel.querySelector('[data-tab="ai"] .tab-count').textContent = `(${finalAiFields.length})`;
+    panel.querySelector('[data-tab="manual"] .tab-count').textContent = `(${finalManualFields.length})`;
 
     document.body.appendChild(panel);
 
