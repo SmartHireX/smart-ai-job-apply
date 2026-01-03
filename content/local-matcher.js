@@ -15,22 +15,86 @@ const LocalMatcher = {
      */
     resolveFields(fields, resumeData) {
         const resolved = {};
-        const resolvedGroups = new Set();
         const remaining = [];
 
         // Pre-calculate facts
         const facts = this.extractFacts(resumeData);
         console.log('🧠 [LocalMatcher] extracted facts:', facts);
 
-        // First pass: Resolve fields
+        // Pre-processing: Group Radio/Checkbox fields by Name
+        const fieldGroups = {};
         fields.forEach(field => {
-            let answer = null;
+            if ((field.type === 'radio' || field.type === 'checkbox') && field.name) {
+                if (!fieldGroups[field.name]) fieldGroups[field.name] = [];
+                fieldGroups[field.name].push(field);
+            }
+        });
 
-            // Skip if group already resolved (for radios)
-            if (field.name && resolvedGroups.has(field.name)) {
-                return; // Already handled this group
+        // Set of processed names to skip individual processing
+        const processedNames = new Set();
+
+        // Pass 1: Handle Groups (Radios/Checkboxes)
+        for (const [name, group] of Object.entries(fieldGroups)) {
+            // Use the first field's label/context as the group "master"
+            const primary = group[0];
+            const labelLower = (primary.label || '').toLowerCase();
+            const nameLower = (name || '').toLowerCase();
+            const context = `${labelLower} ${nameLower}`;
+
+            let answerIdx = -1; // Index of the selected option in the group
+            let answerVal = null;
+
+            // DEBUG LOGGING
+            if (context.includes('visa') || context.includes('skill') || context.includes('relocate') || context.includes('sponsor')) {
+                console.log(`[LocalMatcher] GROUP TRACE "${name}":`, group.map(g => g.value));
             }
 
+            // Route to Matchers (Passing FULL GROUP)
+            if (context.includes('experience') || context.includes('years')) {
+                // Not typically radio, but possible
+            }
+            else if (context.includes('sponsorship') || context.includes('visa') || context.includes('authorized')) {
+                answerVal = this.matchVisaGroup(group, facts, context);
+            }
+            else if (context.includes('relocate') || context.includes('remote') || context.includes('travel')) {
+                answerVal = this.matchLogisticsGroup(group, facts, context);
+            }
+            else if (context.includes('skill')) {
+                // Skills usually check individual checkboxes, but let's see
+                // For checkboxes, we might want to check MULTIPLE.
+                // If type is radio, single select. If checkbox, multi.
+                if (primary.type === 'checkbox') {
+                    // Start with empty, let individual loop handle or handle here?
+                    // Better to handle here for "Select your technical skills" 
+                    const matches = this.matchSkillsGroup(group, facts);
+                    matches.forEach(val => {
+                        // Find the field with this value
+                        const target = group.find(g => g.value === val);
+                        if (target) resolved[target.selector] = { value: val, confidence: 1, source: 'local-rule' };
+                    });
+                    processedNames.add(name);
+                    continue;
+                }
+            }
+            // ... Add other groups as needed
+
+            // Apply Group Result (For Radios - Single Select)
+            if (answerVal !== null && primary.type === 'radio') {
+                // Find the field that matches this value
+                const target = group.find(g => g.value === answerVal);
+                if (target) {
+                    resolved[target.selector] = { value: answerVal, confidence: 1, source: 'local-rule' };
+                    console.log(`[LocalMatcher] Group "${name}" resolved to ->`, answerVal);
+                }
+                processedNames.add(name);
+            }
+        }
+
+        // Pass 2: Handle Remaining / Non-Grouped Fields
+        fields.forEach(field => {
+            if (field.name && processedNames.has(field.name)) return;
+
+            let answer = null;
             const labelLower = (field.label || '').toLowerCase();
             const nameLower = (field.name || '').toLowerCase();
             const context = `${labelLower} ${nameLower}`;
@@ -45,7 +109,7 @@ const LocalMatcher = {
                 answer = this.matchExperience(field, facts.totalYearsExp);
             }
             // 2. Visa / Sponsorship
-            else if (context.includes('sponsorship') || context.includes('visa') || context.includes('authorized')) {
+            else if ((context.includes('sponsorship') || context.includes('visa') || context.includes('authorized')) && field.type !== 'radio') {
                 answer = this.matchVisa(field, facts, context);
             }
             // 3. Relocation / Remote
@@ -110,19 +174,9 @@ const LocalMatcher = {
                     source: 'local_heuristic',
                     field_type: field.type
                 };
-
-                if (field.name) {
-                    resolvedGroups.add(field.name);
-                }
+            } else {
+                remaining.push(field);
             }
-        });
-
-        // Second pass: Populate remaining, filtering out resolved groups
-        fields.forEach(field => {
-            if (resolved[field.selector]) return; // Already resolved
-            if (field.name && resolvedGroups.has(field.name)) return; // Group resolved
-
-            remaining.push(field);
         });
 
         console.log(`⚡ [LocalMatcher] Resolved ${Object.keys(resolved).length} fields locally.`);
@@ -193,128 +247,107 @@ const LocalMatcher = {
         return null;
     },
 
-    matchVisa(field, facts, context) {
-        const text = (field.label + ' ' + (field.value || '')).toLowerCase();
-        const valueLower = (field.value || '').toLowerCase(); // Strict value check
-        const isYes = valueLower === 'yes' || valueLower === 'true' || valueLower === 'on';
-        const isNo = valueLower === 'no' || valueLower === 'false' || valueLower === 'off';
+    // --- GROUP MATCHERS ---
 
-        // 1. Sponsorship Question: "Do you require sponsorship?"
-        if (context.includes('sponsorship') || text.includes('sponsorship')) {
-            // "Will you now or in future require..." -> If sponsorshipRequired=false, answer NO.
-            // If sponsorshipRequired=true, answer YES.
+    matchVisaGroup(group, facts, context) {
+        let targetAnswer = null; // 'yes' or 'no'
 
-            if (facts.sponsorshipRequired) {
-                if (isYes) return field.value;
-            } else {
-                if (isNo) return field.value;
-            }
+        // 1. Sponsorship Question
+        if (context.includes('sponsorship') || context.includes('sponsor')) {
+            targetAnswer = facts.sponsorshipRequired ? 'yes' : 'no';
         }
-
-        // 2. Authorization Question: "Are you authorized?", "Legally allowed?"
-        if (context.includes('authorized') || context.includes('authorization') || context.includes('legally')) {
-            // "Are you authorized to work?" -> If sponsorshipRequired=false (meaning authorized based on assumption), answer YES.
-            // Note: This logic assumes if you don't need sponsorship, you are authorized.
-            // Real world: You might be authorized BUT need sponsorship later (OPT).
-            // But usually: Authorized = YES.
-
-            // If authorized (default to true if not specified, or checks field)
+        // 2. Authorization Question
+        else if (context.includes('authorized') || context.includes('legally')) {
             const authorized = facts.workAuthorization === 'Authorized' || !facts.sponsorshipRequired;
-
-            if (authorized) {
-                if (isYes) return field.value;
-            } else {
-                if (isNo) return field.value;
-            }
+            targetAnswer = authorized ? 'yes' : 'no';
         }
 
-        // Select logic (simplified)
-        if (field.type === 'select' && field.options) {
-            const target = facts.sponsorshipRequired ? 'yes' : 'no';
-            if (context.includes('sponsorship')) {
-                return field.options.find(opt => opt.toLowerCase().includes(target)) || null;
-            }
-            if (context.includes('authorized')) {
-                const authTarget = !facts.sponsorshipRequired ? 'yes' : 'no';
-                return field.options.find(opt => opt.toLowerCase().includes(authTarget)) || null;
-            }
+        if (targetAnswer) {
+            console.log(`[LocalMatcher] Visa Target -> "${targetAnswer}" (sponsorship: ${facts.sponsorshipRequired})`);
+
+            const match = group.find(opt => {
+                const val = (opt.value || '').toLowerCase();
+                const lbl = (opt.label || '').toLowerCase();
+
+                // Strict Value Checks
+                if (targetAnswer === 'yes') {
+                    if (val === 'yes' || val === 'true' || val === 'on') return true;
+                    if (/\byes\b/.test(lbl)) return true;
+                }
+
+                if (targetAnswer === 'no') {
+                    if (val === 'no' || val === 'false' || val === 'off') return true;
+                    if (/\bno\b/.test(lbl)) return true;
+                }
+
+                return false;
+            });
+            return match ? match.value : null;
         }
 
         return null;
+    },
+
+    matchLogisticsGroup(group, facts, context) {
+        let targetAnswer = null;
+
+        if (context.includes('relocate')) {
+            targetAnswer = facts.willingToRelocate ? 'yes' : 'no';
+        }
+        else if (context.includes('remote')) {
+            const wantsRemote = facts.preferredLocation.includes('remote');
+            targetAnswer = wantsRemote ? 'yes' : 'no';
+        }
+
+        if (targetAnswer) {
+            const match = group.find(opt => {
+                const val = (opt.value || '').toLowerCase();
+                const lbl = (opt.label || '').toLowerCase();
+                if (targetAnswer === 'yes') return val === 'true' || val === 'yes' || val === 'on' || lbl.includes('yes');
+                if (targetAnswer === 'no') return val === 'false' || val === 'no' || val === 'off' || lbl.includes('no');
+                return false;
+            });
+            return match ? match.value : null;
+        }
+        return null;
+    },
+
+    matchSkillsGroup(group, facts) {
+        const matches = [];
+        const userSkills = facts.skills.map(s => s.toLowerCase());
+
+        group.forEach(opt => {
+            const val = (opt.value || '').toLowerCase();
+            const lbl = (opt.label || '').toLowerCase();
+
+            let isMatch = false;
+            // Value match
+            if (val.length > 1) {
+                isMatch = userSkills.some(skill => val.includes(skill) || skill.includes(val));
+            }
+            // Label match
+            if (!isMatch && lbl.length > 1 && !lbl.includes('select')) {
+                isMatch = userSkills.some(skill => lbl.includes(skill) || skill.includes(lbl)); // Loose match
+            }
+
+            if (isMatch) matches.push(opt.value);
+        });
+
+        return matches;
+    },
+
+    // Legacy / Single Field Wrappers
+    matchVisa(field, facts, context) {
+        return this.matchVisaGroup([{ value: field.value, label: field.label }], facts, context);
     },
 
     matchLogistics(field, facts, context) {
-        const text = (field.label + ' ' + (field.value || '')).toLowerCase();
-        // Loose check for "Yes" in label or value
-        const isYes = text.includes('yes') || text.includes('true') || (field.value === 'on');
-
-        // Context-aware checking
-        // "Relocate"
-        if (context.includes('relocate')) {
-            if (facts.willingToRelocate === true) {
-                // If Checkbox ("Willing to relocate"), check it
-                if (field.type === 'checkbox') return field.value;
-                // If Radio "Yes", select it
-                if (isYes) return field.value;
-            } else if (facts.willingToRelocate === false) {
-                // If Radio "No" (implied if not Yes), select it
-                if (!isYes && field.type === 'radio') return field.value;
-            }
-        }
-
-        // "Remote"
-        if (context.includes('remote')) {
-            // Check if profile mentions "remote" in location preference
-            const wantsRemote = facts.preferredLocation.includes('remote');
-
-            if (wantsRemote) {
-                if (field.type === 'checkbox') return field.value;
-                if (isYes) return field.value;
-            } else {
-                if (!isYes && field.type === 'radio') return field.value;
-            }
-        }
-
-        if (context.includes('travel')) {
-            // Optimistic handling: If it's a checkbox "Willing to travel", check it?
-            // Safer: Leave for AI if not explicit. But let's check it for now if simple boolean.
-            if (field.type === 'checkbox') return field.value;
-        }
-
-        return null;
+        return this.matchLogisticsGroup([{ value: field.value, label: field.label }], facts, context);
     },
 
-
     matchSkills(field, facts) {
-        // Multi-select or Checkbox group
-        // If Select
-        if (field.type === 'select' && field.options) {
-            // Return ARRAY of matching values
-            const matches = field.options.filter(opt => {
-                const optLower = opt.toLowerCase();
-                return facts.skills.some(skill => optLower.includes(skill) || skill.includes(optLower));
-            });
-            return matches.length > 0 ? matches : null;
-        }
-        // If Checkbox
-        if (field.type === 'checkbox') {
-            const val = (field.value || '').toLowerCase();
-            // If value is present, use it directly (e.g. "javascript")
-            if (val.length > 1) {
-                const isMatch = facts.skills.some(skill => val.includes(skill) || skill.includes(val));
-                return isMatch ? field.value : null;
-            }
-
-            // Fallback: Use label if value is generic/empty, but strip common prefixes
-            let text = (field.label || '').toLowerCase();
-            // Remove group label if present (heuristic)
-            const commonPrefixes = ['skills', 'technologies', 'proficiency', 'select', ':'];
-            commonPrefixes.forEach(p => text = text.replace(p, ''));
-
-            const isMatch = facts.skills.some(skill => text.includes(skill) || skill.includes(text));
-            return isMatch ? field.value : null;
-        }
-        return null;
+        const matches = this.matchSkillsGroup([{ value: field.value, label: field.label }], facts);
+        return matches.length > 0 ? matches[0] : null; // Return single value or null
     },
 
     matchEducation(field, facts) {

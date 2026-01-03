@@ -157,39 +157,47 @@ function getFieldLabel(element) {
 
     // 0. Group Label Strategy (Highest Priority for Radios/Checkboxes)
     if (isGroup) {
-        // 0a. Fieldset Legend
+        // 0a. Fieldset Legend (Golden Standard)
         const fieldset = element.closest('fieldset');
         if (fieldset) {
             const legend = fieldset.querySelector('legend');
             if (legend) return clean(legend.innerText);
         }
 
-        // 0b. Container Header Strategy (Common in React/Div soups)
-        // Look up up to 3 parents
+        // 0b. Smart Block Search
+        // Scan up to 4 parents to find a "Question Block"
         let parent = element.parentElement;
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 4; i++) {
             if (!parent || parent.tagName === 'FORM' || parent.tagName === 'BODY') break;
 
-            // Look for a preceding sibling that looks like a label (h* tag, label, or bold span)
-            let sibling = parent.previousElementSibling;
-            if (sibling) {
-                // Heuristic: Short text, header, or 'label' class
-                const text = clean(sibling.innerText);
-                if (text.length > 2 && text.length < 150) {
-                    // Strong signal: Heading tag or explicit class
-                    if (/H[1-6]|LABEL|LEGEND/.test(sibling.tagName) ||
-                        (sibling.className && typeof sibling.className === 'string' && sibling.className.toLowerCase().includes('label'))) {
-                        return text;
-                    }
-                    // Medium signal: Just text before a likely group container
-                    return text;
+            // STRATEGY 1: Internal Header
+            // Look for any header (H1-H6) or Legend INSIDE this parent that is ABOVE the current element.
+            // This catches: <div> <h3>My Question</h3> <div><input></div> </div>
+            const headers = parent.querySelectorAll('h1, h2, h3, h4, h5, h6, legend, label.question, .form-label');
+            for (const header of headers) {
+                // Must be BEFORE the element in DOM order
+                if (header.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING) {
+                    const text = clean(header.innerText);
+                    if (text.length > 5 && text.length < 200) return text;
                 }
             }
 
-            // Look for a distinct header INSIDE the parent (if it's a wrapper)
-            const internalHeader = parent.querySelector('h1, h2, h3, h4, h5, h6, label, .label, .question');
-            if (internalHeader && !internalHeader.contains(element)) {
-                return clean(internalHeader.innerText);
+            // STRATEGY 2: Previous Sibling Loop
+            // Check all previous siblings, not just the first one.
+            // This catches: <h3>Question</h3> <p>Desc</p> <div class="options">...</div>
+            let sibling = parent.previousElementSibling;
+            while (sibling) {
+                const text = clean(sibling.innerText);
+                // Stop if we hit a substantial header
+                if (/H[1-6]|LABEL|LEGEND/.test(sibling.tagName) && text.length > 5) {
+                    return text;
+                }
+                // Stop if we hit a 'label' class
+                if (sibling.classList && (sibling.classList.contains('label') || sibling.classList.contains('question'))) {
+                    return text;
+                }
+
+                sibling = sibling.previousElementSibling;
             }
 
             parent = parent.parentElement;
@@ -240,13 +248,20 @@ function getFieldLabel(element) {
         return clean(fallback.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1')); // camelCaese -> camel Case
     }
 
+    if (element.type === 'radio' || element.type === 'checkbox') {
+        console.warn('[Scraper Debug] Failed to find label for:', element);
+    }
     return 'Unknown Field';
 }
 
 function getElementSelector(element) {
-    // 1. ID - The Gold Standard (if valid and not dynamic gibberish)
-    if (element.id && !/\d{5,}/.test(element.id)) { // Avoid auto-generated IDs like "input-12345"
-        return `#${CSS.escape(element.id)}`;
+    // 1. ID - The Gold Standard (BUT only if unique)
+    if (element.id && !/\d{5,}/.test(element.id)) {
+        const idSelector = `#${CSS.escape(element.id)}`;
+        // Check uniqueness locally (quick check)
+        if (document.querySelectorAll(idSelector).length === 1) {
+            return idSelector;
+        }
     }
 
     // 2. Stable QA/Automation Attributes ("FANG" style)
@@ -254,14 +269,34 @@ function getElementSelector(element) {
     for (const attr of attributes) {
         if (element.hasAttribute(attr)) {
             const val = element.getAttribute(attr);
+            // Validation: Ensure value is not empty or just whitespace
+            if (!val || val.trim() === '') continue;
+
             if (attr === 'name') {
+                let candidate = '';
                 // Special handling for Radio/Checkbox groups
-                if ((element.type === 'radio' || element.type === 'checkbox') && element.value) {
-                    return `input[name="${CSS.escape(val)}"][value="${CSS.escape(element.value)}"]`;
+                if ((element.type === 'radio' || element.type === 'checkbox') && element.value && element.value.trim() !== '') {
+                    candidate = `input[name="${CSS.escape(val)}"][value="${CSS.escape(element.value)}"]`;
+                } else {
+                    candidate = `input[name="${CSS.escape(val)}"]`;
                 }
-                return `input[name="${CSS.escape(val)}"]`;
+
+                // Verify uniqueness
+                if (document.querySelectorAll(candidate).length === 1) return candidate;
+
+                // If not unique (duplicates on page), try combining with form parent
+                const form = element.closest('form');
+                if (form && form.id) {
+                    const formScoped = `form#${CSS.escape(form.id)} ${candidate}`;
+                    if (document.querySelectorAll(formScoped).length === 1) return formScoped;
+                }
+
+                // If still not unique, don't return partial match, fall through to Path Strategy
+                continue;
             }
-            return `[${attr}="${CSS.escape(val)}"]`;
+
+            const attrSelector = `[${attr}="${CSS.escape(val)}"]`;
+            if (document.querySelectorAll(attrSelector).length === 1) return attrSelector;
         }
     }
 

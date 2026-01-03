@@ -244,6 +244,20 @@ async function processPageFormLocal() {
                 console.log(`🧠 Phase 2: AI mapped ${Object.keys(aiResult.mappings).length} fields.`);
                 cumulativeMappings = { ...cumulativeMappings, ...aiResult.mappings };
 
+                // FIX: Ensure ALL original fields are in cumulativeMappings, even if unmapped
+                // This forces them to appear in the "Manual" tab of the Sidebar
+                fields.forEach(field => {
+                    if (!cumulativeMappings[field.selector]) {
+                        cumulativeMappings[field.selector] = {
+                            value: null,
+                            confidence: 0,
+                            source: 'manual',
+                            field_type: field.type,
+                            label: field.label
+                        };
+                    }
+                });
+
                 showProcessingWidget('Finalizing...', 3);
                 await executeInstantFill({
                     mappings: aiResult.mappings,

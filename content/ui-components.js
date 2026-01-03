@@ -657,27 +657,72 @@ function showAccordionSidebar(allFields) {
 
         // Click to scroll to field
         item.addEventListener('click', () => {
-            const element = document.querySelector(selector);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                element.focus();
+            try {
+                const element = document.querySelector(selector);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.focus();
+                }
+            } catch (e) {
+                console.warn('Skipping invalid selector click:', selector);
+                showErrorToast('Could not scroll to field (Invalid Selector)');
             }
         });
 
         // Hover to show connection beam
         item.addEventListener('mouseenter', () => {
-            const element = document.querySelector(selector);
-            if (element) {
-                element.classList.add('smarthirex-spotlight');
-                showConnectionBeam(item, element);
+            try {
+                if (!selector) return;
+                const element = document.querySelector(selector);
+                console.log(`[Sidebar Debug] Hovering "${selector}". Found?`, !!element);
+
+                if (element) {
+                    // Smart Highlight: If radio/checkbox, prefer the entire Group Container over the individual option
+                    let target = element;
+                    if (element.type === 'radio' || element.type === 'checkbox') {
+                        // 1. Try to find the container of the whole question (fieldset or form-group)
+                        const groupContainer = element.closest('fieldset, .form-group, .question-block, .card');
+
+                        // 2. If valid and reasonably close (don't highlight the whole body), use it
+                        if (groupContainer && groupContainer.contains(element)) {
+                            // Heuristic: Check size. If it's the whole page, ignore.
+                            if (groupContainer.offsetHeight < window.innerHeight * 0.7) { // Increased to 0.7
+                                target = groupContainer;
+                            }
+                        }
+
+                        // 3. Fallback to Option Container if no Group found
+                        if (target === element) {
+                            const parentOption = element.closest('label, .checkbox-option, .radio-option');
+                            if (parentOption) target = parentOption;
+                        }
+                    }
+
+                    console.log(`[Sidebar Debug] Highlight Target:`, target.tagName, target.className);
+                    target.classList.add('smarthirex-spotlight');
+                    showConnectionBeam(item, target);
+                    item._highlightedElement = target; // Store for cleanup
+                }
+            } catch (e) {
+                // Invalid selector ignored to prevent crash
+                console.warn('Skipping invalid selector highlight:', selector);
             }
         });
 
         item.addEventListener('mouseleave', () => {
-            const element = document.querySelector(selector);
-            if (element) {
-                element.classList.remove('smarthirex-spotlight');
-                hideConnectionBeam();
+            try {
+                if (item._highlightedElement) {
+                    item._highlightedElement.classList.remove('smarthirex-spotlight');
+                    item._highlightedElement = null;
+                    hideConnectionBeam();
+                } else {
+                    // Fallback cleanup
+                    const element = document.querySelector(selector);
+                    if (element) element.classList.remove('smarthirex-spotlight');
+                    hideConnectionBeam();
+                }
+            } catch (e) {
+                // Ignore
             }
         });
     });

@@ -175,24 +175,26 @@ function extractFieldsFromDOM(source) {
 
         // Determine Label / Context
         let label = '';
-        // 1. Label tag
-        if (input.id) {
-            const labelTag = root.querySelector(`label[for="${safeId}"]`);
-            if (labelTag) label = labelTag.innerText;
-        }
-        // 2. Aria Label
-        if (!label && input.getAttribute('aria-label')) label = input.getAttribute('aria-label');
-        if (!label && input.getAttribute('placeholder')) label = input.getAttribute('placeholder');
-
-        // 3. Parent Text (naive)
-        if (!label && input.parentElement) {
-            // Get text of parent matching heuristics often helps
-            label = input.parentElement.innerText.replace(input.value, '').trim().substring(0, 50);
+        // Use robust global scraper if available
+        if (typeof window.getFieldLabel === 'function') {
+            label = window.getFieldLabel(input);
+        } else {
+            // Fallback to basic logic if form-detection.js isn't loaded
+            const safeId = input.id ? CSS.escape(input.id) : '';
+            if (safeId) {
+                const labelTag = root.querySelector(`label[for="${safeId}"]`);
+                if (labelTag) label = labelTag.innerText;
+            }
+            if (!label && input.getAttribute('aria-label')) label = input.getAttribute('aria-label');
+            if (!label && input.getAttribute('placeholder')) label = input.getAttribute('placeholder');
+            if (!label && input.parentElement) {
+                label = input.parentElement.innerText.replace(input.value, '').trim().substring(0, 50);
+            }
         }
 
         fields.push({
             type: input.tagName === 'TEXTAREA' ? 'textarea' : (input.tagName === 'SELECT' ? 'select' : input.type),
-            label: label.trim(),
+            label: (label || '').trim(),
             name: input.name || '',
             id: input.id || '',
             value: input.value || '', // Capture current/default value (Crucial for Radios)
