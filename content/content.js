@@ -134,9 +134,9 @@ async function processPageFormLocal() {
                             }
                         }
 
-                        // 3. Fuzzy Match
+                        // 3. Fuzzy Match (Jaccard Similarity)
                         const score = calculateUsingJaccardSimilarity(cachedLabel, fieldLabel);
-                        if (score > 0.6) {
+                        if (score > 0.7) { // 70% similarity required (stricter)
                             foundAnswer = cachedData.answer;
                             break;
                         }
