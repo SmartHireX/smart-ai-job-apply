@@ -821,11 +821,11 @@ function showAccordionSidebar(allFields) {
 
             <!-- Cache Tab (Name only, with recalculate) -->
             <div class="tab-content" data-tab="cache" style="display: none;">
-                ${finalCacheFields.length > 0 ? `
+                ${finalCacheFields.filter(field => field.source !== 'selection_cache').length > 0 ? `
                     <div class="tab-actions">
                         <button class="recalculate-all-btn" data-tab="cache" data-tooltip="Regenerate all cached fields using AI">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                            Regenerate All (${finalCacheFields.length})
+                            Regenerate All (${finalCacheFields.filter(field => field.source !== 'selection_cache').length})
                         </button>
                     </div>
                 ` : ''}
