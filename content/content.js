@@ -241,13 +241,18 @@ async function processPageFormLocal() {
                                 ? `input[type="radio"][name="${CSS.escape(element.name)}"][value="${CSS.escape(cached.value)}"]`
                                 : item.selector;
 
-                            cacheHits[radioSelector] = {
-                                value: cached.value,
-                                confidence: cached.confidence,
-                                source: cached.source,
-                                field_type: 'radio'
-                            };
-                            console.log(`💾 [SelectionCache] HIT: "${label}" → ${cached.value} (${cached.semanticType})`);
+                            // Only add if selector is valid
+                            if (radioSelector && radioSelector.length > 10 && !radioSelector.includes('undefined')) {
+                                cacheHits[radioSelector] = {
+                                    value: cached.value,
+                                    confidence: cached.confidence,
+                                    source: cached.source,
+                                    field_type: 'radio'
+                                };
+                                console.log(`💾 [SelectionCache] HIT: "${label}" → ${cached.value} (${cached.semanticType})`);
+                            } else {
+                                console.warn(`[SelectionCache] Skipping invalid radio selector: ${radioSelector}`);
+                            }
                         } else {
                             // Select - single value (use item selector directly)
                             cacheHits[item.selector] = {
