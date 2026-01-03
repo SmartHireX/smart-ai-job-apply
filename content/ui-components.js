@@ -419,14 +419,14 @@ function showAccordionSidebar(allFields) {
             <div class="tab-content" data-tab="cache" style="display: none;">
                 ${cacheFields.length > 0 ? `
                     <div class="tab-actions">
-                        <button class="recalculate-all-btn" data-tab="cache" title="Regenerate all cached fields using AI with current job context">Recalculate All (${cacheFields.length})</button>
+                        <button class="recalculate-all-btn" data-tab="cache" data-tooltip="Regenerate all cached fields using AI">Recalculate All (${cacheFields.length})</button>
                     </div>
                 ` : ''}
                 ${cacheFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
                             <div class="field-label">${item.label}</div>
-                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" title="Regenerate this field using AI">🔄</button>
+                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>
                         </div>
                     </div>
                 `).join('')}
@@ -437,14 +437,14 @@ function showAccordionSidebar(allFields) {
             <div class="tab-content" data-tab="ai" style="display: none;">
                 ${aiFields.length > 0 ? `
                     <div class="tab-actions">
-                        <button class="recalculate-all-btn" data-tab="ai" title="Regenerate all AI fields with fresh context and improved answers">Recalculate All (${aiFields.length})</button>
+                        <button class="recalculate-all-btn" data-tab="ai" data-tooltip="Regenerate all AI fields with fresh context">Recalculate All (${aiFields.length})</button>
                     </div>
                 ` : ''}
                 ${aiFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
                             <div class="field-label">${item.label}</div>
-                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" title="Regenerate this field using AI">🔄</button>
+                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>
                         </div>
                         <div class="field-confidence">⚡ ${Math.round(item.confidence * 100)}%</div>
                     </div>
