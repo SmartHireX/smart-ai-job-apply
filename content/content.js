@@ -169,6 +169,7 @@ async function processPageFormLocal() {
             console.log('💾 Phase 1.7: Checking Selection Cache...');
             const cacheHits = {};
             const cacheMisses = [];
+            const processedGroups = new Set(); // Track processed checkbox groups
 
             for (const item of unmapped) {
                 const element = document.querySelector(item.selector);
@@ -187,13 +188,76 @@ async function processPageFormLocal() {
                     const cached = await window.SelectionCache.getCachedValue(element, label);
 
                     if (cached) {
-                        cacheHits[item.selector] = {
-                            value: cached.value,
-                            confidence: cached.confidence,
-                            source: cached.source,
-                            field_type: fieldType
-                        };
-                        console.log(`💾 [SelectionCache] HIT: "${label}" → ${cached.value} (${cached.semanticType})`);
+                        // Handle checkbox arrays specially
+                        // Value might be an array or comma-separated string
+                        const isCheckboxArray = fieldType === 'checkbox' && (
+                            Array.isArray(cached.value) ||
+                            (typeof cached.value === 'string' && cached.value.includes(','))
+                        );
+
+                        if (isCheckboxArray) {
+                            const groupKey = element.name || label;
+
+                            // Skip if we've already processed this checkbox group
+                            if (processedGroups.has(groupKey)) {
+                                continue;
+                            }
+                            processedGroups.add(groupKey);
+
+                            // Convert to array if it's a string
+                            const valuesArray = Array.isArray(cached.value)
+                                ? cached.value
+                                : cached.value.split(',').map(v => v.trim());
+
+                            // Find all checkboxes in this group
+                            const allCheckboxes = document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(element.name)}"]`);
+
+                            // Check each checkbox whose value is in the cached array
+                            allCheckboxes.forEach(checkbox => {
+                                if (valuesArray.includes(checkbox.value)) {
+                                    const checkboxSelector = checkbox.id ? `#${CSS.escape(checkbox.id)}` : `input[name="${CSS.escape(checkbox.name)}"][value="${CSS.escape(checkbox.value)}"]`;
+                                    cacheHits[checkboxSelector] = {
+                                        value: checkbox.value,
+                                        confidence: cached.confidence,
+                                        source: cached.source,
+                                        field_type: 'checkbox'
+                                    };
+                                }
+                            });
+
+                            console.log(`💾 [SelectionCache] HIT: "${label}" → ${valuesArray.join(', ')} (${cached.semanticType})`);
+                        } else if (fieldType === 'radio') {
+                            // Radio groups - process only once per group
+                            const groupKey = element.name || label;
+
+                            // Skip if we've already processed this radio group
+                            if (processedGroups.has(groupKey)) {
+                                continue;
+                            }
+                            processedGroups.add(groupKey);
+
+                            // Build selector for the specific radio with the cached value
+                            const radioSelector = (element.name && cached.value)
+                                ? `input[type="radio"][name="${CSS.escape(element.name)}"][value="${CSS.escape(cached.value)}"]`
+                                : item.selector;
+
+                            cacheHits[radioSelector] = {
+                                value: cached.value,
+                                confidence: cached.confidence,
+                                source: cached.source,
+                                field_type: 'radio'
+                            };
+                            console.log(`💾 [SelectionCache] HIT: "${label}" → ${cached.value} (${cached.semanticType})`);
+                        } else {
+                            // Select - single value (use item selector directly)
+                            cacheHits[item.selector] = {
+                                value: cached.value,
+                                confidence: cached.confidence,
+                                source: cached.source,
+                                field_type: fieldType
+                            };
+                            console.log(`💾 [SelectionCache] HIT: "${label}" → ${cached.value} (${cached.semanticType})`);
+                        }
                     } else {
                         cacheMisses.push(item);
                     }
