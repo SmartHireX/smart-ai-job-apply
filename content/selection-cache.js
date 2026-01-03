@@ -208,12 +208,12 @@ async function getCachedValue(field, label) {
         cached.lastUsed = Date.now();
         cached.useCount = (cached.useCount || 0) + 1;
 
-        // Learn this variant
-        if (!cached.variants) cached.variants = new Set();
-        cached.variants.add(normalizeFieldName(label));
+        // Learn this variant (variants is stored as Array, convert to Set temporarily)
+        if (!cached.variants) cached.variants = [];
+        const variantsSet = new Set(cached.variants);
+        variantsSet.add(normalizeFieldName(label));
+        cached.variants = Array.from(variantsSet);
 
-        // Convert Set to Array for storage
-        cached.variants = Array.from(cached.variants);
 
         await saveCache(cache);
 
