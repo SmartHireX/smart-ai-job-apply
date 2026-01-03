@@ -64,12 +64,27 @@ function calculateUsingJaccardSimilarity(str1, str2) {
     return intersection.size / union.size;
 }
 
-// Helper: Normalize keys for robust matching
+// Common stop words to filter out
+const STOP_WORDS = new Set([
+    'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'do', 'for',
+    'from', 'has', 'have', 'in', 'is', 'it', 'of', 'on', 'or',
+    'that', 'the', 'to', 'was', 'will', 'with', 'you', 'your',
+    'please', 'enter', 'provide', 'kindly', 'input'
+]);
+
+// Helper: Normalize keys for robust matching with sorted tokens
 function normalizeSmartMemoryKey(text) {
     if (!text) return '';
+
     return text.toLowerCase()
-        .replace(/[^\w\s]|_/g, ' ') // Replace punctuation with space
-        .replace(/\s+/g, ' ')       // Collapse spaces
-        .replace(/^(please\s+|enter\s+|provide\s+|kindly\s+|input\s+)/, '') // Remove command prefixes
-        .trim();
+        .replace(/[^\w\s]/g, ' ')     // Replace punctuation with space
+        .replace(/\s+/g, ' ')          // Collapse multiple spaces
+        .trim()
+        .split(' ')                    // Split into words
+        .filter(word =>
+            word.length > 0 &&         // Not empty
+            !STOP_WORDS.has(word)      // Not a stop word
+        )
+        .sort()                        // Sort alphabetically (order-independent!)
+        .join(' ');                    // Join back together
 }
