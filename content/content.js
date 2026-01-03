@@ -242,23 +242,46 @@ async function processPageFormLocal() {
                 const newCacheEntries = {};
                 const ALLOWED_CACHE_TYPES = new Set(['text', 'textarea', 'email', 'tel', 'url', 'search']);
 
+                console.log(`💾 Attempting to cache ${Object.keys(aiResult.mappings).length} Phase 2 fields...`);
                 Object.entries(aiResult.mappings).forEach(([selector, data]) => {
-                    if (data.value && String(data.value).length < 500) {
-                        const el = document.querySelector(selector);
-                        if (el && ALLOWED_CACHE_TYPES.has(el.type || 'text')) {
-                            const label = getFieldLabel(el);
-                            if (label && label.length > 2) {
-                                newCacheEntries[normalizeSmartMemoryKey(label)] = {
-                                    answer: data.value,
-                                    timestamp: Date.now()
-                                };
-                            }
-                        }
+                    if (!data.value || String(data.value).length >= 500) {
+                        console.log(`⏭️ Skipping cache (no value or too long): ${selector}`);
+                        return;
                     }
+
+                    const el = document.querySelector(selector);
+                    if (!el) {
+                        console.log(`⏭️ Skipping cache (element not found): ${selector}`);
+                        return;
+                    }
+
+                    // Get field type, default to 'text' if not specified
+                    const fieldType = (el.type || 'text').toLowerCase();
+
+                    if (!ALLOWED_CACHE_TYPES.has(fieldType)) {
+                        console.log(`⏭️ Skipping cache (type '${fieldType}' not allowed): ${selector}`);
+                        return;
+                    }
+
+                    const label = getFieldLabel(el);
+                    if (!label || label.length <= 2) {
+                        console.log(`⏭️ Skipping cache (invalid label '${label}'): ${selector}`);
+                        return;
+                    }
+
+                    const normalizedLabel = normalizeSmartMemoryKey(label);
+                    newCacheEntries[normalizedLabel] = {
+                        answer: data.value,
+                        timestamp: Date.now()
+                    };
+                    console.log(`✅ Cached: "${normalizedLabel}" => "${data.value}"`);
                 });
 
                 if (Object.keys(newCacheEntries).length > 0) {
+                    console.log(`💾 Saving ${Object.keys(newCacheEntries).length} entries to smart memory...`);
                     updateSmartMemoryCache(newCacheEntries);
+                } else {
+                    console.log(`⚠️ No Phase 2 fields were cached!`);
                 }
             } else {
                 const errorMsg = aiResult?.error || 'Unknown error';
