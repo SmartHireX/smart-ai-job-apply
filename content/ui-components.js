@@ -833,7 +833,7 @@ function showAccordionSidebar(allFields) {
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
                             <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
-                            <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>
+                            ${item.source !== 'selection_cache' ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>` : ''}
                         </div>
                     </div>
                 `).join('')}
