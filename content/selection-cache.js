@@ -75,7 +75,7 @@ const FIELD_PATTERNS = {
     disability: /disab(le|ility)|handicap|accommodation/i,
 
     // Experience & Skills
-    experience: /(years?|yrs?).*(experience|exp)|experience.*(years?|yrs?)|seniority/i,
+    experience: /\b(experience|yrs?|years?)\b.*\b(experience|yrs?|years?)\b|\bexperience\b|\bseniority\b/i,
     experience_level: /(experience|skill).*(level|tier)|level.*(experience|skill)|seniority/i,
 
     // Education
