@@ -369,22 +369,28 @@ function showAccordionSidebar(highConfidenceFields, lowConfidenceFields) {
                 <span>Form Review</span>
             </div>
             <div class="header-actions">
-                <button class="action-btn clear-highlights-btn" id="smarthirex-clear-highlights" data-tooltip="Remove visual highlights" title="Clear visual highlights">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M12 17v2M12 5v2M5 12H3M21 12h-2"/>
-                    </svg>
+                <button class="action-btn-text" id="smarthirex-clear-highlights" title="Clear visual highlights">
+                    💡 Remove Highlights
                 </button>
-                <button class="action-btn undo-btn" id="smarthirex-undo-fill" data-tooltip="Undo fill & Close" title="Undo form fill">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-                        <path d="M3 7v6h6M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/>
-                    </svg>
+                <button class="action-btn-text" id="smarthirex-undo-fill" title="Undo form fill">
+                    ↩️ Undo All
                 </button>
-                <button class="close-btn" id="smarthirex-sidebar-close" data-tooltip="Close sidebar" aria-label="Close Sidebar">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
+                <button class="close-btn-x" id="smarthirex-sidebar-close" aria-label="Close Sidebar">
+                    ✕
                 </button>
             </div>
+        </div>
+        
+        <div class="tab-navigation">
+            <button class="tab active" data-tab="app">
+                📄 App Fill <span class="tab-count">(0)</span>
+            </button>
+            <button class="tab" data-tab="cache">
+                🧠 Cache <span class="tab-count">(0)</span>
+            </button>
+            <button class="tab" data-tab="ai">
+                🤖 AI <span class="tab-count">(0)</span>
+            </button>
         </div>
         
         <div class="sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">

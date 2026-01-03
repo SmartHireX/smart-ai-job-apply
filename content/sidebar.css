@@ -207,31 +207,49 @@
 #smarthirex-accordion-sidebar .header-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 }
 
-#smarthirex-accordion-sidebar .action-btn {
+/* Text-based action buttons */
+#smarthirex-accordion-sidebar .action-btn-text {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    padding: 6px 12px;
+    border-radius: 6px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
     transition: all 0.2s;
+    white-space: nowrap;
 }
 
-#smarthirex-accordion-sidebar .action-btn:hover {
+#smarthirex-accordion-sidebar .action-btn-text:hover {
     background: rgba(255, 255, 255, 0.25);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-#smarthirex-accordion-sidebar .action-btn svg {
+/* Close button (X) */
+#smarthirex-accordion-sidebar .close-btn-x {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 300;
+    transition: all 0.2s;
+}
+
+#smarthirex-accordion-sidebar .close-btn-x:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
 }
 
 [data-tooltip] {
@@ -258,6 +276,44 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     z-index: 1000;
     border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Tab Navigation */
+#smarthirex-accordion-sidebar .tab-navigation {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+#smarthirex-accordion-sidebar .tab {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+#smarthirex-accordion-sidebar .tab.active {
+    background: white;
+    color: #0a66c2;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#smarthirex-accordion-sidebar .tab:hover:not(.active) {
+    background: rgba(10, 102, 194, 0.05);
+    color: #0a66c2;
+}
+
+#smarthirex-accordion-sidebar .tab-count {
+    opacity: 0.7;
+    font-size: 13px;
 }
 
 [data-tooltip]:hover::after {
