@@ -162,6 +162,20 @@ async function processPageFormLocal() {
             }
         }
 
+        // --- PHASE 1.8: LOCAL SEMANTIC MATCHER (NEW) ---
+        // Resolve structured fields (Radio/Checkbox/Select) using deterministic logic
+        // This runs BEFORE Phase 1 ends, so these are filled instantly.
+        if (unmapped.length > 0 && window.LocalMatcher) {
+            console.log('⚡ Phase 1.8: Running Local Semantic Matcher...');
+            const { defined: localMappings, remaining: finalUnmapped } = window.LocalMatcher.resolveFields(unmapped, resumeData);
+
+            if (Object.keys(localMappings).length > 0) {
+                console.log(`✅ [LocalMatcher] Resolved ${Object.keys(localMappings).length} fields without AI.`);
+                heuristicMappings = { ...heuristicMappings, ...localMappings };
+                unmapped = finalUnmapped;
+            }
+        }
+
         console.log(`⚡ Phase 1: ${Object.keys(heuristicMappings).length} fields mapped instantly.`);
 
         const hasPhase2 = unmapped.length > 0;

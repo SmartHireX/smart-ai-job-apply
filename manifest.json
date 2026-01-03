@@ -37,6 +37,7 @@
                 "utils/ai-client.js",
                 "utils/resume-manager.js",
                 "utils/form-analyzer.js",
+                "content/local-matcher.js",
                 "content/memory-utils.js",
                 "content/form-detection.js",
                 "content/visuals.js",
