@@ -440,6 +440,17 @@
     font-style: italic;
 }
 
+/* Manual tab field styling - red border for attention */
+#smarthirex-accordion-sidebar .tab-content[data-tab="manual"] .field-item {
+    border-left: 3px solid #ef4444;
+    background: rgba(239, 68, 68, 0.02);
+}
+
+#smarthirex-accordion-sidebar .tab-content[data-tab="manual"] .field-item:hover {
+    background: rgba(239, 68, 68, 0.05);
+    border-left-color: #dc2626;
+}
+
 #smarthirex-accordion-sidebar .recalculate-btn {
     padding: 6px 12px;
     background: rgba(10, 102, 194, 0.08);
