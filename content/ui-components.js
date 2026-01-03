@@ -268,25 +268,25 @@ async function showRegenerateModal(selector, label) {
     });
 }
 
-function showReopenTrigger(highFields, lowFields) {
-    // Remove existing if any
-    const existing = document.getElementById('smarthirex-reopen-trigger');
-    if (existing) existing.remove();
+function showReopenTrigger(allFields) {
+    // Remove any existing trigger first
+    const existingTrigger = document.getElementById('smarthirex-reopen-trigger');
+    if (existingTrigger) existingTrigger.remove();
 
+    // Create reopen button
     const trigger = document.createElement('div');
     trigger.id = 'smarthirex-reopen-trigger';
+    trigger.className = 'smarthirex-reopen-button';
     trigger.innerHTML = `
-        <div class="trigger-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-            </svg>
-        </div>
-        <span>Open Form Review</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+        <span>Form Review</span>
     `;
 
     trigger.addEventListener('click', () => {
-        showAccordionSidebar(highFields, lowFields);
         trigger.remove();
+        showAccordionSidebar(allFields);
     });
 
     document.body.appendChild(trigger);
@@ -419,14 +419,14 @@ function showAccordionSidebar(allFields) {
             <div class="tab-content" data-tab="cache" style="display: none;">
                 ${cacheFields.length > 0 ? `
                     <div class="tab-actions">
-                        <button class="recalculate-all-btn" data-tab="cache">Recalculate All (${cacheFields.length})</button>
+                        <button class="recalculate-all-btn" data-tab="cache" title="Regenerate all cached fields using AI with current job context">Recalculate All (${cacheFields.length})</button>
                     </div>
                 ` : ''}
                 ${cacheFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
                             <div class="field-label">${item.label}</div>
-                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}">🔄</button>
+                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" title="Regenerate this field using AI">🔄</button>
                         </div>
                     </div>
                 `).join('')}
@@ -437,14 +437,14 @@ function showAccordionSidebar(allFields) {
             <div class="tab-content" data-tab="ai" style="display: none;">
                 ${aiFields.length > 0 ? `
                     <div class="tab-actions">
-                        <button class="recalculate-all-btn" data-tab="ai">Recalculate All (${aiFields.length})</button>
+                        <button class="recalculate-all-btn" data-tab="ai" title="Regenerate all AI fields with fresh context and improved answers">Recalculate All (${aiFields.length})</button>
                     </div>
                 ` : ''}
                 ${aiFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
                             <div class="field-label">${item.label}</div>
-                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}">🔄</button>
+                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" title="Regenerate this field using AI">🔄</button>
                         </div>
                         <div class="field-confidence">⚡ ${Math.round(item.confidence * 100)}%</div>
                     </div>
@@ -488,7 +488,7 @@ function showAccordionSidebar(allFields) {
             if (sidebar) sidebar.remove();
 
             // Show the reopen trigger
-            showReopenTrigger(highConfidenceFields, lowConfidenceFields);
+            showReopenTrigger(allFields);
 
             document.querySelectorAll('.smarthirex-field-highlight').forEach(el => el.classList.remove('smarthirex-field-highlight'));
             hideConnectionBeam(); // Clean up beam
