@@ -236,22 +236,43 @@ async function processPageFormLocal() {
                             }
                             processedGroups.add(groupKey);
 
-                            // Build selector for the specific radio with the cached value
-                            const radioSelector = (element.name && cached.value)
-                                ? `input[type="radio"][name="${CSS.escape(element.name)}"][value="${CSS.escape(cached.value)}"]`
-                                : item.selector;
+                            // Find matching radio in group (Value Match OR Label Match)
+                            // This handles dynamic IDs (Hibob) where we cached the label 'Yes' instead of ID '12345'
+                            const allRadios = document.querySelectorAll(`input[type="radio"][name="${CSS.escape(element.name)}"]`);
+                            let matchedRadio = null;
 
-                            // Only add if selector is valid
-                            if (radioSelector && radioSelector.length > 10 && !radioSelector.includes('undefined')) {
+                            allRadios.forEach(radio => {
+                                const val = radio.value;
+                                if (val === cached.value) {
+                                    matchedRadio = radio;
+                                } else {
+                                    // Try label match
+                                    let radioLabel = '';
+                                    if (radio.labels && radio.labels.length > 0) radioLabel = radio.labels[0].innerText;
+                                    else if (radio.id) {
+                                        const l = document.querySelector(`label[for="${CSS.escape(radio.id)}"]`);
+                                        if (l) radioLabel = l.innerText;
+                                    }
+                                    if (!radioLabel && radio.closest('label')) radioLabel = radio.closest('label').innerText.replace(val, '');
+
+                                    if (radioLabel && String(radioLabel).trim().toLowerCase() === String(cached.value).trim().toLowerCase()) {
+                                        matchedRadio = radio;
+                                    }
+                                }
+                            });
+
+                            if (matchedRadio) {
+                                const radioSelector = matchedRadio.id
+                                    ? `#${CSS.escape(matchedRadio.id)}`
+                                    : `input[name="${CSS.escape(matchedRadio.name)}"][value="${CSS.escape(matchedRadio.value)}"]`;
+
                                 cacheHits[radioSelector] = {
-                                    value: cached.value,
+                                    value: matchedRadio.value, // Use actual ID so autofill works
                                     confidence: cached.confidence,
                                     source: cached.source,
                                     field_type: 'radio'
                                 };
                                 console.log(`💾 [SelectionCache] HIT: "${label}" → ${cached.value} (${cached.semanticType})`);
-                            } else {
-                                console.warn(`[SelectionCache] Skipping invalid radio selector: ${radioSelector}`);
                             }
                         } else {
                             // Select - single value (use item selector directly)

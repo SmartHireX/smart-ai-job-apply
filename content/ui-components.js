@@ -1228,6 +1228,23 @@ function captureFieldState(element) {
     };
 }
 
+// Helper to extract text from a specific option input
+function getOptionLabelText(input) {
+    if (input.labels && input.labels.length > 0) return input.labels[0].innerText.trim();
+    if (input.id) {
+        const label = document.querySelector(`label[for="${CSS.escape(input.id)}"]`);
+        if (label) return label.innerText.trim();
+    }
+    const parent = input.closest('label');
+    if (parent) {
+        const clone = parent.cloneNode(true);
+        const inputInClone = clone.querySelector('input');
+        if (inputInClone) inputInClone.remove();
+        return clone.innerText.trim();
+    }
+    return null;
+}
+
 function attachSelfCorrectionTrigger(element) {
     if (element.dataset.shLearningAttached) return;
     element.dataset.shLearningAttached = 'true';
@@ -1249,6 +1266,15 @@ function attachSelfCorrectionTrigger(element) {
             // For radio, only cache if checked
             if (!element.checked) return;
             newValue = element.value;
+
+            // Handle Dynamic Values (e.g., numeric IDs like '27794634')
+            // If value looks like an ID, prefer the visible label text (e.g., 'Yes')
+            const isDynamic = /^[0-9]+$/.test(newValue) || (newValue.length > 8 && /[0-9]/.test(newValue) && !newValue.includes(' '));
+            if (isDynamic) {
+                const textLabel = getOptionLabelText(element);
+                if (textLabel) newValue = textLabel;
+            }
+
         } else if (element.tagName === 'SELECT') {
             const selectedOption = element.options[element.selectedIndex];
             newValue = selectedOption ? selectedOption.value : element.value;
