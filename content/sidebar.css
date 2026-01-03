@@ -11,13 +11,14 @@
     max-height: 85vh;
     min-width: 280px;
     min-height: 150px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
     box-shadow:
-        0 10px 25px -5px rgba(0, 0, 0, 0.1),
-        0 8px 10px -6px rgba(0, 0, 0, 0.1),
-        0 0 0 1px rgba(0, 0, 0, 0.05);
+        0 24px 48px -12px rgba(0, 0, 0, 0.18),
+        0 0 0 1px rgba(255, 255, 255, 0.4) inset;
     z-index: 2147483647;
     font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
     overflow: hidden;
@@ -149,12 +150,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
+    padding: 18px 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    background: #0a66c2;
+    background: linear-gradient(135deg, #0a66c2 0%, #004182 100%);
     color: white;
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     cursor: grab;
 }
 
@@ -232,14 +233,37 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* Header Text Button (Undo All) */
+#smarthirex-accordion-sidebar .header-text-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+#smarthirex-accordion-sidebar .header-text-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 #smarthirex-accordion-sidebar .action-btn-icon svg {
     stroke: white;
     color: white;
     fill: none;
+    width: 18px;
+    height: 18px;
 }
 
 #smarthirex-accordion-sidebar .action-btn-icon svg path {
     stroke: white;
+    stroke-width: 2;
 }
 
 /* Close button (X) */
@@ -266,27 +290,37 @@
 
 [data-tooltip] {
     position: relative;
+    /* Ensure anchor */
 }
 
 [data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
-    bottom: 100%;
+    top: 100%;
     left: 50%;
-    transform: translateX(-50%) translateY(-8px);
-    background: #1e293b;
+    transform: translateX(-50%) translateY(8px);
+    background: rgba(15, 23, 42, 0.98);
+    /* Increased opacity for legibility */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 11px;
     font-weight: 500;
+    letter-spacing: 0.01em;
     white-space: nowrap;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: all 0.2s;
-    z-index: 10000;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2147483647;
+    /* Max Z-Index to overlay everything */
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.2),
+        0 8px 16px -2px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    margin-top: 8px;
 }
 
 [data-tooltip]:hover::after {
@@ -298,10 +332,10 @@
 /* Tab Navigation */
 #smarthirex-accordion-sidebar .tab-navigation {
     display: flex;
-    gap: 8px;
-    padding: 12px 16px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e5e7eb;
+    gap: 4px;
+    padding: 8px 12px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
@@ -327,26 +361,27 @@
 }
 
 #smarthirex-accordion-sidebar .tab {
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 6px 14px;
+    border-radius: 6px;
     background: transparent;
     border: none;
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    color: #6b7280;
-    transition: all 0.2s;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    transition: all 0.2s ease;
     white-space: nowrap;
 }
 
 #smarthirex-accordion-sidebar .tab.active {
     background: white;
     color: #0a66c2;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 #smarthirex-accordion-sidebar .tab:hover:not(.active) {
-    background: rgba(10, 102, 194, 0.05);
+    background: rgba(255, 255, 255, 0.5);
     color: #0a66c2;
 }
 
@@ -362,44 +397,29 @@
 
 #smarthirex-accordion-sidebar .tab-actions {
     padding: 12px 16px;
-    background: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
     display: flex;
     justify-content: flex-end;
 }
 
-#smarthirex-accordion-sidebar .recalculate-all-btn {
-    padding: 8px 16px;
-    background: #0a66c2;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
 
-#smarthirex-accordion-sidebar .recalculate-all-btn:hover {
-    background: #084d92;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(10, 102, 194, 0.3);
-}
 
 /* Field Items - Premium Design */
 #smarthirex-accordion-sidebar .field-item {
-    padding: 18px 20px;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
     background: white;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     cursor: pointer;
 }
 
 #smarthirex-accordion-sidebar .field-item:hover {
-    background: linear-gradient(to right, #f8f9fa, #ffffff);
-    transform: translateX(4px);
-    box-shadow: -2px 0 0 #0a66c2, 0 1px 3px rgba(0, 0, 0, 0.05);
+    background: #f8fafc;
+    border-left: 3px solid #0a66c2;
+    padding-left: 17px;
+    /* Compensate for border */
 }
 
 #smarthirex-accordion-sidebar .field-item:last-child {
@@ -422,53 +442,37 @@
 }
 
 #smarthirex-accordion-sidebar .field-confidence {
-    font-size: 16px;
-    font-weight: 700;
-    color: #10b981;
-    margin-top: 6px;
-    display: inline-block;
-    padding: 4px 8px;
-    background: rgba(16, 185, 129, 0.1);
-    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #15803d;
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: #f0fdf4;
+    border: 1px solid #dcfce7;
+    border-radius: 12px;
 }
 
 #smarthirex-accordion-sidebar .field-note {
-    font-size: 12px;
+    font-size: 11px;
     color: #f59e0b;
     margin-top: 6px;
     font-weight: 500;
-    font-style: italic;
 }
 
-/* Manual tab field styling - red border for attention */
+/* Manual tab field styling - Attention State */
 #smarthirex-accordion-sidebar .tab-content[data-tab="manual"] .field-item {
-    border-left: 3px solid #ef4444;
-    background: rgba(239, 68, 68, 0.02);
+    border-left: 3px solid #f43f5e;
+    background: #fff1f2;
 }
 
 #smarthirex-accordion-sidebar .tab-content[data-tab="manual"] .field-item:hover {
-    background: rgba(239, 68, 68, 0.05);
-    border-left-color: #dc2626;
+    background: #ffe4e6;
+    border-left-color: #e11d48;
 }
 
-#smarthirex-accordion-sidebar .recalculate-btn {
-    padding: 6px 12px;
-    background: rgba(10, 102, 194, 0.08);
-    border: 1px solid rgba(10, 102, 194, 0.2);
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-}
 
-#smarthirex-accordion-sidebar .recalculate-btn:hover {
-    background: #0a66c2;
-    color: white;
-    border-color: #0a66c2;
-    transform: scale(1.05);
-    box-shadow: 0 2px 6px rgba(10, 102, 194, 0.25);
-}
 
 #smarthirex-accordion-sidebar .empty-state {
     padding: 60px 24px;
@@ -489,28 +493,46 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
+#smarthirex-accordion-sidebar .recalculate-btn {
+    margin-left: auto !important;
+    /* Force to far right */
+    padding: 6px 12px;
+    background: rgba(10, 102, 194, 0.05);
+    color: #0a66c2;
+    border: 1px solid rgba(10, 102, 194, 0.2);
+    border-radius: 6px;
+    font-size: 12px;
+}
+
 #smarthirex-accordion-sidebar .recalculate-all-btn {
-    padding: 9px 18px;
-    background: linear-gradient(to bottom, #0a66c2, #084d92);
-    color: white;
-    border: none;
-    border-radius: 7px;
-    font-size: 13px;
+    padding: 6px 12px;
+    background: rgba(10, 102, 194, 0.05);
+    color: #0a66c2;
+    border: 1px solid rgba(10, 102, 194, 0.2);
+    border-radius: 6px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.25s;
-    box-shadow: 0 1px 3px rgba(10, 102, 194, 0.2);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    /* Anchor for tooltip */
+    z-index: 20;
+    /* Lift button slightly */
 }
 
 #smarthirex-accordion-sidebar .recalculate-all-btn:hover {
-    background: linear-gradient(to bottom, #084d92, #063a6f);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(10, 102, 194, 0.35);
+    background: #0a66c2;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(10, 102, 194, 0.2);
 }
 
 #smarthirex-accordion-sidebar .recalculate-all-btn:active {
     transform: translateY(0);
-    box-shadow: 0 1px 3px rgba(10, 102, 194, 0.2);
+    box-shadow: none;
 }
 
 #smarthirex-accordion-sidebar .recalculate-all-btn:disabled {
@@ -528,53 +550,67 @@
 [data-tooltip]::before {
     content: '';
     position: absolute;
-    bottom: -10px;
+    top: 100%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateY(4px);
     border-width: 5px;
     border-style: solid;
-    border-color: transparent transparent #1e293b transparent;
+    border-color: transparent transparent rgba(15, 23, 42, 0.95) transparent;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.1s;
+    transition: opacity 0.2s;
     z-index: 1000;
+    pointer-events: none;
 }
 
 [data-tooltip]:hover::before {
     opacity: 1;
     visibility: visible;
+    transform: translateX(-50%) translateY(0);
 }
 
 #smarthirex-reopen-trigger {
     position: fixed;
     bottom: 24px;
     left: 24px;
-    height: 44px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-left: 4px solid #0073b1;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-left: 4px solid #0a66c2;
     border-radius: 12px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 2px 4px rgba(0, 0, 0, 0.05),
+        0 0 0 1px rgba(255, 255, 255, 0.4) inset;
     display: flex;
     align-items: center;
-    padding: 0 16px;
-    gap: 10px;
+    padding: 0 20px 0 16px;
+    /* Adjusted padding for border */
+    gap: 12px;
     cursor: pointer;
-    z-index: 2147483647;
-    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    z-index: 2147483646;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    color: #0a66c2;
     font-weight: 600;
     font-size: 14px;
-    color: #1e293b;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     animation: popIn 0.3s ease-out;
     user-select: none;
 }
 
 #smarthirex-reopen-trigger:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 12px 28px -5px rgba(0, 0, 0, 0.15);
-    background: #f8fafc;
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.15),
+        0 4px 8px rgba(10, 102, 194, 0.05);
+    border-color: rgba(255, 255, 255, 0.8);
+    border-left-color: #004182;
+    background: rgba(255, 255, 255, 0.95);
 }
+
+
 
 #smarthirex-reopen-trigger .trigger-icon {
     display: flex;
@@ -582,9 +618,25 @@
     justify-content: center;
     width: 24px;
     height: 24px;
-    background: #eef2ff;
-    color: #0073b1;
-    border-radius: 6px;
+    color: #0a66c2;
+    border-radius: 50%;
+    background: rgba(10, 102, 194, 0.1);
+    transition: all 0.2s;
+}
+
+#smarthirex-reopen-trigger .trigger-icon svg {
+    color: #0a66c2;
+    stroke: #0a66c2;
+}
+
+#smarthirex-reopen-trigger:hover .trigger-icon svg {
+    color: white;
+    stroke: white;
+}
+
+#smarthirex-reopen-trigger:hover .trigger-icon {
+    background: #0a66c2;
+    color: white;
 }
 
 #smarthirex-accordion-sidebar .accordion-section {
@@ -755,9 +807,6 @@
 
 .smarthirex-field-highlight {
     outline: none !important;
-    border: 2px solid #f59e0b !important;
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2) !important;
-    animation: fieldPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
 }
 
 .smarthirex-filled {
@@ -765,40 +814,10 @@
     outline: none !important;
 }
 
-/* High Confidence - Deep Green */
-.smarthirex-filled-high {
-    border-color: #10b981 !important;
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3) !important;
-}
-
-/* Medium Confidence - Blue */
-.smarthirex-filled-medium {
-    border-color: #0a66c2 !important;
-    box-shadow: 0 0 0 2px rgba(10, 102, 194, 0.3) !important;
-}
-
-/* Low Confidence - Orange/Red */
-.smarthirex-filled-low {
-    border-color: #f59e0b !important;
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3) !important;
-}
-
 .smarthirex-spotlight {
     position: relative;
     z-index: 10000;
     transition: all 0.2s ease;
-}
-
-@keyframes fieldPulse {
-
-    0%,
-    100% {
-        outline-color: rgba(245, 158, 11, 1);
-    }
-
-    50% {
-        outline-color: rgba(245, 158, 11, 0.4);
-    }
 }
 
 @keyframes pulse {
@@ -814,11 +833,7 @@
 }
 
 .smarthirex-typing {
-    background: linear-gradient(90deg, transparent 0%, rgba(10, 102, 194, 0.1) 25%, rgba(10, 102, 194, 0.25) 50%, rgba(10, 102, 194, 0.1) 75%, transparent 100%) !important;
-    background-size: 200% 100% !important;
-    animation: magicalShimmer 1s infinite linear !important;
-    border-color: #0a66c2 !important;
-    box-shadow: 0 0 0 4px rgba(10, 102, 194, 0.15), 0 0 15px rgba(10, 102, 194, 0.2) !important;
+    background: transparent !important;
     transition: all 0.2s ease !important;
 }
 
@@ -1163,4 +1178,153 @@
     background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
     color: white;
     box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* Undo Confirmation Modal */
+#smarthirex-undo-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 2147483648;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    animation: fadeIn 0.2s forwards;
+}
+
+#smarthirex-undo-modal {
+    background: white;
+    width: 90%;
+    max-width: 340px;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    transform: scale(0.95);
+    animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+}
+
+#smarthirex-undo-modal h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+#smarthirex-undo-modal p {
+    margin: 0 0 24px 0;
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+#smarthirex-undo-modal .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+#smarthirex-undo-modal .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    flex: 1;
+}
+
+#smarthirex-undo-modal .btn-cancel {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+#smarthirex-undo-modal .btn-cancel:hover {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+#smarthirex-undo-modal .btn-confirm {
+    background: #dc2626;
+    color: white;
+    box-shadow: 0 1px 2px rgba(220, 38, 38, 0.1);
+}
+
+#smarthirex-undo-modal .btn-confirm:hover {
+    background: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.25);
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleUp {
+    to {
+        transform: scale(1);
+    }
+}
+
+/* Right-aligned tooltips for Regenerate buttons */
+#smarthirex-accordion-sidebar .recalculate-all-btn[data-tooltip]::after,
+#smarthirex-accordion-sidebar .recalculate-btn[data-tooltip]::after {
+    left: auto;
+    right: 0;
+    transform: translateY(8px);
+    width: max-content;
+    max-width: 200px;
+    white-space: normal;
+    text-align: right;
+}
+
+#smarthirex-accordion-sidebar .recalculate-all-btn[data-tooltip]::before,
+#smarthirex-accordion-sidebar .recalculate-btn[data-tooltip]::before {
+    left: auto;
+    right: 12px;
+    transform: translateY(4px);
+}
+
+/* Ensure individual regenerate button has proper spacing */
+#smarthirex-accordion-sidebar .recalculate-btn {
+    margin-left: auto !important;
+    /* Force to far right */
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0a66c2;
+    border-radius: 6px;
+    background: transparent;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+#smarthirex-accordion-sidebar .field-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#smarthirex-accordion-sidebar .field-label {
+    flex: 1;
+    min-width: 0;
+    /* Allow text truncate if needed */
+    margin-right: 8px;
+}
+
+#smarthirex-accordion-sidebar .recalculate-btn:hover {
+    background: rgba(10, 102, 194, 0.1);
+    color: #004182;
 }

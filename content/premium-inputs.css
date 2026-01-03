@@ -84,7 +84,6 @@
 .premium-date:focus,
 .premium-number:focus,
 .premium-textarea:focus {
-    border-color: #0a66c2 !important;
+    /* No focus styles */
     outline: none !important;
-    box-shadow: 0 0 0 1px #0a66c2 !important;
 }

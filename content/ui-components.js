@@ -96,7 +96,7 @@ function showSuccessToast(filled, review) {
             <span style="font-size: 12px; color: #94a3b8;">${filled} fields matched, ${review} need review</span>
         </div>
         <div style="display: flex; gap: 8px; margin-left: 8px;">
-            <button id="smarthirex-toast-clear-highlights" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Clear Highlights</button>
+            <!-- Removed Clear Highlights Button -->
             <button id="smarthirex-toast-undo" style="background: #ef4444; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Undo</button>
         </div>
     `;
@@ -109,10 +109,13 @@ function showSuccessToast(filled, review) {
         toast.remove();
     });
 
+    // Clear highlight listener removed
+    /*
     toast.querySelector('#smarthirex-toast-clear-highlights').addEventListener('click', () => {
         clearAllFieldHighlights();
         toast.remove();
     });
+    */
 
     setTimeout(() => {
         if (toast.parentElement) {
@@ -121,6 +124,46 @@ function showSuccessToast(filled, review) {
             setTimeout(() => toast.remove(), 400);
         }
     }, 6000);
+}
+
+function showUndoToast() {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        color: #b91c1c; padding: 12px 24px; border-radius: 12px;
+        box-shadow: 
+            0 4px 6px -1px rgba(220, 38, 38, 0.05), 
+            0 12px 20px -4px rgba(220, 38, 38, 0.1),
+            0 0 0 1px rgba(220, 38, 38, 0.1);
+        z-index: 2147483647; display: flex; align-items: center; gap: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; 
+        font-weight: 600; font-size: 14px; letter-spacing: -0.01em;
+        animation: slideDownFade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        user-select: none;
+    `;
+
+    toast.innerHTML = `
+        <div style="background: rgba(254, 226, 226, 0.6); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6" /><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+            </svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="line-height: 1;">Form Cleared</span>
+            <span style="font-size: 11px; font-weight: 500; opacity: 0.8;">Action completed successfully</span>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, -10px) scale(0.98)';
+        toast.style.transition = 'all 0.3s ease-in';
+        setTimeout(() => toast.remove(), 400);
+    }, 3000);
 }
 
 function showErrorToast(message) {
@@ -278,9 +321,11 @@ function showReopenTrigger(allFields) {
     trigger.id = 'smarthirex-reopen-trigger';
     trigger.className = 'smarthirex-reopen-button';
     trigger.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-        </svg>
+        <div class="trigger-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a66c2" stroke-width="2.5">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+        </div>
         <span>Form Review</span>
     `;
 
@@ -373,15 +418,9 @@ function showAccordionSidebar(allFields) {
                 <span>Form Review</span>
             </div>
             <div class="header-actions">
-                <button class="action-btn-icon" id="smarthirex-clear-highlights" data-tooltip="Remove Highlights" title="Clear visual highlights">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M12 17v2M12 5v2M5 12H3M21 12h-2"/>
-                    </svg>
-                </button>
-                <button class="action-btn-icon" id="smarthirex-undo-fill" data-tooltip="Undo All" title="Undo form fill">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-                        <path d="M3 7v6h6M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/>
-                    </svg>
+                <!-- Removed Clear Highlights Button -->
+                <button class="header-text-btn" id="smarthirex-undo-fill" data-tooltip="Undo all the filled field">
+                    Undo all
                 </button>
                 <button class="close-btn-x" id="smarthirex-sidebar-close" aria-label="Close Sidebar">
                     ✕
@@ -419,7 +458,10 @@ function showAccordionSidebar(allFields) {
             <div class="tab-content" data-tab="cache" style="display: none;">
                 ${cacheFields.length > 0 ? `
                     <div class="tab-actions">
-                        <button class="recalculate-all-btn" data-tab="cache" data-tooltip="Regenerate all cached fields using AI">Recalculate All (${cacheFields.length})</button>
+                        <button class="recalculate-all-btn" data-tab="cache" data-tooltip="Regenerate all cached fields using AI">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+                            Regenerate All (${cacheFields.length})
+                        </button>
                     </div>
                 ` : ''}
                 ${cacheFields.map(item => `
@@ -437,14 +479,19 @@ function showAccordionSidebar(allFields) {
             <div class="tab-content" data-tab="ai" style="display: none;">
                 ${aiFields.length > 0 ? `
                     <div class="tab-actions">
-                        <button class="recalculate-all-btn" data-tab="ai" data-tooltip="Regenerate all AI fields with fresh context">Recalculate All (${aiFields.length})</button>
+                        <button class="recalculate-all-btn" data-tab="ai" data-tooltip="Regenerate all AI fields with fresh context">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+                            Regenerate All (${aiFields.length})
+                        </button>
                     </div>
                 ` : ''}
                 ${aiFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
                             <div class="field-label">${item.label}</div>
-                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>
+                            <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+                            </button>
                         </div>
                         <div class="field-confidence">⚡ ${Math.round(item.confidence * 100)}%</div>
                     </div>
@@ -495,21 +542,55 @@ function showAccordionSidebar(allFields) {
         });
     }
 
-    // Clear Highlights button
+    // Clear Highlights button removed
+    /*
     const clearHighlightsBtn = panel.querySelector('#smarthirex-clear-highlights');
     if (clearHighlightsBtn) {
         clearHighlightsBtn.addEventListener('click', () => {
             clearAllFieldHighlights();
         });
     }
+    */
 
     // Undo Fill button
     const undoFillBtn = panel.querySelector('#smarthirex-undo-fill');
     if (undoFillBtn) {
-        undoFillBtn.addEventListener('click', async () => {
-            await undoFormFill();
-            const sidebar = document.getElementById('smarthirex-accordion-sidebar');
-            if (sidebar) sidebar.remove();
+        undoFillBtn.addEventListener('click', () => {
+            // Create and append modal
+            const overlay = document.createElement('div');
+            overlay.id = 'smarthirex-undo-modal-overlay';
+            overlay.innerHTML = `
+                <div id="smarthirex-undo-modal" role="dialog" aria-modal="true">
+                    <h3>Confirm Undo</h3>
+                    <p>Are you sure you want to undo all filled fields? This action cannot be reversed.</p>
+                    <div class="modal-actions">
+                        <button class="btn btn-cancel" id="smarthirex-modal-cancel">Cancel</button>
+                        <button class="btn btn-confirm" id="smarthirex-modal-confirm">Yes, Undo All</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            // Close modal helper
+            const close = () => {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 200);
+            };
+
+            // Event listeners
+            overlay.querySelector('#smarthirex-modal-cancel').addEventListener('click', close);
+
+            overlay.querySelector('#smarthirex-modal-confirm').addEventListener('click', async () => {
+                close();
+                await undoFormFill();
+                const sidebar = document.getElementById('smarthirex-accordion-sidebar');
+                if (sidebar) sidebar.remove();
+            });
+
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) close();
+            });
         });
     }
 

@@ -414,7 +414,7 @@ function undoFormFill() {
     });
 
     activeFormUndoHistory = [];
-    showSuccessToast('Undo complete', 0);
+    showUndoToast();
     return { success: true };
 }
 

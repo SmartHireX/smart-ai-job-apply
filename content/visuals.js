@@ -31,7 +31,7 @@ function highlightField(element, confidence = 1.0) {
     // Add subtle pulse on entry
     element.style.animation = 'none';
     element.offsetHeight; // trigger reflow
-    element.style.animation = 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1)';
+    // element.style.animation = 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1)'; // Disabled pulse animation
 }
 
 function clearAllFieldHighlights() {

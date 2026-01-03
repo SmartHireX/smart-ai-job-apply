@@ -1,28 +1,26 @@
 /* Highlight styles for filled fields - Elite Blue */
 .smarthirex-filled {
     animation: smarthirex-pulse 0.6s ease-in-out;
-    border: 2px solid #0a66c2 !important;
-    box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.2) !important;
+    padding: inherit;
 }
 
 @keyframes smarthirex-pulse {
     0% {
-        box-shadow: 0 0 0 0 rgba(10, 102, 194, 0.4);
+        transform: scale(1);
     }
 
     50% {
-        box-shadow: 0 0 0 8px rgba(10, 102, 194, 0);
+        transform: scale(1.02);
     }
 
     100% {
-        box-shadow: 0 0 0 0 rgba(10, 102, 194, 0);
+        transform: scale(1);
     }
 }
 
-/* Ripple effect - Elite Blue */
+/* Ripple effect */
 .smarthirex-ripple {
     pointer-events: none;
-    border: 2px solid #0a66c2;
     border-radius: 4px;
     animation: smarthirex-ripple 0.8s ease-out;
     z-index: 999999;
@@ -44,61 +42,31 @@
 .smarthirex-submit {
     animation: smarthirex-submit-pulse 2s infinite !important;
     position: relative !important;
-    border: 2px solid #0a66c2 !important;
 }
 
 @keyframes smarthirex-submit-pulse {
 
     0%,
     100% {
-        box-shadow: 0 0 0 0 rgba(10, 102, 194, 0.4),
-            0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        transform: scale(1);
     }
 
     50% {
-        box-shadow: 0 0 0 6px rgba(10, 102, 194, 0),
-            0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        transform: scale(1.02);
     }
 }
 
 .smarthirex-submit::after {
-    content: '← Submit Application';
-    position: absolute;
-    right: -160px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: #0a66c2;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    z-index: 999999;
+    display: none;
 }
 
-/* Handle RTL and different positions */
-@media (max-width: 768px) {
-    .smarthirex-submit::after {
-        right: auto;
-        left: 50%;
-        top: -36px;
-        transform: translateX(-50%);
-        content: '↓ Submit Application';
-    }
-}
-
-/* Ghost Typer Active State - Elite Style */
+/* Ghost Typer Active State */
 .smarthirex-typing {
     transition: all 0.1s ease;
-    border-color: #0a66c2 !important;
-    box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.15) !important;
-    background-color: rgba(10, 102, 194, 0.05) !important;
+    background-color: transparent !important;
 }
 
 .smarthirex-typing-cursor {
-    border-right: 2px solid #0a66c2;
     animation: smarthirex-blink 0.7s step-end infinite;
 }
 
