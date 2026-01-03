@@ -201,7 +201,7 @@ async function getCachedValue(field, label) {
     const semanticType = classifyFieldType(signature);
 
     if (!semanticType) {
-        console.log('[SelectionCache] No semantic type match for:', label);
+        // console.log('[SelectionCache] No semantic type match for:', label);
         return null;
     }
 
@@ -209,6 +209,15 @@ async function getCachedValue(field, label) {
     const cached = cache[semanticType];
 
     if (cached) {
+        // VALIDATION: Check if cached value exists in current options
+        if (field.tagName.toLowerCase() === 'select' || (field.getAttribute('role') === 'listbox')) {
+            const isValid = validateOption(field, cached.value);
+            if (!isValid) {
+                console.warn(`[SelectionCache] ⚠️ Cached value "${cached.value}" not found in current options for "${label}". Cache Miss forced.`);
+                return null;
+            }
+        }
+
         console.log(`[SelectionCache] ✅ Cache HIT for "${label}" → type: ${semanticType}, value: ${cached.value}`);
 
         // Update usage stats
@@ -234,6 +243,48 @@ async function getCachedValue(field, label) {
 
     console.log(`[SelectionCache] ❌ Cache MISS for "${label}" (type: ${semanticType})`);
     return null;
+}
+
+/**
+ * Validate if a value exists in a select field's options
+ * @param {HTMLElement} field - The select element
+ * @param {string} targetValue - The value to check
+ * @returns {boolean} True if valid option exists
+ */
+function validateOption(field, targetValue) {
+    if (!targetValue) return false;
+
+    // 1. Get all options
+    // Handle standard <select>
+    let options = [];
+    if (field.options) {
+        options = Array.from(field.options).map(o => ({ text: o.text, value: o.value }));
+    }
+    // Handle ARIA listboxes (if possible, though usually this runs on native select)
+    // For now assume native select validation or standard passed options
+
+    if (options.length === 0) return true; // If no options found, can't validate, assume true (safe fallback) or false (strict)? Safe fallback for now.
+
+    const targetLower = targetValue.toLowerCase().trim();
+
+    // 2. Check for Exact or Fuzzy Match
+    return options.some(opt => {
+        const val = (opt.value || '').toLowerCase().trim();
+        const text = (opt.text || '').toLowerCase().trim();
+
+        // Exact Value Match
+        if (val === targetLower) return true;
+
+        // Exact Text Match
+        if (text === targetLower) return true;
+
+        // Fuzzy / Substring Match (e.g. "USA" vs "United States")
+        // Check if target is contained in option text or vice versa
+        if (val.includes(targetLower) || targetLower.includes(val)) return true;
+        if (text.includes(targetLower) || targetLower.includes(text)) return true;
+
+        return false;
+    });
 }
 
 /**

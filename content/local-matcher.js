@@ -272,6 +272,33 @@ const LocalMatcher = {
         return null;
     },
 
+    // --- DATE NORMALIZATION ---
+
+    /**
+     * Normalize a date value to the target field format
+     * @param {string} dateStr - Input date string
+     * @param {string} targetType - 'date' (ISO) or 'text' (US/Locale)
+     * @returns {string|null}
+     */
+    normalizeDate(dateStr, targetType = 'date') {
+        if (!dateStr) return null;
+
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return null;
+
+        // ISO Format (YYYY-MM-DD) - Required for <input type="date">
+        if (targetType === 'date') {
+            return d.toISOString().split('T')[0];
+        }
+
+        // US Format (MM/DD/YYYY) - Common for text fields
+        // We could make this locale-aware if needed later
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${mm}/${dd}/${yyyy}`;
+    },
+
     // --- GROUP MATCHERS ---
 
     matchVisaGroup(group, facts, context) {
@@ -291,19 +318,12 @@ const LocalMatcher = {
             console.log(`[LocalMatcher] Visa Target -> "${targetAnswer}" (sponsorship: ${facts.sponsorshipRequired})`);
 
             const match = group.find(opt => {
-                const val = (opt.value || '').toLowerCase();
-                const lbl = (opt.label || '').toLowerCase();
+                const text = (opt.label + ' ' + (opt.value || '')).toLowerCase();
 
-                // Strict Value Checks
-                if (targetAnswer === 'yes') {
-                    if (val === 'yes' || val === 'true' || val === 'on') return true;
-                    if (/\byes\b/.test(lbl)) return true;
-                }
-
-                if (targetAnswer === 'no') {
-                    if (val === 'no' || val === 'false' || val === 'off') return true;
-                    if (/\bno\b/.test(lbl)) return true;
-                }
+                // Use Synonym Checker for robustness
+                // Check if Option matches "Yes" (if target is yes) or "No" (if target is no)
+                if (targetAnswer === 'yes') return this.checkSynonyms(text, 'yes') || this.checkSynonyms(text, 'true');
+                if (targetAnswer === 'no') return this.checkSynonyms(text, 'no') || this.checkSynonyms(text, 'false');
 
                 return false;
             });
@@ -326,10 +346,9 @@ const LocalMatcher = {
 
         if (targetAnswer) {
             const match = group.find(opt => {
-                const val = (opt.value || '').toLowerCase();
-                const lbl = (opt.label || '').toLowerCase();
-                if (targetAnswer === 'yes') return val === 'true' || val === 'yes' || val === 'on' || lbl.includes('yes');
-                if (targetAnswer === 'no') return val === 'false' || val === 'no' || val === 'off' || lbl.includes('no');
+                const text = (opt.label + ' ' + (opt.value || '')).toLowerCase();
+                if (targetAnswer === 'yes') return this.checkSynonyms(text, 'yes');
+                if (targetAnswer === 'no') return this.checkSynonyms(text, 'no');
                 return false;
             });
             return match ? match.value : null;
@@ -415,14 +434,60 @@ const LocalMatcher = {
         return null;
     },
 
+    // --- SYNONYMS DICTIONARY ---
+    SYNONYMS: {
+        'male': ['man', 'cis-male', 'male', 'boy'],
+        'female': ['woman', 'cis-female', 'female', 'girl'],
+        'white': ['caucasian', 'european', 'white', 'non-hispanic'],
+        'hispanic': ['latino', 'latinx', 'spanish'],
+        'black': ['african', 'african american'],
+        'asian': ['indian', 'chinese', 'japanese', 'korean', 'vietnamese', 'filipino', 'south asian', 'east asian'],
+        'indian': ['asian', 'south asian'],
+        'veteran': ['served', 'military', 'armed forces'],
+        'disability': ['disabled', 'impairment', 'condition', 'handicap']
+    },
+
+    /**
+     * Check if text matches a value or its synonyms
+     * @param {string} text - The form option text
+     * @param {string} userVal - The user's profile value
+     * @returns {boolean}
+     */
+    checkSynonyms(text, userVal) {
+        if (!text || !userVal) return false;
+        text = text.toLowerCase();
+        userVal = userVal.toLowerCase();
+
+        // 1. Direct Match
+        if (text.includes(userVal) || userVal.includes(text)) return true;
+
+        // 2. Look up userVal in synonyms
+        // Find the canonical key for the userVal
+        let canonicalKey = null;
+        for (const [key, synonyms] of Object.entries(this.SYNONYMS)) {
+            if (key === userVal || synonyms.includes(userVal)) {
+                canonicalKey = key;
+                break;
+            }
+        }
+
+        if (canonicalKey) {
+            // Check if text matches any synonym of the canonical key
+            const synonyms = this.SYNONYMS[canonicalKey];
+            return synonyms.some(syn => text.includes(syn));
+        }
+
+        return false;
+    },
+
     matchDemographics(field, facts, key) {
         let userVal = (facts.demographics[key] || '').toLowerCase();
         if (!userVal) return null;
 
         const text = (field.label + ' ' + (field.value || '')).toLowerCase();
 
-        // Direct match
-        if (text.includes(userVal)) return field.value;
+        // Enhanced Synonym Match
+        if (this.checkSynonyms(text, userVal)) return field.value;
 
         return null;
     },
