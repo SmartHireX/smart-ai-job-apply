@@ -227,8 +227,19 @@ function extractFieldsFromDOM(source) {
     inputs.forEach(input => {
         // Generate a unique selector
         let selector = '';
-        if (input.id) selector = `#${CSS.escape(input.id)}`;
-        else if (input.name) selector = `[name="${CSS.escape(input.name)}"]`;
+        const safeName = input.name ? CSS.escape(input.name) : '';
+        const safeId = input.id ? CSS.escape(input.id) : '';
+        const safeValue = CSS.escape(input.value || '');
+
+        if (input.id) selector = `#${safeId}`;
+        else if (input.name) {
+            if ((input.type === 'radio' || input.type === 'checkbox') && input.value) {
+                // For radio/checkbox groups, we need a unique selector for each option
+                selector = `input[name="${safeName}"][value="${safeValue}"]`;
+            } else {
+                selector = `[name="${safeName}"]`;
+            }
+        }
         else {
             // Fallback: This is tricky for detached DOM. 
             // Ideally we rely on IDs/Names. 
@@ -239,7 +250,7 @@ function extractFieldsFromDOM(source) {
         let label = '';
         // 1. Label tag
         if (input.id) {
-            const labelTag = root.querySelector(`label[for="${CSS.escape(input.id)}"]`);
+            const labelTag = root.querySelector(`label[for="${safeId}"]`);
             if (labelTag) label = labelTag.innerText;
         }
         // 2. Aria Label
@@ -257,6 +268,7 @@ function extractFieldsFromDOM(source) {
             label: label.trim(),
             name: input.name || '',
             id: input.id || '',
+            value: input.value || '', // Capture current/default value (Crucial for Radios)
             selector: selector,
             options: input.tagName === 'SELECT' ? Array.from(input.options).map(o => o.value) : []
         });

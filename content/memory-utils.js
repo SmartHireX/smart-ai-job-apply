@@ -45,7 +45,7 @@ function calculateUsingJaccardSimilarity(str1, str2) {
     if (!str1 || !str2) return 0;
 
     // Tokenize: Lowercase -> Remove non-alphanumeric -> Split -> Filter empty
-    const tokenize = (s) => s.toLowerCase()
+    const tokenize = (s) => String(s).toLowerCase()
         .replace(/[^a-z0-9\s]/g, '') // Keep spaces to split
         .split(/\s+/)
         .filter(w => w.length > 2); // Ignore 'a', 'is' (stop words simple filter)

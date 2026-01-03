@@ -196,10 +196,13 @@ function getFieldLabel(element) {
 
 function getElementSelector(element) {
     if (element.id) {
-        return `#${element.id}`;
+        return `#${CSS.escape(element.id)}`;
     }
     if (element.name) {
-        return `input[name="${element.name}"]`;
+        if ((element.type === 'radio' || element.type === 'checkbox') && element.value) {
+            return `input[name="${CSS.escape(element.name)}"][value="${CSS.escape(element.value)}"]`;
+        }
+        return `input[name="${CSS.escape(element.name)}"]`;
     }
     // Fallback: use tag + nth-of-type
     const parent = element.parentElement;

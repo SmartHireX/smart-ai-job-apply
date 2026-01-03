@@ -358,7 +358,7 @@ function showAccordionSidebar(allFields) {
         const label = item.fieldData?.label || getFieldLabel(element);
         const fieldType = item.fieldData?.field_type || element.type || 'text';
         const isFileUpload = fieldType === 'file' || element.type === 'file';
-        const isEmpty = !item.value || item.value.trim() === '';
+        const isEmpty = !item.value || String(item.value).trim() === '';
 
         const fieldInfo = {
             field: element,

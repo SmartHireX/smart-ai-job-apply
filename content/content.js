@@ -197,6 +197,7 @@ async function processPageFormLocal() {
                 while (attempt < maxRetries) {
                     try {
                         const result = await new Promise(resolve => {
+                            console.log('🤖 AI INPUT PAYLOAD:', { prompt, sys, opts });
                             chrome.runtime.sendMessage({
                                 type: 'AI_REQUEST',
                                 prompt, systemInstruction: sys, options: opts
