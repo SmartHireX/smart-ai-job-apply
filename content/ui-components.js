@@ -440,7 +440,9 @@ function showAccordionSidebar(allFields) {
             }
 
             // Fallback: use the name attribute formatted
-            return field.name.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').trim();
+            const formatted = field.name.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').trim();
+            // Capitalize first letter
+            return formatted.charAt(0).toUpperCase() + formatted.slice(1);
         }
 
         // Process radio groups
@@ -457,6 +459,12 @@ function showAccordionSidebar(allFields) {
                     const optionLabel = document.querySelector(`label[for="${selectedRadio.field.id}"]`);
                     if (optionLabel) {
                         selectedValue = optionLabel.textContent.trim();
+                    }
+                } else {
+                    // No id - check if input is inside a label
+                    const parentLabel = selectedRadio.field.closest('label');
+                    if (parentLabel) {
+                        selectedValue = parentLabel.textContent.trim();
                     }
                 }
 
@@ -688,7 +696,7 @@ function showAccordionSidebar(allFields) {
             // Filled groups - categorize by source/confidence
             if (field.source === 'smart-memory') {
                 finalCacheFields.push(field);
-            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
+            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || field.source === 'selection_cache' || !field.source || field.source === undefined)) {
                 finalAppFillFields.push(field);
             } else {
                 finalAiFields.push(field);
@@ -706,7 +714,7 @@ function showAccordionSidebar(allFields) {
             // Fully filled groups - categorize by source/confidence
             if (field.source === 'smart-memory') {
                 finalCacheFields.push(field);
-            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
+            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || field.source === 'selection_cache' || !field.source || field.source === undefined)) {
                 finalAppFillFields.push(field);
             } else {
                 finalAiFields.push(field);
@@ -718,7 +726,7 @@ function showAccordionSidebar(allFields) {
                 finalManualFields.push(field);
             } else if (field.source === 'smart-memory') {
                 finalCacheFields.push(field);
-            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
+            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || field.source === 'selection_cache' || !field.source || field.source === undefined)) {
                 finalAppFillFields.push(field);
             } else {
                 finalAiFields.push(field);
@@ -734,7 +742,7 @@ function showAccordionSidebar(allFields) {
             finalManualFields.push(field);
         } else if (field.source === 'smart-memory') {
             finalCacheFields.push(field);
-        } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
+        } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || field.source === 'selection_cache' || !field.source || field.source === undefined)) {
             finalAppFillFields.push(field);
         } else {
             finalAiFields.push(field);
@@ -1221,7 +1229,7 @@ function attachSelfCorrectionTrigger(element) {
     if (element.dataset.shLearningAttached) return;
     element.dataset.shLearningAttached = 'true';
 
-    element.addEventListener('change', async () => {
+    const handleChange = async () => {
         const label = getFieldLabel(element);
         const fieldType = element.type || element.tagName?.toLowerCase();
 
@@ -1261,7 +1269,12 @@ function attachSelfCorrectionTrigger(element) {
             });
             console.log(`🧠 [SmartMemory] Learned: "${label}" → ${newValue}`);
         }
-    });
+    };
+
+    // Listen to both 'change' and 'input' events for better coverage
+    // 'change' for radio/checkbox/select, 'input' for text/date fields
+    element.addEventListener('change', handleChange);
+    element.addEventListener('input', handleChange);
 }
 
 function activateSmartMemoryLearning() {
