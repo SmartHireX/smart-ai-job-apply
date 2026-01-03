@@ -304,6 +304,28 @@
         padding: 12px 16px;
         background: #f8f9fa;
         border-bottom: 1px solid #e5e7eb;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f8f9fa;
+    }
+
+    #smarthirex-accordion-sidebar .tab-navigation::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    #smarthirex-accordion-sidebar .tab-navigation::-webkit-scrollbar-track {
+        background: #f8f9fa;
+    }
+
+    #smarthirex-accordion-sidebar .tab-navigation::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 2px;
+    }
+
+    #smarthirex-accordion-sidebar .tab-navigation::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
     }
 
     #smarthirex-accordion-sidebar .tab {
