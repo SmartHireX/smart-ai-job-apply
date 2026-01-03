@@ -405,15 +405,60 @@
 }
 
 #smarthirex-accordion-sidebar .recalculate-btn:hover {
-    background: rgba(10, 102, 194, 0.2);
-    transform: scale(1.05);
+    background: #0a66c2;
+    color: white;
+    border-color: #0a66c2;
+    transform: scale(1.08) rotate(180deg);
+    box-shadow: 0 2px 8px rgba(10, 102, 194, 0.25);
 }
 
 #smarthirex-accordion-sidebar .empty-state {
-    padding: 40px 20px;
+    padding: 60px 24px;
     text-align: center;
     color: #9ca3af;
     font-size: 14px;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+/* Tab Actions Bar - Premium */
+#smarthirex-accordion-sidebar .tab-actions {
+    padding: 14px 20px;
+    background: linear-gradient(to bottom, #fafbfc, #f8f9fa);
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+#smarthirex-accordion-sidebar .recalculate-all-btn {
+    padding: 9px 18px;
+    background: linear-gradient(to bottom, #0a66c2, #084d92);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    box-shadow: 0 1px 3px rgba(10, 102, 194, 0.2);
+}
+
+#smarthirex-accordion-sidebar .recalculate-all-btn:hover {
+    background: linear-gradient(to bottom, #084d92, #063a6f);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(10, 102, 194, 0.35);
+}
+
+#smarthirex-accordion-sidebar .recalculate-all-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(10, 102, 194, 0.2);
+}
+
+#smarthirex-accordion-sidebar .recalculate-all-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 [data-tooltip]:hover::after {
