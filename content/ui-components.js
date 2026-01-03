@@ -304,24 +304,33 @@ function showAccordionSidebar(allFields) {
     const appFillFields = [];   // Heuristic matches (high confidence, no specific source)
     const cacheFields = [];      // From smart memory
     const aiFields = [];         // AI-generated or low confidence
+    const manualFields = [];     // Unfilled or file uploads
 
     allFields.forEach(item => {
         const element = document.querySelector(item.selector);
         if (!element || !isFieldVisible(element)) return;
 
         const label = item.fieldData?.label || getFieldLabel(element);
+        const fieldType = item.fieldData?.field_type || element.type || 'text';
+        const isFileUpload = fieldType === 'file' || element.type === 'file';
+        const isEmpty = !item.value || item.value.trim() === '';
+
         const fieldInfo = {
             field: element,
             selector: item.selector,
             label,
             confidence: item.confidence,
-            fieldType: item.fieldData?.field_type || element.type || 'text',
+            fieldType: fieldType,
             source: item.source || 'heuristic',
-            value: item.value || element.value
+            value: item.value || element.value,
+            isFileUpload
         };
 
-        // Group by source
-        if (item.source === 'smart-memory') {
+        // Group by source and type
+        if (isFileUpload || isEmpty) {
+            // File uploads and empty fields go to Manual
+            manualFields.push(fieldInfo);
+        } else if (item.source === 'smart-memory') {
             cacheFields.push(fieldInfo);
         } else if (item.confidence >= 0.85 && (item.source === 'heuristic' || !item.source || item.source === undefined)) {
             // High confidence heuristic matches = App Fill
@@ -332,7 +341,7 @@ function showAccordionSidebar(allFields) {
         }
     });
 
-    console.log(`📄 App Fill: ${appFillFields.length}, 🧠 Cache: ${cacheFields.length}, 🤖 AI: ${aiFields.length}`);
+    console.log(`📄 App Fill: ${appFillFields.length}, 🧠 Cache: ${cacheFields.length}, 🤖 AI: ${aiFields.length}, ✋ Manual: ${manualFields.length}`);
 
     if (appFillFields.length === 0 && cacheFields.length === 0 && aiFields.length === 0) {
         console.log('No fields to show in sidebar');
@@ -390,6 +399,9 @@ function showAccordionSidebar(allFields) {
             <button class="tab" data-tab="ai">
                 🤖 AI <span class="tab-count">(0)</span>
             </button>
+            <button class="tab" data-tab="manual">
+                ✋ Manual <span class="tab-count">(0)</span>
+            </button>
         </div>
         
         <div class="sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
@@ -439,6 +451,21 @@ function showAccordionSidebar(allFields) {
                 `).join('')}
                 ${aiFields.length === 0 ? '<div class="empty-state">No AI-generated fields</div>' : ''}
             </div>
+
+            <!-- Manual Tab (Unfilled and file uploads) -->
+            <div class="tab-content" data-tab="manual" style="display: none;">
+                ${manualFields.map(item => `
+                    <div class="field-item" data-selector="${item.selector}">
+                        <div class="field-header">
+                            <div class="field-label">
+                                ${item.isFileUpload ? '📁 ' : ''}${item.label}
+                            </div>
+                        </div>
+                        ${item.isFileUpload ? '<div class="field-note">File upload required</div>' : '<div class="field-note">Not filled</div>'}
+                    </div>
+                `).join('')}
+                ${manualFields.length === 0 ? '<div class="empty-state">All fields filled!</div>' : ''}
+            </div>
         </div>
     `;
 
@@ -446,6 +473,7 @@ function showAccordionSidebar(allFields) {
     panel.querySelector('[data-tab="app"] .tab-count').textContent = `(${appFillFields.length})`;
     panel.querySelector('[data-tab="cache"] .tab-count').textContent = `(${cacheFields.length})`;
     panel.querySelector('[data-tab="ai"] .tab-count').textContent = `(${aiFields.length})`;
+    panel.querySelector('[data-tab="manual"] .tab-count').textContent = `(${manualFields.length})`;
 
     document.body.appendChild(panel);
 
