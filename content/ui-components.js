@@ -483,71 +483,91 @@ function showAccordionSidebar(allFields) {
         });
     }
 
-    // Highlight fields that need review
-    needsReviewFields.forEach(item => {
-        item.field.classList.add('smarthirex-field-highlight');
-    });
+    // Tab switching
+    const tabs = panel.querySelectorAll('.tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.dataset.tab;
 
-    // Add toggle handlers for accordion sections
-    const headers = panel.querySelectorAll('.section-header');
-    headers.forEach(header => {
-        header.addEventListener('click', () => {
-            const content = header.nextElementSibling;
-            const isExpanded = header.classList.contains('expanded');
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
 
-            if (isExpanded) {
-                // Close this section
-                header.classList.remove('expanded');
-                header.classList.add('collapsed');
-                content.classList.remove('expanded');
-            } else {
-                // Close all other sections first
-                headers.forEach(otherHeader => {
-                    const otherContent = otherHeader.nextElementSibling;
-                    otherHeader.classList.remove('expanded');
-                    otherHeader.classList.add('collapsed');
-                    otherContent.classList.remove('expanded');
-                });
-
-                // Then open this section
-                header.classList.remove('collapsed');
-                header.classList.add('expanded');
-                content.classList.add('expanded');
-            }
+            // Show corresponding content
+            const tabContents = panel.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.style.display = content.dataset.tab === tabName ? 'block' : 'none';
+            });
         });
     });
 
-    // Add click handlers for field items  
-    const allFields = [...autoFilledFields, ...needsReviewFields];
-    panel.querySelectorAll('.field-item').forEach((fieldItem, index) => {
-        const field = allFields[Math.min(index, allFields.length - 1)];
-        if (field) {
-            fieldItem.addEventListener('click', () => {
-                field.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                field.field.focus();
-            });
-
-            // Spotlight Hover Effect
-            fieldItem.addEventListener('mouseenter', () => {
-                field.field.classList.add('smarthirex-spotlight');
-                field.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                showConnectionBeam(fieldItem, field.field);
-            });
-
-            fieldItem.addEventListener('mouseleave', () => {
-                field.field.classList.remove('smarthirex-spotlight');
-                hideConnectionBeam();
-            });
-        }
-    });
-
-    // Add regenerate button handlers
-    panel.querySelectorAll('.regenerate-btn').forEach(btn => {
+    // Individual recalculate buttons
+    const recalculateBtns = panel.querySelectorAll('.recalculate-btn');
+    recalculateBtns.forEach(btn => {
         btn.addEventListener('click', async (e) => {
-            e.stopPropagation(); // Prevent field item click
+            e.stopPropagation();
             const selector = btn.dataset.selector;
             const label = btn.dataset.label;
             await showRegenerateModal(selector, label);
+        });
+    });
+
+    // Recalculate All buttons
+    const recalculateAllBtns = panel.querySelectorAll('.recalculate-all-btn');
+    recalculateAllBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const tabType = btn.dataset.tab;
+            const btnText = btn.textContent;
+            btn.textContent = 'Recalculating...';
+            btn.disabled = true;
+
+            // Get all fields in this tab
+            const tabContent = panel.querySelector(`.tab-content[data-tab="${tabType}"]`);
+            const fieldBtns = tabContent.querySelectorAll('.recalculate-btn');
+
+            // Recalculate each field sequentially
+            for (const fieldBtn of fieldBtns) {
+                await new Promise(resolve => {
+                    fieldBtn.click();
+                    setTimeout(resolve, 500); // Small delay between fields
+                });
+            }
+
+            btn.textContent = btnText;
+            btn.disabled = false;
+        });
+    });
+
+    // Field click handlers for scrolling and highlighting
+    const fieldItems = panel.querySelectorAll('.field-item');
+    fieldItems.forEach(item => {
+        const selector = item.dataset.selector;
+        if (!selector) return;
+
+        // Click to scroll to field
+        item.addEventListener('click', () => {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.focus();
+            }
+        });
+
+        // Hover to show connection beam
+        item.addEventListener('mouseenter', () => {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.classList.add('smarthirex-spotlight');
+                showConnectionBeam(item, element);
+            }
+        });
+
+        item.addEventListener('mouseleave', () => {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.classList.remove('smarthirex-spotlight');
+                hideConnectionBeam();
+            }
         });
     });
 }
