@@ -351,8 +351,9 @@ function showAccordionSidebar(allFields) {
     const aiFields = [];         // AI-generated or low confidence
     const manualFields = [];     // Unfilled or file uploads
 
-    // ========== SEPARATE RADIO/CHECKBOX FIELDS FROM OTHERS ==========
+    // ========== SEPARATE RADIO/CHECKBOX/SELECT FIELDS FROM OTHERS ==========
     const radioCheckboxFields = [];
+    const selectFields = [];
     const otherFieldsRaw = [];
 
     allFields.forEach(item => {
@@ -374,9 +375,11 @@ function showAccordionSidebar(allFields) {
             isFileUpload
         };
 
-        // Separate radio/checkbox from other fields
+        // Separate radio/checkbox/select from other fields
         if (fieldType === 'radio' || fieldType === 'checkbox') {
             radioCheckboxFields.push(fieldInfo);
+        } else if (fieldType === 'select' || fieldType === 'select-one' || fieldType === 'select-multiple' || element.tagName === 'SELECT') {
+            selectFields.push(fieldInfo);
         } else {
             otherFieldsRaw.push(fieldInfo);
         }
@@ -538,6 +541,138 @@ function showAccordionSidebar(allFields) {
     // Group all radio/checkbox fields
     const groupedRadioCheckbox = groupRadioCheckboxFields(radioCheckboxFields);
 
+    // ========== GROUP SELECT FIELDS BY NAME PREFIX ==========
+    function groupSelectFields(fields) {
+        // Helper to extract prefix from name (before _, -, or camelCase)
+        function extractPrefix(name) {
+            if (!name) return null;
+
+            // Try underscore delimiter: education_level -> education
+            if (name.includes('_')) {
+                return name.split('_')[0];
+            }
+
+            // Try dash delimiter: work-experience -> work
+            if (name.includes('-')) {
+                return name.split('-')[0];
+            }
+
+            // Try camelCase: addressCity -> address
+            const camelMatch = name.match(/^[a-z]+/);
+            if (camelMatch && camelMatch[0].length < name.length) {
+                return camelMatch[0];
+            }
+
+            return null; // No grouping pattern detected
+        }
+
+        // Helper to format prefix as label
+        function formatPrefixAsLabel(prefix) {
+            // Convert to sentence case: education -> Education
+            return prefix.charAt(0).toUpperCase() + prefix.slice(1);
+        }
+
+        const selectGroups = {};
+        const ungroupedSelects = [];
+
+        // Group selects by prefix
+        fields.forEach(fieldInfo => {
+            const name = fieldInfo.field.name;
+            const prefix = extractPrefix(name);
+
+            if (prefix) {
+                if (!selectGroups[prefix]) selectGroups[prefix] = [];
+                selectGroups[prefix].push(fieldInfo);
+            } else {
+                ungroupedSelects.push(fieldInfo);
+            }
+        });
+
+        const groupedFields = [];
+
+        // Process select groups (minimum 2 selects to form a group)
+        Object.entries(selectGroups).forEach(([prefix, selects]) => {
+            if (selects.length < 2) {
+                // Single select - don't group, keep as is
+                ungroupedSelects.push(...selects);
+                return;
+            }
+
+            // Check if ALL selects in group have values
+            const allFilled = selects.every(s => s.value && String(s.value).trim() !== '');
+            const anyFilled = selects.some(s => s.value && String(s.value).trim() !== '');
+
+            if (allFilled) {
+                // All filled - create grouped entry
+                const selectedValues = selects.map(s => {
+                    const select = s.field;
+                    if (select.selectedIndex >= 0 && select.options[select.selectedIndex]) {
+                        return select.options[select.selectedIndex].text.trim();
+                    }
+                    return s.value || '';
+                }).filter(v => v);
+
+                const groupLabel = formatPrefixAsLabel(prefix);
+
+                groupedFields.push({
+                    ...selects[0], // Use first select as base
+                    label: groupLabel,
+                    displayValue: selectedValues.join(', '),
+                    isSelectGroup: true,
+                    filled: true,
+                    groupName: prefix,
+                    selectCount: selects.length,
+                    originalFields: selects
+                });
+            } else if (anyFilled) {
+                // Partially filled - show filled values with indicator
+                const filledSelects = selects.filter(s => s.value && String(s.value).trim() !== '');
+                const selectedValues = filledSelects.map(s => {
+                    const select = s.field;
+                    if (select.selectedIndex >= 0 && select.options[select.selectedIndex]) {
+                        return select.options[select.selectedIndex].text.trim();
+                    }
+                    return s.value || '';
+                }).filter(v => v);
+
+                const unfilledCount = selects.length - filledSelects.length;
+                const groupLabel = formatPrefixAsLabel(prefix);
+
+                groupedFields.push({
+                    ...filledSelects[0],
+                    label: groupLabel,
+                    displayValue: selectedValues.join(', ') + ` (+${unfilledCount} more)`,
+                    isSelectGroup: true,
+                    filled: false, // Partially filled = not fully complete
+                    groupName: prefix,
+                    selectCount: selects.length,
+                    filledCount: filledSelects.length,
+                    originalFields: selects
+                });
+            } else {
+                // All unfilled - create empty group entry
+                const groupLabel = formatPrefixAsLabel(prefix);
+
+                groupedFields.push({
+                    ...selects[0],
+                    label: groupLabel,
+                    displayValue: null,
+                    isSelectGroup: true,
+                    filled: false,
+                    groupName: prefix,
+                    selectCount: selects.length,
+                    filledCount: 0,
+                    originalFields: selects
+                });
+            }
+        });
+
+        return [...ungroupedSelects, ...groupedFields];
+    }
+
+    // Group all select fields
+    const groupedSelects = groupSelectFields(selectFields);
+
     // ========== CATEGORIZE ALL FIELDS INTO TABS ==========
     const finalAppFillFields = [];
     const finalCacheFields = [];
@@ -552,6 +687,36 @@ function showAccordionSidebar(allFields) {
         } else {
             // Filled groups - categorize by source/confidence
             if (field.source === 'smart-memory') {
+                finalCacheFields.push(field);
+            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
+                finalAppFillFields.push(field);
+            } else {
+                finalAiFields.push(field);
+            }
+        }
+    });
+
+    // Process grouped select fields
+    groupedSelects.forEach(field => {
+        // Select groups - route based on filled status
+        if (field.isSelectGroup && !field.filled) {
+            // Unfilled or partially filled groups go to Manual
+            finalManualFields.push(field);
+        } else if (field.isSelectGroup && field.filled) {
+            // Fully filled groups - categorize by source/confidence
+            if (field.source === 'smart-memory') {
+                finalCacheFields.push(field);
+            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
+                finalAppFillFields.push(field);
+            } else {
+                finalAiFields.push(field);
+            }
+        } else {
+            // Ungrouped single selects - categorize normally
+            const isEmpty = !field.value || String(field.value).trim() === '';
+            if (isEmpty) {
+                finalManualFields.push(field);
+            } else if (field.source === 'smart-memory') {
                 finalCacheFields.push(field);
             } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
                 finalAppFillFields.push(field);
@@ -638,7 +803,7 @@ function showAccordionSidebar(allFields) {
             <div class="tab-content active" data-tab="app">
                 ${finalAppFillFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
-                        <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
+                        <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
                     </div>
                 `).join('')}
                 ${finalAppFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
@@ -657,7 +822,7 @@ function showAccordionSidebar(allFields) {
                 ${finalCacheFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
-                            <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
+                            <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
                             <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>
                         </div>
                     </div>
@@ -678,7 +843,7 @@ function showAccordionSidebar(allFields) {
                 ${finalAiFields.map(item => `
                     <div class="field-item" data-selector="${item.selector}">
                         <div class="field-header">
-                            <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
+                            <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
                             <button class="recalculate-btn" data-selector="${item.selector}" data-label="${item.label}" data-tooltip="Regenerate using AI">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
                             </button>
