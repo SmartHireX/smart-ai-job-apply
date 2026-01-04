@@ -257,12 +257,27 @@ async function getCachedValue(field, label) {
 function validateOption(field, targetValue) {
     if (!targetValue) return false;
 
-    // Handle Array (Multi-select / Checkbox Group)
-    if (Array.isArray(targetValue)) {
-        return targetValue.every(val => validateSingleOption(field, val));
+    let valuesToCheck = targetValue;
+
+    // Handle stringified array (e.g. "python,java") -> Convert to Array
+    if (typeof targetValue === 'string' && targetValue.includes(',')) {
+        valuesToCheck = targetValue.split(',').map(v => v.trim());
     }
 
-    return validateSingleOption(field, targetValue);
+    // Handle Array (Multi-select / Checkbox Group)
+    if (Array.isArray(valuesToCheck)) {
+        // If ANY validity is enough (some old options might be missing, but we want to fill the valid ones)
+        // Strictly enforcing 'every' might block partial valid fills.
+        // Let's use 'some' valid or 'every'? The user wants to fill valid skills.
+        // But getCachedValue returns NULL if validation fails.
+        // So we must return TRUE if at least one option is valid to allow partial fill?
+        // OR better: Filter the value? (Can't change value here).
+        // Let's stick to: If >50% of skills are valid, it's a valid cache hit.
+        // Or simpler: If at least one matches, return true.
+        return valuesToCheck.some(val => validateSingleOption(field, val));
+    }
+
+    return validateSingleOption(field, valuesToCheck);
 }
 
 /**
