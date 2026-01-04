@@ -409,9 +409,10 @@ const LocalMatcher = {
         // Helper: get level from string
         const getLevel = (str) => {
             if (!str) return 0;
-            str = str.toLowerCase();
+            // Handle if str is object (just in case)
+            const text = (typeof str === 'string' ? str : String(str.label || str.value || str)).toLowerCase();
             for (const [key, lvl] of Object.entries(levels)) {
-                if (str.includes(key)) return lvl;
+                if (text.includes(key)) return lvl;
             }
             return 0;
         };
@@ -421,9 +422,10 @@ const LocalMatcher = {
         // Select: Iterate options
         if (field.type === 'select' && field.options) {
             // Find option with closest matching level
-            // Note: options might be values. If values are codes (e.g. "deg_1"), this fails.
-            // But usually they are "bachelors", "masters".
-            return field.options.find(opt => getLevel(opt) === targetLevel) || null;
+            return field.options.find(opt => {
+                const optText = typeof opt === 'object' ? (opt.label || opt.value) : opt;
+                return getLevel(optText) === targetLevel;
+            }) || null;
         }
 
         // Radio: Check if THIS option matches

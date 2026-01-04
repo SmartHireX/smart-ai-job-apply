@@ -254,32 +254,45 @@ async function getCachedValue(field, label) {
 function validateOption(field, targetValue) {
     if (!targetValue) return false;
 
+    // Handle Array (Multi-select / Checkbox Group)
+    if (Array.isArray(targetValue)) {
+        return targetValue.every(val => validateSingleOption(field, val));
+    }
+
+    return validateSingleOption(field, targetValue);
+}
+
+/**
+ * Validate a single value against field options
+ */
+function validateSingleOption(field, singleValue) {
+    if (!singleValue) return false;
+
     // 1. Get all options
     // Handle standard <select>
     let options = [];
     if (field.options) {
         options = Array.from(field.options).map(o => ({ text: o.text, value: o.value }));
     }
-    // Handle ARIA listboxes (if possible, though usually this runs on native select)
-    // For now assume native select validation or standard passed options
+    // Handle Radio/Checkbox NodeList if passed as "field" context? 
+    // Usually validateOption is called on a specific element. 
+    // If it's a select, it has options.
+    // If it's a radio/checkbox, we might need to look up the group? 
+    // Currently getCachedValue checks: if (field.tagName === 'SELECT' ...
+    // So validation is primarily for SELECTs. Checkboxes/Radios might not hit this path in getCachedValue.
+    // But good to be safe.
 
-    if (options.length === 0) return true; // If no options found, can't validate, assume true (safe fallback) or false (strict)? Safe fallback for now.
+    if (options.length === 0) return true; // Safe fallback
 
-    const targetLower = targetValue.toLowerCase().trim();
+    const targetLower = String(singleValue).toLowerCase().trim();
 
     // 2. Check for Exact or Fuzzy Match
     return options.some(opt => {
         const val = (opt.value || '').toLowerCase().trim();
         const text = (opt.text || '').toLowerCase().trim();
 
-        // Exact Value Match
         if (val === targetLower) return true;
-
-        // Exact Text Match
         if (text === targetLower) return true;
-
-        // Fuzzy / Substring Match (e.g. "USA" vs "United States")
-        // Check if target is contained in option text or vice versa
         if (val.includes(targetLower) || targetLower.includes(val)) return true;
         if (text.includes(targetLower) || targetLower.includes(text)) return true;
 

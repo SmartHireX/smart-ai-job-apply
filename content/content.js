@@ -380,6 +380,7 @@ async function processPageFormLocal() {
 
             if (aiResult.success && aiResult.mappings) {
                 console.log(`🧠 Phase 2: AI mapped ${Object.keys(aiResult.mappings).length} fields.`);
+                console.log('🤖 FULL AI OUTPUT:', JSON.stringify(aiResult, null, 2));
                 cumulativeMappings = { ...cumulativeMappings, ...aiResult.mappings };
 
                 // FIX: Ensure ALL original fields are in cumulativeMappings, even if unmapped
@@ -412,30 +413,46 @@ async function processPageFormLocal() {
                 const ALLOWED_CACHE_TYPES = new Set(['text', 'textarea', 'email', 'tel', 'url', 'search']);
 
                 console.log(`💾 Attempting to cache ${Object.keys(aiResult.mappings).length} Phase 2 fields...`);
-                Object.entries(aiResult.mappings).forEach(([selector, data]) => {
+
+                for (const [selector, data] of Object.entries(aiResult.mappings)) {
                     if (!data.value || String(data.value).length >= 500) {
                         console.log(`⏭️ Skipping cache (no value or too long): ${selector}`);
-                        return;
+                        continue;
                     }
 
                     const el = document.querySelector(selector);
                     if (!el) {
                         console.log(`⏭️ Skipping cache (element not found): ${selector}`);
-                        return;
+                        continue;
                     }
 
                     // Get field type, default to 'text' if not specified
                     const fieldType = (el.type || 'text').toLowerCase();
+                    const tagName = el.tagName.toLowerCase();
+                    const label = getFieldLabel(el);
 
-                    if (!ALLOWED_CACHE_TYPES.has(fieldType)) {
-                        console.log(`⏭️ Skipping cache (type '${fieldType}' not allowed): ${selector}`);
-                        return;
+                    // --- 1. HANDLE STRUCTURED FIELDS (Selection Cache) ---
+                    if (window.SelectionCache && (fieldType === 'radio' || fieldType === 'checkbox' || tagName === 'select')) {
+                        if (label && label.length > 2) {
+                            try {
+                                await window.SelectionCache.cacheSelection(el, label, data.value);
+                                console.log(`💾 [SelectionCache] AI Learned: "${label}" → ${JSON.stringify(data.value)}`);
+                            } catch (err) {
+                                console.warn('[SelectionCache] Failed to cache AI result:', err);
+                            }
+                        }
+                        continue; // Done with this field
                     }
 
-                    const label = getFieldLabel(el);
+                    // --- 2. HANDLE TEXT FIELDS (Smart Memory) ---
+                    if (!ALLOWED_CACHE_TYPES.has(fieldType)) {
+                        console.log(`⏭️ Skipping cache (type '${fieldType}' not allowed): ${selector}`);
+                        continue;
+                    }
+
                     if (!label || label.length <= 2) {
                         console.log(`⏭️ Skipping cache (invalid label '${label}'): ${selector}`);
-                        return;
+                        continue;
                     }
 
                     const normalizedLabel = normalizeSmartMemoryKey(label);
@@ -447,17 +464,17 @@ async function processPageFormLocal() {
 
                     if (isGeneric) {
                         console.log(`⏭️ Skipping cache (generic label '${normalizedLabel}'): ${selector}`);
-                        return;
+                        continue;
                     }
 
                     if (isSingleWord && normalizedLabel.length < 4) {
                         console.log(`⏭️ Skipping cache (too short single word '${normalizedLabel}'): ${selector}`);
-                        return;
+                        continue;
                     }
 
                     if (isNumberHeavy) {
                         console.log(`⏭️ Skipping cache (number-heavy label '${normalizedLabel}'): ${selector}`);
-                        return;
+                        continue;
                     }
 
                     newCacheEntries[normalizedLabel] = {
@@ -465,13 +482,13 @@ async function processPageFormLocal() {
                         timestamp: Date.now()
                     };
                     console.log(`✅ Cached: "${normalizedLabel}" => "${data.value}"`);
-                });
+                }
 
                 if (Object.keys(newCacheEntries).length > 0) {
                     console.log(`💾 Saving ${Object.keys(newCacheEntries).length} entries to smart memory...`);
                     updateSmartMemoryCache(newCacheEntries);
                 } else {
-                    console.log(`⚠️ No Phase 2 fields were cached!`);
+                    console.log(`⚠️ No Phase 2 text fields were cached.`);
                 }
             } else {
                 const errorMsg = aiResult?.error || 'Unknown error';
