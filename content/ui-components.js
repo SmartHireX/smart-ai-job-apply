@@ -1150,34 +1150,65 @@ function setRadioValue(element, value) {
 }
 
 function setCheckboxValue(element, value) {
-    if (Array.isArray(value)) {
+    let targetValues = value;
+
+    // Robustness: Handle comma-separated strings as arrays
+    if (typeof value === 'string' && value.includes(',')) {
+        targetValues = value.split(',').map(v => v.trim());
+    }
+
+    if (Array.isArray(targetValues)) {
         // Handle Multi-Checkbox Group (AI/Batch context)
         const name = element.name;
         if (!name) return; // Cannot handle group without name
 
         const checkboxes = document.querySelectorAll(`input[name="${name}"]`);
+
         checkboxes.forEach(cb => {
             const label = findLabelText(cb) || '';
             const val = cb.value || '';
 
             // Check if this checkbox matches ANY value in the array
-            const isMatch = value.some(target => {
+            const isMatch = targetValues.some(target => {
                 // Exact value match
-                if (val === target) return true;
+                if (val === target) {
+                    return true;
+                }
+
                 // Text/Label match (loose)
                 const textSim = calculateUsingJaccardSimilarity(label, target);
-                return textSim > 0.8;
+                const isSimMatch = textSim > 0.6; // Lowered threshold 
+
+                return isSimMatch;
             });
 
             if (isMatch) {
-                cb.checked = true;
-                dispatchChangeEvents(cb);
+                // SAFE CHECKING LOGIC:
+                // 1. If not checked, try clicking (natural event trigger)
+                if (!cb.checked) {
+                    cb.click();
+
+                    // 2. If click didn't work (e.g. prevented), force it
+                    if (!cb.checked) {
+                        cb.checked = true;
+                        cb.dispatchEvent(new Event('input', { bubbles: true }));
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
             }
         });
     } else {
         // Standard Single Boolean
-        element.checked = (value === true || String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'yes');
-        dispatchChangeEvents(element);
+        const shouldBeChecked = (value === true || String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'yes');
+        if (element.checked !== shouldBeChecked) {
+            element.click();
+            // Fallback
+            if (element.checked !== shouldBeChecked) {
+                element.checked = shouldBeChecked;
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+                element.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
     }
 }
 

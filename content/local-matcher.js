@@ -92,11 +92,13 @@ const LocalMatcher = {
                     // Start with empty, let individual loop handle or handle here?
                     // Better to handle here for "Select your technical skills" 
                     const matches = this.matchSkillsGroup(group, facts);
-                    matches.forEach(val => {
-                        // Find the field with this value
-                        const target = group.find(g => g.value === val);
-                        if (target) resolved[target.selector] = { value: val, confidence: 1, source: 'local-rule' };
-                    });
+
+                    // Return the FULL ARRAY to trigger the robust setCheckboxValue logic
+                    // We map it to the primary selector (any element in the group works because of name grouping)
+                    if (matches.length > 0) {
+                        resolved[primary.selector] = { value: matches, confidence: 1, source: 'local-rule' };
+                    }
+
                     processedNames.add(name);
                     continue;
                 }

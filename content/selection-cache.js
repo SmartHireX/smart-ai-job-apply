@@ -190,6 +190,9 @@ async function saveMetadata(metadata) {
 // CACHE OPERATIONS
 // ============================================================================
 
+// Mutex to prevent race conditions during rapid batch updates (e.g. skills fill)
+let _cacheLock = Promise.resolve();
+
 /**
  * Get cached value for a field
  * @param {HTMLElement} field - Form field element
@@ -274,10 +277,10 @@ function validateSingleOption(field, singleValue) {
     if (field.options) {
         options = Array.from(field.options).map(o => ({ text: o.text, value: o.value }));
     }
-    // Handle Radio/Checkbox NodeList if passed as "field" context? 
-    // Usually validateOption is called on a specific element. 
+    // Handle Radio/Checkbox NodeList if passed as "field" context?
+    // Usually validateOption is called on a specific element.
     // If it's a select, it has options.
-    // If it's a radio/checkbox, we might need to look up the group? 
+    // If it's a radio/checkbox, we might need to look up the group?
     // Currently getCachedValue checks: if (field.tagName === 'SELECT' ...
     // So validation is primarily for SELECTs. Checkboxes/Radios might not hit this path in getCachedValue.
     // But good to be safe.
@@ -307,47 +310,94 @@ function validateSingleOption(field, singleValue) {
  * @param {string} value - Selected value
  */
 async function cacheSelection(field, label, value) {
-    const signature = generateFieldSignature(field, label);
-    const semanticType = classifyFieldType(signature);
+    // Chain this operation to the lock
+    const currentOp = _cacheLock.then(async () => {
+        const signature = generateFieldSignature(field, label);
+        const semanticType = classifyFieldType(signature);
 
-    if (!semanticType) {
-        console.log('[SelectionCache] Cannot cache - no semantic type for:', label);
-        return;
-    }
-
-    const cache = await getCache();
-
-    // Create or update cache entry
-    if (!cache[semanticType]) {
-        cache[semanticType] = {
-            value: value,
-            variants: [normalizeFieldName(label)],
-            fieldType: field.type || field.tagName.toLowerCase(),
-            lastUsed: Date.now(),
-            useCount: 1,
-            confidence: 0.75
-        };
-    } else {
-        // Update existing entry
-        cache[semanticType].value = value;
-        cache[semanticType].lastUsed = Date.now();
-        cache[semanticType].useCount++;
-
-        // Add variant
-        if (!cache[semanticType].variants) cache[semanticType].variants = [];
-        if (!cache[semanticType].variants.includes(normalizeFieldName(label))) {
-            cache[semanticType].variants.push(normalizeFieldName(label));
+        if (!semanticType) {
+            console.log('[SelectionCache] Cannot cache - no semantic type for:', label);
+            return;
         }
-    }
 
-    await saveCache(cache);
+        const cache = await getCache();
 
-    // Update metadata
-    const metadata = await getMetadata();
-    metadata.totalEntries = Object.keys(cache).length;
-    await saveMetadata(metadata);
+        // Create or update cache entry
+        let newValue = value;
 
-    console.log(`[SelectionCache] 💾 Cached "${label}" → ${semanticType}: ${value}`);
+        // Special Handling for Skills/Checkboxes (Array Accumulation)
+        const isMultiSelect = field.type === 'checkbox' || semanticType === 'skills' || field.multiple;
+
+        if (isMultiSelect) {
+            // 1. Normalize Input: Parse comma-separated strings into Array
+            let inputPayload = value;
+            if (typeof value === 'string' && value.includes(',')) {
+                inputPayload = value.split(',').map(s => s.trim()).filter(s => s);
+            }
+
+            // 2. Decide: Overwrite or Append?
+            if (Array.isArray(inputPayload)) {
+                // If input is a full list (from AI or parsed string) -> Overwrite
+                newValue = inputPayload;
+            } else {
+                // If input is a single item (Manual Check) -> Append
+                const existing = cache[semanticType] ? cache[semanticType].value : [];
+
+                // Ensure existing cache is an Array
+                let existingArray = [];
+                if (Array.isArray(existing)) {
+                    existingArray = existing;
+                } else if (typeof existing === 'string') {
+                    // Legacy Fix: If existing cache is "a,b", parse it too
+                    existingArray = existing.includes(',') ?
+                        existing.split(',').map(s => s.trim()) :
+                        [existing];
+                }
+
+                // Append unique
+                const set = new Set(existingArray);
+                if (inputPayload) set.add(inputPayload);
+                newValue = Array.from(set);
+            }
+        }
+
+        if (!cache[semanticType]) {
+            cache[semanticType] = {
+                value: newValue,
+                variants: [normalizeFieldName(label)],
+                fieldType: field.type || field.tagName.toLowerCase(),
+                lastUsed: Date.now(),
+                useCount: 1,
+                confidence: 0.75
+            };
+        } else {
+            // Update existing entry
+            cache[semanticType].value = newValue;
+            cache[semanticType].lastUsed = Date.now();
+            cache[semanticType].useCount++;
+
+            // Add variant
+            if (!cache[semanticType].variants) cache[semanticType].variants = [];
+            if (!cache[semanticType].variants.includes(normalizeFieldName(label))) {
+                cache[semanticType].variants.push(normalizeFieldName(label));
+            }
+        }
+
+        await saveCache(cache);
+
+        // Update metadata
+        const metadata = await getMetadata();
+        metadata.totalEntries = Object.keys(cache).length;
+        await saveMetadata(metadata);
+
+        console.log(`[SelectionCache] 💾 Cached "${label}" → ${semanticType}: ${JSON.stringify(newValue)}`);
+    }).catch(err => {
+        console.error('[SelectionCache] Critical Error in cacheSelection:', err);
+    });
+
+    // Update the lock
+    _cacheLock = currentOp;
+    await currentOp;
 }
 
 /**

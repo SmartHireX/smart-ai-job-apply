@@ -209,23 +209,17 @@ async function processPageFormLocal() {
                                 ? cached.value
                                 : cached.value.split(',').map(v => v.trim());
 
-                            // Find all checkboxes in this group
-                            const allCheckboxes = document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(element.name)}"]`);
+                            // DELEGATE TO UI-COMPONENTS:
+                            // Instead of strictly matching values here, we pass the FULL ARRAY to the primary field.
+                            // setCheckboxValue in ui-components.js has robust fuzzy matching (Label vs Value).
+                            cacheHits[item.selector] = {
+                                value: valuesArray,
+                                confidence: cached.confidence,
+                                source: cached.source,
+                                field_type: 'checkbox'
+                            };
 
-                            // Check each checkbox whose value is in the cached array
-                            allCheckboxes.forEach(checkbox => {
-                                if (valuesArray.includes(checkbox.value)) {
-                                    const checkboxSelector = checkbox.id ? `#${CSS.escape(checkbox.id)}` : `input[name="${CSS.escape(checkbox.name)}"][value="${CSS.escape(checkbox.value)}"]`;
-                                    cacheHits[checkboxSelector] = {
-                                        value: checkbox.value,
-                                        confidence: cached.confidence,
-                                        source: cached.source,
-                                        field_type: 'checkbox'
-                                    };
-                                }
-                            });
-
-                            console.log(`💾 [SelectionCache] HIT: "${label}" → ${valuesArray.join(', ')} (${cached.semanticType})`);
+                            console.log(`💾 [SelectionCache] HIT: "${label}" → ${JSON.stringify(valuesArray)} (${cached.semanticType})`);
                         } else if (fieldType === 'radio') {
                             // Radio groups - process only once per group
                             const groupKey = element.name || label;
