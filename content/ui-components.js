@@ -1957,37 +1957,37 @@ async function handleNovaSubmit() {
     showNovaTyping();
 
     try {
-        // Get resume for context
-        let resumeData = {};
+        // Get optimized context (Text/Markdown)
+        let resumeContext = '';
         try {
-            resumeData = await window.ResumeManager?.getResumeData() || {};
+            resumeContext = await window.ResumeManager?.getOptimizedContext() || '';
         } catch (e) {
-            console.warn('[Nova] Could not get resume data:', e);
+            console.warn('[Nova] Could not get resume context:', e);
         }
 
-        // Build prompt
-        const systemPrompt = `You are an expert at writing professional job application responses.
+        // Robustness: Handle empty resume context
+        let resumeSection = '';
+        if (resumeContext && resumeContext.length > 50) {
+            resumeSection = `RESUME_DATA:\n${resumeContext}`;
+        } else {
+            resumeSection = `RESUME_DATA: (Not available. Please rely on general professional standards and the user instruction.)`;
+        }
 
-TASK: Regenerate the answer for the form field "${context.label}" based on the user's instruction.
+        // Optimized Concise Prompt (Token Saver)
+        const systemPrompt = `CONTEXT: Job Application Field "${context.label}"
+CURRENT_VALUE: ${context.currentValue}
+${resumeSection}
 
-CURRENT VALUE:
-${context.currentValue}
+INSTRUCTION: ${userInstruction}
 
-USER'S RESUME (for reference):
-${JSON.stringify(resumeData, null, 2)}
-
-USER'S INSTRUCTION:
-${userInstruction}
-
-GUIDELINES:
-1. Apply the user's requested changes precisely
-2. Keep the response professional and appropriate for a job application
-3. Use facts from the resume - don't fabricate information
-4. Maintain appropriate length for the field type
-5. Return ONLY the new field value, no explanations or quotes around it`;
+TASK: Regenerate the field value based on the instruction.
+RULES:
+1. Professional tone.
+2. Use resume facts only (if available).
+3. OUTPUT: New value ONLY. No quotes/preamble.`;
 
         const result = await window.AIClient.callAI(
-            'Generate the new response:',
+            'Regenerate value:',
             systemPrompt,
             { maxTokens: 500, temperature: 0.5 }
         );
