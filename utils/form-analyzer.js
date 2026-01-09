@@ -113,6 +113,127 @@ RESPONSE FORMAT (JSON ONLY)
 - Valid JSON only
 `, // Optimization: We will construct a minimal prompt for just the "hard" fields dynamically.
 
+    // NEW: Batched processing prompt for first batch (full context)
+    MAP_DATA_BATCH: `You are an intelligent job-application assistant.
+
+Your task is to answer 1-5 form questions professionally and concisely.
+
+────────────────────────────
+USER CONTEXT
+────────────────────────────
+Name: {{name}}
+Current Role: {{current_role}}
+Total Experience: {{total_years_experience}} years
+
+────────────────────────────
+FULL APPLICANT PROFILE
+────────────────────────────
+## Personal Details
+{{full_personal_info}}
+
+## Work Experience
+{{work_experience_details}}
+
+## Education
+{{education_details}}
+
+## Skills
+{{all_skills_details}}
+
+## Projects
+{{project_details}}
+
+## Preferences & Additional Info
+{{custom_fields_details}}
+
+────────────────────────────
+JOB CONTEXT
+────────────────────────────
+{{job_context}}
+
+────────────────────────────
+QUESTIONS TO ANSWER
+────────────────────────────
+{{fields_array}}
+
+────────────────────────────
+INSTRUCTIONS
+────────────────────────────
+1. Generate concise, professional, ATS-friendly responses.
+2. Tailor answers to the Job Context.
+3. Use profile facts - DO NOT fabricate experience.
+4. Keep answers under 120 words unless clearly required.
+5. For select/radio/checkbox fields, ONLY use values from the provided options array.
+
+────────────────────────────
+RESPONSE FORMAT (JSON ONLY)
+────────────────────────────
+{
+  "mappings": {
+    "<css_selector>": {
+      "value": "<answer_text_or_selected_value>",
+      "confidence": <0.6 - 0.9>,
+      "source": "ai_generated",
+      "field_type": "<type>"
+    }
+  }
+}
+
+Return mappings ONLY for provided selectors. Valid JSON only.
+`,
+
+    // NEW: Condensed prompt for subsequent batches (minimal context)
+    MAP_DATA_BATCH_CONDENSED: `You are helping complete a job application.
+
+────────────────────────────
+APPLICANT PROFILE (CONDENSED)
+────────────────────────────
+Name: {{name}}
+Current Role: {{current_role}}
+Experience: {{years_exp}} years
+Top Skills: {{top_skills}}
+Education: {{education}}
+Contact: {{email}} | {{phone}}
+Location: {{location}}
+
+────────────────────────────
+PREVIOUS ANSWERS (CONTEXT)
+────────────────────────────
+{{previous_qa}}
+
+────────────────────────────
+JOB CONTEXT
+────────────────────────────
+{{job_context}}
+
+────────────────────────────
+NEW QUESTIONS TO ANSWER
+────────────────────────────
+{{fields_array}}
+
+────────────────────────────
+INSTRUCTIONS
+────────────────────────────
+1. Answer professionally and concisely (<120 words).
+2. Stay consistent with previous answers above.
+3. Use profile facts - DO NOT fabricate.
+4. For select/radio/checkbox, ONLY use provided option values.
+
+────────────────────────────
+RESPONSE FORMAT (JSON ONLY)
+────────────────────────────
+{
+  "mappings": {
+    "<css_selector>": {
+      "value": "<answer>",
+      "confidence": <0.6-0.9>,
+      "source": "ai_generated",
+      "field_type": "<type>"
+    }
+  }
+}
+`,
+
 
 
     GENERATE_ANSWER: `You are helping a job applicant answer a question on a job application form. 
@@ -434,6 +555,154 @@ async function mapResumeToFields(fields, resumeData, pageContext = '') {
 }
 
 /**
+ * NEW: Build condensed context for subsequent batches (token-efficient)
+ * @param {Object} context - Context object from BatchProcessor
+ * @param {Object} resumeData - Full resume data (for first batch)
+ * @param {string} pageContext - Job context
+ * @returns {Object} Prepared prompt replacements
+ */
+function buildCondensedContext(context, resumeData, pageContext = '') {
+    if (context.type === 'full') {
+        // First batch - use full context (same as mapResumeToFields)
+        const personal = resumeData.personal || {};
+        const name = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
+        const fullPersonalInfo = Object.entries(personal)
+            .filter(([_, v]) => v && String(v).trim())
+            .map(([k, v]) => `- ${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`)
+            .join('\n');
+
+        const jobs = resumeData.experience || [];
+        const currentJob = jobs.find(j => j.current) || jobs[0] || {};
+        const currentRole = currentJob.title || 'Candidate';
+        const workExperienceDetails = jobs.map(j => {
+            const dates = `${j.startDate || ''} - ${j.current ? 'Present' : (j.endDate || '')}`;
+            return `### ${j.title} at ${j.company} (${dates})\n${j.location ? `Location: ${j.location}\n` : ''}${j.description || ''}`;
+        }).join('\n\n');
+
+        const education = resumeData.education || [];
+        const educationDetails = education.map(e => {
+            const dates = `${e.startDate || ''} - ${e.endDate || ''}`;
+            return `### ${e.degree} in ${e.field} from ${e.school} (${dates})\n${e.gpa ? `GPA: ${e.gpa}` : ''}`;
+        }).join('\n\n');
+
+        const skillsData = resumeData.skills || {};
+        const allSkillsDetails = Object.entries(skillsData)
+            .filter(([_, v]) => Array.isArray(v) && v.length > 0)
+            .map(([category, items]) => `- ${category.charAt(0).toUpperCase() + category.slice(1)}: ${items.join(', ')}`)
+            .join('\n');
+
+        const projects = resumeData.projects || [];
+        const projectDetails = projects.map(p => {
+            return `### ${p.name}\n${p.description || ''}\nTechnologies: ${(p.technologies || []).join(', ')}`;
+        }).join('\n\n');
+
+        const customFields = resumeData.customFields || {};
+        const customFieldsDetails = Object.entries(customFields)
+            .filter(([_, v]) => v !== null && v !== '' && v !== undefined)
+            .map(([k, v]) => `- ${k.replace(/([A-Z])/g, ' $1').trim().replace(/^\w/, c => c.toUpperCase())}: ${v}`)
+            .join('\n');
+
+        let totalYears = 0;
+        if (window.LocalMatcher?.calculateTotalExperience) {
+            totalYears = window.LocalMatcher.calculateTotalExperience(jobs);
+        } else {
+            totalYears = jobs.length * 1.5;
+        }
+
+        return {
+            name,
+            current_role: currentRole,
+            total_years_experience: totalYears,
+            full_personal_info: fullPersonalInfo || 'N/A',
+            work_experience_details: workExperienceDetails || 'N/A',
+            education_details: educationDetails || 'N/A',
+            all_skills_details: allSkillsDetails || 'N/A',
+            project_details: projectDetails || 'N/A',
+            custom_fields_details: customFieldsDetails || 'N/A',
+            job_context: pageContext || 'No specific job description found.'
+        };
+    } else {
+        // Condensed context for subsequent batches
+        const profile = context.profile || {};
+        const previousQA = context.previousQA || [];
+
+        const previousQAText = previousQA.length > 0
+            ? previousQA.map((qa, idx) => `Q${idx + 1}: ${qa.question}\nA${idx + 1}: ${qa.answer}`).join('\n\n')
+            : 'No previous questions yet.';
+
+        return {
+            name: profile.name || 'Candidate',
+            current_role: profile.currentRole || 'Professional',
+            years_exp: profile.yearsExp || 0,
+            top_skills: Array.isArray(profile.topSkills) ? profile.topSkills.join(', ') : 'N/A',
+            education: profile.latestEducation || 'N/A',
+            email: profile.email || '',
+            phone: profile.phone || '',
+            location: profile.location || '',
+            previous_qa: previousQAText,
+            job_context: pageContext || 'No specific job description found.'
+        };
+    }
+}
+
+/**
+ * NEW: Map a small batch of fields (1-5) using AI with smart context
+ * @param {Array} fields - Batch of 1-5 field objects
+ * @param {Object} context - Context object from BatchProcessor (type: 'full' or 'condensed')
+ * @param {string} pageContext - Job context
+ * @returns {Promise<{success: boolean, mappings?: Object, error?: string}>}
+ */
+async function mapFieldsBatch(fields, context, pageContext = '') {
+    if (!fields || fields.length === 0) return { success: true, mappings: {} };
+    if (fields.length > 5) {
+        console.warn('[FormAnalyzer] mapFieldsBatch called with more than 5 fields, truncating...');
+        fields = fields.slice(0, 5);
+    }
+
+    console.log(`[FormAnalyzer] Processing batch of ${fields.length} fields with ${context.type} context`);
+
+    // Choose prompt template based on context type
+    const promptTemplate = context.type === 'full'
+        ? PROMPTS.MAP_DATA_BATCH
+        : PROMPTS.MAP_DATA_BATCH_CONDENSED;
+
+    // Build context replacements
+    const contextData = buildCondensedContext(context, context.resumeData, pageContext);
+
+    // Prepare fields for prompt
+    const fieldsArray = JSON.stringify(fields, null, 2);
+
+    // Replace template variables
+    let prompt = promptTemplate;
+    Object.entries(contextData).forEach(([key, value]) => {
+        prompt = prompt.replace(new RegExp(`{{${key}}}`, 'g'), value);
+    });
+    prompt = prompt.replace('{{fields_array}}', fieldsArray);
+
+    // Call AI
+    const result = await window.AIClient.callAI(prompt, '', {
+        maxTokens: context.type === 'full' ? 3000 : 1500, // Condensed needs fewer output tokens
+        temperature: 0.3,
+        jsonMode: true
+    });
+
+    if (!result || !result.success) {
+        return { success: false, error: result?.error || 'AI call returned no response' };
+    }
+
+    const parseResult = window.AIClient.parseAIJson(result.text);
+
+    if (!parseResult || typeof parseResult !== 'object') {
+        return { success: false, error: 'Failed to parse mapping result' };
+    }
+
+    const mappings = parseResult.mappings || parseResult;
+
+    return { success: true, mappings };
+}
+
+
+/**
  * Generate a smart answer for an open-ended question
  * @param {string} question - The question to answer
  * @param {string} context - Additional context (job description, etc.)
@@ -604,6 +873,8 @@ async function analyzeAndMapForm(html) {
 if (typeof window !== 'undefined') {
     window.FormAnalyzer = {
         mapResumeToFields,
+        mapFieldsBatch,           // NEW: Batched processing
+        buildCondensedContext,    // NEW: Context builder
         generateSmartAnswer,
         getChatSystemPrompt,
         analyzeAndMapForm,
@@ -617,6 +888,8 @@ if (typeof window !== 'undefined') {
 if (typeof self !== 'undefined' && typeof self.FormAnalyzer === 'undefined') {
     self.FormAnalyzer = {
         mapResumeToFields,
+        mapFieldsBatch,
+        buildCondensedContext,
         generateSmartAnswer,
         getChatSystemPrompt,
         analyzeAndMapForm,

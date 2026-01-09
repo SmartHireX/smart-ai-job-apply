@@ -1328,3 +1328,181 @@
     background: rgba(10, 102, 194, 0.1);
     color: #004182;
 }
+
+/* NEW: Batched Processing Animations */
+
+/* AI Writing Pulse Effect */
+.smarthirex-ai-writing {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+    animation: aiWritingPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes aiWritingPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(139, 92, 246, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+    }
+}
+
+/* Sidebar Field Enter Animation */
+.sidebar-field-enter {
+    animation: fadeInSlide 0.3s ease-out;
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Accessibility: Respect Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+    .smart hirex-ai-writing {
+        animation: none;
+        box-shadow: none;
+    }
+
+    .sidebar-field-enter {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+
+    .smarthirex-typing {
+        animation: none;
+    }
+}
+
+/* NEW: Batch Processing Widget Enhancements */
+
+/* Batch Indicator Dots */
+.sh-batch-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 0;
+    margin-top: 8px;
+}
+
+/* Inline Batch Indicators (next to text) */
+.sh-batch-indicators-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.sh-batch-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.sh-batch-dot.pending {
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2);
+}
+
+.sh-batch-dot.active {
+    background: #60a5fa;
+    box-shadow: 0 0 8px #60a5fa, 0 0 0 2px rgba(96, 165, 250, 0.3);
+    animation: batchPulse 1.5s ease-in-out infinite;
+    transform: scale(1.4);
+}
+
+.sh-batch-dot.completed {
+    background: #34d399;
+    box-shadow: 0 0 4px #34d399;
+    transform: scale(1);
+}
+
+@keyframes batchPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 8px #60a5fa, 0 0 0 2px rgba(96, 165, 250, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 12px #60a5fa, 0 0 0 4px rgba(96, 165, 250, 0.5);
+    }
+}
+
+/* Animated Gradient Progress Fill */
+.sh-progress-fill.sh-gradient-flow {
+    background: linear-gradient(90deg,
+            #667eea 0%,
+            #764ba2 25%,
+            #f093fb 50%,
+            #f5576c 75%,
+            #feca57 100%);
+    background-size: 200% 100%;
+    animation: gradientFlow 3s linear infinite;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes gradientFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    100% {
+        background-position: 200% 50%;
+    }
+}
+
+/* Batch Count Overlay on Neural Loader */
+.sh-neural-loader.sh-batch-mode {
+    position: relative;
+}
+
+.sh-batch-count {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+/* Enhanced Neural Core for Batch Mode */
+.sh-neural-loader.sh-batch-mode .sh-neural-core {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow:
+        0 0 10px rgba(102, 126, 234, 0.7),
+        0 0 20px rgba(118, 75, 162, 0.5);
+    animation: batchCorePulse 2s ease-in-out infinite;
+}
+
+@keyframes batchCorePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.9;
+    }
+}

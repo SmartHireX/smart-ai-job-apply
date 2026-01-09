@@ -252,3 +252,57 @@ function highlightSubmitButton() {
         submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 }
+
+/**
+ * NEW: Show ghosting/typing animation for batched field filling
+ * @param {HTMLElement} element - Form field element
+ * @param {string} value - Value to type
+ * @param {number} confidence - AI confidence level
+ */
+async function showGhostingAnimation(element, value, confidence = 0.8) {
+    if (!element || !value) return;
+
+    // Check accessibility preference for reduced motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+        // Instant fill for users who prefer no animations
+        setFieldValue(element, value);
+        highlightField(element, confidence);
+        dispatchChangeEvents(element);
+        return;
+    }
+
+    // Add visual state
+    element.classList.add('smarthirex-typing');
+    element.classList.add('smarthirex-ai-writing'); // New class for pulse effect
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    element.focus();
+
+    // Check if text input
+    const isText = (element.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'color', 'file', 'date', 'time'].includes(element.type)) || element.tagName === 'TEXTAREA';
+
+    if (isText) {
+        const chars = String(value).split('');
+
+        // Use Native Setter for robust filling
+        setNativeValue(element, '');
+
+        // Use SAME speed as simulateTyping: 10-20ms per character (human-like but fast)
+        for (const char of chars) {
+            const currentVal = element.value;
+            setNativeValue(element, currentVal + char);
+            // Random delay 10-20ms (same as cache/heuristic fills)
+            await new Promise(r => setTimeout(r, Math.random() * 10 + 10));
+        }
+    } else {
+        // For non-text fields, show brief animation then fill
+        await new Promise(r => setTimeout(r, 200));
+        setFieldValue(element, value);
+    }
+
+    element.classList.remove('smarthirex-typing');
+    element.classList.remove('smarthirex-ai-writing');
+    highlightField(element, confidence);
+    dispatchChangeEvents(element);
+}

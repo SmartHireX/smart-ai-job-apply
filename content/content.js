@@ -313,7 +313,7 @@ async function processPageFormLocal() {
         const hasPhase2 = unmapped.length > 0;
         let cumulativeMappings = { ...heuristicMappings };
 
-        // 4. EXECUTE PHASE 1 FILL
+        // 4. EXECUTE PHASE 1 FILL (but don't show sidebar if AI will run)
         if (Object.keys(heuristicMappings).length > 0) {
             await executeInstantFill({
                 mappings: heuristicMappings,
@@ -322,16 +322,17 @@ async function processPageFormLocal() {
             }, {
                 resetHistory: true,
                 cumulativeMappings,
-                isFinal: !hasPhase2
+                isFinal: !hasPhase2,
+                skipSidebar: hasPhase2  // NEW: Skip sidebar if AI batches will run
             });
         } else {
             activeFormUndoHistory = [];
         }
 
-        // --- PHASE 2: AI REASONING ---
+        // --- PHASE 2: AI REASONING (BATCHED) ---
         if (unmapped.length > 0) {
             console.log(`⚡ Phase 2: AI Needed for ${unmapped.length} complex fields`);
-            showProcessingWidget('Thinking...', 2);
+            console.log(`🚀 Starting BATCHED Processing with background prefetching...`);
 
             const pageContext = getJobContext();
 
@@ -343,19 +344,18 @@ async function processPageFormLocal() {
                 while (attempt < maxRetries) {
                     try {
                         const result = await new Promise(resolve => {
-                            console.log('🤖 AI INPUT PAYLOAD:', { prompt, sys, opts });
                             chrome.runtime.sendMessage({
                                 type: 'AI_REQUEST',
                                 prompt, systemInstruction: sys, options: opts
                             }, resolve);
                         });
 
-                        if (result && result.success) return result; // FIX: return result, not result.data
+                        if (result && result.success) return result;
 
                         const errorMsg = (result?.error || '').toLowerCase();
                         if (errorMsg.includes('rate limit') || errorMsg.includes('quota')) {
                             console.warn(`⚡ AI Rate Limit Wait (Attempt ${attempt + 1})`);
-                            showProcessingWidget(`Rate Limit... Waiting (${attempt + 1})`, 2);
+                            updateProcessingWidget(`Rate Limit... Waiting (${attempt + 1})`);
                             await new Promise(r => setTimeout(r, 2000 * Math.pow(2, attempt)));
                             attempt++;
                             continue;
@@ -369,58 +369,79 @@ async function processPageFormLocal() {
                 return { success: false, error: 'Rate limit' };
             };
 
-            const aiResult = await window.FormAnalyzer.mapResumeToFields(unmapped, resumeData, pageContext);
+            // Use batched processor with callbacks
+            const allAIMappings = await window.BatchProcessor.processFieldsInBatches(
+                unmapped,
+                resumeData,
+                pageContext,
+                {
+                    onBatchStart: (idx, total, labels) => {
+                        console.log(`[Batch ${idx}/${total}] Processing: ${labels.join(', ')}`);
+                        // Use enhanced widget with batch info
+                        showProcessingWidget('AI Processing...', 2, {
+                            currentBatch: idx,
+                            totalBatches: total
+                        });
+                    },
+                    onFieldAnswered: (selector, value, confidence) => {
+                        const element = document.querySelector(selector);
+                        if (element && isFieldVisible(element)) {
+                            // Show ghosting animation for all foreground batch fields
+                            showGhostingAnimation(element, value, confidence);
+                        }
+                    },
+                    onBatchComplete: (batchMappings, isBackground) => {
+                        if (!isBackground) {
+                            console.log(`✅ Foreground batch complete: ${Object.keys(batchMappings).length} fields`);
+                            // Just merge into cumulative, don't update sidebar yet
+                            Object.assign(cumulativeMappings, batchMappings);
+                        } else {
+                            console.log(`📦 Background batch cached: ${Object.keys(batchMappings).length} fields`);
+                        }
+                    },
+                    onAllComplete: (finalMappings) => {
+                        console.log(`🎉 All batches complete: ${Object.keys(finalMappings).length} total fields`);
+
+                        // Now update sidebar with ALL fields after batches complete
+                        // Ensure ALL original fields are in cumulativeMappings
+                        fields.forEach(field => {
+                            if (!cumulativeMappings[field.selector]) {
+                                cumulativeMappings[field.selector] = {
+                                    value: null,
+                                    confidence: 0,
+                                    source: 'manual',
+                                    field_type: field.type,
+                                    label: field.label
+                                };
+                            }
+                        });
+
+                        // Show final sidebar with all fields
+                        triggerConfetti();
+                        updateSidebarWithState(cumulativeMappings);
+                    }
+                }
+            );
+
             window.AIClient.callAI = originalCallAI;
 
-            if (aiResult.success && aiResult.mappings) {
-                console.log(`🧠 Phase 2: AI mapped ${Object.keys(aiResult.mappings).length} fields.`);
-                console.log('🤖 FULL AI OUTPUT:', JSON.stringify(aiResult, null, 2));
-                cumulativeMappings = { ...cumulativeMappings, ...aiResult.mappings };
-
-                // FIX: Ensure ALL original fields are in cumulativeMappings, even if unmapped
-                // This forces them to appear in the "Manual" tab of the Sidebar
-                fields.forEach(field => {
-                    if (!cumulativeMappings[field.selector]) {
-                        cumulativeMappings[field.selector] = {
-                            value: null,
-                            confidence: 0,
-                            source: 'manual',
-                            field_type: field.type,
-                            label: field.label
-                        };
-                    }
-                });
-
-                showProcessingWidget('Finalizing...', 3);
-                await executeInstantFill({
-                    mappings: aiResult.mappings,
-                    analysis: { fields },
-                    allFields: fields
-                }, {
-                    resetHistory: false,
-                    cumulativeMappings,
-                    isFinal: true
-                });
+            if (Object.keys(allAIMappings).length > 0) {
+                console.log(`🧠 Phase 2: AI mapped ${Object.keys(allAIMappings).length} fields via batched processing.`);
 
                 // Save entries to smart memory
                 const newCacheEntries = {};
                 const ALLOWED_CACHE_TYPES = new Set(['text', 'textarea', 'email', 'tel', 'url', 'search']);
 
-                console.log(`💾 Attempting to cache ${Object.keys(aiResult.mappings).length} Phase 2 fields...`);
+                console.log(`💾 Attempting to cache ${Object.keys(allAIMappings).length} Phase 2 fields...`);
 
-                for (const [selector, data] of Object.entries(aiResult.mappings)) {
+                for (const [selector, data] of Object.entries(allAIMappings)) {
                     if (!data.value || String(data.value).length >= 500) {
-                        console.log(`⏭️ Skipping cache (no value or too long): ${selector}`);
                         continue;
                     }
 
                     const el = document.querySelector(selector);
-                    if (!el) {
-                        console.log(`⏭️ Skipping cache (element not found): ${selector}`);
-                        continue;
-                    }
+                    if (!el) continue;
 
-                    // Get field type, default to 'text' if not specified
                     const fieldType = (el.type || 'text').toLowerCase();
                     const tagName = el.tagName.toLowerCase();
                     const label = getFieldLabel(el);
@@ -435,39 +456,21 @@ async function processPageFormLocal() {
                                 console.warn('[SelectionCache] Failed to cache AI result:', err);
                             }
                         }
-                        continue; // Done with this field
+                        continue;
                     }
 
                     // --- 2. HANDLE TEXT FIELDS (Smart Memory) ---
-                    if (!ALLOWED_CACHE_TYPES.has(fieldType)) {
-                        console.log(`⏭️ Skipping cache (type '${fieldType}' not allowed): ${selector}`);
-                        continue;
-                    }
-
-                    if (!label || label.length <= 2) {
-                        console.log(`⏭️ Skipping cache (invalid label '${label}'): ${selector}`);
-                        continue;
-                    }
+                    if (!ALLOWED_CACHE_TYPES.has(fieldType)) continue;
+                    if (!label || label.length <= 2) continue;
 
                     const normalizedLabel = normalizeSmartMemoryKey(label);
 
-                    // Quality validation: reject poor cache keys
+                    // Quality validation
                     const isGeneric = /^(yes|no|ok|submit|cancel|true|false)$/i.test(normalizedLabel);
                     const isSingleWord = !normalizedLabel.includes(' ');
                     const isNumberHeavy = (normalizedLabel.match(/\d/g) || []).length > normalizedLabel.length / 3;
 
-                    if (isGeneric) {
-                        console.log(`⏭️ Skipping cache (generic label '${normalizedLabel}'): ${selector}`);
-                        continue;
-                    }
-
-                    if (isSingleWord && normalizedLabel.length < 4) {
-                        console.log(`⏭️ Skipping cache (too short single word '${normalizedLabel}'): ${selector}`);
-                        continue;
-                    }
-
-                    if (isNumberHeavy) {
-                        console.log(`⏭️ Skipping cache (number-heavy label '${normalizedLabel}'): ${selector}`);
+                    if (isGeneric || (isSingleWord && normalizedLabel.length < 4) || isNumberHeavy) {
                         continue;
                     }
 
@@ -485,15 +488,36 @@ async function processPageFormLocal() {
                     console.log(`⚠️ No Phase 2 text fields were cached.`);
                 }
             } else {
-                const errorMsg = aiResult?.error || 'Unknown error';
-                console.error('⚡ Phase 2: AI failed.', errorMsg);
-                console.error('Full AI Result:', aiResult);
-                showErrorToast(`AI Processing Error: ${errorMsg}`);
-                if (Object.keys(heuristicMappings).length > 0) {
-                    triggerConfetti();
-                    updateSidebarWithState(heuristicMappings);
-                }
+                console.warn('⚡ Phase 2: Batched processing returned no mappings');
+                // Still ensure all fields are in cumulativeMappings and show sidebar
+                fields.forEach(field => {
+                    if (!cumulativeMappings[field.selector]) {
+                        cumulativeMappings[field.selector] = {
+                            value: null,
+                            confidence: 0,
+                            source: 'manual',
+                            field_type: field.type,
+                            label: field.label
+                        };
+                    }
+                });
+                triggerConfetti();
+                updateSidebarWithState(cumulativeMappings);
             }
+        } else {
+            // No Phase 2 needed - still ensure all fields are in mappings for sidebar
+            console.log('⚡ No unmapped fields, skipping Phase 2');
+            fields.forEach(field => {
+                if (!cumulativeMappings[field.selector]) {
+                    cumulativeMappings[field.selector] = {
+                        value: null,
+                        confidence: 0,
+                        source: 'manual',
+                        field_type: field.type,
+                        label: field.label
+                    };
+                }
+            });
         }
 
         showProcessingWidget('Done!', 4);
@@ -542,10 +566,10 @@ async function executeInstantFill(data, options = { resetHistory: true, cumulati
             }
         }
 
-        if (isFinal) {
+        if (isFinal && !options.skipSidebar) {
             if (Object.keys(cumulativeState).length > 0) {
                 triggerConfetti();
-                setTimeout(() => updateSidebarWithState(cumulativeState), 500);
+                updateSidebarWithState(cumulativeState);
             } else {
                 showErrorToast('No matching fields found.');
             }

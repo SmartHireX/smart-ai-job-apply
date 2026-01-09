@@ -44,6 +44,7 @@
                 "content/visuals.js",
                 "content/drag-resize.js",
                 "content/ui-components.js",
+                "content/batch-processor.js",
                 "content/content.js"
             ],
             "css": [

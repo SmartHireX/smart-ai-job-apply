@@ -17,7 +17,7 @@ function updateSidebarWithState(allMappings) {
     showAccordionSidebar(allFields);
 }
 
-function showProcessingWidget(text, step) {
+function showProcessingWidget(text, step, batchInfo = null) {
     let widget = document.getElementById('smarthirex-processing-widget');
     if (!widget) {
         widget = document.createElement('div');
@@ -42,11 +42,44 @@ function showProcessingWidget(text, step) {
         return;
     }
 
-    // Convert step to actual progress percentage
+    // NEW: Handle batched progress
+    if (batchInfo && batchInfo.currentBatch && batchInfo.totalBatches) {
+        const { currentBatch, totalBatches } = batchInfo;
+        const batchProgress = (currentBatch / totalBatches) * 100;
+
+        // Generate batch indicator dots
+        let batchDots = '';
+        for (let i = 1; i <= totalBatches; i++) {
+            const dotClass = i < currentBatch ? 'completed' : (i === currentBatch ? 'active' : 'pending');
+            batchDots += `<div class="sh-batch-dot ${dotClass}"></div>`;
+        }
+
+        widget.innerHTML = `
+            <div class="sh-widget-header">
+                <div class="sh-neural-loader">
+                    <div class="sh-neural-core"></div>
+                    <div class="sh-neural-ring"></div>
+                    <div class="sh-neural-ring"></div>
+                </div>
+                <div class="sh-content-col">
+                    <div class="sh-main-text">${text}</div>
+                    <div class="sh-batch-indicators-inline">
+                        ${batchDots}
+                    </div>
+                </div>
+            </div>
+            <div class="sh-progress-track">
+                <div class="sh-progress-fill sh-gradient-flow" style="width: ${batchProgress}%;"></div>
+            </div>
+        `;
+        return;
+    }
+
+    // Original: Convert step to actual progress percentage
     // Step 1 (Instant Match) = 33%
     // Step 2 (AI Thinking) = 66%
     // Step 3 (Finalizing) = 100%
-    const progressMap = { 1: 33, 2: 66, 3: 100 };
+    const progressMap = { 1: 33, 2: 66, 3: 100, 4: 100 };
     const progressPercent = progressMap[step] || 0;
 
     widget.innerHTML = `
