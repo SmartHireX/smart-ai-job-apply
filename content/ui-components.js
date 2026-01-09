@@ -1021,29 +1021,111 @@ function showAccordionSidebar(allFields) {
         });
     });
 
-    // Recalculate All buttons
+    // Recalculate All buttons - Use batch processor for efficiency
     const recalculateAllBtns = panel.querySelectorAll('.recalculate-all-btn');
     recalculateAllBtns.forEach(btn => {
         btn.addEventListener('click', async () => {
             const tabType = btn.dataset.tab;
-            const btnText = btn.textContent;
-            btn.textContent = 'Recalculating...';
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<svg class="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/></svg> Regenerating...`;
             btn.disabled = true;
 
-            // Get all fields in this tab
-            const tabContent = panel.querySelector(`.tab-content[data-tab="${tabType}"]`);
-            const fieldBtns = tabContent.querySelectorAll('.recalculate-btn');
+            try {
+                // Get all field selectors from this tab that have recalculate buttons
+                const tabContent = panel.querySelector(`.tab-content[data-tab="${tabType}"]`);
+                const fieldBtns = tabContent.querySelectorAll('.recalculate-btn');
 
-            // Recalculate each field sequentially
-            for (const fieldBtn of fieldBtns) {
-                await new Promise(resolve => {
-                    fieldBtn.click();
-                    setTimeout(resolve, 500); // Small delay between fields
+                if (fieldBtns.length === 0) {
+                    showSuccessToast('No fields to regenerate');
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                    return;
+                }
+
+                // Collect fields for batch processing
+                const fieldsToRegenerate = [];
+                fieldBtns.forEach(fieldBtn => {
+                    const selector = fieldBtn.dataset.selector;
+                    const label = fieldBtn.dataset.label;
+                    if (selector && label) {
+                        fieldsToRegenerate.push({
+                            selector: selector,
+                            label: label,
+                            type: 'text', // Default to text for regeneration
+                            name: ''
+                        });
+                    }
                 });
-            }
 
-            btn.textContent = btnText;
-            btn.disabled = false;
+                console.log(`🔄 Regenerating ${fieldsToRegenerate.length} fields in batch...`);
+
+                // Get resume and context
+                const resumeData = await window.ResumeManager.getResumeData();
+                const pageContext = typeof getJobContext === 'function' ? getJobContext() : '';
+
+                // Use batch processor with display updates
+                showProcessingWidget('Regenerating fields...', 2, {
+                    currentBatch: 1,
+                    totalBatches: Math.ceil(fieldsToRegenerate.length / 5)
+                });
+
+                const regeneratedMappings = await window.BatchProcessor.processFieldsInBatches(
+                    fieldsToRegenerate,
+                    resumeData,
+                    pageContext,
+                    {
+                        onBatchStart: (idx, total) => {
+                            showProcessingWidget('Regenerating fields...', 2, {
+                                currentBatch: idx,
+                                totalBatches: total
+                            });
+                        },
+                        onFieldAnswered: (selector, value, confidence) => {
+                            const element = document.querySelector(selector);
+                            if (element && value) {
+                                // Apply the regenerated value with animation
+                                if (typeof showGhostingAnimation === 'function') {
+                                    showGhostingAnimation(element, value, confidence);
+                                } else {
+                                    setFieldValue(element, value);
+                                    highlightField(element, confidence);
+                                }
+                            }
+                        },
+                        onAllComplete: async (mappings) => {
+                            console.log(`✅ Regenerated ${Object.keys(mappings).length} fields`);
+
+                            // Update smart memory with new values
+                            const newCacheEntries = {};
+                            for (const [selector, data] of Object.entries(mappings)) {
+                                if (data.value && data.label) {
+                                    const key = normalizeSmartMemoryKey(data.label);
+                                    if (key && key.length > 2) {
+                                        newCacheEntries[key] = {
+                                            answer: data.value,
+                                            timestamp: Date.now()
+                                        };
+                                    }
+                                }
+                            }
+
+                            if (Object.keys(newCacheEntries).length > 0) {
+                                updateSmartMemoryCache(newCacheEntries);
+                            }
+                        }
+                    }
+                );
+
+                removeProcessingWidget();
+                showSuccessToast(`Regenerated ${Object.keys(regeneratedMappings).length} fields! 🎉`);
+
+            } catch (error) {
+                console.error('Regenerate all failed:', error);
+                showErrorToast('Failed to regenerate fields: ' + error.message);
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
         });
     });
 
