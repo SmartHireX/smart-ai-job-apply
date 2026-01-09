@@ -14,6 +14,45 @@ const MAX_RETRIES = 2; // Retries per batch on failure
 const RETRY_DELAY_MS = 1000; // Base delay between retries
 
 /**
+ * Get the current value of a form field
+ * @param {HTMLElement} element - Form field element
+ * @returns {string} Current value or empty string
+ */
+function getFieldCurrentValue(element) {
+    if (!element) return '';
+
+    try {
+        const tagName = element.tagName.toLowerCase();
+        const type = (element.type || '').toLowerCase();
+
+        if (tagName === 'select') {
+            return element.value || '';
+        } else if (type === 'checkbox') {
+            // For checkboxes, check if any in group are checked
+            const name = element.name;
+            if (name) {
+                const checked = document.querySelectorAll(`input[name="${CSS.escape(name)}"]:checked`);
+                return checked.length > 0 ? 'checked' : '';
+            }
+            return element.checked ? 'checked' : '';
+        } else if (type === 'radio') {
+            // For radios, check if any in group is selected
+            const name = element.name;
+            if (name) {
+                const selected = document.querySelector(`input[name="${CSS.escape(name)}"]:checked`);
+                return selected ? selected.value : '';
+            }
+            return element.checked ? element.value : '';
+        } else {
+            // Text, textarea, etc.
+            return element.value || '';
+        }
+    } catch (e) {
+        return '';
+    }
+}
+
+/**
  * Group fields by type for sequential processing
  * @param {Array} fields - Unmapped field objects
  * @returns {Object} Grouped fields by type
@@ -394,12 +433,36 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
         return {};
     }
 
-    // Deduplicate against smart memory
+    // Deduplicate against smart memory AND skip already-filled fields
     const fieldsToProcess = [];
     const alreadyAnswered = {};
+    const alreadyFilled = {};
 
     for (const field of processingOrder) {
         try {
+            // NEW: Skip fields that already have values
+            let element = null;
+            try {
+                element = document.querySelector(field.selector);
+            } catch (e) { }
+
+            if (element) {
+                const existingValue = getFieldCurrentValue(element);
+                if (existingValue && existingValue.trim() !== '') {
+                    console.log(`[BatchProcessor] Skip (already filled): "${field.label || field.name}" = "${existingValue.slice(0, 30)}..."`);
+                    alreadyFilled[field.selector] = {
+                        value: existingValue,
+                        confidence: 1.0,
+                        source: 'pre-filled',
+                        field_type: field.type,
+                        label: field.label,
+                        skipped: true
+                    };
+                    continue;
+                }
+            }
+
+            // Check smart memory for cached answer
             const cachedAnswer = await checkSmartMemoryForAnswer(field, smartMemory);
             if (cachedAnswer) {
                 console.log(`[BatchProcessor] Deduplication: "${field.label || field.name}" from smart memory`);
@@ -419,11 +482,17 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
         }
     }
 
-    // If everything was deduplicated, return immediately
+    // Merge pre-filled and deduplicated
+    const skippedMappings = { ...alreadyFilled, ...alreadyAnswered };
+
+    console.log(`[BatchProcessor] Skipped ${Object.keys(alreadyFilled).length} pre-filled, ${Object.keys(alreadyAnswered).length} deduplicated`);
+
+
+    // If everything was skipped (pre-filled or deduplicated), return immediately
     if (fieldsToProcess.length === 0) {
-        console.log('[BatchProcessor] All fields were deduplicated from smart memory!');
-        if (callbacks.onAllComplete) callbacks.onAllComplete(alreadyAnswered);
-        return alreadyAnswered;
+        console.log('[BatchProcessor] All fields were skipped (pre-filled or deduplicated)!');
+        if (callbacks.onAllComplete) callbacks.onAllComplete(skippedMappings);
+        return skippedMappings;
     }
 
     // Split into batches
@@ -434,7 +503,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
 
     console.log(`[BatchProcessor] Created ${batches.length} batches from ${fieldsToProcess.length} fields`);
 
-    const allMappings = { ...alreadyAnswered };
+    const allMappings = { ...skippedMappings }; // Start with skipped mappings
     const previousQA = []; // Track Q&A for context continuity
 
     let backgroundPromise = null;

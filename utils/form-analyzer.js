@@ -166,73 +166,41 @@ INSTRUCTIONS
 5. For select/radio/checkbox fields, ONLY use values from the provided options array.
 
 ────────────────────────────
-RESPONSE FORMAT (JSON ONLY)
+RESPONSE FORMAT (JSON ONLY - USE ABBREVIATED KEYS)
 ────────────────────────────
 {
-  "mappings": {
-    "<css_selector>": {
-      "value": "<answer_text_or_selected_value>",
-      "confidence": <0.6 - 0.9>,
-      "source": "ai_generated",
-      "field_type": "<type>"
-    }
+  "m": {
+    "<selector>": {"v": "<answer>", "c": <0.6-0.9>, "t": "<type>"}
   }
 }
 
+KEY: m=mappings, v=value, c=confidence, t=type
 Return mappings ONLY for provided selectors. Valid JSON only.
 `,
 
     // NEW: Condensed prompt for subsequent batches (minimal context)
-    MAP_DATA_BATCH_CONDENSED: `You are helping complete a job application.
+    MAP_DATA_BATCH_CONDENSED: `Job application assistant. Answer 1-5 questions.
 
-────────────────────────────
-APPLICANT PROFILE (CONDENSED)
-────────────────────────────
-Name: {{name}}
-Current Role: {{current_role}}
-Experience: {{years_exp}} years
-Top Skills: {{top_skills}}
-Education: {{education}}
-Contact: {{email}} | {{phone}}
-Location: {{location}}
+PROFILE: {{name}} | {{current_role}} | {{years_exp}}yrs | {{top_skills}}
+EDU: {{education}} | LOC: {{location}}
 
-────────────────────────────
-PREVIOUS ANSWERS (CONTEXT)
-────────────────────────────
+PREV ANSWERS:
 {{previous_qa}}
 
-────────────────────────────
-JOB CONTEXT
-────────────────────────────
-{{job_context}}
+JOB: {{job_context}}
 
-────────────────────────────
-NEW QUESTIONS TO ANSWER
-────────────────────────────
+QUESTIONS:
 {{fields_array}}
 
-────────────────────────────
-INSTRUCTIONS
-────────────────────────────
-1. Answer professionally and concisely (<120 words).
-2. Stay consistent with previous answers above.
-3. Use profile facts - DO NOT fabricate.
-4. For select/radio/checkbox, ONLY use provided option values.
+RULES: <120 words, use provided facts only, select/radio/checkbox use given options only.
 
-────────────────────────────
-RESPONSE FORMAT (JSON ONLY)
-────────────────────────────
-{
-  "mappings": {
-    "<css_selector>": {
-      "value": "<answer>",
-      "confidence": <0.6-0.9>,
-      "source": "ai_generated",
-      "field_type": "<type>"
-    }
-  }
-}
+JSON RESPONSE (abbreviated keys):
+{"m":{"<selector>":{"v":"<answer>","c":<0.6-0.9>,"t":"<type>"}}}
+
+KEY: m=mappings, v=value, c=confidence, t=type
 `,
+
+
 
 
 
@@ -756,24 +724,31 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
             return { success: false, error: 'Invalid mapping result format' };
         }
 
-        // Extract mappings - handle different response formats
-        let mappings = parseResult.mappings || parseResult.fields || parseResult;
+        // Extract mappings - handle different response formats including abbreviated keys
+        // Abbreviated: { m: { selector: { v, c, t } } }
+        // Full: { mappings: { selector: { value, confidence, field_type } } }
+        let mappings = parseResult.m || parseResult.mappings || parseResult.fields || parseResult;
 
         // Validate mappings structure
         if (typeof mappings !== 'object') {
             return { success: false, error: 'Mappings is not an object' };
         }
 
-        // Ensure each mapping has required fields
+        // Ensure each mapping has required fields - handle both abbreviated and full keys
         const validatedMappings = {};
         for (const [selector, data] of Object.entries(mappings)) {
             if (data && typeof data === 'object') {
                 validatedMappings[selector] = {
-                    value: data.value ?? data.answer ?? null,
-                    confidence: typeof data.confidence === 'number' ? data.confidence : 0.8,
+                    // v = value (abbreviated), value (full), answer (fallback)
+                    value: data.v ?? data.value ?? data.answer ?? null,
+                    // c = confidence (abbreviated), confidence (full)
+                    confidence: typeof (data.c ?? data.confidence) === 'number'
+                        ? (data.c ?? data.confidence)
+                        : 0.8,
                     source: 'ai-batch',
-                    field_type: data.field_type || data.type || 'text',
-                    label: data.label || ''
+                    // t = type (abbreviated), field_type/type (full)
+                    field_type: data.t || data.field_type || data.type || 'text',
+                    label: data.label || data.l || ''
                 };
             }
         }
