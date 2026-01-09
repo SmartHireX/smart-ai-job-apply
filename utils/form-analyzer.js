@@ -653,52 +653,138 @@ function buildCondensedContext(context, resumeData, pageContext = '') {
  * @returns {Promise<{success: boolean, mappings?: Object, error?: string}>}
  */
 async function mapFieldsBatch(fields, context, pageContext = '') {
-    if (!fields || fields.length === 0) return { success: true, mappings: {} };
+    // Validate inputs
+    if (!fields || !Array.isArray(fields) || fields.length === 0) {
+        return { success: true, mappings: {} };
+    }
+
+    if (!context || typeof context !== 'object') {
+        console.error('[FormAnalyzer] mapFieldsBatch: Invalid context');
+        return { success: false, error: 'Invalid context object' };
+    }
+
+    // Ensure we don't exceed batch size
     if (fields.length > 5) {
         console.warn('[FormAnalyzer] mapFieldsBatch called with more than 5 fields, truncating...');
         fields = fields.slice(0, 5);
     }
 
-    console.log(`[FormAnalyzer] Processing batch of ${fields.length} fields with ${context.type} context`);
-
-    // Choose prompt template based on context type
-    const promptTemplate = context.type === 'full'
-        ? PROMPTS.MAP_DATA_BATCH
-        : PROMPTS.MAP_DATA_BATCH_CONDENSED;
-
-    // Build context replacements
-    const contextData = buildCondensedContext(context, context.resumeData, pageContext);
-
-    // Prepare fields for prompt
-    const fieldsArray = JSON.stringify(fields, null, 2);
-
-    // Replace template variables
-    let prompt = promptTemplate;
-    Object.entries(contextData).forEach(([key, value]) => {
-        prompt = prompt.replace(new RegExp(`{{${key}}}`, 'g'), value);
-    });
-    prompt = prompt.replace('{{fields_array}}', fieldsArray);
-
-    // Call AI
-    const result = await window.AIClient.callAI(prompt, '', {
-        maxTokens: context.type === 'full' ? 3000 : 1500, // Condensed needs fewer output tokens
-        temperature: 0.3,
-        jsonMode: true
-    });
-
-    if (!result || !result.success) {
-        return { success: false, error: result?.error || 'AI call returned no response' };
+    // Filter out invalid fields
+    const validFields = fields.filter(f => f && f.selector);
+    if (validFields.length === 0) {
+        console.warn('[FormAnalyzer] mapFieldsBatch: No valid fields after filtering');
+        return { success: true, mappings: {} };
     }
 
-    const parseResult = window.AIClient.parseAIJson(result.text);
+    console.log(`[FormAnalyzer] Processing batch of ${validFields.length} fields with ${context.type || 'unknown'} context`);
 
-    if (!parseResult || typeof parseResult !== 'object') {
-        return { success: false, error: 'Failed to parse mapping result' };
+    try {
+        // Choose prompt template based on context type
+        const promptTemplate = context.type === 'full'
+            ? PROMPTS.MAP_DATA_BATCH
+            : PROMPTS.MAP_DATA_BATCH_CONDENSED;
+
+        if (!promptTemplate) {
+            console.error('[FormAnalyzer] Missing prompt template for type:', context.type);
+            return { success: false, error: 'Missing prompt template' };
+        }
+
+        // Build context replacements
+        const contextData = buildCondensedContext(context, context.resumeData || {}, pageContext);
+
+        // Prepare fields for prompt - sanitize field data
+        const sanitizedFields = validFields.map(f => ({
+            selector: f.selector,
+            label: f.label || '',
+            type: f.type || 'text',
+            name: f.name || '',
+            options: f.options || []
+        }));
+        const fieldsArray = JSON.stringify(sanitizedFields, null, 2);
+
+        // Replace template variables
+        let prompt = promptTemplate;
+        Object.entries(contextData).forEach(([key, value]) => {
+            const safeValue = typeof value === 'string' ? value : JSON.stringify(value);
+            prompt = prompt.replace(new RegExp(`{{${key}}}`, 'g'), safeValue);
+        });
+        prompt = prompt.replace('{{fields_array}}', fieldsArray);
+
+        // Verify AIClient is available
+        if (!window.AIClient?.callAI) {
+            console.error('[FormAnalyzer] AIClient not available');
+            return { success: false, error: 'AI client not initialized' };
+        }
+
+        // Call AI with appropriate token limits
+        const result = await window.AIClient.callAI(prompt, '', {
+            maxTokens: context.type === 'full' ? 3000 : 1500,
+            temperature: 0.3,
+            jsonMode: true
+        });
+
+        if (!result) {
+            return { success: false, error: 'AI returned null response' };
+        }
+
+        if (!result.success) {
+            return { success: false, error: result.error || 'AI call failed' };
+        }
+
+        if (!result.text) {
+            return { success: false, error: 'AI returned empty text' };
+        }
+
+        // Parse JSON response with fallback
+        let parseResult;
+        try {
+            parseResult = window.AIClient.parseAIJson(result.text);
+        } catch (e) {
+            console.warn('[FormAnalyzer] parseAIJson failed, trying manual parse');
+            try {
+                // Try to extract JSON from response
+                const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    parseResult = JSON.parse(jsonMatch[0]);
+                }
+            } catch (e2) {
+                return { success: false, error: 'Failed to parse AI response as JSON' };
+            }
+        }
+
+        if (!parseResult || typeof parseResult !== 'object') {
+            return { success: false, error: 'Invalid mapping result format' };
+        }
+
+        // Extract mappings - handle different response formats
+        let mappings = parseResult.mappings || parseResult.fields || parseResult;
+
+        // Validate mappings structure
+        if (typeof mappings !== 'object') {
+            return { success: false, error: 'Mappings is not an object' };
+        }
+
+        // Ensure each mapping has required fields
+        const validatedMappings = {};
+        for (const [selector, data] of Object.entries(mappings)) {
+            if (data && typeof data === 'object') {
+                validatedMappings[selector] = {
+                    value: data.value ?? data.answer ?? null,
+                    confidence: typeof data.confidence === 'number' ? data.confidence : 0.8,
+                    source: 'ai-batch',
+                    field_type: data.field_type || data.type || 'text',
+                    label: data.label || ''
+                };
+            }
+        }
+
+        console.log(`[FormAnalyzer] Batch mapped ${Object.keys(validatedMappings).length} fields successfully`);
+        return { success: true, mappings: validatedMappings };
+
+    } catch (error) {
+        console.error('[FormAnalyzer] mapFieldsBatch error:', error);
+        return { success: false, error: error.message || 'Unknown error in batch processing' };
     }
-
-    const mappings = parseResult.mappings || parseResult;
-
-    return { success: true, mappings };
 }
 
 

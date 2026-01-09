@@ -6,9 +6,12 @@
  * - Background prefetching for next batches
  * - Streaming UI updates with callbacks
  * - Question deduplication and optimization
+ * - Robust error handling and retry logic
  */
 
 const BATCH_SIZE = 5; // Research-backed optimal size
+const MAX_RETRIES = 2; // Retries per batch on failure
+const RETRY_DELAY_MS = 1000; // Base delay between retries
 
 /**
  * Group fields by type for sequential processing
@@ -16,6 +19,11 @@ const BATCH_SIZE = 5; // Research-backed optimal size
  * @returns {Object} Grouped fields by type
  */
 function groupFieldsByType(fields) {
+    if (!Array.isArray(fields)) {
+        console.warn('[BatchProcessor] groupFieldsByType received non-array, returning empty groups');
+        return { text: [], textarea: [], select: [], radio: [], checkbox: [] };
+    }
+
     const groups = {
         text: [],      // text, email, tel, url, search
         textarea: [],  // textarea fields
@@ -25,7 +33,9 @@ function groupFieldsByType(fields) {
     };
 
     fields.forEach(field => {
-        const type = field.type?.toLowerCase() || 'text';
+        if (!field) return; // Skip null/undefined fields
+
+        const type = (field.type || 'text').toLowerCase();
 
         if (type === 'textarea') {
             groups.textarea.push(field);
@@ -53,6 +63,12 @@ function groupFieldsByType(fields) {
  * @returns {Object} Context object with profile and previous answers
  */
 function buildSmartContext(resumeData, isFirstBatch = true, previousQA = []) {
+    // Validate resumeData
+    if (!resumeData || typeof resumeData !== 'object') {
+        console.warn('[BatchProcessor] Invalid resumeData, using empty object');
+        resumeData = {};
+    }
+
     if (isFirstBatch) {
         // Full context for first batch (~2000 tokens)
         return {
@@ -64,39 +80,54 @@ function buildSmartContext(resumeData, isFirstBatch = true, previousQA = []) {
 
     // Condensed context for subsequent batches (~500 tokens)
     const personal = resumeData.personal || {};
-    const jobs = resumeData.experience || [];
-    const currentJob = jobs.find(j => j.current) || jobs[0] || {};
+    const jobs = Array.isArray(resumeData.experience) ? resumeData.experience : [];
+    const currentJob = jobs.find(j => j && j.current) || jobs[0] || {};
     const skills = resumeData.skills || {};
-    const education = resumeData.education || [];
+    const education = Array.isArray(resumeData.education) ? resumeData.education : [];
 
     // Calculate total experience
     let totalYears = 0;
-    if (window.LocalMatcher?.calculateTotalExperience) {
-        totalYears = window.LocalMatcher.calculateTotalExperience(jobs);
-    } else {
-        totalYears = jobs.length * 1.5; // Rough estimate
+    try {
+        if (window.LocalMatcher?.calculateTotalExperience) {
+            totalYears = window.LocalMatcher.calculateTotalExperience(jobs);
+        } else {
+            totalYears = jobs.length * 1.5; // Rough estimate
+        }
+    } catch (e) {
+        totalYears = jobs.length * 1.5;
     }
 
-    // Get top 3 skills across all categories
+    // Get top 5 skills across all categories (increased from 3)
     const allSkills = [];
-    Object.values(skills).forEach(skillArray => {
-        if (Array.isArray(skillArray)) allSkills.push(...skillArray);
-    });
-    const topSkills = allSkills.slice(0, 3);
+    try {
+        Object.values(skills).forEach(skillArray => {
+            if (Array.isArray(skillArray)) allSkills.push(...skillArray);
+        });
+    } catch (e) {
+        console.warn('[BatchProcessor] Error extracting skills:', e);
+    }
+    const topSkills = allSkills.slice(0, 5);
+
+    // Get latest education safely
+    let latestEducation = 'N/A';
+    if (education[0]) {
+        const edu = education[0];
+        latestEducation = `${edu.degree || ''} ${edu.field ? 'in ' + edu.field : ''}`.trim() || 'N/A';
+    }
 
     return {
         type: 'condensed',
         profile: {
-            name: `${personal.firstName || ''} ${personal.lastName || ''}`.trim(),
-            currentRole: currentJob.title || 'Candidate',
+            name: `${personal.firstName || ''} ${personal.lastName || ''}`.trim() || 'Candidate',
+            currentRole: currentJob.title || 'Professional',
             yearsExp: totalYears,
             topSkills: topSkills,
-            latestEducation: education[0] ? `${education[0].degree} in ${education[0].field}` : 'N/A',
-            email: personal.email,
-            phone: personal.phone,
-            location: personal.location
+            latestEducation: latestEducation,
+            email: personal.email || '',
+            phone: personal.phone || '',
+            location: personal.location || ''
         },
-        previousQA: previousQA // Include Q&A from previous batches for context continuity
+        previousQA: Array.isArray(previousQA) ? previousQA.slice(-10) : [] // Limit to last 10 Q&A pairs
     };
 }
 
@@ -105,16 +136,33 @@ function buildSmartContext(resumeData, isFirstBatch = true, previousQA = []) {
  * Helps with deduplication to save tokens
  * @param {Object} field - Field object
  * @param {Object} smartMemory - Smart memory cache
- * @returns {string|null} Cached answer or null
+ * @returns {Promise<string|null>} Cached answer or null
  */
 async function checkSmartMemoryForAnswer(field, smartMemory) {
-    if (!smartMemory || Object.keys(smartMemory).length === 0) return null;
+    if (!smartMemory || typeof smartMemory !== 'object' || Object.keys(smartMemory).length === 0) {
+        return null;
+    }
+    if (!field || !field.selector) return null;
 
     try {
         let element = null;
-        if (field.selector) element = document.querySelector(field.selector);
-        else if (field.id) element = document.getElementById(field.id);
-        else if (field.name) element = document.querySelector(`[name="${CSS.escape(field.name)}"]`);
+        try {
+            element = document.querySelector(field.selector);
+        } catch (e) {
+            // Invalid selector
+            return null;
+        }
+
+        if (!element && field.id) {
+            try {
+                element = document.getElementById(field.id);
+            } catch (e) { }
+        }
+        if (!element && field.name) {
+            try {
+                element = document.querySelector(`[name="${CSS.escape(field.name)}"]`);
+            } catch (e) { }
+        }
 
         if (!element) return null;
 
@@ -125,25 +173,76 @@ async function checkSmartMemoryForAnswer(field, smartMemory) {
             window.normalizeSmartMemoryKey(fieldLabel) :
             fieldLabel.toLowerCase().trim();
 
-        // Check for exact or fuzzy match
-        for (const [cachedLabel, cachedData] of Object.entries(smartMemory)) {
-            if (cachedLabel === normalizedLabel) {
-                return cachedData.answer;
-            }
+        // Check for exact match first
+        if (smartMemory[normalizedLabel]) {
+            return smartMemory[normalizedLabel].answer;
+        }
 
-            // Fuzzy match if available
-            if (window.calculateUsingJaccardSimilarity) {
-                const similarity = window.calculateUsingJaccardSimilarity(cachedLabel, normalizedLabel);
-                if (similarity > 0.7) {
-                    return cachedData.answer;
-                }
+        // Fuzzy match if available
+        if (window.calculateUsingJaccardSimilarity) {
+            for (const [cachedLabel, cachedData] of Object.entries(smartMemory)) {
+                try {
+                    const similarity = window.calculateUsingJaccardSimilarity(cachedLabel, normalizedLabel);
+                    if (similarity > 0.75) { // Increased threshold for better accuracy
+                        return cachedData.answer;
+                    }
+                } catch (e) { }
             }
         }
     } catch (e) {
-        console.warn('[BatchProcessor] Smart memory check failed:', e);
+        console.warn('[BatchProcessor] Smart memory check failed:', e.message);
     }
 
     return null;
+}
+
+/**
+ * Process a single batch with retry logic
+ * @param {Array} batch - Array of field objects (max 5)
+ * @param {Object} resumeData - Resume data
+ * @param {string} pageContext - Job context
+ * @param {Object} context - Smart context object
+ * @returns {Promise<Object>} Mappings for this batch
+ */
+async function processBatchWithRetry(batch, resumeData, pageContext, context) {
+    let lastError = null;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            if (attempt > 0) {
+                console.log(`[BatchProcessor] Retry attempt ${attempt} for batch...`);
+                await new Promise(r => setTimeout(r, RETRY_DELAY_MS * attempt));
+            }
+
+            // Verify FormAnalyzer is available
+            if (!window.FormAnalyzer?.mapFieldsBatch) {
+                throw new Error('FormAnalyzer.mapFieldsBatch not available');
+            }
+
+            const result = await window.FormAnalyzer.mapFieldsBatch(
+                batch,
+                context,
+                pageContext
+            );
+
+            if (result && result.success && result.mappings) {
+                return result.mappings;
+            }
+
+            lastError = result?.error || 'Unknown AI error';
+
+            // Don't retry on certain errors
+            if (lastError.includes('API key') || lastError.includes('unauthorized')) {
+                break;
+            }
+        } catch (e) {
+            lastError = e.message;
+            console.error(`[BatchProcessor] Batch attempt ${attempt} failed:`, e.message);
+        }
+    }
+
+    console.error(`[BatchProcessor] Batch failed after ${MAX_RETRIES + 1} attempts:`, lastError);
+    return {};
 }
 
 /**
@@ -161,49 +260,59 @@ async function processBatchWithStreaming(batch, resumeData, pageContext, options
         callbacks = {}
     } = options;
 
+    if (!batch || batch.length === 0) {
+        return {};
+    }
+
     console.log(`[BatchProcessor] Processing batch (${batch.length} fields) with streaming...`);
 
     // Build appropriate context
     const context = buildSmartContext(resumeData, isFirstBatch, previousQA);
 
-    // Call AI with batch
-    const result = await window.FormAnalyzer.mapFieldsBatch(
-        batch,
-        context,
-        pageContext
-    );
+    // Call AI with retry logic
+    const mappings = await processBatchWithRetry(batch, resumeData, pageContext, context);
 
-    if (!result || !result.success || !result.mappings) {
-        console.error('[BatchProcessor] Batch processing failed:', result?.error);
+    if (!mappings || Object.keys(mappings).length === 0) {
+        console.warn('[BatchProcessor] Batch returned no mappings');
         return {};
     }
 
-
     // Stream results with UI callbacks
-    const mappings = result.mappings;
-
-    // Animate fields sequentially with small delays for visibility
+    // Collect all animations and run them
+    const animationPromises = [];
     let delayMs = 0;
+
     for (const [selector, fieldData] of Object.entries(mappings)) {
-        if (callbacks.onFieldAnswered) {
-            // Schedule animation with delay
-            setTimeout(() => {
-                callbacks.onFieldAnswered(selector, fieldData.value, fieldData.confidence || 0.8);
-            }, delayMs);
+        if (callbacks.onFieldAnswered && fieldData && fieldData.value !== null && fieldData.value !== undefined) {
+            const currentDelay = delayMs;
+
+            // Create animation promise
+            const animPromise = new Promise(resolve => {
+                setTimeout(() => {
+                    try {
+                        callbacks.onFieldAnswered(selector, fieldData.value, fieldData.confidence || 0.8);
+                    } catch (e) {
+                        console.warn('[BatchProcessor] Animation callback failed:', e);
+                    }
+                    resolve();
+                }, currentDelay);
+            });
+            animationPromises.push(animPromise);
 
             // Calculate realistic animation time based on value length
-            // Using 10-20ms per character (average 15ms) to match heuristic fills
             const valueLength = String(fieldData.value || '').length;
-            const typingTime = valueLength * 15; // 15ms per character average
+            const typingTime = Math.min(valueLength * 15, 2000); // Cap at 2 seconds
 
             // Add scroll and focus time (300ms) + small gap between fields (200ms)
             delayMs += typingTime + 500;
         }
     }
 
-    // Wait for all animations to complete before returning
-    if (delayMs > 0) {
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+    // Wait for all animations to complete
+    if (animationPromises.length > 0) {
+        await Promise.all(animationPromises);
+        // Add extra buffer for animation completion
+        await new Promise(resolve => setTimeout(resolve, 300));
     }
 
     return mappings;
@@ -218,23 +327,17 @@ async function processBatchWithStreaming(batch, resumeData, pageContext, options
  * @returns {Promise<Object>} Mappings for this batch
  */
 async function processBatchInBackground(batch, resumeData, pageContext, previousQA = []) {
-    console.log(`[BatchProcessor] Pre-fetching batch in background (${batch.length} fields)...`);
-
-    const context = buildSmartContext(resumeData, false, previousQA);
-
-    const result = await window.FormAnalyzer.mapFieldsBatch(
-        batch,
-        context,
-        pageContext
-    );
-
-    if (!result || !result.success) {
-        console.warn('[BatchProcessor] Background batch failed:', result?.error);
+    if (!batch || batch.length === 0) {
         return {};
     }
 
-    console.log(`[BatchProcessor] Background batch complete, cached ${Object.keys(result.mappings || {}).length} fields`);
-    return result.mappings || {};
+    console.log(`[BatchProcessor] Pre-fetching batch in background (${batch.length} fields)...`);
+
+    const context = buildSmartContext(resumeData, false, previousQA);
+    const mappings = await processBatchWithRetry(batch, resumeData, pageContext, context);
+
+    console.log(`[BatchProcessor] Background batch complete: ${Object.keys(mappings).length} fields`);
+    return mappings;
 }
 
 /**
@@ -248,8 +351,30 @@ async function processBatchInBackground(batch, resumeData, pageContext, previous
 async function processFieldsInBatches(fields, resumeData, pageContext, callbacks = {}) {
     console.log('[BatchProcessor] Starting batched processing...');
 
-    // Get smart memory for deduplication
-    const smartMemory = window.getSmartMemoryCache ? await window.getSmartMemoryCache() : {};
+    // Validate inputs
+    if (!Array.isArray(fields) || fields.length === 0) {
+        console.log('[BatchProcessor] No fields to process');
+        if (callbacks.onAllComplete) callbacks.onAllComplete({});
+        return {};
+    }
+
+    if (!resumeData || typeof resumeData !== 'object') {
+        console.error('[BatchProcessor] Invalid resumeData');
+        if (callbacks.onAllComplete) callbacks.onAllComplete({});
+        return {};
+    }
+
+    // Get smart memory for deduplication (with timeout)
+    let smartMemory = {};
+    try {
+        if (window.getSmartMemoryCache) {
+            const memoryPromise = window.getSmartMemoryCache();
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({}), 2000));
+            smartMemory = await Promise.race([memoryPromise, timeoutPromise]) || {};
+        }
+    } catch (e) {
+        console.warn('[BatchProcessor] Failed to get smart memory:', e);
+    }
 
     // Group fields by type
     const groups = groupFieldsByType(fields);
@@ -261,22 +386,35 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
         ...groups.select,
         ...groups.radio,
         ...groups.checkbox
-    ];
+    ].filter(f => f && f.selector); // Filter out invalid fields
+
+    if (processingOrder.length === 0) {
+        console.log('[BatchProcessor] No valid fields after filtering');
+        if (callbacks.onAllComplete) callbacks.onAllComplete({});
+        return {};
+    }
 
     // Deduplicate against smart memory
     const fieldsToProcess = [];
     const alreadyAnswered = {};
 
     for (const field of processingOrder) {
-        const cachedAnswer = await checkSmartMemoryForAnswer(field, smartMemory);
-        if (cachedAnswer) {
-            console.log(`[BatchProcessor] Deduplication: "${field.label}" already in smart memory`);
-            alreadyAnswered[field.selector] = {
-                value: cachedAnswer,
-                confidence: 0.99,
-                source: 'smart-memory-dedup'
-            };
-        } else {
+        try {
+            const cachedAnswer = await checkSmartMemoryForAnswer(field, smartMemory);
+            if (cachedAnswer) {
+                console.log(`[BatchProcessor] Deduplication: "${field.label || field.name}" from smart memory`);
+                alreadyAnswered[field.selector] = {
+                    value: cachedAnswer,
+                    confidence: 0.95,
+                    source: 'smart-memory-dedup',
+                    field_type: field.type,
+                    label: field.label
+                };
+            } else {
+                fieldsToProcess.push(field);
+            }
+        } catch (e) {
+            // On error, just add to process queue
             fieldsToProcess.push(field);
         }
     }
@@ -300,71 +438,120 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
     const previousQA = []; // Track Q&A for context continuity
 
     let backgroundPromise = null;
+    let backgroundBatchIndex = -1;
 
     for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
         const isFirstBatch = (i === 0);
         const isLastBatch = (i === batches.length - 1);
 
+        // Notify batch start
         if (callbacks.onBatchStart) {
-            const labels = batch.map(f => f.label || f.name || 'Unlabeled').slice(0, 3);
-            callbacks.onBatchStart(i + 1, batches.length, labels);
+            try {
+                const labels = batch
+                    .map(f => f.label || f.name || 'Field')
+                    .slice(0, 3);
+                callbacks.onBatchStart(i + 1, batches.length, labels);
+            } catch (e) { }
         }
 
-        // Start next batch in background (if exists)
-        if (!isLastBatch) {
-            const nextBatch = batches[i + 1];
-            backgroundPromise = processBatchInBackground(
-                nextBatch,
-                resumeData,
-                pageContext,
-                previousQA
-            );
-        }
+        // Check if we have prefetched results for this batch
+        let batchMappings = {};
 
-        // Process current batch in foreground with streaming
-        const batchMappings = await processBatchWithStreaming(batch, resumeData, pageContext, {
-            isFirstBatch,
-            previousQA,
-            callbacks
-        });
+        if (backgroundPromise && backgroundBatchIndex === i) {
+            // Use prefetched results
+            console.log(`[BatchProcessor] Using prefetched results for batch ${i + 1}`);
+            try {
+                batchMappings = await backgroundPromise;
+            } catch (e) {
+                console.warn('[BatchProcessor] Prefetch failed, processing normally');
+                batchMappings = await processBatchWithStreaming(batch, resumeData, pageContext, {
+                    isFirstBatch,
+                    previousQA,
+                    callbacks
+                });
+            }
+            backgroundPromise = null;
+            backgroundBatchIndex = -1;
+
+            // Still need to animate the prefetched results
+            if (Object.keys(batchMappings).length > 0 && callbacks.onFieldAnswered) {
+                let delayMs = 0;
+                for (const [selector, fieldData] of Object.entries(batchMappings)) {
+                    if (fieldData && fieldData.value !== null && fieldData.value !== undefined) {
+                        const currentDelay = delayMs;
+                        setTimeout(() => {
+                            try {
+                                callbacks.onFieldAnswered(selector, fieldData.value, fieldData.confidence || 0.8);
+                            } catch (e) { }
+                        }, currentDelay);
+
+                        const valueLength = String(fieldData.value || '').length;
+                        const typingTime = Math.min(valueLength * 15, 2000);
+                        delayMs += typingTime + 500;
+                    }
+                }
+                if (delayMs > 0) {
+                    await new Promise(resolve => setTimeout(resolve, delayMs + 300));
+                }
+            }
+        } else {
+            // Process current batch in foreground with streaming
+            batchMappings = await processBatchWithStreaming(batch, resumeData, pageContext, {
+                isFirstBatch,
+                previousQA,
+                callbacks
+            });
+        }
 
         // Merge results
         Object.assign(allMappings, batchMappings);
 
         // Update previous Q&A for next batch context
         Object.entries(batchMappings).forEach(([selector, data]) => {
-            const field = batch.find(f => f.selector === selector);
-            if (field && data.value) {
-                previousQA.push({
-                    question: field.label || field.name,
-                    answer: data.value
-                });
+            if (data && data.value) {
+                const field = batch.find(f => f.selector === selector);
+                if (field) {
+                    previousQA.push({
+                        question: field.label || field.name || 'Question',
+                        answer: String(data.value).slice(0, 200) // Limit answer length for context
+                    });
+                }
             }
         });
 
         // Trigger batch complete callback
         if (callbacks.onBatchComplete) {
-            callbacks.onBatchComplete(batchMappings, false); // false = foreground
+            try {
+                callbacks.onBatchComplete(batchMappings, false);
+            } catch (e) { }
         }
 
-        // Wait for background batch to finish before proceeding
-        if (backgroundPromise) {
-            const bgResults = await backgroundPromise;
-
-            // Notify that background batch is ready (cached)
-            if (callbacks.onBatchComplete && Object.keys(bgResults).length > 0) {
-                callbacks.onBatchComplete(bgResults, true); // true = background
-            }
-
-            backgroundPromise = null;
+        // Start prefetching next batch (if not last)
+        if (!isLastBatch && i + 1 < batches.length) {
+            const nextBatch = batches[i + 1];
+            backgroundBatchIndex = i + 1;
+            backgroundPromise = processBatchInBackground(
+                nextBatch,
+                resumeData,
+                pageContext,
+                previousQA
+            ).catch(e => {
+                console.warn('[BatchProcessor] Background prefetch failed:', e);
+                return {};
+            });
         }
     }
 
     console.log(`[BatchProcessor] All batches complete. Total fields: ${Object.keys(allMappings).length}`);
 
+    // Call completion callback
     if (callbacks.onAllComplete) {
-        callbacks.onAllComplete(allMappings);
+        try {
+            callbacks.onAllComplete(allMappings);
+        } catch (e) {
+            console.error('[BatchProcessor] onAllComplete callback failed:', e);
+        }
     }
 
     return allMappings;
@@ -378,6 +565,7 @@ if (typeof window !== 'undefined') {
         processBatchWithStreaming,
         processBatchInBackground,
         processFieldsInBatches,
-        BATCH_SIZE
+        BATCH_SIZE,
+        MAX_RETRIES
     };
 }
