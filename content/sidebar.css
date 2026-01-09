@@ -1506,3 +1506,437 @@
         opacity: 0.9;
     }
 }
+
+/* ============================================================
+   NOVA CHAT - INLINE FIELD REGENERATION STYLES
+   ============================================================ */
+
+/* Nova Tab Button */
+#smarthirex-accordion-sidebar .nova-tab {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+#smarthirex-accordion-sidebar .nova-tab.active {
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+/* Nova Chat Container */
+#nova-chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 350px;
+}
+
+/* Nova Chat Header */
+.nova-chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-radius: 8px;
+    margin: 8px;
+}
+
+.nova-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.nova-title svg {
+    stroke: white;
+}
+
+.nova-close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nova-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Nova Chat Body */
+.nova-chat-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Current Value Box */
+.nova-current-value {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.nova-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.nova-value-box {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 13px;
+    color: #334155;
+    max-height: 100px;
+    overflow-y: auto;
+    line-height: 1.5;
+}
+
+.nova-value-box em {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* Prompt Text */
+.nova-prompt {
+    font-size: 14px;
+    color: #475569;
+    font-weight: 500;
+}
+
+/* Quick Action Chips */
+.nova-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.nova-action-chip {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    color: #0369a1;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.nova-action-chip:hover {
+    background: #e0f2fe;
+    border-color: #7dd3fc;
+    transform: translateY(-1px);
+}
+
+/* Nova Chat Input */
+.nova-chat-input {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.nova-chat-input textarea {
+    flex: 1;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    resize: none;
+    font-family: inherit;
+    line-height: 1.4;
+    background: white;
+}
+
+.nova-chat-input textarea:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+
+.nova-send {
+    background: #10b981;
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.nova-send:hover {
+    background: #059669;
+    transform: scale(1.05);
+}
+
+.nova-send:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.nova-send svg {
+    stroke: white;
+}
+
+/* Nova Messages */
+.nova-message {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.nova-message.nova-user {
+    background: #dbeafe;
+    margin-left: 20%;
+    color: #1e40af;
+}
+
+.nova-message.nova-bot {
+    background: #f0fdf4;
+    margin-right: 20%;
+    color: #166534;
+}
+
+.nova-message.nova-error {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.nova-message.nova-info {
+    background: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+/* ========== Progress Animation ========== */
+.nova-typing {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 1px solid #86efac;
+    padding: 16px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.nova-progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.nova-progress-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nova-progress-icon {
+    font-size: 18px;
+    animation: novaPulse 1.5s ease-in-out infinite;
+}
+
+.nova-progress-title {
+    font-weight: 600;
+    color: #166534;
+    font-size: 14px;
+}
+
+/* Animated Progress Bar */
+.nova-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #dcfce7;
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.nova-progress-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #10b981, #34d399, #10b981);
+    background-size: 200% 100%;
+    animation: novaProgressFlow 2s linear infinite;
+    border-radius: 3px;
+}
+
+/* Status Text */
+.nova-progress-status {
+    font-size: 12px;
+    color: #4ade80;
+    font-style: italic;
+    transition: opacity 0.3s ease;
+}
+
+@keyframes novaPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+@keyframes novaProgressFlow {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Preview Message */
+.nova-preview {
+    background: #fefce8;
+    border: 1px solid #fde047;
+    padding: 16px;
+}
+
+.nova-preview-label {
+    font-weight: 600;
+    color: #854d0e;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.nova-preview-value {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    border: 1px solid #fde68a;
+    max-height: 150px;
+    overflow-y: auto;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.nova-preview-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Buttons */
+.nova-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.nova-btn-apply {
+    background: #10b981;
+    color: white;
+}
+
+.nova-btn-apply:hover {
+    background: #059669;
+}
+
+.nova-btn-retry {
+    background: #f59e0b;
+    color: white;
+}
+
+.nova-btn-retry:hover {
+    background: #d97706;
+}
+
+.nova-btn-cancel {
+    background: #94a3b8;
+    color: white;
+}
+
+.nova-btn-cancel:hover {
+    background: #64748b;
+}
+
+.nova-btn-undo {
+    background: #8b5cf6;
+    color: white;
+}
+
+.nova-btn-undo:hover {
+    background: #7c3aed;
+}
+
+.nova-btn-undo:disabled {
+    background: #c4b5fd;
+    cursor: not-allowed;
+}
+
+.nova-btn-done {
+    background: #10b981;
+    color: white;
+}
+
+.nova-btn-done:hover {
+    background: #059669;
+}
+
+/* Success Message */
+.nova-success {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    padding: 16px;
+}
+
+.nova-success-text {
+    font-weight: 600;
+    color: #166534;
+    margin-bottom: 6px;
+}
+
+.nova-success-subtext {
+    color: #4ade80;
+    font-size: 12px;
+    margin-bottom: 12px;
+}
+
+.nova-followup-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}

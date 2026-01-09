@@ -839,6 +839,9 @@ function showAccordionSidebar(allFields) {
             <button class="tab" data-tab="manual">
                 ✋ Manual <span class="tab-count">(0)</span>
             </button>
+            <button class="tab nova-tab" data-tab="nova" style="display: none;">
+                💬 Nova
+            </button>
         </div>
         
         <div class="sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
@@ -900,6 +903,11 @@ function showAccordionSidebar(allFields) {
                     </div>
                 `).join('')}
                 ${finalManualFields.length === 0 ? '<div class="empty-state">All fields filled!</div>' : ''}
+            </div>
+
+            <!-- Nova Chat Tab (Hidden by default, shown when regenerate is clicked) -->
+            <div class="tab-content" data-tab="nova" style="display: none;">
+                <div id="nova-chat-container"></div>
             </div>
         </div>
     `;
@@ -1000,14 +1008,25 @@ function showAccordionSidebar(allFields) {
         });
     });
 
-    // Individual recalculate buttons
+    // Individual recalculate buttons - now open Nova Chat tab
     const recalculateBtns = panel.querySelectorAll('.recalculate-btn');
     recalculateBtns.forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const selector = btn.dataset.selector;
             const label = btn.dataset.label;
-            await showRegenerateModal(selector, label);
+
+            // Get current value from the field
+            try {
+                const element = document.querySelector(selector);
+                const currentValue = element?.value || element?.textContent || '';
+
+                // Open Nova Chat tab with regeneration context
+                initNovaTabForRegeneration(selector, label, currentValue);
+            } catch (err) {
+                console.error('[Nova] Failed to get field value:', err);
+                showErrorToast('Could not open regeneration chat');
+            }
         });
     });
 
@@ -1642,4 +1661,625 @@ function toggleChatInterface() {
 
     // Save Visibility
     chrome.storage.local.set({ chatInterfaceVisible: true });
+}
+
+// ============================================================
+// NOVA CHAT - INLINE FIELD REGENERATION
+// ============================================================
+
+// Global context for regeneration session
+window._novaRegenerationContext = null;
+
+// Status messages for progress animation
+const NOVA_STATUS_MESSAGES = [
+    'Analyzing your request...',
+    'Crafting the perfect response...',
+    'Applying your style preferences...',
+    'Fine-tuning the content...',
+    'Almost there...'
+];
+
+let novaStatusInterval = null;
+
+/**
+ * Create regeneration context object
+ */
+function createRegenerationContext(selector, label, currentValue) {
+    return {
+        selector,
+        label,
+        currentValue,
+        originalValue: currentValue,
+        previousValue: null,
+        pendingValue: null,
+        history: [],
+        undoStack: []
+    };
+}
+
+/**
+ * Initialize Nova Chat tab for field regeneration
+ */
+function initNovaTabForRegeneration(selector, label, currentValue) {
+    const panel = document.getElementById('smarthirex-accordion-sidebar');
+    if (!panel) {
+        console.error('[Nova] Sidebar panel not found');
+        return;
+    }
+
+    // Show Nova tab button
+    const novaTabBtn = panel.querySelector('[data-tab="nova"]');
+    if (novaTabBtn) {
+        novaTabBtn.style.display = 'flex';
+    }
+
+    // Switch to Nova tab
+    const allTabs = panel.querySelectorAll('.tab');
+    allTabs.forEach(t => t.classList.remove('active'));
+    novaTabBtn?.classList.add('active');
+
+    const allContents = panel.querySelectorAll('.tab-content');
+    allContents.forEach(c => c.style.display = 'none');
+
+    const novaContent = panel.querySelector('.tab-content[data-tab="nova"]');
+    if (novaContent) {
+        novaContent.style.display = 'block';
+    }
+
+    // Render chat UI
+    renderNovaChatForField(selector, label, currentValue);
+}
+
+/**
+ * Render Nova Chat UI for a specific field
+ */
+function renderNovaChatForField(selector, label, currentValue) {
+    const container = document.getElementById('nova-chat-container');
+    if (!container) return;
+
+    // Create regeneration context
+    window._novaRegenerationContext = createRegenerationContext(selector, label, currentValue);
+
+    // Truncate long values for display
+    const displayValue = currentValue.length > 200
+        ? currentValue.substring(0, 200) + '...'
+        : currentValue;
+
+    // Get context-aware quick actions
+    const quickActions = getQuickActionsForField(label);
+
+    container.innerHTML = `
+        <div class="nova-chat-header">
+            <div class="nova-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                </svg>
+                <span>Regenerate: ${escapeHtmlNova(label)}</span>
+            </div>
+            <button class="nova-close-btn" id="nova-close" title="Close">✕</button>
+        </div>
+        
+        <div class="nova-chat-body" id="nova-chat-messages">
+            <div class="nova-current-value">
+                <div class="nova-label">📝 Current Value:</div>
+                <div class="nova-value-box">${displayValue ? escapeHtmlNova(displayValue) : '<em>Empty</em>'}</div>
+            </div>
+            
+            <div class="nova-prompt">
+                What changes would you like to make?
+            </div>
+            
+            <div class="nova-quick-actions" id="nova-quick-actions">
+                ${quickActions.map(action => `
+                    <button class="nova-action-chip" data-action="${escapeHtmlNova(action)}">${escapeHtmlNova(action)}</button>
+                `).join('')}
+            </div>
+        </div>
+        
+        <div class="nova-chat-input">
+            <textarea 
+                id="nova-input" 
+                placeholder="Describe your changes..." 
+                rows="2"
+            ></textarea>
+            <button id="nova-send-btn" class="nova-send" title="Send">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                </svg>
+            </button>
+        </div>
+    `;
+
+    // Bind event listeners
+    bindNovaChatEvents();
+
+    // Focus input
+    setTimeout(() => {
+        document.getElementById('nova-input')?.focus();
+    }, 100);
+}
+
+/**
+ * Get context-aware quick actions based on field label
+ */
+function getQuickActionsForField(label) {
+    const labelLower = label.toLowerCase();
+
+    // Cover Letter / Motivation
+    if (labelLower.includes('cover') || labelLower.includes('letter') || labelLower.includes('motivation')) {
+        return ['Make it concise', 'More enthusiastic', 'Add company focus', 'Professional tone'];
+    }
+
+    // Experience / Work History
+    if (labelLower.includes('experience') || labelLower.includes('work') || labelLower.includes('responsibility')) {
+        return ['Add metrics/numbers', 'Focus on impact', 'More technical', 'Highlight leadership'];
+    }
+
+    // Why This Role / Interest
+    if (labelLower.includes('why') || labelLower.includes('interest') || labelLower.includes('joining')) {
+        return ['Show passion', 'Company-specific', 'Career growth angle', 'Skills alignment'];
+    }
+
+    // Summary / About Me
+    if (labelLower.includes('summary') || labelLower.includes('about') || labelLower.includes('profile')) {
+        return ['Make it shorter', 'More impactful', 'Add key achievements', 'Industry keywords'];
+    }
+
+    // Skills / Strengths
+    if (labelLower.includes('skill') || labelLower.includes('strength') || labelLower.includes('expertise')) {
+        return ['Add technical skills', 'Soft skills focus', 'Industry-specific', 'Quantify impact'];
+    }
+
+    // Availability / Notice Period
+    if (labelLower.includes('available') || labelLower.includes('notice') || labelLower.includes('start')) {
+        return ['Immediate', '2 weeks', '1 month', 'Negotiable'];
+    }
+
+    // Salary / Compensation
+    if (labelLower.includes('salary') || labelLower.includes('compensation') || labelLower.includes('expectation')) {
+        return ['Market rate', 'Negotiable', 'Based on role', 'Open to discuss'];
+    }
+
+    // Default actions for any text field
+    return ['Make it concise', 'More professional', 'Add more detail', 'Simpler language'];
+}
+
+/**
+ * Bind Nova Chat event listeners
+ */
+function bindNovaChatEvents() {
+    const container = document.getElementById('nova-chat-container');
+    if (!container) return;
+
+    // Close button
+    container.querySelector('#nova-close')?.addEventListener('click', closeNovaTab);
+
+    // Quick action chips
+    container.querySelectorAll('.nova-action-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const action = chip.dataset.action;
+            document.getElementById('nova-input').value = action;
+            handleNovaSubmit();
+        });
+    });
+
+    // Send button
+    container.querySelector('#nova-send-btn')?.addEventListener('click', handleNovaSubmit);
+
+    // Enter key (without shift) submits
+    container.querySelector('#nova-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleNovaSubmit();
+        }
+    });
+}
+
+/**
+ * Close Nova Chat tab and return to App Fill
+ */
+function closeNovaTab() {
+    const panel = document.getElementById('smarthirex-accordion-sidebar');
+    if (!panel) return;
+
+    // Clear any running status interval
+    if (novaStatusInterval) {
+        clearInterval(novaStatusInterval);
+        novaStatusInterval = null;
+    }
+
+    // Hide Nova tab button
+    const novaTabBtn = panel.querySelector('[data-tab="nova"]');
+    if (novaTabBtn) {
+        novaTabBtn.style.display = 'none';
+        novaTabBtn.classList.remove('active');
+    }
+
+    // Switch back to App Fill tab
+    const appTabBtn = panel.querySelector('[data-tab="app"]');
+    if (appTabBtn) {
+        appTabBtn.classList.add('active');
+    }
+
+    const allContents = panel.querySelectorAll('.tab-content');
+    allContents.forEach(c => c.style.display = 'none');
+
+    const appContent = panel.querySelector('.tab-content[data-tab="app"]');
+    if (appContent) {
+        appContent.style.display = 'block';
+    }
+
+    // Clear context
+    window._novaRegenerationContext = null;
+}
+
+/**
+ * Handle Nova Chat message submission
+ */
+async function handleNovaSubmit() {
+    const input = document.getElementById('nova-input');
+    const userInstruction = input?.value?.trim();
+    if (!userInstruction) return;
+
+    const context = window._novaRegenerationContext;
+    if (!context) return;
+
+    // Clear input
+    input.value = '';
+
+    // Disable input while processing
+    input.disabled = true;
+    const sendBtn = document.getElementById('nova-send-btn');
+    if (sendBtn) sendBtn.disabled = true;
+
+    // Add user message to chat
+    addNovaChatMessage('user', userInstruction);
+
+    // Show progress animation
+    showNovaTyping();
+
+    try {
+        // Get resume for context
+        let resumeData = {};
+        try {
+            resumeData = await window.ResumeManager?.getResumeData() || {};
+        } catch (e) {
+            console.warn('[Nova] Could not get resume data:', e);
+        }
+
+        // Build prompt
+        const systemPrompt = `You are an expert at writing professional job application responses.
+
+TASK: Regenerate the answer for the form field "${context.label}" based on the user's instruction.
+
+CURRENT VALUE:
+${context.currentValue}
+
+USER'S RESUME (for reference):
+${JSON.stringify(resumeData, null, 2)}
+
+USER'S INSTRUCTION:
+${userInstruction}
+
+GUIDELINES:
+1. Apply the user's requested changes precisely
+2. Keep the response professional and appropriate for a job application
+3. Use facts from the resume - don't fabricate information
+4. Maintain appropriate length for the field type
+5. Return ONLY the new field value, no explanations or quotes around it`;
+
+        const result = await window.AIClient.callAI(
+            'Generate the new response:',
+            systemPrompt,
+            { maxTokens: 500, temperature: 0.5 }
+        );
+
+        hideNovaTyping();
+
+        if (result.success) {
+            let newValue = result.text.trim()
+                .replace(/^["']|["']$/g, '')  // Remove surrounding quotes
+                .replace(/^Here'?s? (?:the |your )?(?:new |updated )?(?:value|response|answer)?:?\s*/i, ''); // Remove preamble
+
+            // Store pending value for preview
+            context.pendingValue = newValue;
+
+            // Add to history
+            context.history.push({
+                instruction: userInstruction,
+                value: newValue,
+                timestamp: Date.now()
+            });
+
+            // Show preview with action buttons (PREVIEW FIRST!)
+            addNovaPreviewMessage(newValue);
+
+        } else {
+            addNovaChatMessage('error', `Failed to generate: ${result.error}`);
+        }
+
+    } catch (error) {
+        hideNovaTyping();
+        addNovaChatMessage('error', `Error: ${error.message}`);
+    } finally {
+        // Re-enable input
+        if (input) input.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
+        input?.focus();
+    }
+}
+
+/**
+ * Show progress typing indicator with animation
+ */
+function showNovaTyping() {
+    const messagesContainer = document.getElementById('nova-chat-messages');
+    if (!messagesContainer) return;
+
+    // Remove existing typing indicator
+    messagesContainer.querySelector('.nova-typing')?.remove();
+
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'nova-message nova-typing';
+    typingDiv.innerHTML = `
+        <div class="nova-progress-container">
+            <div class="nova-progress-header">
+                <span class="nova-progress-icon">✨</span>
+                <span class="nova-progress-title">Nova is thinking...</span>
+            </div>
+            <div class="nova-progress-bar">
+                <div class="nova-progress-fill"></div>
+            </div>
+            <div class="nova-progress-status">Analyzing your request...</div>
+        </div>
+    `;
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    // Cycle through status messages
+    let statusIndex = 0;
+    novaStatusInterval = setInterval(() => {
+        statusIndex = (statusIndex + 1) % NOVA_STATUS_MESSAGES.length;
+        const statusEl = typingDiv.querySelector('.nova-progress-status');
+        if (statusEl) {
+            statusEl.textContent = NOVA_STATUS_MESSAGES[statusIndex];
+        }
+    }, 2000);
+}
+
+/**
+ * Hide progress typing indicator
+ */
+function hideNovaTyping() {
+    // Clear status interval
+    if (novaStatusInterval) {
+        clearInterval(novaStatusInterval);
+        novaStatusInterval = null;
+    }
+    document.querySelector('.nova-typing')?.remove();
+}
+
+/**
+ * Add a message to Nova Chat
+ */
+function addNovaChatMessage(type, content) {
+    const messagesContainer = document.getElementById('nova-chat-messages');
+    if (!messagesContainer) return;
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `nova-message nova-${type}`;
+    msgDiv.innerHTML = `<div class="nova-message-content">${escapeHtmlNova(content)}</div>`;
+
+    messagesContainer.appendChild(msgDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+/**
+ * Show preview message with Apply/Retry/Cancel buttons
+ */
+function addNovaPreviewMessage(newValue) {
+    const messagesContainer = document.getElementById('nova-chat-messages');
+    if (!messagesContainer) return;
+
+    // Remove any existing preview
+    messagesContainer.querySelectorAll('.nova-preview').forEach(el => el.remove());
+
+    const truncatedValue = newValue.length > 400
+        ? newValue.substring(0, 400) + '...'
+        : newValue;
+
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'nova-message nova-preview';
+    previewDiv.innerHTML = `
+        <div class="nova-preview-label">✨ Preview - New Value:</div>
+        <div class="nova-preview-value">${escapeHtmlNova(truncatedValue)}</div>
+        <div class="nova-preview-actions">
+            <button class="nova-btn nova-btn-apply" id="nova-apply" title="Apply to form field">
+                ✓ Apply
+            </button>
+            <button class="nova-btn nova-btn-retry" id="nova-retry" title="Try different instruction">
+                🔄 Try Again
+            </button>
+            <button class="nova-btn nova-btn-cancel" id="nova-cancel" title="Discard and close">
+                ✕ Cancel
+            </button>
+        </div>
+    `;
+
+    messagesContainer.appendChild(previewDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    // Bind preview action buttons
+    previewDiv.querySelector('#nova-apply')?.addEventListener('click', applyNovaRegeneration);
+    previewDiv.querySelector('#nova-retry')?.addEventListener('click', () => {
+        previewDiv.remove();
+        document.getElementById('nova-input')?.focus();
+    });
+    previewDiv.querySelector('#nova-cancel')?.addEventListener('click', closeNovaTab);
+}
+
+/**
+ * Apply regenerated value to the form field
+ */
+async function applyNovaRegeneration() {
+    const context = window._novaRegenerationContext;
+    if (!context || !context.pendingValue) return;
+
+    try {
+        const element = document.querySelector(context.selector);
+        if (!element) {
+            addNovaChatMessage('error', 'Field not found on page. It may have been removed.');
+            return;
+        }
+
+        // UNDO SUPPORT: Save current value before overwriting
+        context.previousValue = context.currentValue;
+        context.undoStack.push(context.currentValue);
+
+        // Apply with ghosting animation if available
+        if (typeof showGhostingAnimation === 'function') {
+            await showGhostingAnimation(element, context.pendingValue, 0.95);
+        } else {
+            // Fallback: direct assignment
+            element.value = context.pendingValue;
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        // Update smart memory cache
+        try {
+            if (typeof normalizeSmartMemoryKey === 'function' && typeof updateSmartMemoryCache === 'function') {
+                const normalizedLabel = normalizeSmartMemoryKey(context.label);
+                updateSmartMemoryCache({
+                    [normalizedLabel]: {
+                        answer: context.pendingValue,
+                        timestamp: Date.now()
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('[Nova] Smart memory update failed:', e);
+        }
+
+        // Update context for iterative editing
+        context.currentValue = context.pendingValue;
+        context.pendingValue = null;
+
+        // Remove preview message
+        document.querySelectorAll('.nova-preview').forEach(el => el.remove());
+
+        // Show success with undo option
+        addNovaSuccessMessage(context.label);
+
+    } catch (error) {
+        addNovaChatMessage('error', `Failed to apply: ${error.message}`);
+    }
+}
+
+/**
+ * Show success message with Undo and follow-up actions
+ */
+function addNovaSuccessMessage(fieldLabel) {
+    const messagesContainer = document.getElementById('nova-chat-messages');
+    if (!messagesContainer) return;
+
+    const successDiv = document.createElement('div');
+    successDiv.className = 'nova-message nova-success';
+    successDiv.innerHTML = `
+        <div class="nova-success-text">
+            ✅ Updated "${escapeHtmlNova(fieldLabel)}" successfully!
+        </div>
+        <div class="nova-success-subtext">
+            Would you like to make any other changes?
+        </div>
+        <div class="nova-followup-actions">
+            <button class="nova-btn nova-btn-undo" id="nova-undo" title="Revert to previous value">
+                ↩️ Undo
+            </button>
+            <button class="nova-action-chip" data-action="Make it shorter">Shorter</button>
+            <button class="nova-action-chip" data-action="Add more detail">More detail</button>
+            <button class="nova-btn nova-btn-done" id="nova-done" title="Close and finish">
+                Done ✓
+            </button>
+        </div>
+    `;
+
+    messagesContainer.appendChild(successDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    // Bind undo button
+    successDiv.querySelector('#nova-undo')?.addEventListener('click', undoNovaRegeneration);
+
+    // Bind follow-up action chips
+    successDiv.querySelectorAll('.nova-action-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.getElementById('nova-input').value = chip.dataset.action;
+            handleNovaSubmit();
+        });
+    });
+
+    // Bind done button
+    successDiv.querySelector('#nova-done')?.addEventListener('click', closeNovaTab);
+}
+
+/**
+ * Undo the last regeneration
+ */
+async function undoNovaRegeneration() {
+    const context = window._novaRegenerationContext;
+    if (!context) return;
+
+    // Check if we have something to undo
+    if (context.undoStack.length === 0) {
+        addNovaChatMessage('info', 'Nothing to undo.');
+        return;
+    }
+
+    try {
+        const element = document.querySelector(context.selector);
+        if (!element) {
+            addNovaChatMessage('error', 'Field not found on page.');
+            return;
+        }
+
+        // Pop previous value from undo stack
+        const previousValue = context.undoStack.pop();
+
+        // Apply previous value with animation
+        if (typeof showGhostingAnimation === 'function') {
+            await showGhostingAnimation(element, previousValue, 0.95);
+        } else {
+            element.value = previousValue;
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        // Update context
+        context.currentValue = previousValue;
+
+        // Show confirmation
+        addNovaChatMessage('bot', `↩️ Reverted "${context.label}" to previous value.`);
+
+        // Disable undo button if no more history
+        if (context.undoStack.length === 0) {
+            const undoBtn = document.getElementById('nova-undo');
+            if (undoBtn) {
+                undoBtn.disabled = true;
+                undoBtn.style.opacity = '0.5';
+            }
+        }
+
+    } catch (error) {
+        addNovaChatMessage('error', `Undo failed: ${error.message}`);
+    }
+}
+
+/**
+ * Escape HTML for Nova Chat (avoid conflict with existing escapeHtml)
+ */
+function escapeHtmlNova(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
