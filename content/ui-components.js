@@ -852,48 +852,38 @@ function showAccordionSidebar(allFields) {
                 ${finalAppFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
             </div>
 
-            <!-- Cache Tab (Name only, with recalculate) -->
+            <!-- Cache Tab (Name only, with recalculate for text fields only) -->
             <div class="tab-content" data-tab="cache" style="display: none;">
-                ${finalCacheFields.filter(field => field.source !== 'selection_cache').length > 0 ? `
-                    <div class="tab-actions">
-                        <button class="recalculate-all-btn" data-tab="cache" data-tooltip="Regenerate all cached fields using AI">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                            Regenerate All (${finalCacheFields.filter(field => field.source !== 'selection_cache').length})
-                        </button>
-                    </div>
-                ` : ''}
-                ${finalCacheFields.map(item => `
+                ${finalCacheFields.map(item => {
+        // Only show regenerate button for text-based fields (not radio, checkbox, select)
+        const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isSelectGroup && item.source !== 'selection_cache';
+        return `
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
                             <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
-                            ${item.source !== 'selection_cache' ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>` : ''}
+                            ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>` : ''}
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
                 ${finalCacheFields.length === 0 ? '<div class="empty-state">No cached fields</div>' : ''}
             </div>
 
-            <!-- AI Tab (Name + confidence, with recalculate) -->
+            <!-- AI Tab (Name + confidence, with recalculate for text fields only) -->
             <div class="tab-content" data-tab="ai" style="display: none;">
-                ${finalAiFields.length > 0 ? `
-                    <div class="tab-actions">
-                        <button class="recalculate-all-btn" data-tab="ai" data-tooltip="Regenerate all AI fields with fresh context">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                            Regenerate All (${finalAiFields.length})
-                        </button>
-                    </div>
-                ` : ''}
-                ${finalAiFields.map(item => `
+                ${finalAiFields.map(item => {
+            // Only show regenerate button for text-based fields (not radio, checkbox, select)
+            const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isSelectGroup;
+            return `
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
                             <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
-                            <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI">
+                            ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                            </button>
+                            </button>` : ''}
                         </div>
                         <div class="field-confidence">⚡ ${Math.round(item.confidence * 100)}%</div>
                     </div>
-                `).join('')}
+                `}).join('')}
                 ${finalAiFields.length === 0 ? '<div class="empty-state">No AI-generated fields</div>' : ''}
             </div>
 
@@ -1021,113 +1011,7 @@ function showAccordionSidebar(allFields) {
         });
     });
 
-    // Recalculate All buttons - Use batch processor for efficiency
-    const recalculateAllBtns = panel.querySelectorAll('.recalculate-all-btn');
-    recalculateAllBtns.forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const tabType = btn.dataset.tab;
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = `<svg class="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/></svg> Regenerating...`;
-            btn.disabled = true;
-
-            try {
-                // Get all field selectors from this tab that have recalculate buttons
-                const tabContent = panel.querySelector(`.tab-content[data-tab="${tabType}"]`);
-                const fieldBtns = tabContent.querySelectorAll('.recalculate-btn');
-
-                if (fieldBtns.length === 0) {
-                    showSuccessToast('No fields to regenerate');
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                    return;
-                }
-
-                // Collect fields for batch processing
-                const fieldsToRegenerate = [];
-                fieldBtns.forEach(fieldBtn => {
-                    const selector = fieldBtn.dataset.selector;
-                    const label = fieldBtn.dataset.label;
-                    if (selector && label) {
-                        fieldsToRegenerate.push({
-                            selector: selector,
-                            label: label,
-                            type: 'text', // Default to text for regeneration
-                            name: ''
-                        });
-                    }
-                });
-
-                console.log(`🔄 Regenerating ${fieldsToRegenerate.length} fields in batch...`);
-
-                // Get resume and context
-                const resumeData = await window.ResumeManager.getResumeData();
-                const pageContext = typeof getJobContext === 'function' ? getJobContext() : '';
-
-                // Use batch processor with display updates
-                showProcessingWidget('Regenerating fields...', 2, {
-                    currentBatch: 1,
-                    totalBatches: Math.ceil(fieldsToRegenerate.length / 5)
-                });
-
-                const regeneratedMappings = await window.BatchProcessor.processFieldsInBatches(
-                    fieldsToRegenerate,
-                    resumeData,
-                    pageContext,
-                    {
-                        onBatchStart: (idx, total) => {
-                            showProcessingWidget('Regenerating fields...', 2, {
-                                currentBatch: idx,
-                                totalBatches: total
-                            });
-                        },
-                        onFieldAnswered: (selector, value, confidence) => {
-                            const element = document.querySelector(selector);
-                            if (element && value) {
-                                // Apply the regenerated value with animation
-                                if (typeof showGhostingAnimation === 'function') {
-                                    showGhostingAnimation(element, value, confidence);
-                                } else {
-                                    setFieldValue(element, value);
-                                    highlightField(element, confidence);
-                                }
-                            }
-                        },
-                        onAllComplete: async (mappings) => {
-                            console.log(`✅ Regenerated ${Object.keys(mappings).length} fields`);
-
-                            // Update smart memory with new values
-                            const newCacheEntries = {};
-                            for (const [selector, data] of Object.entries(mappings)) {
-                                if (data.value && data.label) {
-                                    const key = normalizeSmartMemoryKey(data.label);
-                                    if (key && key.length > 2) {
-                                        newCacheEntries[key] = {
-                                            answer: data.value,
-                                            timestamp: Date.now()
-                                        };
-                                    }
-                                }
-                            }
-
-                            if (Object.keys(newCacheEntries).length > 0) {
-                                updateSmartMemoryCache(newCacheEntries);
-                            }
-                        }
-                    }
-                );
-
-                removeProcessingWidget();
-                showSuccessToast(`Regenerated ${Object.keys(regeneratedMappings).length} fields! 🎉`);
-
-            } catch (error) {
-                console.error('Regenerate all failed:', error);
-                showErrorToast('Failed to regenerate fields: ' + error.message);
-            } finally {
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-            }
-        });
-    });
+    // Recalculate All buttons removed - individual regenerate only
 
     // Field click handlers for scrolling and highlighting
     const fieldItems = panel.querySelectorAll('.field-item');
