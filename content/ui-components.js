@@ -889,19 +889,18 @@ function showAccordionSidebar(allFields) {
             const statusIcon = confidence >= 80 ? '●' : '○';
 
             return `
-                    <div class="sh-ent-card" data-selector="${item.selector.replace(/"/g, '&quot;')}">
-                        <div class="sh-ent-header">
-                            <div class="sh-ent-info">
-                                <div class="sh-ent-label">${item.label}</div>
-                                ${(!isTextBased && item.displayValue) ? `<div class="sh-ent-value">${item.displayValue}</div>` : ''}
-                            </div>
-                            <div class="sh-ent-meta">
-                                <div class="sh-ent-badge ${confClass}">
+                    <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
+                        <div class="field-header">
+                            <div class="field-label">${item.label}${(!isTextBased && item.displayValue) ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
+                            
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="${confClass}" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
                                     ${statusIcon} ${confidence}%
                                 </div>
-                                ${isTextBased ? `<button class="recalculate-btn sh-ent-regen-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI" title="Regenerate using AI">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                                </button>` : '<div class="sh-ent-spacer"></div>'}
+                                
+                                ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+                                </button>` : ''}
                             </div>
                         </div>
                     </div>
