@@ -858,13 +858,17 @@ function showAccordionSidebar(allFields) {
             <!-- Cache Tab (Name only, with recalculate for text fields only) -->
             <div class="tab-content" data-tab="cache" style="display: none;">
                 ${finalCacheFields.map(item => {
-        // Only show regenerate button for text-based fields (not radio, checkbox, select)
-        const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isSelectGroup && item.source !== 'selection_cache';
+        // Only show regenerate button for true text-based fields
+        const isSafeText = !['date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'button', 'image', 'file'].includes(item.type || '');
+        const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isSelectGroup && !item.isFileUpload && isSafeText && item.source !== 'selection_cache';
+
         return `
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
                             <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
-                            ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI">🔄</button>` : ''}
+                            ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+                            </button>` : ''}
                         </div>
                     </div>
                 `}).join('')}
@@ -874,17 +878,32 @@ function showAccordionSidebar(allFields) {
             <!-- AI Tab (Name + confidence, with recalculate for text fields only) -->
             <div class="tab-content" data-tab="ai" style="display: none;">
                 ${finalAiFields.map(item => {
-            // Only show regenerate button for text-based fields (not radio, checkbox, select)
-            const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isSelectGroup;
+            // Enterprise Logic: Exclude selects explicitly + other non-text types
+            const isSelect = item.isSelectGroup || (item.type && item.type.includes('select'));
+            const isSafeText = !['date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'button', 'image', 'file'].includes(item.type || '');
+            const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !isSelect && !item.isFileUpload && isSafeText;
+
+            // Enterprise Confidence Display
+            const confidence = Math.round(item.confidence * 100);
+            const confClass = confidence >= 80 ? 'sh-conf-high' : 'sh-conf-med';
+            const statusIcon = confidence >= 80 ? '●' : '○';
+
             return `
-                    <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
-                        <div class="field-header">
-                            <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
-                            ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                            </button>` : ''}
+                    <div class="sh-ent-card" data-selector="${item.selector.replace(/"/g, '&quot;')}">
+                        <div class="sh-ent-header">
+                            <div class="sh-ent-info">
+                                <div class="sh-ent-label">${item.label}</div>
+                                ${(!isTextBased && item.displayValue) ? `<div class="sh-ent-value">${item.displayValue}</div>` : ''}
+                            </div>
+                            <div class="sh-ent-meta">
+                                <div class="sh-ent-badge ${confClass}">
+                                    ${statusIcon} ${confidence}%
+                                </div>
+                                ${isTextBased ? `<button class="recalculate-btn sh-ent-regen-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI" title="Regenerate using AI">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+                                </button>` : '<div class="sh-ent-spacer"></div>'}
+                            </div>
                         </div>
-                        <div class="field-confidence">⚡ ${Math.round(item.confidence * 100)}%</div>
                     </div>
                 `}).join('')}
                 ${finalAiFields.length === 0 ? '<div class="empty-state">No AI-generated fields</div>' : ''}
