@@ -222,7 +222,7 @@ async function checkSmartMemoryForAnswer(field, smartMemory) {
             for (const [cachedLabel, cachedData] of Object.entries(smartMemory)) {
                 try {
                     const similarity = window.calculateUsingJaccardSimilarity(cachedLabel, normalizedLabel);
-                    if (similarity > 0.75) { // Increased threshold for better accuracy
+                    if (similarity >= 0.6) { // Lowered to 0.6 to catch "First Name" vs "Candidate First Name" (0.66)
                         return cachedData.answer;
                     }
                 } catch (e) { }
@@ -556,8 +556,8 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
                         }, currentDelay);
 
                         const valueLength = String(fieldData.value || '').length;
-                        const typingTime = Math.min(valueLength * 15, 2000);
-                        delayMs += typingTime + 500;
+                        const typingTime = Math.min(valueLength * 5, 200); // Super fast typing
+                        delayMs += typingTime + 50;
                     }
                 }
                 if (delayMs > 0) {

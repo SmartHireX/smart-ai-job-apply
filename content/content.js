@@ -559,10 +559,13 @@ async function executeInstantFill(data, options = { resetHistory: true, cumulati
                 const confidence = fieldData.confidence || 0;
                 if (fieldData.value && !fieldData.skipped) {
                     await simulateTyping(element, fieldData.value, confidence);
-                    attachSelfCorrectionTrigger(element);
                 } else {
                     highlightField(element, confidence);
                 }
+
+                // Active Learning: Listen for manual input/correction on ALL fields
+                // This allows Smart Memory to learn even from fields AI left blank
+                attachSelfCorrectionTrigger(element);
             }
         }
 

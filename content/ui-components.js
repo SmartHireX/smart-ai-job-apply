@@ -1141,17 +1141,33 @@ function showAccordionSidebar(allFields) {
 }
 
 function setNativeValue(element, value) {
-    const { set: valueSetter } = Object.getOwnPropertyDescriptor(element, 'value') || {};
-    const prototype = Object.getPrototypeOf(element);
-    const { set: prototypeValueSetter } = Object.getOwnPropertyDescriptor(prototype, 'value') || {};
+    let lastValue = element.value;
+    element.value = value;
 
-    if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
-        prototypeValueSetter.call(element, value);
-    } else if (valueSetter) {
-        valueSetter.call(element, value);
-    } else {
-        element.value = value;
+    let event = new Event('input', { bubbles: true });
+
+    // React hack: overwriting value setter
+    let tracker = element._valueTracker;
+    if (tracker) {
+        tracker.setValue(lastValue);
     }
+
+    // Try finding the setter from the specific prototype
+    let descriptor;
+    if (element instanceof HTMLInputElement) {
+        descriptor = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+    } else if (element instanceof HTMLTextAreaElement) {
+        descriptor = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
+    } else if (element instanceof HTMLSelectElement) {
+        descriptor = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value');
+        event = new Event('change', { bubbles: true }); // Selects need 'change'
+    }
+
+    if (descriptor && descriptor.set) {
+        descriptor.set.call(element, value);
+    }
+
+    element.dispatchEvent(event);
 }
 
 function setFieldValue(element, value) {
@@ -1390,7 +1406,13 @@ function attachSelfCorrectionTrigger(element) {
 
         } else if (element.tagName === 'SELECT') {
             const selectedOption = element.options[element.selectedIndex];
-            newValue = selectedOption ? selectedOption.value : element.value;
+            if (selectedOption) {
+                // User explicit request: "instead of saving id save the label"
+                // Always use the visible text (e.g., "United States") as it's more portable than values ("US" or "123")
+                newValue = (selectedOption.text || selectedOption.value || '').trim();
+            } else {
+                newValue = element.value;
+            }
         } else {
             newValue = element.value;
         }
@@ -2184,6 +2206,11 @@ async function applyNovaRegeneration() {
             element.dispatchEvent(new Event('input', { bubbles: true }));
             element.dispatchEvent(new Event('change', { bubbles: true }));
             element.dispatchEvent(new Event('blur', { bubbles: true }));
+        }
+
+        // Active Learning: Attach trigger for future manual corrections
+        if (typeof attachSelfCorrectionTrigger === 'function') {
+            attachSelfCorrectionTrigger(element);
         }
 
         // Update smart memory cache
