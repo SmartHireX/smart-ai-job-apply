@@ -1839,7 +1839,7 @@
     font-size: 13px;
     margin-bottom: 14px;
     border: 1px solid #fde68a;
-    max-height: 150px;
+    max-height: 300px;
     overflow-y: auto;
     line-height: 1.5;
     white-space: pre-wrap;

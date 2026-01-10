@@ -858,9 +858,15 @@ function showAccordionSidebar(allFields) {
             <!-- Cache Tab (Name only, with recalculate for text fields only) -->
             <div class="tab-content" data-tab="cache" style="display: none;">
                 ${finalCacheFields.map(item => {
-        // Only show regenerate button for true text-based fields
-        const isSafeText = !['date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'button', 'image', 'file'].includes(item.type || '');
-        const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isSelectGroup && !item.isFileUpload && isSafeText && item.source !== 'selection_cache';
+        // Robust check for text-only fields (Exclude select, number, date, etc.)
+        const type = (item.type || '').toLowerCase();
+        const tagName = (item.tagName || '').toUpperCase();
+        const isSelect = item.isSelectGroup || type.includes('select') || tagName === 'SELECT';
+        const excludedTypes = ['number', 'date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'reset', 'button', 'image', 'file', 'checkbox', 'radio'];
+
+        // Strict: Must not be excluded type, must not be select, and if type is present it typically defaults to text
+        const isSafeText = !excludedTypes.includes(type) && !isSelect;
+        const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isFileUpload && isSafeText && item.source !== 'selection_cache';
 
         return `
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
@@ -879,9 +885,13 @@ function showAccordionSidebar(allFields) {
             <div class="tab-content" data-tab="ai" style="display: none;">
                 ${finalAiFields.map(item => {
             // Enterprise Logic: Exclude selects explicitly + other non-text types
-            const isSelect = item.isSelectGroup || (item.type && item.type.includes('select'));
-            const isSafeText = !['date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'button', 'image', 'file'].includes(item.type || '');
-            const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !isSelect && !item.isFileUpload && isSafeText;
+            const type = (item.type || '').toLowerCase();
+            const tagName = (item.tagName || '').toUpperCase();
+            const isSelect = item.isSelectGroup || type.includes('select') || tagName === 'SELECT';
+            const excludedTypes = ['number', 'date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'reset', 'button', 'image', 'file', 'checkbox', 'radio'];
+
+            const isSafeText = !excludedTypes.includes(type) && !isSelect;
+            const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isFileUpload && isSafeText;
 
             // Enterprise Confidence Display
             const confidence = Math.round(item.confidence * 100);
@@ -1984,12 +1994,13 @@ TASK: Regenerate the field value based on the instruction.
 RULES:
 1. Professional tone.
 2. Use resume facts only (if available).
-3. OUTPUT: New value ONLY. No quotes/preamble.`;
+3. Do not be concise unless asked. Write comprehensive, complete responses.
+4. OUTPUT: New value ONLY. No quotes/preamble.`;
 
         const result = await window.AIClient.callAI(
             'Regenerate value:',
             systemPrompt,
-            { maxTokens: 500, temperature: 0.5 }
+            { maxTokens: 2000, temperature: 0.7 }
         );
 
         hideNovaTyping();
@@ -2158,10 +2169,21 @@ async function applyNovaRegeneration() {
         if (typeof showGhostingAnimation === 'function') {
             await showGhostingAnimation(element, context.pendingValue, 0.95);
         } else {
-            // Fallback: direct assignment
-            element.value = context.pendingValue;
+            // Fallback: Robust native setter for React/Angular support
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+            const nativeTextAreaSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+
+            if (element.tagName === 'TEXTAREA' && nativeTextAreaSetter) {
+                nativeTextAreaSetter.call(element, context.pendingValue);
+            } else if (nativeInputValueSetter) {
+                nativeInputValueSetter.call(element, context.pendingValue);
+            } else {
+                element.value = context.pendingValue;
+            }
+
             element.dispatchEvent(new Event('input', { bubbles: true }));
             element.dispatchEvent(new Event('change', { bubbles: true }));
+            element.dispatchEvent(new Event('blur', { bubbles: true }));
         }
 
         // Update smart memory cache
