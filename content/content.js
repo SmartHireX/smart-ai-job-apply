@@ -577,6 +577,12 @@ async function executeInstantFill(data, options = { resetHistory: true, cumulati
                 showErrorToast('No matching fields found.');
             }
         }
+
+        // Start watching for SPA re-renders (Self-Healing)
+        if (typeof attachSelfHealingObserver === 'function') {
+            attachSelfHealingObserver();
+        }
+
     } catch (error) {
         console.error('Fill error:', error);
         showErrorToast('Error during fill: ' + error.message);
@@ -621,6 +627,87 @@ function undoFormFill() {
     activeFormUndoHistory = [];
     showUndoToast();
     return { success: true };
+}
+
+/**
+ * Self-Healing: Watches for filled elements that get detached (SPA re-renders)
+ * and attempts to re-fill their replacements.
+ */
+let selfHealingObserver = null;
+const healedFields = new Set();
+
+function attachSelfHealingObserver() {
+    if (selfHealingObserver) return; // Already running
+
+    console.log('🛡️ Starting Self-Healing Observer...');
+
+    selfHealingObserver = new MutationObserver((mutations) => {
+        // Debounce slightly to avoid chaos
+        if (selfHealingObserver.timeout) clearTimeout(selfHealingObserver.timeout);
+
+        selfHealingObserver.timeout = setTimeout(() => {
+            const filledSelectors = Object.keys(activeFormUndoHistory
+                ? activeFormUndoHistory.map(h => {
+                    // We need to map history back to selectors. 
+                    // Actually, simpler: activeFormUndoHistory stores { element, value, ... }
+                    // But element is detached.
+                    return h;
+                })
+                : []
+            );
+
+            // Check our history of filled fields
+            activeFormUndoHistory.forEach(historyItem => {
+                // 1. Is the original element still connected?
+                if (historyItem.element.isConnected) return; // Still there, all good.
+
+                // 2. Element is gone! It was murdered by the SPA.
+                // Try to find its replacement.
+                let newElement = null;
+                const oldEl = historyItem.element;
+
+                // Try ID Match
+                if (oldEl.id) {
+                    newElement = document.getElementById(oldEl.id);
+                }
+                // Try Name Match
+                else if (oldEl.name) {
+                    newElement = document.querySelector(`[name="${CSS.escape(oldEl.name)}"]`);
+                }
+
+                // 3. If found and empty/different, re-heal it
+                if (newElement && isFieldVisible(newElement)) {
+                    // Check if we should heal (don't over-heal)
+                    const healKey = `${oldEl.id || oldEl.name || 'unk'}_${Date.now()}`;
+                    // Simple check: Is it empty?
+                    if (!newElement.value || newElement.value !== historyItem.value) {
+                        console.log(`❤️‍🩹 Self-Healing: Re-filling ${oldEl.name || oldEl.id}`);
+
+                        // Re-apply value
+                        if (historyItem.isCheckbox) {
+                            newElement.checked = historyItem.value;
+                        } else {
+                            setNativeValue(newElement, historyItem.value);
+                        }
+                        dispatchChangeEvents(newElement); // Re-trigger events
+
+                        // Update history to point to new element (so we watch this one now)
+                        historyItem.element = newElement;
+
+                        // Re-attach listeners because new element is fresh
+                        if (typeof attachSelfCorrectionTrigger === 'function') {
+                            attachSelfCorrectionTrigger(newElement);
+                        }
+                    }
+                }
+            });
+        }, 500); // Check 500ms after mutations settle
+    });
+
+    selfHealingObserver.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
 }
 
 /**

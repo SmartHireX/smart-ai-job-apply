@@ -175,9 +175,32 @@ const LocalMatcher = {
                 answer = this.matchEthnicity(field, facts);
             }
 
+            // 8. Enhanced Regex / Strict Contact Info (Zip, Phone, etc)
+            else if (context.includes('zip') || context.includes('postal')) {
+                answer = facts.contact.zip;
+            }
+            else if (context.includes('phone') || context.includes('mobile') || context.includes('cell')) {
+                answer = facts.contact.phone;
+            }
+            else if (context.includes('city') || context.includes('town')) {
+                answer = facts.contact.city;
+            }
+            else if (context.includes('state') || context.includes('province') || context.includes('region')) {
+                answer = facts.contact.state;
+            }
+            else if (context.includes('address') || context.includes('street')) {
+                answer = facts.contact.address;
+            }
+
             // 6. Generic Types (Date, Time, Number) -> Implied Local by Prompt Rules
-            else if (field.type === 'date') {
-                answer = new Date().toISOString().split('T')[0]; // Today
+            else if (field.type === 'date' || context.includes('date')) {
+                // "Start Date" or "Available From" usually means today/asap
+                if (context.includes('birth')) {
+                    // Start blank for DOB to avoid accidents, or parse from basics if available?
+                    // Safe: Leave blank or implement strict DOB extraction later
+                } else {
+                    answer = new Date().toISOString().split('T')[0]; // Today
+                }
             }
             else if (field.type === 'time') {
                 answer = '09:00';
@@ -226,7 +249,17 @@ const LocalMatcher = {
             },
             skills: (resumeData.skills?.technical || []).map(s => s.toLowerCase()),
             noticePeriod: resumeData.customFields?.noticePeriod || null, // e.g. "30 days" or "1 month"
-            isEmployed: (resumeData.experience || []).some(j => j.current === true)
+            isEmployed: (resumeData.experience || []).some(j => j.current === true),
+
+            // Contact Info (for Enhanced Regex)
+            contact: {
+                phone: resumeData.basics?.phone || resumeData.phone || '',
+                email: resumeData.basics?.email || resumeData.email || '',
+                city: resumeData.basics?.location?.city || resumeData.city || '',
+                state: resumeData.basics?.location?.region || resumeData.state || '',
+                zip: resumeData.basics?.location?.postalCode || resumeData.zip || '',
+                address: resumeData.basics?.location?.address || resumeData.address || ''
+            }
         };
     },
 
