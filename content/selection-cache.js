@@ -258,6 +258,17 @@ async function getCachedValue(field, label) {
 
                     return null;
                 }
+
+                // NEW: External Mappings Check (Prevent Race Condition with Heuristics)
+                // If heuristicMappings already claimed this value for another field, block it here.
+                if (externalMappings && typeof externalMappings === 'object') {
+                    const pendingValues = Object.values(externalMappings).map(m => (m.value || '').toString().trim().toLowerCase());
+                    const cachedVal = (cached.value || '').toString().trim().toLowerCase();
+                    if (pendingValues.includes(cachedVal)) {
+                        console.warn(`[SelectionCache] 🛡️ Collision Block (Pending Heuristic): "${cached.value}" already claimed. Skipping.`);
+                        return null;
+                    }
+                }
             }
         }
 

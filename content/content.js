@@ -118,27 +118,31 @@ async function processPageFormLocal() {
 
                 console.log(`🔍 Searching cache for field: "${fieldLabel}"`);
                 if (fieldLabel.length > 2) {
-                    for (const [cachedLabel, cachedData] of Object.entries(smartMemory)) {
-                        // 1. Exact Match
-                        if (cachedLabel === fieldLabel) {
-                            foundAnswer = cachedData.answer;
-                            break;
+                    // Use Centralized Cache Logic with all Dedupe safeguards
+                    // Passing 'heuristicMappings' allows us to block values that Heuristics just claimed
+                    // but haven't written to DOM yet (Race Condition Fix).
+                    if (window.SelectionCache && window.SelectionCache.getCachedValue) {
+                        try {
+                            const cachedResult = window.SelectionCache.getCachedValue(
+                                field,
+                                fieldLabel,
+                                smartMemory,
+                                heuristicMappings // <--- CRITICAL: Pass pending mappings
+                            );
+                            if (cachedResult) {
+                                foundAnswer = cachedResult.value;
+                            }
+                        } catch (err) {
+                            console.warn('Cache lookup failed:', err);
                         }
-
-                        // 2. Substring Match with length ratio check
-                        if (cachedLabel.includes(fieldLabel) || fieldLabel.includes(cachedLabel)) {
-                            const lenRatio = Math.min(cachedLabel.length, fieldLabel.length) / Math.max(cachedLabel.length, fieldLabel.length);
-                            if (lenRatio > 0.5) {
+                    } else {
+                        // Fallback (shouldn't happen if loaded correctly)
+                        console.warn('SelectionCache module not loaded, using basic fallback');
+                        for (const [cachedLabel, cachedData] of Object.entries(smartMemory)) {
+                            if (cachedLabel === fieldLabel) {
                                 foundAnswer = cachedData.answer;
                                 break;
                             }
-                        }
-
-                        // 3. Fuzzy Match (Jaccard Similarity)
-                        const score = calculateUsingJaccardSimilarity(cachedLabel, fieldLabel);
-                        if (score > 0.7) { // 70% similarity required (stricter)
-                            foundAnswer = cachedData.answer;
-                            break;
                         }
                     }
                 }
