@@ -228,6 +228,21 @@ async function checkSmartMemoryForAnswer(field, smartMemory) {
                 } catch (e) { }
             }
         }
+
+        // --- UNIFIED CACHING FALLBACK ---
+        // If Smart Memory (Text) fails, check Selection Cache (Dropdowns/Radios)
+        // Scenario: User cached "Gender: Male" from a dropdown. Now encounters "Gender" text input.
+        if (window.SelectionCache && window.SelectionCache.getCachedValue) {
+            const selectionHit = await window.SelectionCache.getCachedValue(element, fieldLabel);
+            if (selectionHit && selectionHit.value) {
+                // Extract value. If it's an array (checkboxes), join it? Text inputs usually want single string.
+                let val = selectionHit.value;
+                if (Array.isArray(val)) val = val.join(', ');
+
+                console.log(`🧠 [UnifiedCache] Rescued specific text field "${fieldLabel}" using SelectionCache data!`);
+                return val;
+            }
+        }
     } catch (e) {
         console.warn('[BatchProcessor] Smart memory check failed:', e.message);
     }
