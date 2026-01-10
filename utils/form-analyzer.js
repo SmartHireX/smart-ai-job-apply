@@ -349,6 +349,7 @@ function extractFieldsFromDOM(source) {
             name: input.name || '',
             id: input.id || '',
             value: input.value || '',
+            placeholder: input.placeholder || '',
             selector: selector,
             options: tagName === 'SELECT' ? Array.from(input.options).map(o => ({ value: o.value, label: o.text.trim() })) : []
         });

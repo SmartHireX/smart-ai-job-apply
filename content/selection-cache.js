@@ -231,21 +231,33 @@ async function getCachedValue(field, label) {
 
             // NEW: DOM-Based Deduplication (Check against page state)
             // This prevents duplicating values that were filled by LocalMatcher or User
-            const duplicates = Array.from(document.querySelectorAll('input[type="text"], input[type="email"], select'))
-                .filter(el => {
-                    const val = (el.value || '').trim().toLowerCase();
-                    const cachedVal = (cached.value || '').trim().toLowerCase();
-                    return val === cachedVal && el !== field && isFieldVisible(el);
-                });
+            // EXCEPTION: Allow Index 0 (Latest) to duplicate other fields (e.g. "Current Employer" = "History Row 0")
+            let isIndexZero = false;
+            const nameId = (field.name || field.id || '').toLowerCase();
+            const labelLower = (label || '').toLowerCase();
 
-            if (duplicates.length > 0) {
-                console.warn(`[SelectionCache] 🛡️ Collision Block (DOM): "${cached.value}" found in another field. Skipping.`);
+            // Check for "0" or "current" or "latest"
+            if (labelLower.includes('latest') || labelLower.includes('current') || nameId.match(/[_\-\[]0[_\-\]]?/) || labelLower.match(/#\s*1\b/)) {
+                isIndexZero = true;
+            }
 
-                // Add to session set to be efficient next time
-                usedSet.add(cached.value);
-                _sessionUsedValues.set(semanticType, usedSet);
+            if (!isIndexZero) {
+                const duplicates = Array.from(document.querySelectorAll('input[type="text"], input[type="email"], select'))
+                    .filter(el => {
+                        const val = (el.value || '').trim().toLowerCase();
+                        const cachedVal = (cached.value || '').trim().toLowerCase();
+                        return val === cachedVal && el !== field && isFieldVisible(el);
+                    });
 
-                return null;
+                if (duplicates.length > 0) {
+                    console.warn(`[SelectionCache] 🛡️ Collision Block (DOM): "${cached.value}" found in another field. Skipping since not Index 0.`);
+
+                    // Add to session set to be efficient next time
+                    usedSet.add(cached.value);
+                    _sessionUsedValues.set(semanticType, usedSet);
+
+                    return null;
+                }
             }
         }
 

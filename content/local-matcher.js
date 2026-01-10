@@ -289,12 +289,18 @@ const LocalMatcher = {
         if (indexMatch) {
             index = parseInt(indexMatch[1]);
         } else {
-            // Check Label for "Employer 1", "Job 2", etc.
+            // Check Label OR Placeholder for "Employer 1", "Job 2", etc.
             const labelLower = (field.label || '').toLowerCase();
-            const labelNumMatch = labelLower.match(/(?:employer|job|company|experience|work)\s*[#]?\s*(\d+)/);
+            const placeholderLower = (field.placeholder || '').toLowerCase();
+            const combinedContext = labelLower + ' ' + placeholderLower;
+
+            const labelNumMatch = combinedContext.match(/(?:employer|job|company|experience|work)\s*[#]?\s*(\d+)/);
             if (labelNumMatch) {
                 const labelNum = parseInt(labelNumMatch[1]);
                 if (labelNum > 0) index = labelNum - 1; // Convert 1-based label to 0-based index
+            } else if (combinedContext.includes('latest') || combinedContext.includes('current') || combinedContext.includes('most recent')) {
+                // Explicitly map "Latest Employer" etc. to Index 0
+                index = 0;
             }
         }
 
