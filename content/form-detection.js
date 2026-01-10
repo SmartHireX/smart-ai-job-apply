@@ -228,7 +228,34 @@ function getFieldLabel(element) {
         }
     }
 
-    // 1. Explicit Label (Standard)
+    // 1. Table Column Strategy (NEW: For Education/Work History tables)
+    // Matches <td> input to <th> header by column index
+    const td = element.closest('td');
+    if (td) {
+        const table = td.closest('table');
+        if (table) {
+            const tr = td.parentElement;
+            const colIndex = Array.from(tr.children).indexOf(td);
+            const thead = table.querySelector('thead');
+            if (thead) {
+                // Try to find the corresponding TH
+                // Logic: Find the LAST row in thead (usually contains the actual column headers)
+                const rows = thead.querySelectorAll('tr');
+                if (rows.length > 0) {
+                    const thRow = rows[rows.length - 1]; // Last row is safest bet
+                    if (thRow && thRow.children[colIndex]) {
+                        const th = thRow.children[colIndex];
+                        const headerText = clean(th.innerText);
+                        if (headerText.length > 2) {
+                            return headerText;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Explicit Label (Standard)
     // For radio/checkbox: Find the label WITH for="id" to get the SPECIFIC option label
     // element.labels[0] can return the GROUP question label which is wrong!
     if (isGroup && element.id) {

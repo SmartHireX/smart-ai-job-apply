@@ -1320,22 +1320,55 @@ function setSelectValue(element, value) {
     }
 
     // Single Select Logic
-    let bestMatch = options[0];
+    let bestMatchIndex = -1;
     let maxSim = 0;
 
-    options.forEach(opt => {
-        const textSim = calculateUsingJaccardSimilarity(opt.text, value);
-        const valSim = calculateUsingJaccardSimilarity(opt.value, value);
-        const sim = Math.max(textSim, valSim);
-        if (sim > maxSim) {
-            maxSim = sim;
-            bestMatch = opt;
-        }
-    });
+    console.log(`🔍 [SelectDebug] Setting value for select. Target: "${value}"`);
 
-    if (maxSim > 0.3) {
-        element.value = bestMatch.value;
+    // STRATEGY 1: Exact Match (Value or Text) - Priority #1
+    for (let i = 0; i < options.length; i++) {
+        const opt = options[i];
+        if (opt.value === "" || opt.text.toLowerCase().includes("select")) continue;
+
+        if (opt.value.toLowerCase() === String(value).toLowerCase() ||
+            opt.text.toLowerCase() === String(value).toLowerCase()) {
+            bestMatchIndex = i;
+            console.log(`✅ [SelectDebug] Exact match found: "${opt.text}"`);
+            break;
+        }
+    }
+
+    // STRATEGY 2: Jaccard & Substring Fallback (if no exact match)
+    if (bestMatchIndex === -1) {
+        options.forEach((opt, index) => {
+            if (opt.value === "" || opt.text.toLowerCase().includes("select")) return;
+
+            const textSim = calculateUsingJaccardSimilarity(opt.text, value);
+            const valSim = calculateUsingJaccardSimilarity(opt.value, value);
+            const sim = Math.max(textSim, valSim);
+
+            // Exact match override (case-insensitive) - Already checked, but check if passed text was slightly off?
+            // Actually let's assume Strategy 1 covered exact. 
+            // Here we look for high similarity.
+
+            if (sim > maxSim) {
+                maxSim = sim;
+                bestMatchIndex = index;
+            }
+        });
+
+        console.log(`   🏆 Best Fuzzy Match: "${bestMatchIndex !== -1 ? options[bestMatchIndex].text : 'None'}" (Score: ${maxSim})`);
+    }
+
+    // Apply Best Match
+    if (bestMatchIndex !== -1 && (maxSim >= 0.4 || bestMatchIndex !== -1)) { // If bestMatchIndex set by Strat 1, it's valid.
+        element.selectedIndex = bestMatchIndex;
+        // Force update value attribute too for framework listeners
+        element.value = element.options[bestMatchIndex].value;
         dispatchChangeEvents(element);
+        console.log(`✅ [SelectDebug] Applied index ${bestMatchIndex}: "${element.options[bestMatchIndex].text}"`);
+    } else {
+        console.warn(`❌ [SelectDebug] No match found. Max Sim: ${maxSim}`);
     }
 }
 

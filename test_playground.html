@@ -163,7 +163,148 @@
             <button type="button">Simulate Submit</button>
         </form>
 
-        <!-- FORM 3: Precise Regex & Legal -->
+        </form>
+
+        <!-- FORM 4: Enterprise ATS (The Nightmare) -->
+        <form class="test-form" id="form-enterprise" style="grid-column: 1 / -1;">
+            <h2>4. Enterprise ATS (Complex Real-World)</h2>
+            <p style="margin-bottom: 20px; color: #6b7280; font-size: 0.9rem;">
+                Simulates legacy ATS systems (Workday, Taleo) with nested divs, tables, and repeated sections.
+            </p>
+
+            <!-- 4.1 Nested Div Hell (Common in React/Angular apps) -->
+            <div class="nested-wrapper">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-control-wrapper">
+                            <label class="control-label">What is your <strong>Primary Discipline</strong>?</label>
+                            <div class="input-group">
+                                <input type="text" name="discipline_primary" class="form-control"
+                                    placeholder="e.g. Software Engineering">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+
+            <!-- 4.2 Table Layout (Old School ATS) -->
+            <h3 style="font-size: 1rem; margin-bottom: 10px;">Education History (Table Layout)</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <thead>
+                    <tr style="text-align: left; background: #f9fafb;">
+                        <th style="padding: 10px; border: 1px solid #e5e7eb;">School / University</th>
+                        <th style="padding: 10px; border: 1px solid #e5e7eb;">Degree</th>
+                        <th style="padding: 10px; border: 1px solid #e5e7eb;">End Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="edu_school_0" placeholder="School Name" style="width: 100%;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="edu_degree_0" placeholder="Degree" style="width: 100%;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="edu_end_date_0" placeholder="YYYY-MM-DD" style="width: 100%;">
+                        </td>
+                    </tr>
+                    <!-- Row 2 (To test multi-row extraction) -->
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="edu_school_1" placeholder="School Name" style="width: 100%;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="edu_degree_1" placeholder="Degree" style="width: 100%;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="edu_end_date_1" placeholder="YYYY-MM-DD" style="width: 100%;">
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 4.3 Ambiguous Labels & Honeypots -->
+            <div class="form-group">
+                <label>Tell us about yourself</label>
+                <!-- Honeypot (Hidden) -->
+                <input type="text" name="website_hp" style="display:none;" tabindex="-1" autocomplete="off">
+                <!-- Real Field -->
+                <textarea name="cover_letter" rows="4" placeholder="Paste your cover letter or bio here..."></textarea>
+            </div>
+
+            <div class="form-group" style="display: flex; gap: 20px; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <!-- Label is far separate from input DOM-wise -->
+                    <div class="question-header"><strong>Diversity & Inclusion</strong></div>
+                    <p style="font-size: 0.8rem; margin: 5px 0 10px;">Voluntary self-identification</p>
+
+                    <label style="display: block; margin-bottom: 5px;">Race / Ethnicity</label>
+                    <select name="race_ethnicity" multiple style="height: 100px;">
+                        <option value="hispanic">Hispanic or Latino</option>
+                        <option value="white">White (Not Hispanic or Latino)</option>
+                        <option value="black">Black or African American</option>
+                        <option value="asian">Asian</option>
+                        <option value="two">Two or More Races</option>
+                    </select>
+                </div>
+
+                <div style="flex: 1;">
+                    <div class="question-header"><strong>Veteran Status</strong></div>
+                    <p style="font-size: 0.8rem; margin: 5px 0 10px;">Protected veteran definition</p>
+
+                    <div style="background: #fdf2f8; padding: 10px; border-radius: 6px; border: 1px solid #fbcfe8;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" name="veteran_status"> I identify as a protected veteran
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4.4 Random Noise & Distractions (Marketing Fluff) -->
+            <div
+                style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+                <h4 style="margin: 0 0 10px; color: #065f46;">Why Join Global Corp?</h4>
+                <p style="font-size: 0.85rem; color: #1f2937; line-height: 1.5;">
+                    At Global Corp, we believe in <strong>synergy</strong> and <strong>paradigm shifts</strong>.
+                    Our mission is to leverage agile frameworks to provide a robust synopsis for high-level overviews.
+                    Iterative approaches to corporate strategy foster collaborative thinking to further the overall
+                    value proposition.
+                </p>
+                <p style="font-size: 0.85rem; color: #1f2937; margin-top: 10px;">
+                    <em>"We don't just write code; we architect dreams."</em> - CEO John Doe
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label>How did you hear about us?</label>
+                <p style="font-size: 0.8rem; color: #6b7280; margin-bottom: 5px;">
+                    (Please include specific campaign ID if applicable. Note: This helps our marketing team optimize
+                    future outreach efforts across Q3 and Q4 key deliverables.)
+                </p>
+                <input type="text" name="referral_source">
+            </div>
+
+            <!-- 4.5 Formatting Trap (Text separated by line breaks) -->
+            <div style="margin: 20px 0;">
+                <div><strong>Legal Authorization</strong></div>
+                <div style="font-size: 0.9rem; color: #4b5563; margin-bottom: 8px;">
+                    Are you legally authorized to work in the country where this job is located?
+                    <br>
+                    <span style="font-size: 0.8rem; color: #9ca3af;">(Proof of citizenship or immigration status will be
+                        required upon employment)</span>
+                </div>
+                <select name="work_auth">
+                    <option value="">-- Please Select --</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+
+            <button type="button" style="background-color: #10b981;">Submit Application</button>
+        </form>
         <form class="test-form" id="form-legal">
             <h2>3. Compliance (Strict Mode)</h2>
             <div class="form-group">

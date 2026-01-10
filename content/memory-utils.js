@@ -48,7 +48,7 @@ function calculateUsingJaccardSimilarity(str1, str2) {
     const tokenize = (s) => String(s).toLowerCase()
         .replace(/[^a-z0-9\s]/g, '') // Keep spaces to split
         .split(/\s+/)
-        .filter(w => w.length > 2); // Ignore 'a', 'is' (stop words simple filter)
+        .filter(w => w.length > 0); // Allow short tokens (m, f, us, uk, no) - Stop words handle noise
 
     const set1 = new Set(tokenize(str1));
     const set2 = new Set(tokenize(str2));
