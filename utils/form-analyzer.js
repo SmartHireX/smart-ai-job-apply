@@ -60,6 +60,7 @@ TEXT FIELDS TO FILL
 Each item contains:
 - selector: CSS selector
 - label: Field label
+- placeholder: Field placeholder (Strong signal for "Latest" vs "Previous")
 - context: Help text or nearby description (if any)
 
 Fields:
@@ -76,6 +77,7 @@ INSTRUCTIONS
 6. DO NOT fabricate experience or facts.
 7. If context is insufficient, return an empty string.
 8. **Sequential History Mapping**: For indexed fields (e.g. school_0, school_1) or repeated sections (Employer 1, Employer 2), YOU MUST map them in CHRONOLOGICAL ORDER (Latest to Oldest). Use the 1st history item for the 1st field (index 0), the 2nd history item for the 2nd field (index 1), and so on. NEVER repeat the same history entry for multiple distinct indices.
+9. **Placeholder Context**: ALWAYS check the "placeholder" field. If it says "Latest Employer", "Current Job", or similar, treat it as Index 0 (Current Role). If "Previous Employer", map it to Index 1. Use this to differentiate generic labels like "Employer".
 ────────────────────────────
 RESPONSE FORMAT (JSON ONLY)
 ────────────────────────────
@@ -667,6 +669,7 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
             label: f.label || '',
             type: f.type || 'text',
             name: f.name || '',
+            placeholder: f.placeholder || '',
             options: f.options || []
         }));
         const fieldsArray = JSON.stringify(sanitizedFields, null, 2);
