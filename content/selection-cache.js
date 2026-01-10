@@ -192,8 +192,12 @@ async function saveMetadata(metadata) {
 // CACHE OPERATIONS
 // ============================================================================
 
-// Mutex to prevent race conditions during rapid batch updates (e.g. skills fill)
+// Mutex to prevent race conditions
 let _cacheLock = Promise.resolve();
+
+// SESSION STATE: Track used values to prevent duplicates on the SAME page (e.g. School 1 vs School 2)
+// Map<SemanticType, Set<Value>>
+const _sessionUsedValues = new Map();
 
 /**
  * Get cached value for a field
@@ -205,15 +209,27 @@ async function getCachedValue(field, label) {
     const signature = generateFieldSignature(field, label);
     const semanticType = classifyFieldType(signature);
 
-    if (!semanticType) {
-        // console.log('[SelectionCache] No semantic type match for:', label);
-        return null;
-    }
+    if (!semanticType) return null;
 
     const cache = await getCache();
     const cached = cache[semanticType];
 
     if (cached) {
+        // --- COLLISION CHECK (New) ---
+        // For "List Items" (Education/Experience), don't return the same value twice on one page
+        const isListType = semanticType.includes('education') || semanticType.includes('employer') || semanticType.includes('relocate') === false;
+        // Note: 'relocate' is essentially unique, but strict lists are education/jobs. 
+        // Let's be specific: education_institution, education_degree.
+        const strictListTypes = ['education_institution', 'education_degree', 'employer', 'job_title'];
+
+        if (strictListTypes.includes(semanticType)) {
+            const usedSet = _sessionUsedValues.get(semanticType) || new Set();
+            if (usedSet.has(cached.value)) {
+                console.warn(`[SelectionCache] 🛡️ Collision Block: "${cached.value}" already used for ${semanticType}. Skipping cache to allow next item.`);
+                return null; // Force fallback to Next Priority Item
+            }
+        }
+
         // VALIDATION: Check if cached value exists in current options
         if (field.tagName.toLowerCase() === 'select' || (field.getAttribute('role') === 'listbox')) {
             const isValid = validateOption(field, cached.value);
@@ -225,22 +241,28 @@ async function getCachedValue(field, label) {
 
         console.log(`[SelectionCache] ✅ Cache HIT for "${label}" → type: ${semanticType}, value: ${cached.value}`);
 
+        // Mark as USED for this session
+        if (strictListTypes.includes(semanticType)) {
+            const usedSet = _sessionUsedValues.get(semanticType) || new Set();
+            usedSet.add(cached.value);
+            _sessionUsedValues.set(semanticType, usedSet);
+        }
+
         // Update usage stats
         cached.lastUsed = Date.now();
         cached.useCount = (cached.useCount || 0) + 1;
 
-        // Learn this variant (variants is stored as Array, convert to Set temporarily)
+        // Learn this variant
         if (!cached.variants) cached.variants = [];
         const variantsSet = new Set(cached.variants);
         variantsSet.add(normalizeFieldName(label));
         cached.variants = Array.from(variantsSet);
 
-
         await saveCache(cache);
 
         return {
             value: cached.value,
-            confidence: Math.min(0.95, 0.75 + (cached.useCount * 0.02)), // Confidence increases with use
+            confidence: Math.min(0.95, 0.75 + (cached.useCount * 0.02)),
             source: 'selection_cache',
             semanticType: semanticType
         };

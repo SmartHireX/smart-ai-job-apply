@@ -528,7 +528,22 @@ async function processPageFormLocal() {
     } catch (error) {
         console.error('Processing failed:', error);
         showProcessingWidget('Error', -1);
-        showErrorToast(error.message);
+        showErrorToast('Partial Error: ' + error.message);
+        // CRITICAL FIX: Don't stop! Allow flow to proceed to "finall" block to show what we have.
+    } finally {
+        // ALWAYS show the results we have (Local + Cache + whatever AI parts worked)
+        if (typeof cumulativeMappings !== 'undefined' && Object.keys(cumulativeMappings).length > 0) {
+            // Ensure sidebar is updated even if AI failed
+            triggerConfetti();
+            updateSidebarWithState(cumulativeMappings);
+        } else if (typeof cumulativeMappings !== 'undefined') {
+            // Fallback if truly nothing was mapped
+            showErrorToast('No fields could be mapped.');
+        }
+
+        setTimeout(() => removeProcessingWidget(), 800);
+        activateSmartMemoryLearning();
+        chrome.runtime.sendMessage({ type: 'FILL_COMPLETE' });
     }
 }
 

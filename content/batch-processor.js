@@ -296,6 +296,10 @@ async function processBatchWithRetry(batch, resumeData, pageContext, context) {
     }
 
     console.error(`[BatchProcessor] Batch failed after ${MAX_RETRIES + 1} attempts:`, lastError);
+    // CRITICAL: Notify user if batch fails completely (e.g. Rate Limit)
+    if (typeof window.showErrorToast === 'function') {
+        window.showErrorToast(`AI Batch Failed: ${lastError}`);
+    }
     return {};
 }
 

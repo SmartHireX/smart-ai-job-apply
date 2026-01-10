@@ -148,7 +148,7 @@ const LocalMatcher = {
                 answer = this.matchSkills(field, facts);
             }
             // 4. Education
-            else if (context.includes('degree') || context.includes('education')) {
+            else if (context.includes('degree') || context.includes('education') || context.includes('school') || context.includes('university') || context.includes('college') || context.includes('edu_')) {
                 answer = this.matchEducation(field, facts);
             }
             // 5. Gender / Veteran / Disability
@@ -234,8 +234,14 @@ const LocalMatcher = {
     },
 
     extractFacts(resumeData) {
+        // PRE-SORT HISTORY (Latest First)
+        const sortedEdu = this.getSortedHistory(resumeData.education);
+        const sortedExp = this.getSortedHistory(resumeData.experience);
+
         return {
             totalYearsExp: this.calculateTotalExperience(resumeData.experience || []),
+            education: sortedEdu,
+            workExperience: sortedExp, // Expose sorted experience
             highestDegree: this.calculateHighestDegree(resumeData.education || []),
             sponsorshipRequired: resumeData.customFields?.sponsorshipRequired === true, // Boolean
             workAuthorization: resumeData.customFields?.workAuthorization || 'Authorized',
@@ -265,11 +271,71 @@ const LocalMatcher = {
 
     // --- MATCHERS ---
 
-    matchExperience(field, totalYears) {
-        if (!field.options && !field.value) return null; // Can't match if no options
+    matchExperience(field, facts) {
+        // 1. Check if this is a "Years of Experience" question (Range Match)
+        // If the label asks for "How many years...", use the totalYears logic
+        const context = (field.label + ' ' + (field.name || '')).toLowerCase();
 
-        // Strategy: Parse ranges from label/value
-        // "0-2 years", "3-5", "5+"
+        if (context.includes('how many') || context.includes('years') || context.includes('duration')) {
+            return this.matchExperienceYears(field, facts.totalYearsExp);
+        }
+
+        // 2. Index-Aware Matching (like Education)
+        // Extract Index from Field Name/ID (e.g., job_0, employer_1, work_history[2])
+        let index = 0;
+        const nameId = (field.name || field.id || '');
+        const indexMatch = nameId.match(/[_\-\[](\d+)[_\-\]]?/);
+        if (indexMatch) {
+            index = parseInt(indexMatch[1]);
+        }
+
+        console.log(`💼 [LocalMatcher-Exp] Field: "${nameId}" -> Index: ${index}`);
+
+        // 3. Get specific experience entry
+        if (!facts.workExperience || index >= facts.workExperience.length) {
+            // RELAXED LOGIC: Allow AI fallback for ANY index to support 1-based forms
+            console.log(`   ⚠️ Exp Index ${index} not found locally. Handing over to AI.`);
+            return null;
+        }
+        const job = facts.workExperience[index];
+        console.log(`   ✅ Using Job #${index}: ${job.name || job.company}`);
+
+        // 4. Match Field Type
+        // Company / Employer
+        if (context.includes('company') || context.includes('employer') || context.includes('organization')) {
+            return job.name || job.company || null;
+        }
+
+        // Job Title / Role
+        if (context.includes('title') || context.includes('role') || context.includes('position') || context.includes('designation')) {
+            return job.position || job.title || null;
+        }
+
+        // Start Date
+        if (context.includes('start') && context.includes('date')) {
+            return this.normalizeDate(job.startDate, field.type === 'date' ? 'date' : 'text');
+        }
+
+        // End Date
+        if (context.includes('end') && context.includes('date')) {
+            const isCurrent = job.current || (job.endDate && job.endDate.toLowerCase() === 'present');
+            if (isCurrent || !job.endDate) {
+                console.log(`   ⛔ Job #${index} is Current/Ongoing. Returning EMPTY for End Date.`);
+                return '';
+            }
+            return this.normalizeDate(job.endDate, field.type === 'date' ? 'date' : 'text');
+        }
+
+        // Description / Responsibilities
+        if (context.includes('description') || context.includes('responsibilities') || context.includes('duties')) {
+            return job.summary || job.description || (job.highlights ? job.highlights.join('\n') : null);
+        }
+
+        return null; // Fallback
+    },
+
+    matchExperienceYears(field, totalYears) {
+        if (!field.options && !field.value) return null;
 
         // Helper to check if a number is in range
         const checkRange = (text) => {
@@ -430,45 +496,68 @@ const LocalMatcher = {
     },
 
     matchEducation(field, facts) {
-        // Simple hierarchy map
-        const levels = {
-            'high school': 1, 'secondary': 1,
-            'bachelor': 2, 'undergraduate': 2, 'bs': 2, 'ba': 2, 'b.tech': 2,
-            'master': 3, 'graduate': 3, 'ms': 3, 'ma': 3, 'mba': 3,
-            'phd': 4, 'doctorate': 4
-        };
+        // 1. Extract Index from Field Name/ID (e.g., school_0, school[1])
+        let index = 0;
+        const nameId = (field.name || field.id || '');
+        const indexMatch = nameId.match(/[_\-\[](\d+)[_\-\]]?/);
+        if (indexMatch) {
+            index = parseInt(indexMatch[1]);
+        }
 
-        const targetLevel = levels[facts.highestDegree] || 0;
-        if (targetLevel === 0) return null;
+        console.log(`🎓 [LocalMatcher-Edu] Field: "${nameId}" -> Index: ${index}`);
 
-        // Helper: get level from string
-        const getLevel = (str) => {
-            if (!str) return 0;
-            // Handle if str is object (just in case)
-            const text = (typeof str === 'string' ? str : String(str.label || str.value || str)).toLowerCase();
-            for (const [key, lvl] of Object.entries(levels)) {
-                if (text.includes(key)) return lvl;
+        // 2. Get specific education entry
+        if (!facts.education || index >= facts.education.length) {
+            // CRITICAL FIX: Only block AI (return '') if we are looking for >1st item.
+            // If we are looking for the 1st item (index 0) and don't have it locally,
+            // we SHOULD let the AI try (return null), as it might find it in raw text.
+            if (index > 0) {
+                console.log(`   ⚠️ Index ${index} out of bounds (Total: ${facts.education ? facts.education.length : 0}). Returning EMPTY to block AI duplicate.`);
+                return '';
             }
-            return 0;
-        };
+            return null; // Fallback to AI for primary field
+        }
+        const edu = facts.education[index];
+        console.log(`   ✅ Using Education #${index}: ${edu.institution}`);
 
-        const text = (field.label + ' ' + (field.value || '')).toLowerCase();
+        const context = (field.label + ' ' + (field.name || '')).toLowerCase();
 
-        // Select: Iterate options
-        if (field.type === 'select' && field.options) {
-            // Find option with closest matching level
-            return field.options.find(opt => {
-                const optText = typeof opt === 'object' ? (opt.label || opt.value) : opt;
-                return getLevel(optText) === targetLevel;
-            }) || null;
+        // 3. Match Field Type
+        // School / University
+        if (context.includes('school') || context.includes('university') || context.includes('institution') || context.includes('college')) {
+            return edu.institution || edu.organization || null;
         }
 
-        // Radio: Check if THIS option matches
-        if (field.type === 'radio') {
-            if (getLevel(text) === targetLevel) return field.value;
+        // Degree / Major
+        if (context.includes('degree') || context.includes('qualification') || context.includes('major')) {
+            // Check if it's a dropdown for "Type" (BS, MS) or Text for "Major" (Computer Science)
+            const degreeLevel = this.calculateHighestDegree([edu]); // Get level of THIS entry
+
+            // If it's a select, try to match level or text
+            if (field.type === 'select' || field.type === 'radio') {
+                return this.calculateHighestDegree([edu]); // Reuse logic to return "bachelor", "master", etc.
+            }
+            return edu.area || edu.studyType || null;
         }
 
-        return null;
+        // Start Date
+        if (context.includes('start') && context.includes('date')) {
+            return this.normalizeDate(edu.startDate, field.type === 'date' ? 'date' : 'text');
+        }
+
+        // End Date
+        if (context.includes('end') && context.includes('date')) {
+            // STRICT CHECK: If current or no end date, return generic handling or empty
+            const isCurrent = edu.current || (edu.endDate && edu.endDate.toLowerCase() === 'present');
+
+            if (isCurrent || !edu.endDate) {
+                console.log(`   ⛔ Education #${index} is Current/Ongoing. Returning EMPTY for End Date to block generic fallback.`);
+                return ''; // Return empty string to MARK AS RESOLVED (blocked), preventing Generic Date Fallback
+            }
+            return this.normalizeDate(edu.endDate, field.type === 'date' ? 'date' : 'text');
+        }
+
+        return null; // Fallback
     },
 
     // --- SYNONYMS DICTIONARY ---
@@ -566,7 +655,21 @@ const LocalMatcher = {
         return null;
     },
 
-    // --- UTILS ---
+    // --- SORTING UTILS ---
+
+    getSortedHistory(historyArray) {
+        if (!historyArray || !Array.isArray(historyArray)) return [];
+
+        // Sort DESCENDING by End Date (Latest First)
+        // "Current" or "Present" -> Date.now()
+        return [...historyArray].sort((a, b) => {
+            const getEndTime = (item) => {
+                if (item.current || (item.endDate && item.endDate.toLowerCase() === 'present')) return Date.now();
+                return item.endDate ? new Date(item.endDate).getTime() : (item.startDate ? new Date(item.startDate).getTime() : 0);
+            };
+            return getEndTime(b) - getEndTime(a);
+        });
+    },
 
     calculateTotalExperience(experience) {
         if (!experience || experience.length === 0) return 0;

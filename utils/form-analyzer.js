@@ -75,7 +75,7 @@ INSTRUCTIONS
 5. Keep answers under 120 words unless clearly required.
 6. DO NOT fabricate experience or facts.
 7. If context is insufficient, return an empty string.
-
+8. **Sequential History Mapping**: For indexed fields (e.g. school_0, school_1) or repeated sections (Employer 1, Employer 2), YOU MUST map them in CHRONOLOGICAL ORDER (Latest to Oldest). Use the 1st history item for the 1st field (index 0), the 2nd history item for the 2nd field (index 1), and so on. NEVER repeat the same history entry for multiple distinct indices.
 ────────────────────────────
 RESPONSE FORMAT (JSON ONLY)
 ────────────────────────────
@@ -164,7 +164,7 @@ INSTRUCTIONS
 3. Use profile facts - DO NOT fabricate experience.
 4. Keep answers under 120 words unless clearly required.
 5. For select/radio/checkbox fields, ONLY use values from the provided options array.
-
+6. **Sequential History Mapping**: For indexed fields (e.g. school_0, school_1), map them in CHRONOLOGICAL ORDER (Latest to Oldest). Index 0 = Latest, Index 1 = Previous. DO NOT repeat the same entry.
 ────────────────────────────
 RESPONSE FORMAT (JSON ONLY - USE ABBREVIATED KEYS)
 ────────────────────────────

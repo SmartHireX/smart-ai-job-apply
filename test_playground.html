@@ -301,10 +301,111 @@
                     <option value="yes">Yes</option>
                     <option value="no">No</option>
                 </select>
+                </select>
             </div>
+
+            <!-- 4.6 Work Experience History (Repeated Fields) -->
+            <h3 style="font-size: 1rem; margin: 20px 0 10px;">Work Experience History (Latest First)</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <thead>
+                    <tr style="text-align: left; background: #f9fafb;">
+                        <th style="padding: 10px; border: 1px solid #e5e7eb;">Employer</th>
+                        <th style="padding: 10px; border: 1px solid #e5e7eb;">Job Title</th>
+                        <th style="padding: 10px; border: 1px solid #e5e7eb;">Start Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="employer_0" placeholder="Latest Employer" style="width: 100%;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="job_title_0" placeholder="Job Title" style="width: 100%;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="start_date_0" placeholder="YYYY-MM-DD" style="width: 100%;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="employer_1" placeholder="Previous Employer" style="width: 100%;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="job_title_1" placeholder="Job Title" style="width: 100%;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <input type="text" name="start_date_1" placeholder="YYYY-MM-DD" style="width: 100%;">
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
 
             <button type="button" style="background-color: #10b981;">Submit Application</button>
         </form>
+
+        <!-- FORM 5: Technical Nightmares (Shadow DOM & Dynamic) -->
+        <div id="shadow-host" style="grid-column: 1 / -1; margin-top: 20px;"></div>
+
+        <script>
+            // Render Form 5 inside Shadow DOM to test boundary traversal
+            const shadowHost = document.getElementById('shadow-host');
+            const shadowRoot = shadowHost.attachShadow({ mode: 'open' });
+
+            const shadowContent = `
+                <style>
+                    .shadow-form { background: #f3f4f6; padding: 20px; border-radius: 8px; border: 1px dashed #9ca3af; }
+                    .form-group { margin-bottom: 15px; }
+                    label { display: block; font-weight: 500; color: #374151; margin-bottom: 4px; }
+                    input { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; }
+                    h2 { font-size: 1.1rem; color: #be185d; margin-top: 0; }
+                </style>
+                <form class="shadow-form" id="form-shadow">
+                    <h2>5. Shadow DOM & Dynamic (The Invisible)</h2>
+                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
+                        These fields exist in a #shadow-root. Most extensions cannot see them.
+                    </p>
+                    
+                    <div class="form-group">
+                        <label>Portfolio Password (Shadow)</label>
+                        <input type="password" class="secure-input" placeholder="Hidden in shadow">
+                    </div>
+
+                    <!-- Obfuscated Field (No Name/ID) -->
+                    <div class="form-group">
+                        <label>SSN / National ID (Obfuscated)</label>
+                        <input type="text" data-testid="obscure-field-123" placeholder="XXX-XX-XXXX">
+                        <div style="font-size: 0.8rem; color: #ef4444;">(Field has no name or ID)</div>
+                    </div>
+
+                    <!-- Dynamic Injection Container -->
+                    <div id="dynamic-container"></div>
+                    
+                    <button type="button" id="add-exp-btn" style="background: #be185d; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                        + Add Work Experience (Dynamic)
+                    </button>
+                    
+                    <button type="button" style="margin-left: 10px; padding: 6px 12px;">Submit</button>
+                </form>
+            `;
+
+            shadowRoot.innerHTML = shadowContent;
+
+            // Handle Dynamic Injection inside Shadow DOM
+            shadowRoot.getElementById('add-exp-btn').addEventListener('click', () => {
+                const container = shadowRoot.getElementById('dynamic-container');
+                const newField = document.createElement('div');
+                newField.className = 'form-group';
+                newField.style.marginTop = '15px';
+                newField.style.borderLeft = '3px solid #be185d';
+                newField.style.paddingLeft = '10px';
+                newField.innerHTML = `
+                    <label>Job Title (Dynamically Added)</label>
+                    <input type="text" class="dynamic-job" placeholder="Software Engineer">
+                `;
+                container.appendChild(newField);
+            });
+        </script>
         <form class="test-form" id="form-legal">
             <h2>3. Compliance (Strict Mode)</h2>
             <div class="form-group">
@@ -335,6 +436,95 @@
                 <div class="hint">Testing: Standard Field Regex</div>
             </div>
             <button type="button">Simulate Submit</button>
+        </form>
+
+        <!-- FORM 6: Corporate Wizard (Complex SPA) -->
+        <form class="test-form" id="form-corporate" style="grid-column: 1 / -1; border-top: 5px solid #4f46e5;">
+            <h2>6. Global Conglomerate Application (Enterprise SPA)</h2>
+            <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 20px;">
+                Features: Iframe hosting, Custom Div Selects (React-style), Conditional Logic via JS.
+            </p>
+
+            <!-- 6.1 Custom Div Select (React/Angular simulation) -->
+            <div class="form-group">
+                <label>Preferred Office Location (Custom Div Select)</label>
+                <div class="custom-select-container" style="position: relative; width: 100%;">
+                    <div class="custom-select-trigger" tabindex="0"
+                        style="padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; background: white; display: flex; justify-content: space-between; align-items: center;">
+                        <span id="selected-office">Select an office...</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
+                    </div>
+                    <div class="custom-options"
+                        style="display: none; position: absolute; top: 100%; left: 0; right: 0; border: 1px solid #d1d5db; background: white; z-index: 10; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                        <div class="custom-option" data-value="ny" style="padding: 10px; cursor: pointer;">New York HQ
+                        </div>
+                        <div class="custom-option" data-value="sf" style="padding: 10px; cursor: pointer;">San Francisco
+                            Hub</div>
+                        <div class="custom-option" data-value="ldn" style="padding: 10px; cursor: pointer;">London
+                            Branch</div>
+                        <div class="custom-option" data-value="remote" style="padding: 10px; cursor: pointer;">Remote
+                            (Worldwide)</div>
+                    </div>
+                    <!-- Hidden Real Input (often used by frameworks) -->
+                    <input type="hidden" name="office_location_hidden" id="office_hidden">
+                </div>
+            </div>
+
+            <!-- 6.2 Conditional Logic -->
+            <div class="form-group" style="background: #eff6ff; padding: 15px; border-radius: 6px;">
+                <label>Do you have a security clearance?</label>
+                <div style="margin: 10px 0;">
+                    <label style="margin-right: 15px;"><input type="radio" name="security_clearance" value="yes"
+                            onclick="document.getElementById('clearance-details').style.display = 'block'"> Yes</label>
+                    <label><input type="radio" name="security_clearance" value="no"
+                            onclick="document.getElementById('clearance-details').style.display = 'none'"> No</label>
+                </div>
+
+                <!-- Hidden Sub-Section -->
+                <div id="clearance-details"
+                    style="display: none; margin-top: 15px; border-top: 1px solid #bfdbfe; padding-top: 15px;">
+                    <label>Clearance Level</label>
+                    <select name="clearance_level" style="width: 100%; margin-top: 5px;">
+                        <option value="">Select Level...</option>
+                        <option value="confidential">Confidential</option>
+                        <option value="secret">Secret</option>
+                        <option value="top_secret">Top Secret</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 6.3 Iframe Trap (Cross-Origin Simulation) -->
+            <div class="form-group" style="margin-top: 30px;">
+                <label style="color: #b91c1c; font-weight: bold;">⚠ Tax Residency Form (Embedded Iframe)</label>
+                <p style="font-size: 0.8rem; color: #6b7280; margin-bottom: 10px;">
+                    This form lives inside an iframe. Extensions with <code>all_frames: false</code> will fail here.
+                </p>
+                <iframe id="tax-iframe"
+                    style="width: 100%; height: 250px; border: 1px solid #e5e7eb; border-radius: 8px;" srcdoc='
+                    <html>
+                    <body style="font-family: sans-serif; padding: 20px; background: #fffbff;">
+                        <h3 style="margin-top: 0; color: #4338ca;">Tax Declaration (Internal)</h3>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; font-size: 14px; margin-bottom: 5px;">Tax ID / SSN</label>
+                            <input type="text" name="tax_id" style="width: 90%; padding: 8px; border: 1px solid #ccc;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size: 14px; margin-bottom: 5px;">Primary Country of Residence</label>
+                            <select name="tax_country" style="width: 95%; padding: 8px;">
+                                <option>United States</option>
+                                <option>Canada</option>
+                                <option>United Kingdom</option>
+                            </select>
+                        </div>
+                    </body>
+                    </html>
+                '></iframe>
+            </div>
+
+            <button type="button" style="background-color: #4f46e5;">Submit Enterprise App</button>
         </form>
 
     </div>
