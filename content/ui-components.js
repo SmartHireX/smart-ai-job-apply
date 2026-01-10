@@ -100,6 +100,19 @@ function showProcessingWidget(text, step, batchInfo = null) {
     `;
 }
 
+function updateProcessingWidget(text) {
+    const widget = document.getElementById('smarthirex-processing-widget');
+    if (widget) {
+        const textEl = widget.querySelector('.sh-main-text');
+        if (textEl) {
+            textEl.textContent = text;
+            return;
+        }
+    }
+    // Fallback if widget doesn't exist
+    showProcessingWidget(text, 2);
+}
+
 function removeProcessingWidget() {
     const widget = document.getElementById('smarthirex-processing-widget');
     if (widget) {

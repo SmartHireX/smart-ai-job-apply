@@ -339,34 +339,26 @@ async function processPageFormLocal() {
             // Temporary AI Request Override for retry logic
             const originalCallAI = window.AIClient.callAI;
             window.AIClient.callAI = async (prompt, sys, opts) => {
-                const maxRetries = 3;
-                let attempt = 0;
-                while (attempt < maxRetries) {
-                    try {
-                        const result = await new Promise(resolve => {
-                            chrome.runtime.sendMessage({
-                                type: 'AI_REQUEST',
-                                prompt, systemInstruction: sys, options: opts
-                            }, resolve);
-                        });
+                try {
+                    const result = await new Promise(resolve => {
+                        chrome.runtime.sendMessage({
+                            type: 'AI_REQUEST',
+                            prompt, systemInstruction: sys, options: opts
+                        }, resolve);
+                    });
 
-                        if (result && result.success) return result;
+                    if (result && result.success) return result;
 
-                        const errorMsg = (result?.error || '').toLowerCase();
-                        if (errorMsg.includes('rate limit') || errorMsg.includes('quota')) {
-                            console.warn(`⚡ AI Rate Limit Wait (Attempt ${attempt + 1})`);
-                            updateProcessingWidget(`Rate Limit... Waiting (${attempt + 1})`);
-                            await new Promise(r => setTimeout(r, 2000 * Math.pow(2, attempt)));
-                            attempt++;
-                            continue;
-                        }
-                        return { success: false, error: result?.error || 'AI request failed' };
-                    } catch (e) {
-                        return { success: false, error: e.message };
+                    const errorMsg = (result?.error || '').toLowerCase();
+                    if (errorMsg.includes('rate limit') || errorMsg.includes('quota')) {
+                        console.warn('⚡ AI Rate Limit hit. Exiting immediately.');
+                        showErrorToast('AI Rate Limit exceeded.');
+                        return { success: false, error: 'Rate limit' };
                     }
+                    return { success: false, error: result?.error || 'AI request failed' };
+                } catch (e) {
+                    return { success: false, error: e.message };
                 }
-                showErrorToast('AI Rate Limit exceeded. Please try again shortly.');
-                return { success: false, error: 'Rate limit' };
             };
 
             // Use batched processor with callbacks
