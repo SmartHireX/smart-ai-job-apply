@@ -74,9 +74,9 @@ async function simulateTyping(element, value, confidence = 1.0) {
             const currentVal = element.value;
             setNativeValue(element, currentVal + char);
 
-            // Human-like randomization (30-80ms)
-            // This variability helps bypass simple bot detection scripts
-            await new Promise(r => setTimeout(r, Math.random() * 50 + 30));
+            // Human-like randomization (15-40ms) - Increased speed 2x
+            // This variability helps bypass simple bot detection scripts while remaining fast
+            await new Promise(r => setTimeout(r, Math.random() * 25 + 15));
         }
     } else {
         await new Promise(r => setTimeout(r, 100));

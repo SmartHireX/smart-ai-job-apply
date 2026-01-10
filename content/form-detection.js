@@ -255,12 +255,7 @@ function getFieldLabel(element) {
         if (labelEl) return clean(labelEl.textContent);
     }
 
-    // 4. Placeholder (for Text Inputs)
-    if (!isGroup && element.placeholder) {
-        return clean(element.placeholder);
-    }
-
-    // 5. Nearby Text Strategy (Visual Adjacency for non-groups or failed groups)
+    // 4. Nearby Text Strategy (Visual Adjacency) - Higher Priority than Placeholder now
     // Check previous sibling directly
     let prev = element.previousElementSibling;
     if (prev && clean(prev.innerText).length > 0 && clean(prev.innerText).length < 50) {
@@ -274,6 +269,11 @@ function getFieldLabel(element) {
         const val = element.value || '';
         const textWithoutVal = parentText.replace(val, '').trim();
         if (textWithoutVal.length > 2 && textWithoutVal.length < 50) return clean(textWithoutVal);
+    }
+
+    // 5. Placeholder (Fallback for Text Inputs)
+    if (!isGroup && element.placeholder) {
+        return clean(element.placeholder);
     }
 
     // 6. Name/ID Fallback (Last Resort)

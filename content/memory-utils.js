@@ -72,6 +72,35 @@ const STOP_WORDS = new Set([
     'please', 'enter', 'provide', 'kindly', 'input'
 ]);
 
+// Helper: Canonical Synonym Mapping (Zero-Space Semantic Layer)
+const SYNONYM_MAP = {
+    'compensation': 'salary',
+    'remuneration': 'salary',
+    'pay': 'salary',
+    'ctc': 'salary',
+    'expected': 'desired',
+    'expectation': 'desired',
+    'location': 'address',
+    'residence': 'address',
+    'mobile': 'phone',
+    'cell': 'phone',
+    'tele': 'phone',
+    'surname': 'lastname',
+    'familyname': 'lastname',
+    'givenname': 'firstname',
+    'mail': 'email',
+    'post': 'zip',
+    'postal': 'zip',
+    'zipcode': 'zip',
+    'linkedin': 'website',
+    'github': 'website',
+    'portfolio': 'website',
+    'url': 'website',
+    'link': 'website',
+    'notice': 'noticeperiod', // Normalize "Notice Period" -> "noticeperiod"
+    'joining': 'noticeperiod'
+};
+
 // Helper: Normalize keys for robust matching with sorted tokens
 function normalizeSmartMemoryKey(text) {
     if (!text) return '';
@@ -85,6 +114,7 @@ function normalizeSmartMemoryKey(text) {
             word.length > 0 &&         // Not empty
             !STOP_WORDS.has(word)      // Not a stop word
         )
+        .map(word => SYNONYM_MAP[word] || word) // Apply Synonym Mapping
         .sort()                        // Sort alphabetically (order-independent!)
         .join(' ');                    // Join back together
 }

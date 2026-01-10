@@ -760,4 +760,15 @@ Generate an appropriate, professional answer for this field.`;
         showErrorToast(`Regeneration failed: ${error.message}`);
         removeProcessingWidget();
     }
+
 }
+
+// ============ SPECULATIVE PREFETCHING INIT ============
+document.addEventListener('focusin', (e) => {
+    // Only prefetch if we are not currently typing/filling to save resources
+    if (e.target.classList.contains('smarthirex-typing')) return;
+
+    if (window.PrefetchEngine) {
+        window.PrefetchEngine.handleFocus(e.target);
+    }
+}, true); // Capture phase to be early

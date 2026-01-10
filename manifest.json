@@ -45,6 +45,7 @@
                 "content/drag-resize.js",
                 "content/ui-components.js",
                 "content/batch-processor.js",
+                "content/prefetch-engine.js",
                 "content/content.js"
             ],
             "css": [
