@@ -281,19 +281,34 @@ const LocalMatcher = {
         }
 
         // 2. Index-Aware Matching (like Education)
-        // Extract Index from Field Name/ID (e.g., job_0, employer_1, work_history[2])
+        // Extract Index from Name/ID OR Label (e.g., job_0, Employer 1)
         let index = 0;
         const nameId = (field.name || field.id || '');
         const indexMatch = nameId.match(/[_\-\[](\d+)[_\-\]]?/);
+
         if (indexMatch) {
             index = parseInt(indexMatch[1]);
+        } else {
+            // Check Label for "Employer 1", "Job 2", etc.
+            const labelLower = (field.label || '').toLowerCase();
+            const labelNumMatch = labelLower.match(/(?:employer|job|company|experience|work)\s*[#]?\s*(\d+)/);
+            if (labelNumMatch) {
+                const labelNum = parseInt(labelNumMatch[1]);
+                if (labelNum > 0) index = labelNum - 1; // Convert 1-based label to 0-based index
+            }
         }
 
-        console.log(`💼 [LocalMatcher-Exp] Field: "${nameId}" -> Index: ${index}`);
+        console.log(`💼 [LocalMatcher-Exp] Field: "${field.label}" (${nameId}) -> Index: ${index}`);
 
         // 3. Get specific experience entry
         if (!facts.workExperience || index >= facts.workExperience.length) {
-            // RELAXED LOGIC: Allow AI fallback for ANY index to support 1-based forms
+            // STRICTER LOGIC: If we are looking for >1st item (e.g. Job 2) and don't have it,
+            // we MUST return generic EMPTY to prevent AI from filling it with Job 1 or hallucinating.
+            if (index > 0) {
+                console.log(`   ⛔ Exp Index ${index} out of bounds (Total: ${facts.workExperience ? facts.workExperience.length : 0}). Returning EMPTY to block AI duplicate.`);
+                return '';
+            }
+            // For Index 0 (Primary), we allow AI to try fallback (maybe parsing failed?)
             console.log(`   ⚠️ Exp Index ${index} not found locally. Handing over to AI.`);
             return null;
         }
@@ -496,15 +511,24 @@ const LocalMatcher = {
     },
 
     matchEducation(field, facts) {
-        // 1. Extract Index from Field Name/ID (e.g., school_0, school[1])
+        // 1. Extract Index from Name/ID OR Label
         let index = 0;
         const nameId = (field.name || field.id || '');
         const indexMatch = nameId.match(/[_\-\[](\d+)[_\-\]]?/);
+
         if (indexMatch) {
             index = parseInt(indexMatch[1]);
+        } else {
+            // Check Label for "School 1", "Education 2"
+            const labelLower = (field.label || '').toLowerCase();
+            const labelNumMatch = labelLower.match(/(?:school|education|university|college|institution)\s*[#]?\s*(\d+)/);
+            if (labelNumMatch) {
+                const labelNum = parseInt(labelNumMatch[1]);
+                if (labelNum > 0) index = labelNum - 1; // Convert 1-based label to 0-based index
+            }
         }
 
-        console.log(`🎓 [LocalMatcher-Edu] Field: "${nameId}" -> Index: ${index}`);
+        console.log(`🎓 [LocalMatcher-Edu] Field: "${field.label}" (${nameId}) -> Index: ${index}`);
 
         // 2. Get specific education entry
         if (!facts.education || index >= facts.education.length) {
@@ -512,7 +536,7 @@ const LocalMatcher = {
             // If we are looking for the 1st item (index 0) and don't have it locally,
             // we SHOULD let the AI try (return null), as it might find it in raw text.
             if (index > 0) {
-                console.log(`   ⚠️ Index ${index} out of bounds (Total: ${facts.education ? facts.education.length : 0}). Returning EMPTY to block AI duplicate.`);
+                console.log(`   ⚠️ Edu Index ${index} out of bounds (Total: ${facts.education ? facts.education.length : 0}). Returning EMPTY to block AI duplicate.`);
                 return '';
             }
             return null; // Fallback to AI for primary field
