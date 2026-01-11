@@ -315,7 +315,8 @@ async function processBatchWithStreaming(batch, resumeData, pageContext, options
     const {
         isFirstBatch = false,
         previousQA = [],
-        callbacks = {}
+        callbacks = {},
+        filledHistorySummary = null
     } = options;
 
     if (!batch || batch.length === 0) {
@@ -326,6 +327,11 @@ async function processBatchWithStreaming(batch, resumeData, pageContext, options
 
     // Build appropriate context
     const context = buildSmartContext(resumeData, isFirstBatch, previousQA);
+
+    // Inject History Summary for AI Prompt
+    if (filledHistorySummary) {
+        context.filledHistorySummary = filledHistorySummary;
+    }
 
     // Call AI with retry logic
     const mappings = await processBatchWithRetry(batch, resumeData, pageContext, context);
@@ -438,9 +444,12 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
     const groups = groupFieldsByType(fields);
 
     // Process order: text + textarea first, then selects, then radio/checkbox
+    // Process order: text + textarea first, then selects, then radio/checkbox
+    // CLUSTER FIX: Sort by name/id to keep related fields (employer_0, employer_1) adjacent
+    // This ensures they likely land in the same batch or consecutive batches.
     const processingOrder = [
-        ...groups.text,
-        ...groups.textarea,
+        ...groups.text.sort((a, b) => (a.name || a.id || '').localeCompare(b.name || b.id || '')),
+        ...groups.textarea.sort((a, b) => (a.name || a.id || '').localeCompare(b.name || b.id || '')),
         ...groups.select,
         ...groups.radio,
         ...groups.checkbox
@@ -506,6 +515,16 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
 
     console.log(`[BatchProcessor] Skipped ${Object.keys(alreadyFilled).length} pre-filled, ${Object.keys(alreadyAnswered).length} deduplicated`);
 
+    // Animate deduplicated fields (fill them into the form)
+    if (callbacks.onFieldAnswered && Object.keys(alreadyAnswered).length > 0) {
+        console.log(`[BatchProcessor] Filling ${Object.keys(alreadyAnswered).length} deduplicated fields...`);
+        for (const [selector, data] of Object.entries(alreadyAnswered)) {
+            callbacks.onFieldAnswered(selector, data.value, data.confidence || 0.95);
+        }
+        // Wait for animation
+        await new Promise(r => setTimeout(r, Object.keys(alreadyAnswered).length * 300));
+    }
+
 
     // If everything was skipped (pre-filled or deduplicated), return immediately
     if (fieldsToProcess.length === 0) {
@@ -514,11 +533,19 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
         return skippedMappings;
     }
 
-    // Split into batches
-    const batches = [];
-    for (let i = 0; i < fieldsToProcess.length; i += BATCH_SIZE) {
-        batches.push(fieldsToProcess.slice(i, i + BATCH_SIZE));
-    }
+    // --- VIRTUAL INDEXING: Handle Unnumbered Fields ---
+    // 1. Assign 0, 1, 2... based on occurrence count (DOM order)
+    assignVirtualIndices(fieldsToProcess);
+
+    // 2. RE-SORT by Index to force related fields clusters (e.g. School #0 + Degree #0)
+    fieldsToProcess.sort((a, b) => {
+        const idxA = a.virtualIndex !== undefined ? a.virtualIndex : (extractFieldIndex(a) || 999);
+        const idxB = b.virtualIndex !== undefined ? b.virtualIndex : (extractFieldIndex(b) || 999);
+        return idxA - idxB;
+    });
+
+    // Split into batches using Smart Batching (Atomic Groups)
+    const batches = createSmartBatches(fieldsToProcess);
 
     console.log(`[BatchProcessor] Created ${batches.length} batches from ${fieldsToProcess.length} fields`);
 
@@ -530,8 +557,27 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
 
     for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
+        let activeBatch = [...batch]; // Mutable batch for partial filling
         const isFirstBatch = (i === 0);
         const isLastBatch = (i === batches.length - 1);
+
+        // --- HISTORY GUARD: Prevent Hallucination for Extra Fields ---
+        if (checkHistoryBounds(batch, resumeData)) {
+            console.log('[BatchProcessor] History Guard triggered. Auto-filling blanks.');
+            const blankMappings = {};
+
+            // Resolve all fields as blank
+            batch.forEach(f => {
+                if (f.selector) {
+                    blankMappings[f.selector] = { value: '', confidence: 1.0, source: 'history-guard' };
+                    // Notify UI immediately
+                    if (callbacks.onFieldAnswered) callbacks.onFieldAnswered(f.selector, '', 1.0);
+                }
+            });
+
+            Object.assign(allMappings, blankMappings);
+            continue; // SKIP AI CALL
+        }
 
         // Notify batch start
         if (callbacks.onBatchStart) {
@@ -541,6 +587,101 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
                     .slice(0, 3);
                 callbacks.onBatchStart(i + 1, batches.length, labels);
             } catch (e) { }
+        }
+
+        // --- STRUCTURED CACHE: Match Resume Item -> History Entity ---
+        // If we know this is "Job #1", look up what Job #1 corresponds to in Resume, then find in History Cache.
+        if (window.HistoryManager) {
+            try {
+                // 1. Determine resume context (e.g. School #0)
+                const index = batch[0].virtualIndex !== undefined ? batch[0].virtualIndex : (extractFieldIndex(batch[0]) ?? 0);
+                const isEdu = batch.some(f => /school|education|degree|university|college/i.test((f.name || '') + ' ' + (f.label || '')));
+                const isWork = batch.some(f => /job|work|employ|company|position/i.test((f.name || '') + ' ' + (f.label || '')));
+
+                let candidateName = null;
+                // Look up in Resume Data by Index
+                if (isEdu && resumeData.education && resumeData.education[index]) {
+                    candidateName = resumeData.education[index].institution || resumeData.education[index].schoolName || resumeData.education[index].school;
+                } else if (isWork && resumeData.experience && resumeData.experience[index]) {
+                    candidateName = resumeData.experience[index].company || resumeData.experience[index].employer || resumeData.experience[index].name;
+                }
+
+                if (candidateName) {
+                    // Find in Structured Cache
+                    const entity = window.HistoryManager.findEntity(candidateName);
+
+                    // Call hydrateBatch with resume fallback (works even if entity is null)
+                    const structMappings = window.HistoryManager.hydrateBatch(batch, entity, resumeData, index);
+                    const hitCount = Object.keys(structMappings).length;
+
+                    // If we have any hits, use them (Partial Filling Allowed)
+                    if (hitCount > 0) {
+                        const source = entity ? 'cache' : 'resume';
+                        console.log(`[BatchProcessor] HistoryManager filled ${hitCount} fields from ${source} (index ${index})`);
+                        Object.assign(allMappings, structMappings);
+
+                        // Animate filled fields
+                        if (callbacks.onFieldAnswered) {
+                            Object.entries(structMappings).forEach(([sel, data]) => {
+                                callbacks.onFieldAnswered(sel, data.value, data.confidence || 0.95);
+                            });
+                        }
+                    } else if (!entity) {
+                        console.log(`[BatchProcessor] No cache or resume data for index ${index}`);
+                    }
+
+                    // Remove filled fields from activeBatch so AI doesn't redo them
+                    activeBatch = activeBatch.filter(f => !structMappings[f.selector]);
+
+                    // Learn from this usage (refresh timestamp) - only if entity exists
+                    if (entity) {
+                        window.HistoryManager.upsertEntity(isWork ? 'work' : 'education', entity);
+                    }
+
+                    // If everything filled, skip AI
+                    if (activeBatch.length === 0) {
+                        await new Promise(r => setTimeout(r, hitCount * 300));
+                        continue;
+                    }
+                }
+            } catch (e) {
+                console.warn('[BatchProcessor] HistoryManager error:', e);
+            }
+        }
+
+        // --- CACHE EXPANSION: All-or-Nothing Cache Logic ---
+        let cacheHits = {};
+        let hitCount = 0;
+
+        try {
+            for (const field of activeBatch) {
+                const cachedVal = await checkSmartMemoryForAnswer(field, smartMemory);
+                if (cachedVal) {
+                    cacheHits[field.selector] = {
+                        value: cachedVal,
+                        confidence: 0.95,
+                        source: 'cache-expansion',
+                        field_type: field.type,
+                        label: field.label
+                    };
+                    hitCount++;
+                }
+            }
+        } catch (e) { console.warn('[BatchProcessor] Cache check error:', e); }
+
+        if (hitCount > 0 && hitCount >= activeBatch.length * 0.5) {
+            console.log(`[BatchProcessor] Cache Expansion: ${hitCount}/${activeBatch.length} fields cached. Skipping AI.`);
+            Object.assign(allMappings, cacheHits);
+
+            // Animate results
+            if (callbacks.onFieldAnswered) {
+                Object.entries(cacheHits).forEach(([sel, data]) => {
+                    callbacks.onFieldAnswered(sel, data.value, 0.95);
+                });
+            }
+            // Wait for animation simulation
+            await new Promise(r => setTimeout(r, hitCount * 300));
+            continue; // SKIP AI CALL
         }
 
         // Check if we have prefetched results for this batch
@@ -553,7 +694,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
                 batchMappings = await backgroundPromise;
             } catch (e) {
                 console.warn('[BatchProcessor] Prefetch failed, processing normally');
-                batchMappings = await processBatchWithStreaming(batch, resumeData, pageContext, {
+                batchMappings = await processBatchWithStreaming(activeBatch, resumeData, pageContext, {
                     isFirstBatch,
                     previousQA,
                     callbacks
@@ -584,12 +725,53 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
                 }
             }
         } else {
-            // Process current batch in foreground with streaming
-            batchMappings = await processBatchWithStreaming(batch, resumeData, pageContext, {
-                isFirstBatch,
-                previousQA,
-                callbacks
-            });
+            // --- CONTEXT INJECTION & DATE GUARD ---
+            let filledHistorySummary = null;
+            let batchForAI = activeBatch;
+
+            try {
+                const isEduBatch = activeBatch.some(f => /school|education|degree|university|college|major/i.test((f.name || '') + ' ' + (f.label || '')));
+                const isJobBatch = activeBatch.some(f => /job|employ|work|position|company/i.test((f.name || '') + ' ' + (f.label || '')));
+
+                // 1. Context Injection
+                if (isEduBatch || isJobBatch) {
+                    const usedEntities = new Set();
+                    [allMappings, alreadyFilled, alreadyAnswered].forEach(source => {
+                        Object.values(source).forEach(item => {
+                            const val = String(item.value || '').trim();
+                            if (val.length < 2) return;
+                            if (isEduBatch && /school|university|college/i.test(item.label || '')) usedEntities.add(`Used School: "${val}"`);
+                            if (isJobBatch && /employer|company|organization/i.test(item.label || '')) usedEntities.add(`Used Employer: "${val}"`);
+                        });
+                    });
+                    if (usedEntities.size > 0) filledHistorySummary = Array.from(usedEntities).join('\n');
+
+
+                }
+            } catch (e) { console.warn('[BatchProcessor] Context/Filter failed:', e); }
+
+            // Process filtered batch
+            if (batchForAI.length > 0) {
+                batchMappings = await processBatchWithStreaming(batchForAI, resumeData, pageContext, {
+                    isFirstBatch,
+                    previousQA,
+                    callbacks,
+                    filledHistorySummary
+                });
+            } else {
+                batchMappings = {};
+            }
+        }
+
+        // --- LEARN: Capture AI Result to Structured History ---
+        if (window.HistoryManager && Object.keys(batchMappings).length > 0) {
+            try {
+                const learnedId = await window.HistoryManager.learnFromBatch(batch, batchMappings);
+                if (learnedId) {
+                    console.log(`[BatchProcessor] Learned entity ${learnedId} from batch.`);
+                    attachHistoryListeners(batch, learnedId);
+                }
+            } catch (e) { console.warn('[BatchProcessor] Learning failed:', e); }
         }
 
         // Merge results
@@ -656,4 +838,228 @@ if (typeof window !== 'undefined') {
         BATCH_SIZE,
         MAX_RETRIES
     };
+}
+
+/**
+ * Extract index from field name or label (e.g. "school_0" -> 0)
+ * @param {Object} field 
+ * @returns {number|null} Index or null if not indexed
+ */
+function extractFieldIndex(field) {
+    const text = (field.name || '') + ' ' + (field.label || '') + ' ' + (field.placeholder || '');
+    const patterns = [
+        /[_\-\[](\d+)[_\-\]]?/,  // school_0, school[0], school-0
+        /Job[\s\-_]*(\d+)/i,     // Job 1
+        /Employer[\s\-_]*(\d+)/i, // Employer 1
+        /School[\s\-_]*(\d+)/i    // School 1
+    ];
+
+    for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match) return parseInt(match[1], 10);
+    }
+    return null;
+}
+
+
+/**
+ * Smart Batching: Group fields atomically to keep related items together
+ * @param {Array} fields - Sorted list of fields
+ * @returns {Array<Array>} Array of batches
+ */
+function createSmartBatches(fields) {
+    const batches = [];
+    const groups = [];
+    let currentGroup = [];
+    let lastIndex = -1;
+
+    // Step 1: Group by Index Suffiix (or Virtual Index)
+    for (const field of fields) {
+        // Prioritize Virtual Index (from assignVirtualIndices) -> Explicit Regex
+        let index = field.virtualIndex;
+        if (index === undefined || index === null) {
+            index = extractFieldIndex(field);
+        }
+
+        // If index changes, start new group
+        if (index !== null && index !== lastIndex) {
+            if (currentGroup.length > 0) groups.push(currentGroup);
+            currentGroup = [field];
+            lastIndex = index;
+        }
+        // If duplicate index or non-indexed, just add to current stream or separate?
+        // Actually, non-indexed fields should treat as separate "singles"
+        else if (index === null) {
+            if (currentGroup.length > 0) groups.push(currentGroup);
+            currentGroup = [];
+            groups.push([field]); // Single field group
+            lastIndex = -1;
+        } else {
+            // Same index, add to group
+            currentGroup.push(field);
+        }
+    }
+    if (currentGroup.length > 0) groups.push(currentGroup);
+
+    // Step 2: Bin Packing into Batches
+    let currentBatch = [];
+    const MAX_STRETCH = 7; // Allow batch to go up to 7 to keep group together
+
+    for (const group of groups) {
+        if (currentBatch.length + group.length <= BATCH_SIZE) {
+            // Fits perfectly
+            currentBatch.push(...group);
+        } else if (currentBatch.length === 0) {
+            // Group is bigger than batch size, force split or take as is?
+            // If group < MAX_STRETCH, take it all in one supersized batch
+            if (group.length <= MAX_STRETCH) {
+                batches.push([...group]);
+            } else {
+                // Huge group, must split. 
+                // Allow first chunk to take BATCH_SIZE, rest flows to next
+                batches.push(group.slice(0, BATCH_SIZE));
+                let remaining = group.slice(BATCH_SIZE);
+                while (remaining.length > 0) {
+                    batches.push(remaining.slice(0, BATCH_SIZE));
+                    remaining = remaining.slice(BATCH_SIZE);
+                }
+            }
+        } else if (currentBatch.length + group.length <= MAX_STRETCH) {
+            // Fits if we stretch a bit
+            currentBatch.push(...group);
+            // Close batch since we stretched
+            batches.push(currentBatch);
+            currentBatch = [];
+        } else {
+            // Doesn't fit. Close current batch.
+            batches.push(currentBatch);
+            currentBatch = [];
+            // Re-evaluate group for new batch
+            if (group.length <= MAX_STRETCH) {
+                currentBatch.push(...group);
+            } else {
+                // Huge group logic again
+                batches.push(group.slice(0, BATCH_SIZE));
+                let remaining = group.slice(BATCH_SIZE);
+                while (remaining.length > 0) {
+                    if (remaining.length <= BATCH_SIZE) {
+                        currentBatch = remaining;
+                        remaining = [];
+                    } else {
+                        batches.push(remaining.slice(0, BATCH_SIZE));
+                        remaining = remaining.slice(BATCH_SIZE);
+                    }
+                }
+            }
+        }
+    }
+    if (currentBatch.length > 0) batches.push(currentBatch);
+
+    return batches;
+}
+
+/**
+ * Assign "Virtual Indices" to unnumbered repeating fields based on DOM order
+ * @param {Array} fields 
+ */
+function assignVirtualIndices(fields) {
+    const labelCounts = {};
+
+    fields.forEach(f => {
+        // Skip if explicit index exists
+        if (extractFieldIndex(f) !== null) return;
+
+        // Generate key from simplified label (e.g. "schoolname", "employer")
+        const key = ((f.name || '') + (f.label || '')).toLowerCase().replace(/[^a-z]/g, '');
+        if (key.length < 3) return; // Ignore tiny keys
+
+        // Increment count
+        if (labelCounts[key] === undefined) labelCounts[key] = 0;
+        else labelCounts[key]++;
+
+        f.virtualIndex = labelCounts[key];
+    });
+}
+
+/**
+ * Guard Strategy: Check if batch index exceeds resume history length
+ * @param {Array} batch - Fields in batch
+ * @param {Object} resumeData - Resume data
+ * @returns {boolean} True if batch should be skipped (hallucination risk)
+ */
+function checkHistoryBounds(batch, resumeData) {
+    // 1. Determine batch "Topic" (Work vs Education)
+    let isWork = false;
+    let isEdu = false;
+    let maxIndex = -1;
+
+    for (const field of batch) {
+        const text = (field.name || '') + ' ' + (field.label || '');
+        if (/job|employ|work|position|company/i.test(text)) isWork = true;
+        if (/school|education|degree|university|college|major/i.test(text)) isEdu = true;
+
+        // Use Virtual Index if assigned, otherwise extract
+        const idx = field.virtualIndex !== undefined ? field.virtualIndex : extractFieldIndex(field);
+        if (idx !== null && idx !== undefined && idx > maxIndex) maxIndex = idx;
+    }
+
+    if (maxIndex === -1) return false; // No index, safe to process
+
+    // 2. Check Bounds
+    // Indices are 0-based. If asking for Index 2 (3rd job), length must be > 2.
+    if (isWork) {
+        const experiences = resumeData.experience || resumeData.work || [];
+        if (maxIndex >= experiences.length) {
+            console.warn(`[BatchProcessor] History Guard: Skipping Index ${maxIndex} (Resume has ${experiences.length} jobs)`);
+            return true;
+        }
+    }
+
+    if (isEdu) {
+        const educations = resumeData.education || resumeData.schools || [];
+        if (maxIndex >= educations.length) {
+            console.warn(`[BatchProcessor] History Guard: Skipping Index ${maxIndex} (Resume has ${educations.length} schools)`);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Attach listeners to fields to learn from user edits
+ * @param {Array} batch - Field objects
+ * @param {string} entityId - The ID of the structural entity (Job/School)
+ */
+function attachHistoryListeners(batch, entityId) {
+    if (!window.HistoryManager || !entityId) return;
+
+    batch.forEach(field => {
+        try {
+            const element = document.querySelector(field.selector);
+            if (!element) return;
+
+            // Mark for debugging/visuals
+            element.dataset.smartEntityId = entityId;
+
+            const handler = (e) => {
+                const newVal = e.target.value;
+                if (!newVal) return;
+
+                // Update History Manager
+                // Debounce could be handled inside HistoryManager or here
+                // For now, direct call (HistoryManager saves async)
+                window.HistoryManager.updateFromUserEdit(entityId, field, newVal);
+            };
+
+            // Use 'change' for robust final value capture (less spam than input)
+            // But 'input' is better for "typing" feedback if we had it. 
+            // 'change' is safer for persistence.
+            element.addEventListener('change', handler);
+            element.addEventListener('blur', handler);
+
+        } catch (e) {
+            console.warn('[BatchProcessor] Failed to attach listener', e);
+        }
+    });
 }

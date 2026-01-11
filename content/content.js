@@ -79,6 +79,17 @@ async function processPageFormLocal() {
 
         if (!resumeData) throw new Error('Resume data missing');
 
+        // --- NORMALIZE RESUME SCHEMA ---
+        // Ensure 'experience' and 'education' exist even if parser used 'work' or 'schools'
+        if (!resumeData.experience && resumeData.work) {
+            console.log('🔧 Normalizing Schema: mapped "work" to "experience"');
+            resumeData.experience = resumeData.work;
+        }
+        if (!resumeData.education && resumeData.schools) {
+            console.log('🔧 Normalizing Schema: mapped "schools" to "education"');
+            resumeData.education = resumeData.schools;
+        }
+
         // 2. Extract Fields Locally (Fast)
         const formHTML = extractFormHTML();
         if (!formHTML) throw new Error('No form found');

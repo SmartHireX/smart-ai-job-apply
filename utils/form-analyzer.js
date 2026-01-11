@@ -139,6 +139,10 @@ FULL APPLICANT PROFILE
 ## Education
 {{education_details}}
 
+## HISTORY CONTEXT (Already Filled)
+{{filled_history_summary}}
+
+
 ## Skills
 {{all_skills_details}}
 
@@ -167,6 +171,12 @@ INSTRUCTIONS
 4. Keep answers under 120 words unless clearly required.
 5. For select/radio/checkbox fields, ONLY use values from the provided options array.
 6. **Sequential History Mapping**: For indexed fields (e.g. school_0, school_1), map them in CHRONOLOGICAL ORDER (Latest to Oldest). Index 0 = Latest, Index 1 = Previous. DO NOT repeat the same entry.
+7. **No Duplication**: Do NOT reuse history items listed in HISTORY CONTEXT. Start filling from the next available item.
+8. **Section Context Awareness**: Some fields include a "sectionContext" object with detected context ("work" or "education"). Confidence interpretation:
+   - Confidence ≥ 10: Highly confident (explicit HTML semantics like fieldset/autocomplete)
+   - Confidence ≥ 7: Very confident (table headers, section headers)
+   - Confidence ≥ 4: Confident (container analysis, field clustering)
+   - Use this context to disambiguate generic field names (e.g., "From" in work section = job start date, in education section = school start date).
 ────────────────────────────
 RESPONSE FORMAT (JSON ONLY - USE ABBREVIATED KEYS)
 ────────────────────────────
@@ -189,12 +199,16 @@ EDU: {{education}} | LOC: {{location}}
 PREV ANSWERS:
 {{previous_qa}}
 
+HISTORY USED:
+{{filled_history_summary}}
+
+
 JOB: {{job_context}}
 
 QUESTIONS:
 {{fields_array}}
 
-RULES: <120 words, use provided facts only, select/radio/checkbox use given options only.
+RULES: <120 words, use provided facts only, select/radio/checkbox use given options only. Fields may include "sectionContext" (work/education) - use to interpret generic names (e.g., "From" in work section = job start, in education = school start). Confidence ≥10=highly confident, ≥7=very confident, ≥4=confident.
 
 JSON RESPONSE (abbreviated keys):
 {"m":{"<selector>":{"v":"<answer>","c":<0.6-0.9>,"t":"<type>"}}}
@@ -357,6 +371,32 @@ function extractFieldsFromDOM(source) {
         });
     });
 
+    // ========================================
+    // ENRICH FIELDS WITH SECTION CONTEXT
+    // ========================================
+    if (typeof window !== 'undefined' && window.SectionDetector) {
+        const allInputs = root.querySelectorAll('input, select, textarea');
+
+        fields.forEach((field) => {
+            let element = null;
+            try {
+                element = root.querySelector(field.selector);
+            } catch (e) {
+                if (field.name) {
+                    element = Array.from(allInputs).find(el => el.name === field.name);
+                }
+            }
+
+            if (element) {
+                const sectionContext = window.SectionDetector.detect(element, fields);
+                if (sectionContext) {
+                    field.sectionContext = sectionContext;
+                    console.log(`🎯 [SectionContext] "${field.label}" → ${sectionContext.context} (${sectionContext.confidence})`);
+                }
+            }
+        });
+    }
+
     return fields;
 }
 
@@ -448,14 +488,16 @@ async function mapResumeToFields(fields, resumeData, pageContext = '') {
     const currentRole = currentJob.title || 'Candidate';
     const workExperienceDetails = jobs.map(j => {
         const dates = `${j.startDate || ''} - ${j.current ? 'Present' : (j.endDate || '')}`;
-        return `### ${j.title} at ${j.company} (${dates})\n${j.location ? `Location: ${j.location}\n` : ''}${j.description || ''}`;
+        const companyName = j.company || j.name || j.employer || 'Unknown Company';
+        return `### ${j.title} at ${companyName} (${dates})\n${j.location ? `Location: ${j.location}\n` : ''}${j.description || ''}`;
     }).join('\n\n');
 
     // -- Education --
     const education = resumeData.education || [];
     const educationDetails = education.map(e => {
         const dates = `${e.startDate || ''} - ${e.endDate || ''}`;
-        return `### ${e.degree} in ${e.field} from ${e.school} (${dates})\n${e.gpa ? `GPA: ${e.gpa}` : ''}`;
+        const schoolName = e.school || e.institution || e.university || 'Unknown School';
+        return `### ${e.degree} in ${e.field || e.major} from ${schoolName} (${dates})\n${e.gpa ? `GPA: ${e.gpa}` : ''}`;
     }).join('\n\n');
 
     // -- Skills --
@@ -547,13 +589,15 @@ function buildCondensedContext(context, resumeData, pageContext = '') {
         const currentRole = currentJob.title || 'Candidate';
         const workExperienceDetails = jobs.map(j => {
             const dates = `${j.startDate || ''} - ${j.current ? 'Present' : (j.endDate || '')}`;
-            return `### ${j.title} at ${j.company} (${dates})\n${j.location ? `Location: ${j.location}\n` : ''}${j.description || ''}`;
+            const companyName = j.company || j.name || j.employer || 'Unknown Company';
+            return `### ${j.title} at ${companyName} (${dates})\n${j.location ? `Location: ${j.location}\n` : ''}${j.description || ''}`;
         }).join('\n\n');
 
         const education = resumeData.education || [];
         const educationDetails = education.map(e => {
             const dates = `${e.startDate || ''} - ${e.endDate || ''}`;
-            return `### ${e.degree} in ${e.field} from ${e.school} (${dates})\n${e.gpa ? `GPA: ${e.gpa}` : ''}`;
+            const schoolName = e.school || e.institution || e.university || 'Unknown School';
+            return `### ${e.degree} in ${e.field || e.major} from ${schoolName} (${dates})\n${e.gpa ? `GPA: ${e.gpa}` : ''}`;
         }).join('\n\n');
 
         const skillsData = resumeData.skills || {};
@@ -663,6 +707,9 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
         // Build context replacements
         const contextData = buildCondensedContext(context, context.resumeData || {}, pageContext);
 
+        // Inject History Summary for Context Awareness
+        contextData.filled_history_summary = context.filledHistorySummary || 'None';
+
         // Prepare fields for prompt - sanitize field data
         const sanitizedFields = validFields.map(f => ({
             selector: f.selector,
@@ -670,7 +717,8 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
             type: f.type || 'text',
             name: f.name || '',
             placeholder: f.placeholder || '',
-            options: f.options || []
+            options: f.options || [],
+            sectionContext: f.sectionContext || null  // AI aware of section context
         }));
         const fieldsArray = JSON.stringify(sanitizedFields, null, 2);
 

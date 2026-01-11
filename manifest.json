@@ -40,6 +40,8 @@
                 "content/selection-cache.js",
                 "content/local-matcher.js",
                 "content/memory-utils.js",
+                "content/history-manager.js",
+                "content/section-detector.js",
                 "content/form-detection.js",
                 "content/visuals.js",
                 "content/drag-resize.js",

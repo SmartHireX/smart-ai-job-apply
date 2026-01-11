@@ -131,9 +131,42 @@ const LocalMatcher = {
                 console.log(`[LocalMatcher] TRACE "${field.name}":`, { label: field.label, context, type: field.type, value: field.value });
             }
 
-            // 1. Experience
+            // ========================================
+            // SKIP WORK & EDUCATION HISTORY FIELDS (Indexed Fields)
+            // These are handled by HistoryManager in Phase 2 (cache → resume → AI)
+            // ========================================
+            const hasIndex = /[_\-\[]\d+[_\-\]]?/.test(field.name || field.id || '');
+
+            // Priority 1: Use SectionContext metadata if available (most accurate)
+            if (field.sectionContext && hasIndex) {
+                const ctx = field.sectionContext;
+                if (ctx.confidence >= 4 && (ctx.context === 'work' || ctx.context === 'education')) {
+                    console.log(`🎯 [LocalMatcher] Skipping "${field.label}" → ${ctx.context} (confidence: ${ctx.confidence})`);
+                    remaining.push(field);
+                    return;
+                }
+            }
+
+            // Priority 2: Fallback to keyword matching for indexed fields
+            if (hasIndex) {
+                const isWorkField = /job|employ|work|company|position|title|role/i.test(context);
+                const isEduField = /degree|education|school|university|college|institution|major/i.test(context);
+
+                if (isWorkField || isEduField) {
+                    const fieldType = isWorkField ? 'work' : 'education';
+                    console.log(`🔄 [LocalMatcher] Skipping "${field.label}" → ${fieldType} (indexed field)`);
+                    remaining.push(field);
+                    return;
+                }
+            }
+
+            // ========================================
+            // NON-INDEXED FIELD MATCHING
+            // ========================================
+
+            // 1. Experience YEARS (not indexed job history)
             if (context.includes('experience') || context.includes('years')) {
-                answer = this.matchExperience(field, facts.totalYearsExp);
+                answer = this.matchExperienceYears(field, facts.totalYearsExp);
             }
             // 2. Visa / Sponsorship
             else if ((context.includes('sponsorship') || context.includes('visa') || context.includes('authorized')) && field.type !== 'radio') {
@@ -143,14 +176,11 @@ const LocalMatcher = {
             else if (context.includes('relocate') || context.includes('remote') || context.includes('travel')) {
                 answer = this.matchLogistics(field, facts, context);
             }
-            // 3.5 Skills
+            // 4. Skills
             else if (context.includes('skill')) {
                 answer = this.matchSkills(field, facts);
             }
-            // 4. Education
-            else if (context.includes('degree') || context.includes('education') || context.includes('school') || context.includes('university') || context.includes('college') || context.includes('edu_')) {
-                answer = this.matchEducation(field, facts);
-            }
+            // NOTE: Education is ALWAYS indexed, so it's skipped above
             // 5. Gender / Veteran / Disability
             else if (['gender', 'sex', 'male', 'female'].some(k => context.includes(k))) {
                 answer = this.matchDemographics(field, facts, 'gender');
