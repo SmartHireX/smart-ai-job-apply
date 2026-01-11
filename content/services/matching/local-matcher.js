@@ -617,7 +617,66 @@ const LocalMatcher = {
             return this.normalizeDate(edu.endDate, field.type === 'date' ? 'date' : 'text');
         }
 
-        return null; // Fallback
+        return null;
+    },
+
+    // --- FUZZY MATCHING (Levenshtein) ---
+
+    // Calculate edit distance between strings
+    levenshtein(a, b) {
+        if (!a || !b) return 100;
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1, // substitution
+                        Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1) // insertion/deletion
+                    );
+                }
+            }
+        }
+        return matrix[b.length][a.length];
+    },
+
+    // Get similarity ratio (0.0 to 1.0)
+    getSimilarity(s1, s2) {
+        const longer = s1.length > s2.length ? s1 : s2;
+        if (longer.length === 0) return 1.0;
+        const editDistance = this.levenshtein(s1, s2);
+        return (longer.length - editDistance) / longer.length;
+    },
+
+    /**
+     * Fuzzy find a value in options
+     */
+    findBestMatch(options, targetValue, threshold = 0.8) {
+        if (!options || !targetValue) return null;
+        targetValue = targetValue.toLowerCase();
+
+        let bestMatch = null;
+        let maxScore = 0;
+
+        for (const opt of options) {
+            const optVal = (opt.value || opt.label || opt).toString().toLowerCase();
+            const score = this.getSimilarity(optVal, targetValue);
+
+            if (score > maxScore) {
+                maxScore = score;
+                bestMatch = opt.value || opt;
+            }
+        }
+
+        if (maxScore >= threshold) {
+            console.log(`🔍 [LocalMatcher] Fuzzy Match: "${targetValue}" ~= "${bestMatch}" (Score: ${maxScore.toFixed(2)})`);
+            return bestMatch;
+        }
+        return null;
     },
 
     // --- SYNONYMS DICTIONARY ---
