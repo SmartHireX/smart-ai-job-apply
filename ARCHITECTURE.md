@@ -10,6 +10,22 @@ We adhere to three core principles:
 
 ---
 
+## 💾 The 2-Tier Data Architecture
+We have simplified the system from 3 disconnected caches into **2 Semantic Tiers**:
+
+### Tier 1: Immutable Profile (`HistoryManager`)
+*   **Source**: Your Resume / User Profile.
+*   **Role**: The "Source of Truth". Contains structured, static data (Job History, Education, Address).
+*   **Update Policy**: Read-Only during filling. Updates only when User explicitly edits their profile settings.
+
+### Tier 2: Adaptive Memory (`UnifiedCache`)
+*   **Source**: User Actions & Real-time corrections.
+*   **Role**: The "Short-term Memory". Remembers that for *this specific form*, you prefer "Remote" over "Hybrid".
+*   **Sub-Module**: `SelectionCache` (Now merged conceptually). Handles the specific logic of validating Dropdown Options against memory.
+*   **Update Policy**: Write-Through. Updates instantly every time we fill a field or the user checks a box.
+
+---
+
 ## 📊 System Architecture Diagram
 
 ```mermaid
@@ -27,20 +43,22 @@ graph TD
     end
 
     subgraph Decision ["🟣 Decision Engine"]
-        Router -->|Check key| Cache[UnifiedCache]
-        Cache -->|Hit| Queue[ActionQueue]
-        Cache -->|Miss| Batch[BatchProcessor]
+        Router -->|Check key| Tier2[Tier 2: UnifiedCache]
+        Router -->|Check index| Tier1[Tier 1: HistoryManager]
+        Tier2 -->|Hit| Queue[ActionQueue]
+        Tier1 -->|Hit| Queue
+        Tier2 -->|Miss| Batch[BatchProcessor]
     end
 
     subgraph Execution ["🔴 Execution & Learning"]
         Batch -->|LLM Request| Gemini[Gemini 1.5 Flash]
         Gemini -->|Response| Save[Write-Through Save]
-        Save -->|Update| Cache
+        Save -->|Update| Tier2
         Save -->|Fill| Queue
         Queue -->|Type| DOM[Web Page]
         
         DOM -.->|User Correction| Shadow[ShadowValidator]
-        Shadow -->|Reinforcement| Cache
+        Shadow -->|Reinforcement| Tier2
     end
 ```
 
@@ -95,9 +113,9 @@ graph TD
 1.  **Routing**: The `FieldRouter` takes the classified field and asks: "Who handles this?"
     *   **File**: `content/field-router.js`
     *   **Action**:
-        *   If it's a simple text field (Name, Email) -> **Cache**.
+        *   If it's a simple text field (Name, Email) -> **Tier 2: UnifiedCache**.
         *   If it's complex (Bio, "Why do you fit?") -> **AI Generation**.
-        *   If it's structured (Job History) -> **History Manager**.
+        *   If it's structured (Job History) -> **Tier 1: HistoryManager**.
 2.  **Cache Lookup**: Check memory first.
     *   **File**: `content/services/cache/cache-manager.js`
     *   **Action**: `get(field)`. Checks Semantic Signature `sig_v1|context|label`.

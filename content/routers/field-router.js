@@ -6,6 +6,9 @@
 
 class FieldRouter {
     constructor() {
+        this.neuralClassifier = new window.NeuralClassifier();
+        this.neuralClassifier.init(); // Fire and forget init
+
         this.routingRules = {
             cache: 'Fields with cached values',
             history: 'Indexed work/education fields',
@@ -20,8 +23,15 @@ class FieldRouter {
      * @param {Object} cacheResult - Result from cache check (if any)
      * @returns {Object} { handler: string, priority: number, reason: string }
      */
-    route(field, cacheResult = null) {
+    async route(field, cacheResult = null) {
+        // 0. Neural Classification ( The Brain )
+        // We classify FIRST to know what we are dealing with.
+        const prediction = this.neuralClassifier.predict(field);
+        field.neuralType = prediction.label;
+        field.neuralConfidence = prediction.confidence;
+
         // Priority 1: Use cached value if available
+        // (Even if we know what it is, if we have a locked value, use it)
         if (cacheResult && cacheResult.cached) {
             return {
                 handler: 'cache',
@@ -31,33 +41,52 @@ class FieldRouter {
             };
         }
 
-        // Priority 2: Indexed work/education fields → HistoryManager
+        // Priority 2: Neural Routing (High Confidence > 80%)
+        if (prediction.confidence > 0.8) {
+            // Map Neural Label -> Handler
+            const handler = this.getHandlerForLabel(prediction.label);
+            if (handler !== 'ai') { // If it's a standard field, route it
+                return {
+                    handler: handler,
+                    priority: 2,
+                    reason: `Neural Match: ${prediction.label}`,
+                    confidence: prediction.confidence
+                };
+            }
+        }
+
+        // Priority 3: Regex Fallback (The Old Ways)
+        // If Neural is unsure, double check with Regex
         if (this.isHistoryField(field)) {
-            return {
-                handler: 'history',
-                priority: 2,
-                reason: 'Indexed work/education field',
-                confidence: 0.9
-            };
+            return { handler: 'history', priority: 3, reason: 'Regex: History Field', confidence: 0.9 };
         }
-
-        // Priority 3: Simple deterministic fields → LocalMatcher
         if (this.isMatcherField(field)) {
-            return {
-                handler: 'matcher',
-                priority: 3,
-                reason: this.getMatcherReason(field),
-                confidence: 0.85
-            };
+            return { handler: 'matcher', priority: 3, reason: this.getMatcherReason(field), confidence: 0.85 };
         }
 
-        // Priority 4: Complex/unknown → AI
+        // Priority 4: Complex/unknown → AI (LLM)
         return {
             handler: 'ai',
             priority: 4,
-            reason: 'Complex or unknown field type',
+            reason: 'Unknown field type (Low Neural Confidence)',
             confidence: 0.7
         };
+    }
+
+    /**
+     * Maps a Neural Label (e.g. 'company') to a Handler (e.g. 'history')
+     */
+    getHandlerForLabel(label) {
+        const HISTORY_FIELDS = ['job_title', 'company', 'job_start_date', 'job_end_date', 'work_description', 'school', 'degree', 'major', 'gpa', 'edu_start_date', 'edu_end_date'];
+        const MATCHER_FIELDS = ['sponsorship', 'citizenship', 'gender', 'race', 'veteran', 'disability', 'work_auth', 'clearance', 'legal_age'];
+
+        if (HISTORY_FIELDS.includes(label)) return 'history';
+        if (MATCHER_FIELDS.includes(label)) return 'matcher';
+
+        // Default standard fields (name, email, phone) go to 'cache' (handled by Priority 1 check usually, or falls through to AI if empty)
+        // Actually, if it's 'first_name' but NOT in cache, we want 'ai' (or 'profile' if we had one).
+        // For now, if not in cache, treat as 'ai' to generate/fetch.
+        return 'ai';
     }
 
     /**
@@ -76,9 +105,10 @@ class FieldRouter {
 
         const routingDecisions = [];
 
-        fields.forEach(field => {
+        fields.forEach(async field => {
             const cacheResult = cacheResults[field.selector];
-            const decision = this.route(field, cacheResult);
+            // Fix: route is now async
+            const decision = await this.route(field, cacheResult);
 
             routing[decision.handler].push(field);
 
