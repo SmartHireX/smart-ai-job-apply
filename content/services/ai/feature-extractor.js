@@ -21,7 +21,7 @@ class FeatureExtractor {
      */
     extract(field) {
         // Safety check: Ensure field is effectively an object
-        if (!field) return new Array(this.VOCAB_SIZE + 20).fill(0); // Return empty vector
+        if (!field) return new Array(this.VOCAB_SIZE + 40).fill(0); // Return empty vector (Size increased for new features)
 
         // Helper to safely get attribute
         const getAttr = (attr) => (field.getAttribute && typeof field.getAttribute === 'function') ? field.getAttribute(attr) : (field[attr] || null);
@@ -49,7 +49,11 @@ class FeatureExtractor {
             ...this.hashText(computedLabel || '', 10),   // First 10 slots for Label
             ...this.hashText(field.name || '', 10),      // Next 10 slots for Name/ID
             // Handle context (can be on object or DOM attribute)
-            ...this.hashText(getAttr('context') || field.context || '', 5)     // Next 5 slots for Section Context
+            ...this.hashText(getAttr('context') || field.context || '', 5),     // Next 5 slots for Section Context
+
+            // NEW: Rich Context Signals
+            ...this.hashText(field.parentContext || '', 10),  // 10 slots for Heading/Parent (e.g. "Work Experience")
+            ...this.hashText(field.siblingContext || '', 10)  // 10 slots for Neighbors (e.g. "City, State, Zip")
         ];
 
         return features;

@@ -154,7 +154,13 @@ class NeuralClassifier {
         // Construct the full "Context String" similar to what LocalMatcher uses
         // We use the computed label from FeatureExtractor logic or fallback to DOM
         const computedLabel = this.featureExtractor.getComputedLabel(field) || '';
-        const text = (computedLabel + ' ' + (field.name || '') + ' ' + (field.id || '')).toLowerCase();
+        const text = (
+            computedLabel + ' ' +
+            (field.name || '') + ' ' +
+            (field.id || '') + ' ' +
+            (field.parentContext || '') + ' ' + // NEW: Check Heading
+            (field.siblingContext || '')        // NEW: Check Neighbors
+        ).toLowerCase();
 
         // --- HISTORY FIELDS ---
         // Normalized regex matching (handles 'start_date' and 'start date')
@@ -290,7 +296,7 @@ class NeuralClassifier {
 
     // --- MOCK TRAINING DATA ---
     generateDummyWeights() {
-        const inputSize = 31; // From FeatureExtractor
+        const inputSize = 51; // From FeatureExtractor (was 31, now +20 for context)
         const outputSize = this.CLASSES.length;
 
         // Initialize random small weights (He Initialization-ish)
