@@ -89,11 +89,31 @@ class FeatureExtractor {
         return (field.type === type) ? 1.0 : 0.0;
     }
 
+    // --- GEOMETRIC HEURISTICS ---
+
     calculateVisualWeight(field) {
-        // Mock visual weight based on DOM data if available
-        // In real browser context, we'd use getBoundingClientRect().height
-        // Here we approximate importance
-        return 1.0;
+        // Mock default for simulated environment
+        if (typeof field.getBoundingClientRect !== 'function') return 0.5;
+
+        const rect = field.getBoundingClientRect();
+
+        // 1. Visibility Check
+        if (rect.width === 0 || rect.height === 0 || field.style.display === 'none') {
+            return 0.0; // Invisible fields (Honeypots)
+        }
+
+        // 2. Prominence (Bigger is often more important)
+        const area = rect.width * rect.height;
+        const screenArea = window.innerWidth * window.innerHeight;
+        const relativeSize = Math.min(area / (screenArea * 0.05), 1.0); // Cap at 5% screen space
+
+        // 3. Position (Top of form is usually Name/Email)
+        // Normalize Y position (0 = top, 1 = bottom)
+        const relativeY = Math.min(rect.top / window.innerHeight, 1.0);
+        const positionScore = 1.0 - relativeY;
+
+        // Combine: Size (30%) + Position (70%)
+        return (relativeSize * 0.3) + (positionScore * 0.7);
     }
 
     /**

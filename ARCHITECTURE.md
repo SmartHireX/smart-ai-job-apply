@@ -177,3 +177,13 @@ Based on deep analysis of Chrome's internal architecture and modern AI Agent pat
 ### 4. Differential Privacy (RAPPOR)
 *   **Concept**: Google uses "Randomized Response" to track which fields fail the most without knowing *who* failed.
 *   **Upgrade**: When a user corrects a field, we send a hashed report: `{ url_hash: "a1b2", field_hash: "x9y8", success: false }` + random noise. This allows us to build a global map of "Hard Forms" without tracking users.
+
+### 5. Visual Proximity Analysis (Gestalt Heuristics)
+*   **Problem**: Some fields have no code labels, only visual labels (text next to input).
+*   **Solution**: Implement a "Vision" layer that calculates pixel distance (BoundingBox).
+*   **Algorithm**: "If text 'Phone' is within 50px left or top of <input>, associate them." (Based on Gestalt Principles of Proximity).
+
+### 6. Deep DOM Structural Analysis
+*   **Problem**: Modern React apps use deeply nested `<div>` structures that look like random noise.
+*   **Solution**: Flatten the DOM Tree into a "Zone Tree". Identify repeating patterns (e.g., 3 identical blocks = "Work History").
+*   **Benefit**: Allows detection of complex sections even without standard headers.
