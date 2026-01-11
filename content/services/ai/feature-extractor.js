@@ -20,6 +20,11 @@ class FeatureExtractor {
      * @returns {Array<number>} Input vector for the model
      */
     extract(field) {
+        // AXTree: Calculate the "Computed Name" (What a Screen Reader hears)
+        // This is much more robust than just looking for a <label> tag.
+        const computedLabel = this.getComputedLabel(field);
+        const computedRole = field.getAttribute('role') || field.tagName.toLowerCase();
+
         const features = [
             // 1. Structural Features (One-Hot / Binary)
             this.isType(field, 'text'),
@@ -29,17 +34,53 @@ class FeatureExtractor {
             this.isType(field, 'tel'),
 
             // 2. Heuristic Features
-            field.label ? 1 : 0,           // Has label?
-            field.placeholder ? 1 : 0,     // Has placeholder?
+            computedLabel ? 1 : 0,           // Has accessible label?
+            field.placeholder ? 1 : 0,       // Has placeholder?
             this.calculateVisualWeight(field),
+            (computedRole === 'combobox' || computedRole === 'listbox') ? 1 : 0, // Is complex select?
 
             // 3. Textual Features (Hashed Bag of Words)
-            ...this.hashText(field.label || '', 10),     // First 10 slots for Label
+            // WE NOW USE THE COMPUTED ACCESSIBILITY LABEL INSTEAD OF JUST DOM LABEL
+            ...this.hashText(computedLabel || '', 10),   // First 10 slots for Label
             ...this.hashText(field.name || '', 10),      // Next 10 slots for Name/ID
             ...this.hashText(field.context || '', 5)     // Next 5 slots for Section Context
         ];
 
         return features;
+    }
+
+    // --- ACCESSIBILITY TREE HELPER ---
+
+    /**
+     * Imitates the browser's Accessibility API to find the "Accessible Name"
+     * Precedence: aria-labelledby > aria-label > <label for=""> > placeholder > title
+     */
+    getComputedLabel(field) {
+        // 1. aria-labelledby (Points to another ID)
+        if (field.hasAttribute('aria-labelledby')) {
+            const id = field.getAttribute('aria-labelledby');
+            const labelEl = document.getElementById(id);
+            if (labelEl) return labelEl.innerText.trim();
+        }
+
+        // 2. aria-label (Direct override)
+        if (field.hasAttribute('aria-label')) {
+            return field.getAttribute('aria-label').trim();
+        }
+
+        // 3. Explicit <label for="id"> (Passed from FormScanner usually, but double check)
+        if (field.labels && field.labels.length > 0) {
+            return Array.from(field.labels).map(l => l.innerText).join(' ').trim();
+        }
+
+        // 4. Implicit Wrapper <label><input></label>
+        // (Handled by field.labels usually)
+
+        // 5. Fallback to passed label from Scanner
+        if (field.label) return field.label;
+
+        // 6. Placeholder / Title (Weakest signals)
+        return field.placeholder || field.getAttribute('title') || '';
     }
 
     // --- Helpers ---

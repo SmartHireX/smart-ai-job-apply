@@ -104,29 +104,15 @@ const PrefetchEngine = {
 
                 // Simple scan for fields with this keyword in label/name
                 // This mimics `checkSmartMemoryForAnswer` but lighter
-                // Neural Prefetching Implementation
                 const candidates = Array.from(document.querySelectorAll('input, select, textarea'));
 
                 candidates.forEach(field => {
-                    // Skip if already filled or hidden
-                    if (field.value || field.offsetParent === null) return;
-
-                    // Neural Classification Check
-                    // We instantiate a lightweight classifier just for this check or use global
-                    if (window.NeuralClassifier) {
-                        try {
-                            const classifier = new window.NeuralClassifier(); // Ideally singleton
-                            // Just check if it matches our prefetch target type
-                            // But for prefetch, general "ready-ing" is better
-                            // TODO: Add full implementation
-                        } catch (e) { }
-                    }
-
                     const label = (window.getFieldLabel(field) || field.name || '').toLowerCase();
-                    if (label.includes(keyword)) {
-                        // Tag it visually for debugging
-                        // field.style.borderBottom = '2px solid #a7f3d0'; // Light green underline
-                        console.log(`🔮 [Prefetch] Pre-calculating: "${label}" matched cluster "${key}"`);
+                    if (label.includes(keyword) && !field.value) {
+                        // PRE-CALCULATE ANSWER
+                        // For now, we just identify valid resume data for this keyword
+                        // In full implementation, we'd run the full Jaccard here and store the result.
+                        console.log(`🔮 [Prefetch] Pre-calculating for future field: "${label}"`);
                     }
                 });
             });
