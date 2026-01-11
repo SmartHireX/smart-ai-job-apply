@@ -232,21 +232,31 @@ async function processPageFormLocal() {
 
                 fieldLabel = normalizeSmartMemoryKey(fieldLabel);
 
-                fieldLabel = normalizeSmartMemoryKey(fieldLabel);
-
                 // 🔮 Neural Classification (Already done in Phase 0)
-                // Use the pre-calculated classification
-                const prediction = field.ml_prediction || {
-                    label: 'unknown',
-                    confidence: 0,
-                    source: 'unknown'
-                };
+                const prediction = field.ml_prediction || { label: 'unknown', confidence: 0, source: 'unknown' };
+
+                // LOGIC: If AI is very confident (>90%), use the AI Label as the search key!
+                // This bridges the gap between "weird field name" and "standard cache key".
+                if (prediction.confidence > 0.90 && prediction.label !== 'unknown') {
+                    // Use clean AI label (e.g. "salary_current")
+                    fieldLabel = prediction.label;
+                    console.log(`🤖 [Smart Memory] Overriding key with ML Label: "${fieldLabel}" (Conf: ${(prediction.confidence * 100).toFixed(0)}%)`);
+                } else {
+                    // FALLBACK: Use robust key generation strategy
+                    fieldLabel = generateFallbackKey(field);
+                }
+
+                // STORE THE CALCULATED KEY
+                field.search_field_name = fieldLabel;
 
                 // HISTORY GUARD: Skip Smart Memory lookup for History fields
                 // This forces them to go to Phase 2 (AI/BatchProcessor) which handles HistoryManager
-                const HISTORY_LABELS = ['job_title', 'company', 'job_start_date', 'job_end_date', 'school', 'degree', 'major', 'gpa', 'edu_start_date', 'edu_end_date'];
+                const HISTORY_LABELS = [
+                    'job_title', 'employer_name', 'job_start_date', 'job_end_date', 'work_description', 'job_location',
+                    'institution_name', 'degree_type', 'field_of_study', 'gpa_score', 'education_start_date', 'education_end_date'
+                ];
                 const isHistoryField = HISTORY_LABELS.includes(prediction.label) && prediction.confidence > 0.8;
-                const isSafeOverride = /available|notice|relocat/i.test(fieldLabel);
+                const isSafeOverride = /available|notice|relocat/i.test(fieldLabel); // Allow these to be cached
 
                 if (isHistoryField && !isSafeOverride) {
                     console.log(`🛡️ History Guard: Skipping Smart Memory lookup for "${fieldLabel}" (Neural: ${prediction.label})`);
@@ -959,6 +969,20 @@ function normalizeSmartMemoryKey(label) {
         .replace(/[^a-z0-9 ]/g, '') // Remove special chars
         .trim()
         .replace(/\s+/g, '_');      // Space to underscore
+}
+
+/**
+ * Generate a robust fallback search key
+ * Combines Label + Name + Parent Context
+ */
+function generateFallbackKey(field) {
+    const rawString = [
+        field.label || '',
+        field.name || '',
+        field.parentContext || ''
+    ].join(' ');
+    // We reuse the existing normalizer to keep format consistent
+    return normalizeSmartMemoryKey(rawString);
 }
 
 /**
