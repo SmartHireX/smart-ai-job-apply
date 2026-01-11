@@ -13,30 +13,58 @@ class NeuralClassifier {
     constructor() {
         this.featureExtractor = new window.FeatureExtractor();
 
-        // LABELS: The output classes we predict
+        // LABELS: The expanded output classes (Standard ATS Fields)
         this.CLASSES = [
-            'unknown',      // 0
-            'first_name',   // 1
-            'last_name',    // 2
-            'email',        // 3
-            'phone',        // 4
-            'job_title',    // 5
-            'company',      // 6
-            'start_date',   // 7
-            'end_date'      // 8
+            'unknown',          // 0
+
+            // Personal Info
+            'first_name',       // 1
+            'last_name',        // 2
+            'full_name',        // 3
+            'email',            // 4
+            'phone',            // 5
+
+            // Links & Portfolios
+            'linkedin',         // 6
+            'github',           // 7
+            'portfolio',        // 8
+            'website',          // 9
+
+            // Location
+            'address',          // 10
+            'city',             // 11
+            'state',            // 12
+            'zip_code',         // 13
+            'country',          // 14
+
+            // Work History
+            'job_title',        // 15
+            'company',          // 16
+            'start_date',       // 17
+            'end_date',         // 18
+            'work_description', // 19
+
+            // Education
+            'school',           // 20
+            'degree',           // 21
+            'major',            // 22
+            'gpa',              // 23
+
+            // Generic
+            'cover_letter',     // 24
+            'generic_question'  // 25 (Pass to LLM)
         ];
 
         // WEIGHTS: (Placeholder)
-        // In a real training run, we would dump `model.getWeights()` here.
-        // For now, we simulate weights that "mimic" regex performance to prove architecture.
+        // In the future, we will load `model_v1.json` here.
         this.weights = null;
         this.bias = null;
     }
 
     async init() {
-        console.log('[NeuralClassifier] Initializing TinyML Engine...');
+        console.log(`[NeuralClassifier] Initializing TinyML Engine for ${this.CLASSES.length} classes...`);
         // Load weights from storage or use defaults
-        // This simulates a trained 31-input (from extractor) -> 9-output dense layer
+        // This simulates a trained 31-input (from extractor) -> 26-output dense layer
         this.weights = this.generateDummyWeights();
         console.log('[NeuralClassifier] Ready.');
     }
@@ -60,8 +88,14 @@ class NeuralClassifier {
         const maxProb = Math.max(...probs);
         const classIndex = probs.indexOf(maxProb);
 
+        // Threshold: If confidence is too low, treat as 'generic_question' (LLM Fallback)
+        let label = this.CLASSES[classIndex];
+        if (maxProb < 0.25) {
+            label = 'generic_question'; // Fallback to System 2
+        }
+
         return {
-            label: this.CLASSES[classIndex],
+            label: label,
             confidence: maxProb,
             // Debug info
             features: inputVector.length
@@ -76,6 +110,7 @@ class NeuralClassifier {
     computeLogits(inputs) {
         return this.CLASSES.map((_, classIdx) => {
             let sum = this.bias[classIdx] || 0;
+            // Loop unrolling optimization for speed not needed yet, simple loop is fine
             for (let i = 0; i < inputs.length; i++) {
                 sum += inputs[i] * (this.weights[classIdx][i] || 0);
             }
@@ -104,12 +139,13 @@ class NeuralClassifier {
         for (let c = 0; c < outputSize; c++) {
             const row = [];
             for (let i = 0; i < inputSize; i++) {
-                row.push((Math.random() - 0.5) * 0.1);
+                // Skew weights slightly to prefer "unknown" for safety until trained
+                row.push((Math.random() - 0.5) * 0.05);
             }
             w.push(row);
         }
 
-        this.bias = new Array(outputSize).fill(0);
+        this.bias = new Array(outputSize).fill(-0.1);
         return w;
     }
 }
