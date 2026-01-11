@@ -40,8 +40,8 @@ class NeuralClassifier {
             // Work History
             'job_title',        // 15
             'company',          // 16
-            'start_date',       // 17
-            'end_date',         // 18
+            'job_start_date',   // 17
+            'job_end_date',     // 18
             'work_description', // 19
 
             // Education
@@ -49,10 +49,12 @@ class NeuralClassifier {
             'degree',           // 21
             'major',            // 22
             'gpa',              // 23
+            'edu_start_date',   // 24
+            'edu_end_date',     // 25
 
             // Generic
-            'cover_letter',     // 24
-            'generic_question'  // 25 (Pass to LLM)
+            'cover_letter',     // 26
+            'generic_question'  // 27 (Pass to LLM)
         ];
 
         // WEIGHTS: (Placeholder)
