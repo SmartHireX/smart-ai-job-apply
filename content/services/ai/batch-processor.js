@@ -388,6 +388,29 @@ async function processBatchWithStreaming(batch, resumeData, pageContext, options
         await new Promise(resolve => setTimeout(resolve, 300));
     }
 
+    // 🎓 AI-BASED TRAINING: Use AI's field classifications as ground truth
+    // Train neural network on successful AI predictions (high confidence only)
+    if (window.neuralClassifier && batch && batch.length > 0) {
+        for (const [selector, fieldData] of Object.entries(mappings)) {
+            // Only train on high-confidence AI predictions
+            if (fieldData.confidence >= 0.85 && fieldData.field_type) {
+                const field = batch.find(f => f.selector === selector);
+                if (field) {
+                    try {
+                        // Map AI's field_type to neural classifier class
+                        const classLabel = mapAIFieldToClassLabel(fieldData.field_type);
+                        if (classLabel) {
+                            window.neuralClassifier.train(field, classLabel);
+                            console.log(`🎓 [AI Training] Trained on AI classification: ${classLabel} (Confidence: ${fieldData.confidence.toFixed(2)})`);
+                        }
+                    } catch (e) {
+                        console.warn('[BatchProcessor] Training failed:', e);
+                    }
+                }
+            }
+        }
+    }
+
     return mappings;
 }
 

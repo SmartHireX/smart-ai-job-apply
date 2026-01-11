@@ -202,13 +202,6 @@ async function processPageFormLocal() {
 
                 if (isHistoryField && !isSafeOverride) {
                     console.log(`🛡️ History Guard: Skipping Smart Memory lookup for "${fieldLabel}"`);
-
-                    // 🎓 SELF-TEACHING MOMENT
-                    // If Heuristics found this (source: 'heuristic_hybrid'), teach the Neural Network!
-                    if (prediction.source === 'heuristic_hybrid' && window.neuralClassifier) {
-                        window.neuralClassifier.train(field, prediction.label);
-                    }
-
                     stillUnmapped.push(field);
                     return; // Skip this iteration
                 }
