@@ -38,7 +38,6 @@
                 "utils/resume-manager.js",
                 "utils/form-extractor.js",
                 "utils/form-analyzer.js",
-                "content/memory-utils.js",
                 "content/services/cache/selection-cache.js",
                 "content/services/matching/local-matcher.js",
                 "content/services/cache/history-manager.js",
