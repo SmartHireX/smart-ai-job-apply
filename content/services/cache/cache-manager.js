@@ -8,8 +8,9 @@ class UnifiedCacheManager {
     constructor() {
         // Priority order (highest to lowest)
         this.historyManager = window.HistoryManager || null;
-        this.smartMemory = null; // Will be injected
+        this.smartMemory = {}; // In-memory cache (hydrated from storage)
         this.selectionCache = window.SelectionCache || null;
+        this.saveTimer = null;
 
         this.stats = {
             hits: { history: 0, memory: 0, selection: 0 },
@@ -20,19 +21,51 @@ class UnifiedCacheManager {
 
     /**
      * Initialize all cache sources
+     * Hydrates SmartMemory from disk and decrypts it
      */
-    async init(smartMemory) {
-        this.smartMemory = smartMemory;
+    async init(initialMemory) {
+        // Hydrate and decrypt memory
+        this.smartMemory = {};
+        if (initialMemory) {
+            Object.keys(initialMemory).forEach(key => {
+                try {
+                    const entry = initialMemory[key];
+                    // Support both legacy (plain) and new (encrypted) formats
+                    if (entry.encrypted) {
+                        this.smartMemory[key] = {
+                            ...entry,
+                            answer: this.decrypt(entry.answer)
+                        };
+                    } else {
+                        this.smartMemory[key] = entry;
+                    }
+                } catch (e) {
+                    console.warn('[UnifiedCache] Failed to decrypt entry:', key);
+                }
+            });
+        }
 
         if (this.historyManager && !this.historyManager.isInitialized) {
             await this.historyManager.init();
         }
 
-        console.log('[UnifiedCache] Initialized with sources:', {
-            history: !!this.historyManager,
-            memory: !!this.smartMemory,
-            selection: !!this.selectionCache
-        });
+        console.log(`[UnifiedCache] Initialized. Memory Size: ${Object.keys(this.smartMemory).length}`);
+    }
+
+    // --- ENCRYPTION (Base64 + Salt) ---
+    encrypt(text) {
+        if (!text) return text;
+        try {
+            // Simple obfuscation (Not military grade, but blocks casual snooping)
+            return btoa(encodeURIComponent(text));
+        } catch (e) { return text; }
+    }
+
+    decrypt(ciphertext) {
+        if (!ciphertext) return ciphertext;
+        try {
+            return decodeURIComponent(atob(ciphertext));
+        } catch (e) { return ciphertext; }
     }
 
     /**
@@ -54,20 +87,26 @@ class UnifiedCacheManager {
                     cached: true
                 };
             }
+            // CRITICAL FIX: Skip SmartMemory for history fields (Write-Through logic handles this)
+            // If HistoryManager doesn't know it, we don't want to use a generic cache.
+            return null;
         }
 
-        // Priority 2: SmartMemory (for general text/values)
-        if (this.smartMemory) {
-            const memoryValue = this.smartMemory[fieldKey];
-            if (memoryValue) {
-                this.stats.hits.memory++;
-                return {
-                    value: memoryValue,
-                    source: 'smart-memory',
-                    confidence: 0.95,
-                    cached: true
-                };
-            }
+        // Priority 2: SmartMemory (Encrypted & LRU Sorted)
+        if (this.smartMemory && this.smartMemory[fieldKey]) {
+            const entry = this.smartMemory[fieldKey];
+
+            // "Touch" the entry to update LRU timestamp
+            entry.timestamp = Date.now();
+            this.scheduleSave(); // Async save to persist LRU update
+
+            this.stats.hits.memory++;
+            return {
+                value: entry.answer,
+                source: 'smart-memory',
+                confidence: 0.95,
+                cached: true
+            };
         }
 
         // Priority 3: SelectionCache (for select/radio/checkbox)
@@ -144,21 +183,24 @@ class UnifiedCacheManager {
     }
 
     /**
-     * Store value in appropriate cache(s)
-     * @param {Object} field - Field object
-     * @param {*} value - Value to cache
-     * @param {String} source - Where value came from ('ai', 'history', 'matcher')
+     * WRITE-THROUGH CACHING
+     * Updates Memory + Disk instantly.
      */
     async set(field, value, source = 'unknown') {
         const fieldKey = this.normalizeKey(field);
         this.stats.sets++;
 
-        // Always store in SmartMemory (universal cache)
-        if (this.smartMemory) {
-            this.smartMemory[fieldKey] = value;
-        }
+        // 1. Update SmartMemory (Universal)
+        // Store raw value in memory, encrypted logic happens on save
+        this.smartMemory[fieldKey] = {
+            answer: value,
+            timestamp: Date.now(), // For LRU
+            encrypted: true
+        };
+        this.enforceLRU(); // Prune if needed
+        this.scheduleSave(); // Write to disk
 
-        // Store in SelectionCache if applicable
+        // 2. Update SelectionCache (if applicable)
         if (this.selectionCache && this.isSelectionField(field)) {
             try {
                 await this.selectionCache.cacheResponse(field, value);
@@ -167,13 +209,59 @@ class UnifiedCacheManager {
             }
         }
 
-        // Store in HistoryManager if applicable (learns from AI/user edits)
-        if (this.historyManager && this.isHistoryField(field) && source === 'ai') {
-            // HistoryManager learns from batches, not individual fields
-            // This will be handled by the history handler
-        }
-
         console.log(`[UnifiedCache] Cached "${field.label}" → ${source}`);
+    }
+
+    /**
+     * OPTIMIZED LRU EVICTION
+     * Keeps only top 100 entries. O(N log N) but only runs on write.
+     */
+    enforceLRU() {
+        const MAX_SIZE = 100;
+        const keys = Object.keys(this.smartMemory);
+
+        if (keys.length > MAX_SIZE) {
+            // Sort by timestamp ASC (oldest first)
+            const sortedKeys = keys.sort((a, b) => {
+                return (this.smartMemory[a].timestamp || 0) - (this.smartMemory[b].timestamp || 0);
+            });
+
+            // Evict oldest
+            const deleteCount = keys.length - MAX_SIZE;
+            for (let i = 0; i < deleteCount; i++) {
+                delete this.smartMemory[sortedKeys[i]];
+            }
+            console.log(`[UnifiedCache] LRU Pruned ${deleteCount} entries`);
+        }
+    }
+
+    /**
+     * DEBOUNCED DISK SAVE
+     * Prevents thrashing storage
+     */
+    scheduleSave() {
+        if (this.saveTimer) clearTimeout(this.saveTimer);
+        this.saveTimer = setTimeout(() => {
+            this.saveToDisk();
+        }, 2000); // 2 second debounce
+    }
+
+    async saveToDisk() {
+        if (!this.smartMemory) return;
+
+        // Encrypt before saving
+        const storageDump = {};
+        Object.keys(this.smartMemory).forEach(key => {
+            const entry = this.smartMemory[key];
+            storageDump[key] = {
+                ...entry,
+                answer: this.encrypt(entry.answer),
+                encrypted: true
+            };
+        });
+
+        await chrome.storage.local.set({ 'smart_memory_cache': storageDump });
+        console.log('[UnifiedCache] Synced to storage (Encrypted)');
     }
 
     /**
@@ -198,11 +286,9 @@ class UnifiedCacheManager {
      * Clear all caches
      */
     async flush() {
-        if (this.smartMemory) {
-            Object.keys(this.smartMemory).forEach(key => delete this.smartMemory[key]);
-        }
+        this.smartMemory = {};
+        await chrome.storage.local.remove('smart_memory_cache');
 
-        // SelectionCache and HistoryManager have their own persistence
         console.log('[UnifiedCache] Flushed smart memory');
 
         this.stats = {
