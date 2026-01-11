@@ -62,6 +62,24 @@ const HistoryManager = {
     },
 
     /**
+     * Retrieve a specific entity by Index
+     * @param {string} type - 'work' or 'education'
+     * @param {number} index - 0-based index
+     * @returns {Object|null} The entity or null
+     */
+    getByIndex(type, index) {
+        if (!this.profile[type]) return null;
+
+        // Safety check index
+        if (index < 0 || index >= this.profile[type].length) {
+            console.warn(`[HistoryManager] Index ${index} out of bounds for ${type} (Length: ${this.profile[type].length})`);
+            return null;
+        }
+
+        return this.profile[type][index];
+    },
+
+    /**
      * Analyze a filled batch and learn/update an entity
      * @param {Array} batch - Array of field objects
      * @param {Object} mappings - The values filled (from AI or Cache)

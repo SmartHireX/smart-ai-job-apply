@@ -55,11 +55,26 @@ class FieldRouter {
             // Map Neural Label -> Handler
             const handler = this.getHandlerForLabel(prediction.label);
             if (handler !== 'ai') { // If it's a standard field, route it
+                // Calculate Index using Smart Indexing Service
+                let index = 0;
+                if (window.IndexingService) {
+                    const type = this.getHistoryType(prediction.label);
+                    // Check for Section Start (Sequential Logic)
+                    if (window.IndexingService.SECTION_START_FIELDS[type]?.includes(prediction.label)) {
+                        // Only increment if we see the same field again? 
+                        // Actually, IndexingService.getIndex handles the "Get" logic. 
+                        // But the "Increment" logic is usually when we detect a NEW section.
+                        // For now, let's trust getIndex handling explicit/implicit.
+                    }
+                    index = window.IndexingService.getIndex(field, type);
+                }
+
                 return {
                     handler: handler,
                     priority: 2,
                     reason: `Neural Match: ${prediction.label}`,
-                    confidence: prediction.confidence
+                    confidence: prediction.confidence,
+                    index: index // Attach valid index
                 };
             }
         }
@@ -92,10 +107,16 @@ class FieldRouter {
         if (HISTORY_FIELDS.includes(label)) return 'history';
         if (MATCHER_FIELDS.includes(label)) return 'matcher';
 
-        // Default standard fields (name, email, phone) go to 'cache' (handled by Priority 1 check usually, or falls through to AI if empty)
-        // Actually, if it's 'first_name' but NOT in cache, we want 'ai' (or 'profile' if we had one).
-        // For now, if not in cache, treat as 'ai' to generate/fetch.
         return 'ai';
+    }
+
+    /**
+     * Helper to determine history type (work vs education)
+     */
+    getHistoryType(label) {
+        if (['job_title', 'company', 'job_start_date', 'job_end_date', 'work_description'].includes(label)) return 'work';
+        if (['school', 'degree', 'major', 'gpa', 'edu_start_date', 'edu_end_date'].includes(label)) return 'education';
+        return 'work'; // Default fallback
     }
 
     /**
