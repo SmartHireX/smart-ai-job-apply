@@ -118,7 +118,7 @@ async function processPageFormLocal() {
         // ========================================
         // Initialize Core Services
         window.neuralClassifier = new window.NeuralClassifier();
-        window.neuralClassifier.init(); // Async init (fire and forget)
+        await window.neuralClassifier.init(); // Block until weights are loaded (fixes race condition)
 
         console.log('✨ Starting 🚀 Two-Phase Fill with Smart Memory...');
 
@@ -152,6 +152,30 @@ async function processPageFormLocal() {
 
         // DEBUG: Print extracted fields
         console.log('📊 [ProcessPageForm] Raw Extracted Fields:', fields);
+
+        // --- PHASE 0: NEURAL CLASSIFICATION (The Brain) 🧠 ---
+        // Classify all fields UP FRONT so downstream logic (Heuristics, Cache, AI) knows what they are.
+        if (window.neuralClassifier) {
+            console.log('🧠 [Phase 0] Running TinyML Classification on all fields...');
+            let classificationHash = {}; // Store results in a hash map as requested
+
+            fields.forEach(field => {
+                const prediction = window.neuralClassifier.predict(field);
+
+                // Add requested ml_prediction hash (Primary storage)
+                field.ml_prediction = {
+                    label: prediction.label,
+                    confidence: prediction.confidence,
+                    source: prediction.source
+                };
+
+                // Store in hash map (Secondary method)
+                if (field.selector) {
+                    classificationHash[field.selector] = prediction;
+                }
+            });
+            console.log('🧠 [Phase 0] Classification Complete. Results stored on fields.');
+        }
 
         // 3. Heuristic Map
         let { mappings: heuristicMappings, unmapped } = window.FormAnalyzer.mapFieldsHeuristically(fields, resumeData);
@@ -188,20 +212,31 @@ async function processPageFormLocal() {
 
                 fieldLabel = normalizeSmartMemoryKey(fieldLabel);
 
-                // 🔮 Neural Classification (TinyML Check)
-                // Ask the classifier what this field is.
-                const prediction = window.neuralClassifier ? window.neuralClassifier.predict(field) : { label: 'unknown', confidence: 0 };
+                fieldLabel = normalizeSmartMemoryKey(fieldLabel);
+
+                // 🔮 Neural Classification (Already done in Phase 0)
+                // Use the pre-calculated classification
+                const prediction = field.ml_prediction || {
+                    label: 'unknown',
+                    confidence: 0,
+                    source: 'unknown'
+                };
 
                 // HISTORY GUARD: Skip Smart Memory lookup for History fields
                 // This forces them to go to Phase 2 (AI/BatchProcessor) which handles HistoryManager
-                // OLD REGEX: /employer|company|job[_\s]?title.../i.test(fieldLabel)
-                // NEW CLASSIFIER: Check for history labels
                 const HISTORY_LABELS = ['job_title', 'company', 'job_start_date', 'job_end_date', 'school', 'degree', 'major', 'gpa', 'edu_start_date', 'edu_end_date'];
                 const isHistoryField = HISTORY_LABELS.includes(prediction.label) && prediction.confidence > 0.8;
-                const isSafeOverride = /available|notice|relocat/i.test(fieldLabel); // Keep regex for overrides as they are tricky
+                const isSafeOverride = /available|notice|relocat/i.test(fieldLabel);
 
                 if (isHistoryField && !isSafeOverride) {
-                    console.log(`🛡️ History Guard: Skipping Smart Memory lookup for "${fieldLabel}"`);
+                    console.log(`🛡️ History Guard: Skipping Smart Memory lookup for "${fieldLabel}" (Neural: ${prediction.label})`);
+
+                    // 🎓 SELF-TEACHING MOMENT
+                    // If Heuristics found this (source: 'heuristic_hybrid'), teach the Neural Network!
+                    if (prediction.source === 'heuristic_hybrid' && window.neuralClassifier) {
+                        window.neuralClassifier.train(field, prediction.label);
+                    }
+
                     stillUnmapped.push(field);
                     return; // Skip this iteration
                 }

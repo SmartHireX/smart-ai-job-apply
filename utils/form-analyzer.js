@@ -292,12 +292,7 @@ function extractFieldsFromDOM(source) {
             console.log(`[FormAnalyzer] Enriching ${fields.length} fields with section context...`);
             fields.forEach(field => {
                 if (field.element) {
-                    // 1. Semantic Section
-                    const sectionContext = window.SectionDetector.detect(field.element, fields);
-                    if (sectionContext) {
-                        field.sectionContext = sectionContext;
-                    }
-
+                    // Section Context enrichment REMOVED as per user request
                     // 2. Raw Accessibility Context (The "Fang" Way)
                     if (window.SectionDetector.getNearestHeadingText) {
                         const rawContext = window.SectionDetector.getNearestHeadingText(field.element);

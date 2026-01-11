@@ -14,13 +14,66 @@ const fs = require('fs');
 const path = require('path');
 
 // === FEATURE EXTRACTOR (Matches production version) ===
+// === FEATURE EXTRACTOR (Matches production version) ===
 class SimpleFeatureExtractor {
-    extract(field) {
-        const vector = new Array(56).fill(0);
+    constructor() {
+        this.VOCAB_SIZE = 100;
+    }
 
-        // Hash label + name + placeholder (30 slots: 0-29)
-        const text = `${field.label || ''} ${field.name || ''} ${field.placeholder || ''}`.toLowerCase();
-        const words = text.split(/\W+/).filter(w => w.length > 2);
+    extract(field) {
+        if (!field) return new Array(59).fill(0);
+
+        const getAttr = (attr) => (field.getAttribute && typeof field.getAttribute === 'function') ? field.getAttribute(attr) : (field[attr] || null);
+
+        const computedLabel = this.getComputedLabel(field);
+        const computedRole = getAttr('role') || (field.tagName ? field.tagName.toLowerCase() : (field.type || 'text'));
+
+        const features = [
+            // 1. Structural Features (One-Hot / Binary)
+            this.isType(field, 'text'),
+            this.isType(field, 'number'),
+            this.isType(field, 'email'),
+            this.isType(field, 'password'),
+            this.isType(field, 'tel'),
+
+            // 2. Heuristic Features
+            computedLabel ? 1 : 0,
+            field.placeholder ? 1 : 0,
+            this.calculateVisualWeight(field),
+            (computedRole === 'combobox' || computedRole === 'listbox') ? 1 : 0,
+
+            // 3. Textual Features (Hashed Bag of Words)
+            ...this.hashText(computedLabel || '', 10),   // 10 label
+            ...this.hashText(field.name || '', 10),      // 10 name
+            ...this.hashText(field.placeholder || '', 5), // 5 placeholder
+            ...this.hashText(getAttr('context') || field.context || '', 5),     // 5 context
+
+            // NEW: Rich Context Signals
+            ...this.hashText(field.parentContext || '', 10),  // 10 parent
+            ...this.hashText(field.siblingContext || '', 10)  // 10 sibling
+        ];
+
+        return features;
+    }
+
+    getComputedLabel(field) {
+        if (field.label) return field.label;
+        return field.placeholder || '';
+    }
+
+    isType(field, type) {
+        const t = (field.type || '').toLowerCase();
+        return (t === type) ? 1.0 : 0.0;
+    }
+
+    calculateVisualWeight(field) {
+        return 0.5; // Mock for training
+    }
+
+    hashText(text, slots) {
+        const vector = new Array(slots).fill(0);
+        const cleanText = text.replace(/\d+/g, ''); // Strip digits
+        const words = cleanText.toLowerCase().split(/\W+/).filter(w => w.length > 2);
 
         words.forEach(word => {
             let hash = 0;
@@ -28,40 +81,9 @@ class SimpleFeatureExtractor {
                 hash = ((hash << 5) - hash) + word.charCodeAt(i);
                 hash |= 0;
             }
-            const index = Math.abs(hash) % 30;
+            const index = Math.abs(hash) % slots;
             vector[index] = 1.0;
         });
-
-        // Type features (slots 50-52)
-        if (field.type === 'email') vector[50] = 1.0;
-        if (field.type === 'tel') vector[51] = 1.0;
-        if (field.type === 'text') vector[52] = 1.0;
-
-        // Hash parentContext (10 slots: 31-40)
-        if (field.parentContext) {
-            const parentWords = field.parentContext.toLowerCase().split(/\W+/).filter(w => w.length > 2);
-            parentWords.forEach(word => {
-                let hash = 0;
-                for (let i = 0; i < word.length; i++) {
-                    hash = ((hash << 5) - hash) + word.charCodeAt(i);
-                    hash |= 0;
-                }
-                vector[31 + (Math.abs(hash) % 10)] = 1.0;
-            });
-        }
-
-        // Hash siblingContext (10 slots: 41-50)
-        if (field.siblingContext) {
-            const siblingWords = field.siblingContext.toLowerCase().split(/\W+/).filter(w => w.length > 2);
-            siblingWords.forEach(word => {
-                let hash = 0;
-                for (let i = 0; i < word.length; i++) {
-                    hash = ((hash << 5) - hash) + word.charCodeAt(i);
-                    hash |= 0;
-                }
-                vector[41 + (Math.abs(hash) % 10)] = 1.0;
-            });
-        }
 
         return vector;
     }
@@ -91,7 +113,7 @@ class TrainingNetwork {
     }
 
     initializeWeights() {
-        const inputSize = 56;
+        const inputSize = 59; // Matches production FeatureExtractor
         const hiddenSize = this.HIDDEN_SIZE;
         const outputSize = this.CLASSES.length;
 

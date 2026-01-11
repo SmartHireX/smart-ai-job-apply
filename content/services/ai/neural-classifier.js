@@ -120,8 +120,6 @@ class NeuralClassifier {
      * @returns {Object} { label: string, confidence: number }
      */
     predict(field) {
-        if (!this.weights) return { label: 'unknown', confidence: 0 };
-
         // 1. Vectorize
         const inputVector = this.featureExtractor.extract(field);
 
@@ -444,7 +442,7 @@ class NeuralClassifier {
 
     // --- WEIGHT INITIALIZATION ---
     generateDummyWeights() {
-        const inputSize = 56; // From FeatureExtractor
+        const inputSize = 59; // From FeatureExtractor
         const hiddenSize = this.HIDDEN_SIZE;
         const outputSize = this.CLASSES.length;
 

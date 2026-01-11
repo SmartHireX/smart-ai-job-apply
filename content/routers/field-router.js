@@ -24,11 +24,20 @@ class FieldRouter {
      * @returns {Object} { handler: string, priority: number, reason: string }
      */
     async route(field, cacheResult = null) {
-        // 0. Neural Classification ( The Brain )
-        // We classify FIRST to know what we are dealing with.
-        const prediction = this.neuralClassifier.predict(field);
-        field.neuralType = prediction.label;
-        field.neuralConfidence = prediction.confidence;
+        // 0. Neural Classification (The Brain)
+        // Check if pre-classified (Phase 0), otherwise run inference
+        let prediction = field.ml_prediction;
+
+        if (!prediction) {
+            prediction = this.neuralClassifier.predict(field);
+            // normalization
+            prediction = {
+                label: prediction.label,
+                confidence: prediction.confidence,
+                source: prediction.source
+            };
+            field.ml_prediction = prediction;
+        }
 
         // Priority 1: Use cached value if available
         // (Even if we know what it is, if we have a locked value, use it)
