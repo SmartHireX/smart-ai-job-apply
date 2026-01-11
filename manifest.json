@@ -44,6 +44,7 @@
                 "content/services/cache/cache-manager.js",
                 "content/routers/field-router.js",
                 "content/services/extraction/section-detector.js",
+                "content/services/extraction/sibling-cluster.js",
                 "content/handlers/handler.js",
                 "content/handlers/cache-handler.js",
                 "content/handlers/history-handler.js",

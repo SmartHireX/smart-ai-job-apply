@@ -310,6 +310,15 @@ function extractFieldsFromDOM(source) {
             });
         }
 
+        // 3. Sibling Cluster Analysis (Advanced Context)
+        if (typeof window.SiblingCluster !== 'undefined') {
+            try {
+                window.SiblingCluster.analyze(fields);
+            } catch (err) {
+                console.error('❌ [FormAnalyzer] SiblingCluster error:', err);
+            }
+        }
+
         return fields;
     }
 
@@ -436,6 +445,18 @@ function extractFieldsFromDOM(source) {
                 }
             }
         });
+
+        // 3. Sibling Cluster Analysis (Advanced Context)
+        if (typeof window.SiblingCluster !== 'undefined') {
+            console.log('✅ [FormAnalyzer] SiblingCluster found, executing analysis...');
+            try {
+                window.SiblingCluster.analyze(fields);
+            } catch (err) {
+                console.error('❌ [FormAnalyzer] SiblingCluster error:', err);
+            }
+        } else {
+            console.warn('⚠️ [FormAnalyzer] SiblingCluster NOT found! (Check load order)');
+        }
     }
 
     return fields;
@@ -760,7 +781,8 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
             placeholder: f.placeholder || '',
             options: f.options || [],
             sectionContext: f.sectionContext || null,
-            parentContext: f.parentContext || null // AI now sees "Job Preferences" for "Desired Pay"
+            parentContext: f.parentContext || null,
+            siblingContext: f.siblingContext || null // AI now sees "Siblings: [City, State, Zip]"
         }));
         const fieldsArray = JSON.stringify(sanitizedFields, null, 2);
 
