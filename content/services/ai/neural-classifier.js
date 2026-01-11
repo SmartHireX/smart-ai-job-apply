@@ -52,9 +52,28 @@ class NeuralClassifier {
             'edu_start_date',   // 24
             'edu_end_date',     // 25
 
-            // Generic
-            'cover_letter',     // 26
-            'generic_question'  // 27 (Pass to LLM)
+            // Demographics (EEOC)
+            'gender',           // 26
+            'race',             // 27
+            'veteran',          // 28
+            'disability',       // 29
+
+            // Compensation
+            'salary_current',   // 30
+            'salary_expected',  // 31
+
+            // Legal & Compliance
+            'work_auth',        // 32
+            'sponsorship',      // 33
+            'citizenship',      // 34
+            'clearance',        // 35
+            'legal_age',        // 36
+            'tax_id',           // 37
+
+            // Misc
+            'referral_source',  // 38
+            'cover_letter',     // 39
+            'generic_question'  // 40
         ];
 
         // WEIGHTS: (Placeholder)
