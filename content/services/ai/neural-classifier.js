@@ -42,20 +42,21 @@ class NeuralClassifier {
             'zip_code',         // 13
             'country',          // 14
 
-            // Work History
+            // Work History (Descriptive Keys)
             'job_title',        // 15
-            'company',          // 16
+            'employer_name',    // 16
             'job_start_date',   // 17
             'job_end_date',     // 18
             'work_description', // 19
+            'job_location',     // 19.5 (New/Optional)
 
-            // Education
-            'school',           // 20
-            'degree',           // 21
-            'major',            // 22
-            'gpa',              // 23
-            'edu_start_date',   // 24
-            'edu_end_date',     // 25
+            // Education (Descriptive Keys)
+            'institution_name', // 20
+            'degree_type',      // 21
+            'field_of_study',   // 22
+            'gpa_score',        // 23
+            'education_start_date', // 24
+            'education_end_date',   // 25
 
             // Demographics (EEOC)
             'gender',           // 26
@@ -74,12 +75,17 @@ class NeuralClassifier {
             'clearance',        // 35
             'legal_age',        // 36
             'tax_id',           // 37
+            'criminal_record',  // 38
+            'notice_period',    // 39
 
             // Misc
-            'referral_source',  // 38
-            'cover_letter',     // 39
-            'generic_question'  // 40
+            'referral_source',  // 40
+            'cover_letter',     // 41
+            'generic_question'  // 42
         ];
+
+        // No extra mapping needed - CLASSES match Profile Schema directly.
+
 
         // TWO-LAYER WEIGHTS
         // Layer 1: Input (56) → Hidden (20)
@@ -473,7 +479,6 @@ class NeuralClassifier {
         console.log(`[NeuralClassifier] ✨ Initialized 2-layer network: ${inputSize} → ${hiddenSize} → ${outputSize}`);
     }
 }
-
 // Export
 if (typeof window !== 'undefined') window.NeuralClassifier = NeuralClassifier;
 if (typeof module !== 'undefined') module.exports = NeuralClassifier;
