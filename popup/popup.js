@@ -197,8 +197,27 @@ async function handleFillForm() {
             return;
         }
 
-        // Send message to content script to start local processing
+        // Step 1: Activate extension (load all scripts lazily)
+        console.log('🔄 Activating extension (loading scripts)...');
+        formStatus.textContent = 'Loading extension...';
+
+        const activationResponse = await chrome.tabs.sendMessage(tab.id, {
+            type: 'ACTIVATE_EXTENSION'
+        });
+
+        if (!activationResponse || !activationResponse.loaded) {
+            console.error('Extension activation failed');
+            showError('Failed to load extension. Please refresh page.');
+            fillBtn.disabled = false;
+            return;
+        }
+
+        console.log('✅ Extension activated and ready');
+
+        // Step 2: Trigger form processing
         console.log('🚀 Triggering local AI form processing...');
+        formStatus.textContent = 'Processing forms...';
+
         chrome.tabs.sendMessage(tab.id, {
             type: 'START_LOCAL_PROCESSING'
         });
@@ -226,7 +245,13 @@ async function handleChatOpen() {
             return;
         }
 
-        // Send message to content script to toggle chat
+        // Activate extension first
+        console.log('🔄 Activating extension for chat...');
+        await chrome.tabs.sendMessage(tab.id, {
+            type: 'ACTIVATE_EXTENSION'
+        });
+
+        // Then toggle chat
         await chrome.tabs.sendMessage(tab.id, {
             type: 'TOGGLE_CHAT'
         });

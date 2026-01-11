@@ -34,6 +34,25 @@
                 "<all_urls>"
             ],
             "js": [
+                "common/infrastructure/constants.js",
+                "autofill/core/bootstrap.js"
+            ],
+            "css": [
+                "autofill/ui/autofill-styles.css",
+                "autofill/ui/sidebar/sidebar-styles.css"
+            ],
+            "run_at": "document_idle",
+            "all_frames": true
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "chatbot/ui/chat.html",
+                "chatbot/ui/chat.css",
+                "chatbot/ui/chat.js",
+                "chatbot/services/ai/context-classifier.js",
+                "autofill/services/ai/model_v2_baseline.json",
                 "shared/utils/ai-client.js",
                 "shared/utils/resume-manager.js",
                 "shared/utils/form-extractor.js",
@@ -46,23 +65,24 @@
                 "autofill/routers/field-router.js",
                 "autofill/services/extraction/section-detector.js",
                 "autofill/services/extraction/sibling-cluster.js",
-                "autofill/handlers/handler.js",
-                "autofill/handlers/cache-handler.js",
-                "autofill/handlers/history-handler.js",
-                "autofill/handlers/matcher-handler.js",
-                "autofill/handlers/ai-handler.js",
                 "autofill/services/extraction/form-detector.js",
+                "autofill/services/cache/multi-value-handler.js",
+                "autofill/services/ai/batch-processor.js",
+                "autofill/services/ai/prefetch-engine.js",
                 "autofill/ui/animations/form-visuals.js",
                 "autofill/ui/sidebar/drag-resize.js",
                 "autofill/ui/sidebar/sidebar-components.js",
-                "autofill/services/ai/batch-processor.js",
-                "autofill/services/ai/prefetch-engine.js",
+                "autofill/ui/premium-inputs/premium-input-renderer.js",
+                "autofill/handlers/handler.js",
+                "autofill/handlers/cache-handler.js",
+                "autofill/handlers/matcher-handler.js",
+                "autofill/handlers/history-handler.js",
+                "autofill/handlers/ai-handler.js",
                 "shared/state/state-manager.js",
-                "autofill/services/ai/feature-extractor.js",
-                "autofill/services/ai/neural-classifier.js",
                 "shared/state/action-queue.js",
                 "shared/state/orchestrator.js",
-                "common/infrastructure/constants.js",
+                "autofill/services/ai/feature-extractor.js",
+                "autofill/services/ai/neural-classifier.js",
                 "common/infrastructure/config.js",
                 "common/infrastructure/lifecycle.js",
                 "autofill/services/cache/smart-memory-service.js",
@@ -80,23 +100,6 @@
                 "chatbot/handlers/chat-message-handler.js",
                 "common/messaging/message-router.js",
                 "autofill/core/autofill-orchestrator.js"
-            ],
-            "css": [
-                "autofill/ui/autofill-styles.css",
-                "autofill/ui/sidebar/sidebar-styles.css"
-            ],
-            "run_at": "document_idle",
-            "all_frames": true
-        }
-    ],
-    "web_accessible_resources": [
-        {
-            "resources": [
-                "chatbot/ui/chat.html",
-                "chatbot/ui/chat.css",
-                "chatbot/ui/chat.js",
-                "chatbot/services/ai/context-classifier.js",
-                "autofill/services/ai/model_v2_baseline.json"
             ],
             "matches": [
                 "<all_urls>"
