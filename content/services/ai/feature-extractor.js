@@ -58,10 +58,15 @@ class FeatureExtractor {
     /**
      * Simple hashing trick (MurmurHash-like) to map text to fixed vector slots
      * Prevents needing a massive dictionary file.
+     * STRATEGY: Strip numbers so "job_title_0" and "job_title_1" map to SAME vector.
      */
     hashText(text, slots) {
         const vector = new Array(slots).fill(0);
-        const words = text.toLowerCase().split(/\W+/).filter(w => w.length > 2);
+
+        // Remove digits to treat "employer_1" identical to "employer_2"
+        const cleanText = text.replace(/\d+/g, '');
+
+        const words = cleanText.toLowerCase().split(/\W+/).filter(w => w.length > 2);
 
         words.forEach(word => {
             let hash = 0;
