@@ -212,6 +212,15 @@ async function checkSmartMemoryForAnswer(field, smartMemory) {
             window.normalizeSmartMemoryKey(fieldLabel) :
             fieldLabel.toLowerCase().trim();
 
+        // HISTORY GUARD: Skip Smart Memory lookup for History fields
+        // This forces them to go to the batch loop where HistoryManager handles them properly
+        const isHistoryField = /employer|company|job[_\s]?title|position|school|university|college|degree|major|gpa|start[_\s]?date|end[_\s]?date/i.test(normalizedLabel);
+        const isSafeOverride = /available|notice|relocat/i.test(normalizedLabel);
+
+        if (isHistoryField && !isSafeOverride) {
+            return null;
+        }
+
         // Check for exact match first
         if (smartMemory[normalizedLabel]) {
             return smartMemory[normalizedLabel].answer;
@@ -436,8 +445,13 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
             const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({}), 2000));
             smartMemory = await Promise.race([memoryPromise, timeoutPromise]) || {};
         }
+
+        // INIT FIX: Ensure HistoryManager is ready
+        if (window.HistoryManager && !window.HistoryManager.isInitialized) {
+            await window.HistoryManager.init();
+        }
     } catch (e) {
-        console.warn('[BatchProcessor] Failed to get smart memory:', e);
+        console.warn('[BatchProcessor] Failed to get smart memory/history:', e);
     }
 
     // Group fields by type

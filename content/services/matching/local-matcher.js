@@ -132,6 +132,20 @@ const LocalMatcher = {
             }
 
             // ========================================
+            // HISTORY GUARD: SKIP WORK & EDUCATION FIELDS
+            // ========================================
+            // These must be handled by HistoryManager in Phase 2 for correct structured index mapping.
+            // We skip them here so they "fall through" to the BatchProcessor.
+            if (/employer|company|job[_\s]?title|position|school|university|college|degree|major|gpa|start[_\s]?date|end[_\s]?date/i.test(context)) {
+                // Exception: Allow "Date Available" or "Notice Period" or "Relocate" to be matched locally
+                if (!/available|notice|relocat/i.test(context)) {
+                    console.log(`🎯 [LocalMatcher] Skipping "${field.label}" → Reserved for HistoryManager`);
+                    remaining.push(field);
+                    return;
+                }
+            }
+
+            // ========================================
             // SKIP WORK & EDUCATION HISTORY FIELDS (Indexed Fields)
             // These are handled by HistoryManager in Phase 2 (cache → resume → AI)
             // ========================================

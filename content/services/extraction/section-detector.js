@@ -323,10 +323,89 @@ function detectFieldSectionContext(field, allFields = []) {
     };
 }
 
+/**
+ * Find the nearest heading text (Accessibility Tree style context)
+ * 1. Fieldset Legend
+ * 2. Table Header
+ * 3. Nearest Preceding Heading (Reverse DOM Walk)
+ * @param {HTMLElement} field
+ * @returns {string|null}
+ */
+function getNearestHeadingText(field) {
+    if (!field) return null;
+
+    // 1. Fieldset Legend (Strongest Grouping)
+    const fieldset = field.closest('fieldset');
+    if (fieldset) {
+        const legend = fieldset.querySelector('legend');
+        if (legend && legend.innerText.trim()) return legend.innerText.trim();
+    }
+
+    // 2. Table Context
+    const cell = field.closest('td');
+    if (cell) {
+        // Try Row Header
+        const row = cell.parentElement;
+        if (row && row.tagName === 'TR') {
+            const header = row.querySelector('th');
+            if (header && header.innerText.trim()) return header.innerText.trim();
+        }
+
+        // Try Table Caption
+        const table = field.closest('table');
+        if (table) {
+            const caption = table.querySelector('caption');
+            if (caption && caption.innerText.trim()) return caption.innerText.trim();
+        }
+    }
+
+    // 3. Reverse DOM Walk (The "Fang" Way)
+    // Walk up parents, and for each parent, scan previous siblings for H1-H6
+    let current = field;
+    let depth = 0;
+    const MAX_DEPTH = 5; // Don't look at whole page
+    const MAX_SIBLINGS = 15; // Scan generous amount of siblings
+
+    while (current && current.tagName !== 'BODY' && depth < MAX_DEPTH) {
+        let sibling = current.previousElementSibling;
+        let siblingCount = 0;
+
+        while (sibling && siblingCount < MAX_SIBLINGS) {
+            // Check if sibling IS a Header
+            if (/^H[1-6]$/.test(sibling.tagName)) {
+                return sibling.innerText.trim();
+            }
+
+            // Check if sibling CONTAINS a Header (e.g., <div class="header"><h3>Title</h3></div>)
+            // Limit query to direct children or shallow depth to be fast
+            const nestedHeader = sibling.querySelector('h1, h2, h3, h4, h5, h6');
+            if (nestedHeader) {
+                return nestedHeader.innerText.trim();
+            }
+
+            // Special Case: "Label-like" divs (common in modern frameworks)
+            // <div class="section-label">Job Preferences</div>
+            if (sibling.className && typeof sibling.className === 'string' &&
+                (sibling.className.includes('label') || sibling.className.includes('title') || sibling.className.includes('header'))) {
+                if (sibling.innerText.length < 50) return sibling.innerText.trim();
+            }
+
+            sibling = sibling.previousElementSibling;
+            siblingCount++;
+        }
+
+        current = current.parentElement;
+        depth++;
+    }
+
+    return null;
+}
+
 // Export to window
 if (typeof window !== 'undefined') {
     window.SectionDetector = {
         detect: detectFieldSectionContext,
+        getNearestHeadingText, // New Export
         // Expose individual layers for testing
         detectAutocompleteSection,
         detectFieldsetLegend,

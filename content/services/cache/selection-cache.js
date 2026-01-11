@@ -273,7 +273,7 @@ async function getCachedValue(field, label) {
         }
 
         // VALIDATION: Check if cached value exists in current options
-        if (field.tagName.toLowerCase() === 'select' || (field.getAttribute('role') === 'listbox')) {
+        if (field && field.tagName && (field.tagName.toLowerCase() === 'select' || field.getAttribute('role') === 'listbox')) {
             const isValid = validateOption(field, cached.value);
             if (!isValid) {
                 console.warn(`[SelectionCache] ⚠️ Cached value "${cached.value}" not found in current options for "${label}". Cache Miss forced.`);

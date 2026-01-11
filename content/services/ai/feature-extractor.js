@@ -20,10 +20,15 @@ class FeatureExtractor {
      * @returns {Array<number>} Input vector for the model
      */
     extract(field) {
+        // Safety check: Ensure field is effectively an object
+        if (!field) return new Array(this.VOCAB_SIZE + 20).fill(0); // Return empty vector
+
+        // Helper to safely get attribute
+        const getAttr = (attr) => (field.getAttribute && typeof field.getAttribute === 'function') ? field.getAttribute(attr) : (field[attr] || null);
+
         // AXTree: Calculate the "Computed Name" (What a Screen Reader hears)
-        // This is much more robust than just looking for a <label> tag.
         const computedLabel = this.getComputedLabel(field);
-        const computedRole = field.getAttribute('role') || field.tagName.toLowerCase();
+        const computedRole = getAttr('role') || (field.tagName ? field.tagName.toLowerCase() : (field.type || 'text'));
 
         const features = [
             // 1. Structural Features (One-Hot / Binary)
@@ -43,7 +48,8 @@ class FeatureExtractor {
             // WE NOW USE THE COMPUTED ACCESSIBILITY LABEL INSTEAD OF JUST DOM LABEL
             ...this.hashText(computedLabel || '', 10),   // First 10 slots for Label
             ...this.hashText(field.name || '', 10),      // Next 10 slots for Name/ID
-            ...this.hashText(field.context || '', 5)     // Next 5 slots for Section Context
+            // Handle context (can be on object or DOM attribute)
+            ...this.hashText(getAttr('context') || field.context || '', 5)     // Next 5 slots for Section Context
         ];
 
         return features;
@@ -56,15 +62,18 @@ class FeatureExtractor {
      * Precedence: aria-labelledby > aria-label > <label for=""> > placeholder > title
      */
     getComputedLabel(field) {
+        // Check for DOM capability
+        const isDOM = typeof field.hasAttribute === 'function';
+
         // 1. aria-labelledby (Points to another ID)
-        if (field.hasAttribute('aria-labelledby')) {
+        if (isDOM && field.hasAttribute('aria-labelledby')) {
             const id = field.getAttribute('aria-labelledby');
             const labelEl = document.getElementById(id);
             if (labelEl) return labelEl.innerText.trim();
         }
 
         // 2. aria-label (Direct override)
-        if (field.hasAttribute('aria-label')) {
+        if (isDOM && field.hasAttribute('aria-label')) {
             return field.getAttribute('aria-label').trim();
         }
 
@@ -76,23 +85,29 @@ class FeatureExtractor {
         // 4. Implicit Wrapper <label><input></label>
         // (Handled by field.labels usually)
 
-        // 5. Fallback to passed label from Scanner
+        // 5. Fallback to passed label from Scanner (Common for plain objects)
         if (field.label) return field.label;
 
         // 6. Placeholder / Title (Weakest signals)
-        return field.placeholder || field.getAttribute('title') || '';
+        // Handle both DOM and Object property access
+        const placeholder = field.placeholder || (isDOM ? field.getAttribute('placeholder') : '');
+        const title = field.title || (isDOM ? field.getAttribute('title') : '');
+
+        return placeholder || title || '';
     }
 
     // --- Helpers ---
 
     isType(field, type) {
-        return (field.type === type) ? 1.0 : 0.0;
+        // Handle both DOM 'type' property and object 'type' property
+        const t = (field.type || '').toLowerCase();
+        return (t === type) ? 1.0 : 0.0;
     }
 
     // --- GEOMETRIC HEURISTICS ---
 
     calculateVisualWeight(field) {
-        // Mock default for simulated environment
+        // Mock default for simulated environment or plain objects
         if (typeof field.getBoundingClientRect !== 'function') return 0.5;
 
         const rect = field.getBoundingClientRect();

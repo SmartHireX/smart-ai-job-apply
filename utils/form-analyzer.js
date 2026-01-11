@@ -292,9 +292,19 @@ function extractFieldsFromDOM(source) {
             console.log(`[FormAnalyzer] Enriching ${fields.length} fields with section context...`);
             fields.forEach(field => {
                 if (field.element) {
+                    // 1. Semantic Section
                     const sectionContext = window.SectionDetector.detect(field.element, fields);
                     if (sectionContext) {
                         field.sectionContext = sectionContext;
+                    }
+
+                    // 2. Raw Accessibility Context (The "Fang" Way)
+                    if (window.SectionDetector.getNearestHeadingText) {
+                        const rawContext = window.SectionDetector.getNearestHeadingText(field.element);
+                        if (rawContext) {
+                            field.parentContext = rawContext;
+                            console.log(`🎯 [ParentContext] "${field.label}" → "${rawContext}"`);
+                        }
                     }
                 }
             });
@@ -409,10 +419,20 @@ function extractFieldsFromDOM(source) {
             }
 
             if (element) {
+                // 1. Semantic Section Detection (Work vs Edu)
                 const sectionContext = window.SectionDetector.detect(element, fields);
                 if (sectionContext) {
                     field.sectionContext = sectionContext;
-                    console.log(`🎯 [SectionContext] "${field.label}" → ${sectionContext.context} (${sectionContext.confidence})`);
+                }
+
+                // 2. Raw Accessibility Context (The "Fang" Way)
+                // Get the nearest visual/semantic header text
+                if (window.SectionDetector.getNearestHeadingText) {
+                    const rawContext = window.SectionDetector.getNearestHeadingText(element);
+                    if (rawContext) {
+                        field.parentContext = rawContext;
+                        console.log(`🎯 [ParentContext] "${field.label}" → "${rawContext}"`);
+                    }
                 }
             }
         });
@@ -739,7 +759,8 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
             name: f.name || '',
             placeholder: f.placeholder || '',
             options: f.options || [],
-            sectionContext: f.sectionContext || null  // AI aware of section context
+            sectionContext: f.sectionContext || null,
+            parentContext: f.parentContext || null // AI now sees "Job Preferences" for "Desired Pay"
         }));
         const fieldsArray = JSON.stringify(sanitizedFields, null, 2);
 

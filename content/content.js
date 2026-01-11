@@ -116,6 +116,10 @@ async function processPageFormLocal() {
         // ========================================
         // LEGACY ARCHITECTURE
         // ========================================
+        // Initialize Core Services
+        window.neuralClassifier = new window.NeuralClassifier();
+        window.neuralClassifier.init(); // Async init (fire and forget)
+
         console.log('✨ Starting 🚀 Two-Phase Fill with Smart Memory...');
 
         // --- PHASE 1: INSTANT HEURISTIC FILL ---
@@ -146,8 +150,14 @@ async function processPageFormLocal() {
         if (!formHTML) throw new Error('No form found');
         const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
 
+        // DEBUG: Print extracted fields
+        console.log('📊 [ProcessPageForm] Raw Extracted Fields:', fields);
+
         // 3. Heuristic Map
         let { mappings: heuristicMappings, unmapped } = window.FormAnalyzer.mapFieldsHeuristically(fields, resumeData);
+
+        // DEBUG: Print unmapped fields
+        console.log('📊 [ProcessPageForm] Unmapped Fields (Pre-SmartMemory):', unmapped);
 
         // --- SMART MEMORY CHECK (Phase 1.5) ---
         if (unmapped.length > 0 && smartMemory && Object.keys(smartMemory).length > 0) {
@@ -177,6 +187,31 @@ async function processPageFormLocal() {
                 }
 
                 fieldLabel = normalizeSmartMemoryKey(fieldLabel);
+
+                // 🔮 Neural Classification (TinyML Check)
+                // Ask the classifier what this field is.
+                const prediction = window.neuralClassifier ? window.neuralClassifier.predict(field) : { label: 'unknown', confidence: 0 };
+
+                // HISTORY GUARD: Skip Smart Memory lookup for History fields
+                // This forces them to go to Phase 2 (AI/BatchProcessor) which handles HistoryManager
+                // OLD REGEX: /employer|company|job[_\s]?title.../i.test(fieldLabel)
+                // NEW CLASSIFIER: Check for history labels
+                const HISTORY_LABELS = ['job_title', 'company', 'job_start_date', 'job_end_date', 'school', 'degree', 'major', 'gpa', 'edu_start_date', 'edu_end_date'];
+                const isHistoryField = HISTORY_LABELS.includes(prediction.label) && prediction.confidence > 0.8;
+                const isSafeOverride = /available|notice|relocat/i.test(fieldLabel); // Keep regex for overrides as they are tricky
+
+                if (isHistoryField && !isSafeOverride) {
+                    console.log(`🛡️ History Guard: Skipping Smart Memory lookup for "${fieldLabel}"`);
+
+                    // 🎓 SELF-TEACHING MOMENT
+                    // If Heuristics found this (source: 'heuristic_hybrid'), teach the Neural Network!
+                    if (prediction.source === 'heuristic_hybrid' && window.neuralClassifier) {
+                        window.neuralClassifier.train(field, prediction.label);
+                    }
+
+                    stillUnmapped.push(field);
+                    return; // Skip this iteration
+                }
 
                 console.log(`🔍 Searching cache for field: "${fieldLabel}"`);
                 if (fieldLabel.length > 2) {
@@ -523,6 +558,21 @@ async function processPageFormLocal() {
 
                     const normalizedLabel = normalizeSmartMemoryKey(label);
 
+                    // HISTORY GUARD: Prevent saving structured history fields (Jobs/Edu) to flat Smart Memory
+                    // These should be handled by HistoryManager (structured) only.
+                    // OLD REGEX: /employer|company|job[_\s]?title.../i.test(normalizedLabel)
+
+                    // 🔮 Neural Check
+                    const savePrediction = window.neuralClassifier ? window.neuralClassifier.predict({ name: normalizedLabel, label: normalizedLabel }) : { label: 'unknown' };
+                    const HISTORY_LABELS_SAVE = ['job_title', 'company', 'job_start_date', 'job_end_date', 'school', 'degree', 'major', 'gpa', 'edu_start_date', 'edu_end_date'];
+
+                    const isHistoryField = HISTORY_LABELS_SAVE.includes(savePrediction.label);
+
+                    if (isHistoryField && !/available|notice|relocat/i.test(normalizedLabel)) {
+                        console.log(`🛡️ History Guard: Skipping Smart Memory save for "${normalizedLabel}" (Reserved for HistoryManager)`);
+                        continue;
+                    }
+
                     // Quality validation
                     const isGeneric = /^(yes|no|ok|submit|cancel|true|false)$/i.test(normalizedLabel);
                     const isSingleWord = !normalizedLabel.includes(' ');
@@ -845,3 +895,54 @@ document.addEventListener('focusin', (e) => {
         window.PrefetchEngine.handleFocus(e.target);
     }
 }, true); // Capture phase to be early
+
+// ========================================
+// RESTORED HELPERS (Legacy Support)
+// ========================================
+
+/**
+ * Legacy: Normalize a label for Smart Memory Key
+ * Used by processPageFormLocal (Legacy Path)
+ */
+function normalizeSmartMemoryKey(label) {
+    if (!label) return '';
+    return label
+        .toLowerCase()
+        .replace(/[^a-z0-9 ]/g, '') // Remove special chars
+        .trim()
+        .replace(/\s+/g, '_');      // Space to underscore
+}
+
+/**
+ * Legacy: Fetch Smart Memory (Plain Object)
+ * Used by processPageFormLocal (Legacy Path)
+ */
+async function getSmartMemoryCache() {
+    try {
+        const result = await chrome.storage.local.get('smartMemory');
+        return result.smartMemory || {};
+    } catch (e) {
+        console.warn('Failed to load legacy smartMemory', e);
+        return {};
+    }
+}
+
+/**
+ * Legacy: Update Smart Memory
+ * Used by processPageFormLocal (Legacy Path) and ui-components
+ */
+async function updateSmartMemoryCache(newEntries) {
+    try {
+        const result = await chrome.storage.local.get('smartMemory');
+        const currentMemory = result.smartMemory || {};
+        const updatedMemory = { ...currentMemory, ...newEntries };
+        await chrome.storage.local.set({ smartMemory: updatedMemory });
+        console.log('[SmartMemory] Updated legacy cache with', Object.keys(newEntries).length, 'entries');
+    } catch (e) {
+        console.warn('Failed to update legacy smartMemory', e);
+    }
+}
+
+// Ensure global visibility for ui-components.js
+window.updateSmartMemoryCache = updateSmartMemoryCache;
+window.normalizeSmartMemoryKey = normalizeSmartMemoryKey;

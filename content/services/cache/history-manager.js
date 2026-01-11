@@ -183,6 +183,95 @@ const HistoryManager = {
         }
     },
 
+    // --- RETRIEVAL LOGIC ---
+
+    /**
+     * Find an entity by name in the history
+     * @param {string} name - Company or School name
+     * @returns {Object|null} The entity if found
+     */
+    findEntity(name) {
+        if (!name) return null;
+        if (!this.isInitialized) {
+            console.warn('[HistoryManager] findEntity called before init, cached results might be missed.');
+        }
+
+        // Search Work
+        const workMatch = this.profile.work.find(e => this.fuzzyMatch(e.company, name));
+        if (workMatch) return workMatch;
+
+        // Search Education
+        const eduMatch = this.profile.education.find(e => this.fuzzyMatch(e.school, name));
+        if (eduMatch) return eduMatch;
+
+        return null;
+    },
+
+    /**
+     * Generate mappings for a batch based on a specific entity or resume fallback
+     * @param {Array} batch - Fields 
+     * @param {Object|null} entity - The cached history entity (if found)
+     * @param {Object} resumeData - Full resume data (for fallback)
+     * @param {number} index - The index of the job/school (0, 1, 2)
+     */
+    hydrateBatch(batch, entity, resumeData, index) {
+        const mappings = {};
+
+        // Determine type of the batch (Work vs Edu)
+        const isWork = batch.some(f => /job|employ|work|company|position/i.test((f.name || '') + ' ' + (f.label || '')));
+        const type = isWork ? 'work' : 'education';
+        const schema = this.SCHEMA[type];
+
+        // Data Source: Entity (Cache) > Resume (Fresh Parse)
+        let sourceData = entity;
+        if (!sourceData) {
+            // Fallback to Resume Data
+            if (isWork) {
+                const experiences = resumeData.experience || resumeData.work || [];
+                sourceData = experiences[index];
+            } else {
+                const educations = resumeData.education || resumeData.schools || [];
+                sourceData = educations[index];
+            }
+        }
+
+        if (!sourceData) return {};
+
+        // Map fields
+        batch.forEach(field => {
+            const text = (field.name || '') + ' ' + (field.label || '');
+            let matchedValue = null;
+
+            // Map standard schema keys to source data
+            for (const [key, regex] of Object.entries(schema)) {
+                if (regex.test(text)) {
+                    // MAPPING LOGIC
+                    // 1. Exact Key Match in Source
+                    if (sourceData[key]) matchedValue = sourceData[key];
+
+                    // 2. Resume Schema Variations (if source is raw resume)
+                    else if (!entity) {
+                        if (key === 'company') matchedValue = sourceData.employer || sourceData.name || sourceData.organization;
+                        if (key === 'school') matchedValue = sourceData.institution || sourceData.schoolName;
+                        if (key === 'title') matchedValue = sourceData.role || sourceData.designation;
+                    }
+
+                    break;
+                }
+            }
+
+            if (matchedValue) {
+                mappings[field.selector] = {
+                    value: matchedValue,
+                    confidence: entity ? 0.99 : 0.85, // Cache is trusted more than parser
+                    source: entity ? 'history-cache' : 'resume-inference'
+                };
+            }
+        });
+
+        return mappings;
+    },
+
     // --- SMART LOGIC ---
 
     /**

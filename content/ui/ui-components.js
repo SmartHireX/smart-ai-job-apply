@@ -1493,10 +1493,21 @@ function attachSelfCorrectionTrigger(element) {
         }
     };
 
+    // Debounce the handler to prevent spamming storage on every keystroke
+    const debouncedHandleChange = (() => {
+        let timeout;
+        return (e) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => handleChange(e), 800); // Wait 800ms after typing stops
+        };
+    })();
+
     // Listen to both 'change' and 'input' events for better coverage
-    // 'change' for radio/checkbox/select, 'input' for text/date fields
-    element.addEventListener('change', handleChange);
-    element.addEventListener('input', handleChange);
+    // 'change' (select/radio) is usually instant, so maybe we don't debounce that?
+    // Actually, 'input' is the spammy one. 'change' is fine.
+
+    element.addEventListener('change', handleChange); // Instant save for Blur/Select
+    element.addEventListener('input', debouncedHandleChange); // Debounced save for Typing
 }
 
 function activateSmartMemoryLearning() {
@@ -2408,3 +2419,30 @@ function escapeHtmlNova(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// ========================================
+// RESTORED HELPERS (Legacy Support)
+// ========================================
+
+/**
+ * Legacy: Calculate Jaccard Similarity between two strings
+ * Used by setRadioValue/setSelectValue for fuzzy matching
+ */
+function calculateUsingJaccardSimilarity(str1, str2) {
+    if (!str1 || !str2) return 0;
+
+    // Tokenize (Bag of Words)
+    const set1 = new Set(str1.toLowerCase().split(/\W+/));
+    const set2 = new Set(str2.toLowerCase().split(/\W+/));
+
+    // Intersection
+    const intersection = new Set([...set1].filter(x => set2.has(x)));
+
+    // Union
+    const union = new Set([...set1, ...set2]);
+
+    if (union.size === 0) return 0;
+    return intersection.size / union.size;
+}
+
+window.calculateUsingJaccardSimilarity = calculateUsingJaccardSimilarity;
