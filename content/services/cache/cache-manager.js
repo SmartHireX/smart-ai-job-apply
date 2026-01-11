@@ -229,8 +229,42 @@ class UnifiedCacheManager {
 
     // Helper methods
 
+    // --- ACCURACY IMPROVEMENTS ---
+
+    /**
+     * Generate a FANG-level Semantic Signature for the field
+     * Format: "sig_v1|context|type|clean_label|clean_name"
+     * This ensures fields with same name but different context/type are treated differently
+     */
     normalizeKey(field) {
-        return (field.label + ' ' + (field.name || '')).toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().split(/\s+/).sort().join(' ');
+        const clean = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        // 1. Context (The most important differentiator)
+        let context = 'global';
+        if (field.sectionContext && field.sectionContext.confidence > 0.6) {
+            context = field.sectionContext.context;
+        } else if (this.isHistoryField(field)) {
+            if (/job|employ|work|company/.test(field.name || '')) context = 'work';
+            if (/edu|school|degree/.test(field.name || '')) context = 'education';
+        }
+
+        // 2. Type (Prevents filling "email" into "text" if they share a generic name)
+        const type = field.type || 'text';
+
+        // 3. Label & Name (The core identity)
+        const label = clean(field.label);
+        const name = clean(field.name);
+
+        // 4. Construct Semantic Signature
+        return `sig_v1|${context}|${type}|${label}|${name}`;
+    }
+
+    validateType(field, value) {
+        if (!value) return false;
+        if (field.type === 'date') return !isNaN(new Date(value).getTime());
+        if (field.type === 'number') return !isNaN(parseFloat(value));
+        if (field.type === 'email') return /\S+@\S+\.\S+/.test(value);
+        return true;
     }
 
     isHistoryField(field) {
