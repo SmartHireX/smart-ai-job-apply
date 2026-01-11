@@ -298,7 +298,6 @@ function extractFieldsFromDOM(source) {
                         const rawContext = window.SectionDetector.getNearestHeadingText(field.element);
                         if (rawContext) {
                             field.parentContext = rawContext;
-                            console.log(`🎯 [ParentContext] "${field.label}" → "${rawContext}"`);
                         }
                     }
                 }

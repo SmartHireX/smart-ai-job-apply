@@ -50,18 +50,36 @@ class IndexingService {
     getIndex(field, type) {
         if (!type) return 0;
 
-        // 1. Linguistic Ranking (Explicit Override)
+        // 1. Attribute Check (Strongest Signal)
+        // e.g. "edu_school_1" -> Index 1
+        const attrIndex = this.detectIndexFromAttribute(field);
+        if (attrIndex !== null) return attrIndex;
+
+        // 2. Linguistic Ranking (Explicit Override)
         // If the label says "Previous", we MUST use Index 1, regardless of sequence.
         const explicitIndex = this.detectIndexFromLabel(field.label);
         if (explicitIndex !== null) {
             return explicitIndex;
         }
 
-        // 2. Sequential Tracking (Implicit)
+        // 3. Sequential Tracking (Implicit)
         // This relies on the Caller (FieldRouter) to tell us when to increment.
         // OR we can try to be smart here.
         // For now, return current counter.
         return this.counters[type] || 0;
+    }
+
+    /**
+     * Detect index from name/id attributes like "job_title_1"
+     */
+    detectIndexFromAttribute(field) {
+        const str = (field.name || field.id || '');
+        // Matches "_0", "-0", "[0]" at end or middle
+        const match = str.match(/[_\-\[](\d+)[_\-\]]?$/) || str.match(/[_\-\[](\d+)[_\-\]]?/);
+        if (match) {
+            return parseInt(match[1], 10);
+        }
+        return null;
     }
 
     /**

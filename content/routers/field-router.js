@@ -67,6 +67,12 @@ class FieldRouter {
                         // For now, let's trust getIndex handling explicit/implicit.
                     }
                     index = window.IndexingService.getIndex(field, type);
+
+                    // ATTACH TO FIELD OBJECT (Crucial for MultiValueHandler)
+                    field.field_index = index;
+
+                    // DEBUG: Log the indexed field
+                    console.log(`🎯 [Indexed Field] "${prediction.label}" Index: ${field.field_index}`, field);
                 }
 
                 return {
@@ -101,7 +107,10 @@ class FieldRouter {
      * Maps a Neural Label (e.g. 'company') to a Handler (e.g. 'history')
      */
     getHandlerForLabel(label) {
-        const HISTORY_FIELDS = ['job_title', 'company', 'job_start_date', 'job_end_date', 'work_description', 'school', 'degree', 'major', 'gpa', 'edu_start_date', 'edu_end_date'];
+        const HISTORY_FIELDS = [
+            'job_title', 'employer_name', 'job_start_date', 'job_end_date', 'work_description', 'job_location',
+            'institution_name', 'degree_type', 'field_of_study', 'gpa_score', 'education_start_date', 'education_end_date'
+        ];
         const MATCHER_FIELDS = ['sponsorship', 'citizenship', 'gender', 'race', 'veteran', 'disability', 'work_auth', 'clearance', 'legal_age'];
 
         if (HISTORY_FIELDS.includes(label)) return 'history';
@@ -114,8 +123,8 @@ class FieldRouter {
      * Helper to determine history type (work vs education)
      */
     getHistoryType(label) {
-        if (['job_title', 'company', 'job_start_date', 'job_end_date', 'work_description'].includes(label)) return 'work';
-        if (['school', 'degree', 'major', 'gpa', 'edu_start_date', 'edu_end_date'].includes(label)) return 'education';
+        if (['job_title', 'employer_name', 'job_start_date', 'job_end_date', 'work_description', 'job_location'].includes(label)) return 'work';
+        if (['institution_name', 'degree_type', 'field_of_study', 'gpa_score', 'education_start_date', 'education_end_date'].includes(label)) return 'education';
         return 'work'; // Default fallback
     }
 

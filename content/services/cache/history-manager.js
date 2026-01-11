@@ -36,6 +36,20 @@ const HistoryManager = {
             education_start_date: /start.*date|from/i,
             education_end_date: /end.*date|to|graduat/i,
             gpa_score: /gpa|grade|score/i
+        },
+        portfolio: {
+            linkedin: /linkedin/i,
+            github: /github/i,
+            website: /website|portfolio|blog/i,
+            twitter_url: /twitter|x\.com/i
+        },
+        personal: {
+            marital_status: /marital|search_status/i
+        },
+        compensation: {
+            salary_current: /current.*salary/i,
+            salary_expected: /expected.*salary/i,
+            desired_salary_text: /desired.*salary.*text|compensation.*expectation/i
         }
     },
 

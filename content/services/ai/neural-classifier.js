@@ -29,11 +29,12 @@ class NeuralClassifier {
             'email',            // 4
             'phone',            // 5
 
-            // Links & Portfolios
+            // Social & Portfolio
             'linkedin',         // 6
             'github',           // 7
             'portfolio',        // 8
             'website',          // 9
+            'twitter_url',      // 9.5 (New)
 
             // Location
             'address',          // 10
@@ -63,6 +64,7 @@ class NeuralClassifier {
             'race',             // 27
             'veteran',          // 28
             'disability',       // 29
+            'marital_status',   // 29.5 (New)
 
             // Compensation
             'salary_current',   // 30
@@ -173,35 +175,36 @@ class NeuralClassifier {
      * Maps field text to class labels directly.
      */
     heuristicFallback(field) {
-        // Construct the full "Context String" similar to what LocalMatcher uses
-        // We use the computed label from FeatureExtractor logic or fallback to DOM
+        // Construct PRIMARY text (Label, Name, ID, Placeholder)
+        // EXCLUDE Context from this strict check to avoid pollution from neighbors (e.g. "Phone" sibling)
         const computedLabel = this.featureExtractor.getComputedLabel(field) || '';
         const text = (
             computedLabel + ' ' +
             (field.name || '') + ' ' +
             (field.id || '') + ' ' +
-            (field.placeholder || '') + ' ' +  // NEW: Check Placeholder
-            (field.parentContext || '') + ' ' + // Check Heading
-            (field.siblingContext || '')        // Check Neighbors
+            (field.placeholder || '')
         ).toLowerCase();
 
-        // --- HISTORY FIELDS ---
-        // Normalized regex matching (handles 'start_date' and 'start date')
-        if (/job[_\s]?title|position|role|designation/i.test(text)) return { label: 'job_title', confidence: 0.95 };
-        if (/company|employer|organization/i.test(text)) return { label: 'company', confidence: 0.95 };
-        if (/school|university|college|institution/i.test(text)) return { label: 'school', confidence: 0.95 };
-        if (/degree|major|qualification/i.test(text)) return { label: 'degree', confidence: 0.95 }; // 'degree' or 'major' often overlap
-        if (/gpa|grade/i.test(text)) return { label: 'gpa', confidence: 0.95 };
+        // --- COMPENSATION (Priority) ---
+        if (/remuneration|ctc|salary|compensation|pay/i.test(text)) {
+            if (/expect|desire/i.test(text)) return { label: 'salary_expected', confidence: 0.99 };
+            return { label: 'salary_current', confidence: 0.99 };
+        }
 
-        // Dates need careful context
+        // --- HISTORY FIELDS ---
+        if (/job[_\s]?title|position|role|designation/i.test(text)) return { label: 'job_title', confidence: 0.95 };
+        if (/company|employer|organization/i.test(text)) return { label: 'employer_name', confidence: 0.95 }; // Normalized key
+        if (/school|university|college|institution/i.test(text)) return { label: 'institution_name', confidence: 0.95 }; // Normalized key
+        if (/degree|major|qualification/i.test(text)) return { label: 'degree_type', confidence: 0.95 }; // Normalized key
+        if (/gpa|grade/i.test(text)) return { label: 'gpa_score', confidence: 0.95 }; // Normalized key
+
+        // Dates need more context
         const isStart = /start[_\s]?date|from/i.test(text);
         const isEnd = /end[_\s]?date|to/i.test(text);
+        const isEduContext = /education|school|degree|graduat/i.test(text);
 
-        // Try to infer context if available (Feature Extractor doesn't pass it yet, but we can guess)
-        const isEduContext = /education|school|degree/i.test(text); // Weak check
-
-        if (isStart) return { label: isEduContext ? 'edu_start_date' : 'job_start_date', confidence: 0.90 };
-        if (isEnd) return { label: isEduContext ? 'edu_end_date' : 'job_end_date', confidence: 0.90 };
+        if (isStart) return { label: isEduContext ? 'education_start_date' : 'job_start_date', confidence: 0.90 };
+        if (isEnd) return { label: isEduContext ? 'education_end_date' : 'job_end_date', confidence: 0.90 };
 
         // --- PERSONAL INFO ---
         if (/first[_\s]?name|fname/i.test(text)) return { label: 'first_name', confidence: 0.95 };
@@ -211,6 +214,7 @@ class NeuralClassifier {
         if (/linkedin/i.test(text)) return { label: 'linkedin', confidence: 0.99 };
         if (/github/i.test(text)) return { label: 'github', confidence: 0.99 };
         if (/portfolio|website/i.test(text)) return { label: 'portfolio', confidence: 0.95 };
+        if (/twitter/i.test(text)) return { label: 'twitter_url', confidence: 0.99 };
 
         // --- LOCATION ---
         if (/address/i.test(text)) return { label: 'address', confidence: 0.90 };
@@ -218,6 +222,26 @@ class NeuralClassifier {
         if (/state|province/i.test(text)) return { label: 'state', confidence: 0.90 };
         if (/zip|postal/i.test(text)) return { label: 'zip_code', confidence: 0.95 };
         if (/country/i.test(text)) return { label: 'country', confidence: 0.95 };
+
+        // --- COMPLIANCE / LEGAL (Aggressive Matching) ---
+        if (/veteran/i.test(text)) return { label: 'veteran', confidence: 0.99 };
+        if (/citizen|nationality/i.test(text)) return { label: 'citizenship', confidence: 0.99 };
+        if (/sponsor/i.test(text)) return { label: 'sponsorship', confidence: 0.99 };
+        if (/clearance|security/i.test(text)) return { label: 'clearance', confidence: 0.99 };
+        if (/work.*auth|eligib/i.test(text)) return { label: 'work_auth', confidence: 0.99 };
+        if (/criminal|felony|convict/i.test(text)) return { label: 'criminal_record', confidence: 0.99 };
+        if (/notice.*period|soon.*start|availability/i.test(text)) return { label: 'notice_period', confidence: 0.99 };
+        if (/18.*age|age.*18/i.test(text)) return { label: 'legal_age', confidence: 0.99 };
+
+        // --- DEMOGRAPHICS ---
+        if (/gender/i.test(text)) return { label: 'gender', confidence: 0.99 };
+        if (/race|ethni/i.test(text)) return { label: 'race', confidence: 0.99 };
+        if (/marital/i.test(text)) return { label: 'marital_status', confidence: 0.99 };
+        if (/disab/i.test(text)) return { label: 'disability', confidence: 0.99 };
+
+        // --- MISC ---
+        if (/hear.*about|referral|source/i.test(text)) return { label: 'referral_source', confidence: 0.95 };
+        if (/cover.*letter|bio|about.*yourself/i.test(text)) return { label: 'cover_letter', confidence: 0.95 };
 
         return null; // No strong match
     }

@@ -173,6 +173,26 @@ async function processPageFormLocal() {
                 if (field.selector) {
                     classificationHash[field.selector] = prediction;
                 }
+
+                // --- SMART INDEXING INJECTION ---
+                // Calculate and attach index immediately after classification
+                if (window.IndexingService && prediction.confidence > 0.8) {
+                    const label = prediction.label;
+                    let type = null;
+
+                    // Determine Type (Work vs Education)
+                    if (['job_title', 'employer_name', 'job_start_date', 'job_end_date', 'work_description', 'job_location'].includes(label)) {
+                        type = 'work';
+                    } else if (['institution_name', 'degree_type', 'field_of_study', 'gpa_score', 'education_start_date', 'education_end_date'].includes(label)) {
+                        type = 'education';
+                    }
+
+                    if (type) {
+                        const index = window.IndexingService.getIndex(field, type);
+                        field.field_index = index;
+                        console.log(`🎯 [Indexed Field] "${label}" Index: ${index}`, field);
+                    }
+                }
             });
             console.log('🧠 [Phase 0] Classification Complete. Results stored on fields.');
         }

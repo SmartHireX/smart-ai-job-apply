@@ -42,6 +42,7 @@
                 "content/services/matching/local-matcher.js",
                 "content/services/cache/history-manager.js",
                 "content/services/cache/cache-manager.js",
+                "content/services/indexing/indexing-service.js",
                 "content/routers/field-router.js",
                 "content/services/extraction/section-detector.js",
                 "content/services/extraction/sibling-cluster.js",

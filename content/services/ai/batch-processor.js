@@ -612,17 +612,16 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
                 const isEdu = batch.some(f => /school|education|degree|university|college/i.test((f.name || '') + ' ' + (f.label || '')));
                 const isWork = batch.some(f => /job|work|employ|company|position/i.test((f.name || '') + ' ' + (f.label || '')));
 
-                let candidateName = null;
-                // Look up in Resume Data by Index
-                if (isEdu && resumeData.education && resumeData.education[index]) {
-                    candidateName = resumeData.education[index].institution || resumeData.education[index].schoolName || resumeData.education[index].school;
-                } else if (isWork && resumeData.experience && resumeData.experience[index]) {
-                    candidateName = resumeData.experience[index].company || resumeData.experience[index].employer || resumeData.experience[index].name;
+                // Fetch directly by index
+                let entity = null;
+                if (isEdu) {
+                    entity = window.HistoryManager.getByIndex('education', index);
+                } else if (isWork) {
+                    entity = window.HistoryManager.getByIndex('work', index);
                 }
 
-                if (candidateName) {
-                    // Find in Structured Cache
-                    const entity = window.HistoryManager.findEntity(candidateName);
+                // If entity is found, or if we have Resume Data fallback
+                if (entity || (isEdu && resumeData.education?.[index]) || (isWork && resumeData.experience?.[index])) {
 
                     // Call hydrateBatch with resume fallback (works even if entity is null)
                     const structMappings = window.HistoryManager.hydrateBatch(batch, entity, resumeData, index);
