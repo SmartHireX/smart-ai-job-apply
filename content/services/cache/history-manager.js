@@ -183,141 +183,39 @@ const HistoryManager = {
         }
     },
 
+    // --- SMART LOGIC ---
+
     /**
-     * Find best matching entity for a given text (e.g. "Stanf" -> Stanford Obj)
+     * Check if start date is logically before end date
      */
-    findEntity(query) {
-        if (!query || query.length < 2) return null;
-
-        // Search both work and edu
-        const all = [...this.profile.work, ...this.profile.education];
-
-        // Simple fuzzy search
-        const match = all.find(e => {
-            const primary = e.company || e.school || '';
-            return this.fuzzyMatch(primary, query);
-        });
-
-        return match || null;
+    validateDates(start, end) {
+        if (!start || !end || end.toLowerCase() === 'present') return true;
+        const d1 = new Date(start);
+        const d2 = new Date(end);
+        if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return true; // Can't validate
+        return d1 <= d2;
     },
 
     /**
-     * Convert Entity to Mappings for a Batch
-     * Uses 3-tier strategy: Cache → Resume → (AI handles remaining)
-     * @param {Array} batch - Fields to fill
-     * @param {Object} entity - Cached entity (optional, can be null)
-     * @param {Object} resumeData - Resume data for fallback (optional)
-     * @param {Number} index - Index for resume lookup (0, 1, 2...)
+     * Normalize Company/School names for merging
+     * Removes suffixes: Inc, LLC, Corp, Ltd, etc.
      */
-    hydrateBatch(batch, entity, resumeData = null, index = 0) {
-        const mappings = {};
-
-        // Determine type from batch context
-        const isWork = batch.some(f => /job|employ|work|company|position|title|role/i.test((f.name || '') + ' ' + (f.label || '')));
-        const isEdu = batch.some(f => /degree|education|school|university|college|institution|major/i.test((f.name || '') + ' ' + (f.label || '')));
-
-        const type = isWork ? 'work' : (isEdu ? 'education' : null);
-        if (!type) return mappings;
-
-        const schema = this.SCHEMA[type];
-
-        // Get resume item as fallback
-        let resumeItem = null;
-        if (resumeData && !entity) {
-            if (type === 'education') {
-                const eduArray = resumeData.education || resumeData.schools || [];
-                resumeItem = eduArray[index];
-            } else if (type === 'work') {
-                const workArray = resumeData.experience || resumeData.work || [];
-                resumeItem = workArray[index];
-            }
-        }
-
-        // Fill fields using cache or resume
-        batch.forEach(f => {
-            const text = (f.name || '') + ' ' + (f.label || '');
-
-            // Try each schema property
-            for (const [key, regex] of Object.entries(schema)) {
-                if (regex.test(text)) {
-                    let value = null;
-                    let source = null;
-
-                    // Priority 1: Use cached entity
-                    if (entity && entity[key]) {
-                        value = entity[key];
-                        source = 'history-cache';
-                    }
-                    // Priority 2: Use resume data as fallback
-                    else if (resumeItem) {
-                        value = this.extractFromResume(resumeItem, key, type);
-                        source = 'resume-data';
-                    }
-
-                    if (value) {
-                        mappings[f.selector] = {
-                            value: value,
-                            confidence: source === 'history-cache' ? 1.0 : 0.95,
-                            source: source,
-                            meta: entity ? { entityId: entity.id } : { index, type }
-                        };
-                        break;
-                    }
-                }
-            }
-        });
-
-        return mappings;
+    normalizeName(name) {
+        if (!name) return '';
+        return name.toLowerCase()
+            .replace(/[,.]/g, '') // Remove punctuation
+            .replace(/\s(inc|llc|corp|ltd|co|limited|corporation|group|technologies|solutions)$/i, '') // Remove business suffixes
+            .trim();
     },
 
     /**
-     * Extract value from resume item based on schema key
-     * @param {Object} resumeItem - Work or education entry from resume
-     * @param {String} key - Schema key (company, title, startDate, etc.)
-     * @param {String} type - 'work' or 'education'
+     * Enhanced Fuzzy Match with Normalization
      */
-    extractFromResume(resumeItem, key, type) {
-        if (!resumeItem) return null;
-
-        if (type === 'work') {
-            switch (key) {
-                case 'company':
-                    return resumeItem.company || resumeItem.employer || resumeItem.name || resumeItem.organization;
-                case 'title':
-                    return resumeItem.title || resumeItem.position || resumeItem.role || resumeItem.jobTitle;
-                case 'startDate':
-                    return resumeItem.startDate || resumeItem.from;
-                case 'endDate':
-                    return resumeItem.endDate || resumeItem.to || (resumeItem.current ? 'Present' : null);
-                case 'description':
-                    return resumeItem.description || resumeItem.summary || (resumeItem.highlights ? resumeItem.highlights.join('\n') : null);
-                case 'location':
-                    return resumeItem.location;
-            }
-        } else if (type === 'education') {
-            switch (key) {
-                case 'school':
-                    return resumeItem.school || resumeItem.institution || resumeItem.university || resumeItem.schoolName;
-                case 'degree':
-                    return resumeItem.degree || resumeItem.qualification;
-                case 'startDate':
-                    return resumeItem.startDate || resumeItem.from;
-                case 'endDate':
-                    return resumeItem.endDate || resumeItem.to || resumeItem.graduationDate;
-                case 'gpa':
-                    return resumeItem.gpa || resumeItem.grade;
-            }
-        }
-
-        return null;
-    },
-
-    // Helpers
     fuzzyMatch(a, b) {
         if (!a || !b) return false;
-        const normA = a.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const normB = b.toLowerCase().replace(/[^a-z0-9]/g, '');
-        return normA.includes(normB) || normB.includes(normA);
+        const normA = this.normalizeName(a);
+        const normB = this.normalizeName(b);
+        return normA === normB || normA.includes(normB) || normB.includes(normA);
     },
 
     generateId() {
