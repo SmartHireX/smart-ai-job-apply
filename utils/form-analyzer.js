@@ -282,6 +282,27 @@ const HEURISTIC_PATTERNS = {
  * @returns {Array} Array of field objects
  */
 function extractFieldsFromDOM(source) {
+    // Priority: Use FormExtractor if available (Phase 1 Refactor)
+    if (window.FormExtractor) {
+        const extractor = new window.FormExtractor();
+        const fields = extractor.extract(source);
+
+        // Enrich with Section Context (SectionDetector)
+        if (window.SectionDetector && fields.length > 0) {
+            console.log(`[FormAnalyzer] Enriching ${fields.length} fields with section context...`);
+            fields.forEach(field => {
+                if (field.element) {
+                    const sectionContext = window.SectionDetector.detect(field.element, fields);
+                    if (sectionContext) {
+                        field.sectionContext = sectionContext;
+                    }
+                }
+            });
+        }
+
+        return fields;
+    }
+
     let root = source;
     if (typeof source === 'string') {
         const temp = document.createElement('div');
