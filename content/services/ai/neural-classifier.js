@@ -97,12 +97,18 @@ class NeuralClassifier {
     async init() {
         console.log(`[NeuralClassifier] Initializing TinyML Engine for ${this.CLASSES.length} classes...`);
 
-        // Try to load learned weights
-        const loaded = await this.loadWeights();
-        if (!loaded) {
-            // First run: Initialize random weights
-            this.weights = this.generateDummyWeights();
-            console.log('[NeuralClassifier] 🆕 No saved weights. Initialized fresh model.');
+        // Priority 1: Try to load user's trained weights (personalized)
+        const userWeightsLoaded = await this.loadWeights();
+
+        if (!userWeightsLoaded) {
+            // Priority 2: Load pre-trained baseline weights (bundled with extension)
+            const baselineLoaded = await this.loadBaselineWeights();
+
+            if (!baselineLoaded) {
+                // Priority 3: Initialize random weights (cold start)
+                this.generateDummyWeights();
+                console.log('[NeuralClassifier] 🆕 No saved weights. Initialized fresh model.');
+            }
         }
 
         console.log('[NeuralClassifier] Ready.');
@@ -403,6 +409,35 @@ class NeuralClassifier {
             }
         } catch (e) {
             console.error('[NeuralClassifier] Failed to load weights:', e);
+        }
+        return false;
+    }
+
+    async loadBaselineWeights() {
+        try {
+            // Load pre-trained baseline weights bundled with extension
+            const baselineUrl = chrome.runtime.getURL('content/services/ai/model_v2_baseline.json');
+            const response = await fetch(baselineUrl);
+
+            if (!response.ok) {
+                console.warn('[NeuralClassifier] Baseline weights not found (will use random init)');
+                return false;
+            }
+
+            const data = await response.json();
+
+            if (data.version === 2 && data.W1 && data.W2) {
+                this.W1 = data.W1;
+                this.b1 = data.b1;
+                this.W2 = data.W2;
+                this.b2 = data.b2;
+                this.totalSamples = 0; // Reset training counter for user's personalization
+
+                console.log(`[NeuralClassifier] 📦 Loaded pre-trained baseline (v2) - Trained on ${data.metadata?.trainingExamples || 'N/A'} examples`);
+                return true;
+            }
+        } catch (e) {
+            console.error('[NeuralClassifier] Failed to load baseline weights:', e);
         }
         return false;
     }

@@ -80,7 +80,8 @@
                 "utils/ai-client.js",
                 "utils/resume-manager.js",
                 "utils/form-analyzer.js",
-                "utils/context-classifier.js"
+                "utils/context-classifier.js",
+                "content/services/ai/model_v2_baseline.json"
             ],
             "matches": [
                 "<all_urls>"
