@@ -461,7 +461,7 @@ function trainModel() {
     console.log(`⚙️ Features: label + name + placeholder + parentContext + siblingContext`);
     console.log(`📦 Params: ~2,001\n`);
 
-    const EPOCHS = 500;
+    const EPOCHS = 1000; // Extended training for better accuracy
     const REPORT_INTERVAL = 50;
 
     for (let epoch = 1; epoch <= EPOCHS; epoch++) {
