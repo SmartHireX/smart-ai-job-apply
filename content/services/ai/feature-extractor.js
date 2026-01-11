@@ -21,7 +21,7 @@ class FeatureExtractor {
      */
     extract(field) {
         // Safety check: Ensure field is effectively an object
-        if (!field) return new Array(this.VOCAB_SIZE + 40).fill(0); // Return empty vector (Size increased for new features)
+        if (!field) return new Array(this.VOCAB_SIZE + 45).fill(0); // Return empty vector (Size increased for placeholder + context features)
 
         // Helper to safely get attribute
         const getAttr = (attr) => (field.getAttribute && typeof field.getAttribute === 'function') ? field.getAttribute(attr) : (field[attr] || null);
@@ -48,6 +48,7 @@ class FeatureExtractor {
             // WE NOW USE THE COMPUTED ACCESSIBILITY LABEL INSTEAD OF JUST DOM LABEL
             ...this.hashText(computedLabel || '', 10),   // First 10 slots for Label
             ...this.hashText(field.name || '', 10),      // Next 10 slots for Name/ID
+            ...this.hashText(field.placeholder || '', 5), // 5 slots for Placeholder (strong signal)
             // Handle context (can be on object or DOM attribute)
             ...this.hashText(getAttr('context') || field.context || '', 5),     // Next 5 slots for Section Context
 

@@ -158,8 +158,9 @@ class NeuralClassifier {
             computedLabel + ' ' +
             (field.name || '') + ' ' +
             (field.id || '') + ' ' +
-            (field.parentContext || '') + ' ' + // NEW: Check Heading
-            (field.siblingContext || '')        // NEW: Check Neighbors
+            (field.placeholder || '') + ' ' +  // NEW: Check Placeholder
+            (field.parentContext || '') + ' ' + // Check Heading
+            (field.siblingContext || '')        // Check Neighbors
         ).toLowerCase();
 
         // --- HISTORY FIELDS ---
@@ -296,7 +297,7 @@ class NeuralClassifier {
 
     // --- MOCK TRAINING DATA ---
     generateDummyWeights() {
-        const inputSize = 51; // From FeatureExtractor (was 31, now +20 for context)
+        const inputSize = 56; // From FeatureExtractor (was 51, now +5 for placeholder)
         const outputSize = this.CLASSES.length;
 
         // Initialize random small weights (He Initialization-ish)
