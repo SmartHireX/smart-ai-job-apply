@@ -122,10 +122,11 @@ async function processPageFormLocal() {
         showProcessingWidget('Instant Match...', 1);
 
         // 1. Get Resume & Smart Memory (Parallel)
-        const [resumeData, smartMemory] = await Promise.all([
+        const [resumeData, memoryResult] = await Promise.all([
             window.ResumeManager.getResumeData(),
-            getSmartMemoryCache()
+            chrome.storage.local.get('smartMemory') // Direct fetch for legacy path
         ]);
+        const smartMemory = memoryResult.smartMemory || {};
 
         if (!resumeData) throw new Error('Resume data missing');
 
