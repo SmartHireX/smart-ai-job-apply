@@ -66,6 +66,56 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  */
 async function processPageFormLocal() {
     try {
+        // ========================================
+        // NEW ARCHITECTURE (Feature Flagged)
+        // ========================================
+        const USE_NEW_ARCH = localStorage.getItem('novaai_new_arch') === 'true';
+
+        if (USE_NEW_ARCH && window.NovaAI && window.NovaAI.processFormNew) {
+            console.log('🚀 [New Architecture] Processing form with new system...');
+
+            // Get resume and memory
+            const [resumeData, smartMemory] = await Promise.all([
+                window.ResumeManager.getResumeData(),
+                getSmartMemoryCache()
+            ]);
+
+            if (!resumeData) throw new Error('Resume data missing');
+
+            // Normalize schema
+            if (!resumeData.experience && resumeData.work) resumeData.experience = resumeData.work;
+            if (!resumeData.education && resumeData.schools) resumeData.education = resumeData.schools;
+
+            // Extract fields
+            const formHTML = extractFormHTML();
+            if (!formHTML) throw new Error('No form found');
+            const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
+
+            // Use new architecture
+            const callbacks = {
+                onFieldAnswered: (selector, value, confidence) => {
+                    simulateTyping(selector, value, 0.3).catch(err =>
+                        console.error('Fill error:', err)
+                    );
+                },
+                onBatchComplete: (mappings) => {
+                    console.log('[New Arch] Batch complete:', Object.keys(mappings).length);
+                },
+                onAllComplete: (allMappings) => {
+                    console.log('[New Arch] All complete:', Object.keys(allMappings).length);
+                    showFormReview(allMappings, fields);
+                }
+            };
+
+            await window.NovaAI.processFormNew(fields, resumeData, smartMemory, callbacks);
+
+            console.log('✅ [New Architecture] Form processing complete');
+            return;
+        }
+
+        // ========================================
+        // LEGACY ARCHITECTURE
+        // ========================================
         console.log('✨ Starting 🚀 Two-Phase Fill with Smart Memory...');
 
         // --- PHASE 1: INSTANT HEURISTIC FILL ---
