@@ -105,11 +105,20 @@ class FieldRouter {
 
         const routingDecisions = [];
 
-        fields.forEach(async field => {
+        // Use map + Promise.all to handle async routing in parallel
+        const promises = fields.map(async field => {
             const cacheResult = cacheResults[field.selector];
             // Fix: route is now async
             const decision = await this.route(field, cacheResult);
 
+            // Need to push to correct array in a thread-safe way (JS is single threaded but order matters)
+            // But we can just return the result and sort it out after
+            return { field, decision };
+        });
+
+        const results = await Promise.all(promises);
+
+        results.forEach(({ field, decision }) => {
             routing[decision.handler].push(field);
 
             routingDecisions.push({
