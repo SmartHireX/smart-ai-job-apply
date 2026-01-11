@@ -5,7 +5,8 @@
  */
 
 // Import utility modules
-importScripts('../utils/ai-client.js', '../utils/resume-manager.js');
+importScripts('../shared/utils/ai-client.js', '../shared/utils/resume-manager.js');
+
 
 console.log('Smart AI Job Apply background service worker started');
 
