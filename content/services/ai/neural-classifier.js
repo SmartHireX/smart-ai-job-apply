@@ -13,6 +13,11 @@ class NeuralClassifier {
     constructor() {
         this.featureExtractor = new window.FeatureExtractor();
 
+        // ARCHITECTURE
+        this.HIDDEN_SIZE = 20; // Hidden layer neurons
+        this.LEAKY_RELU_ALPHA = 0.01; // Leaky ReLU slope for negative values
+        this.L2_LAMBDA = 0.01; // L2 regularization strength
+
         // LABELS: The expanded output classes (Standard ATS Fields)
         this.CLASSES = [
             'unknown',          // 0
@@ -76,10 +81,17 @@ class NeuralClassifier {
             'generic_question'  // 40
         ];
 
-        // WEIGHTS: (Placeholder)
-        // In the future, we will load `model_v1.json` here.
-        this.weights = null;
-        this.bias = null;
+        // TWO-LAYER WEIGHTS
+        // Layer 1: Input (56) → Hidden (20)
+        this.W1 = null; // [56 x 20]
+        this.b1 = null; // [20]
+
+        // Layer 2: Hidden (20) → Output (41)
+        this.W2 = null; // [20 x 41]
+        this.b2 = null; // [41]
+
+        // Training state
+        this.totalSamples = 0; // For adaptive learning rate
     }
 
     async init() {
@@ -119,13 +131,13 @@ class NeuralClassifier {
             };
         }
 
-        // 3. Inference (Dot Product + Softmax) - Only if heuristics fail
-        if (!this.weights) {
+        // 3. Inference (Two-layer forward pass + Softmax)
+        if (!this.W1 || !this.W2) {
             // If no heuristics and no weights, unknown.
             return { label: 'unknown', confidence: 0 };
         }
 
-        const logits = this.computeLogits(inputVector);
+        const { logits } = this.forward(inputVector);
         const probs = this.softmax(logits);
 
         // 4. Decode
@@ -203,17 +215,47 @@ class NeuralClassifier {
     // --- MATH KERNEL (Pure JS) ---
 
     /**
-     * Computes Z = Inputs * Weights + Bias
+     * Leaky ReLU activation function
+     * f(x) = x if x > 0, else alpha * x
      */
-    computeLogits(inputs) {
-        return this.CLASSES.map((_, classIdx) => {
-            let sum = this.bias[classIdx] || 0;
-            // Loop unrolling optimization for speed not needed yet, simple loop is fine
+    leakyReLU(x) {
+        return x > 0 ? x : this.LEAKY_RELU_ALPHA * x;
+    }
+
+    /**
+     * Leaky ReLU derivative for backpropagation
+     * f'(x) = 1 if x > 0, else alpha
+     */
+    leakyReLU_derivative(x) {
+        return x > 0 ? 1 : this.LEAKY_RELU_ALPHA;
+    }
+
+    /**
+     * Forward pass through 2-layer network
+     * @param {Array} inputs - Input vector (56 features)
+     * @returns {Object} {logits: Array, hidden: Array}
+     */
+    forward(inputs) {
+        // Layer 1: Input → Hidden with Leaky ReLU
+        const z1 = new Array(this.HIDDEN_SIZE).fill(0);
+        for (let h = 0; h < this.HIDDEN_SIZE; h++) {
+            z1[h] = this.b1[h];
             for (let i = 0; i < inputs.length; i++) {
-                sum += inputs[i] * (this.weights[classIdx][i] || 0);
+                z1[h] += inputs[i] * this.W1[i][h];
             }
-            return sum;
-        });
+        }
+        const hidden = z1.map(z => this.leakyReLU(z));
+
+        // Layer 2: Hidden → Output (logits)
+        const logits = new Array(this.CLASSES.length).fill(0);
+        for (let c = 0; c < this.CLASSES.length; c++) {
+            logits[c] = this.b2[c];
+            for (let h = 0; h < this.HIDDEN_SIZE; h++) {
+                logits[c] += hidden[h] * this.W2[h][c];
+            }
+        }
+
+        return { logits, hidden, z1 }; // z1 needed for derivative
     }
 
     /**
@@ -230,51 +272,110 @@ class NeuralClassifier {
 
     /**
      * Train the model on a single example (Online Learning)
-     * Using Stochastic Gradient Descent (SGD) with simple Delta Rule.
+     * Using Stochastic Gradient Descent (SGD) with L2 regularization.
+     * Backpropagation through 2 layers.
      * @param {Object} field - The input field object
      * @param {string} correctLabel - The ground truth label
      */
     async train(field, correctLabel) {
-        if (!this.weights || !this.bias) return;
+        if (!this.W1 || !this.W2 || !this.b1 || !this.b2) return;
 
         const targetIndex = this.CLASSES.indexOf(correctLabel);
         if (targetIndex === -1) return;
 
         // 1. Forward Pass
         const inputs = this.featureExtractor.extract(field);
-        const logits = this.computeLogits(inputs);
+        const { logits, hidden, z1 } = this.forward(inputs);
         const probs = this.softmax(logits);
 
-        // 2. Compute Gradients (Cross-Entropy Loss derivative for Softmax)
-        // dL/dz = prob - target (where target is 1 for correct class, 0 otherwise)
-        const learningRate = 0.05; // Conservative learning rate
+        // 2. Adaptive Learning Rate (decays with experience)
+        const baseLR = 0.05;
+        const learningRate = baseLR * Math.exp(-0.0001 * this.totalSamples);
+        this.totalSamples++;
 
-        for (let j = 0; j < this.CLASSES.length; j++) {
-            const target = (j === targetIndex) ? 1 : 0;
-            const error = probs[j] - target; // The delta
+        // 3. Backward Pass - Output Layer
+        // Gradient of cross-entropy loss w.r.t. logits
+        const dLogits = new Array(this.CLASSES.length);
+        for (let c = 0; c < this.CLASSES.length; c++) {
+            const target = (c === targetIndex) ? 1 : 0;
+            dLogits[c] = probs[c] - target; // Softmax + CE derivative
+        }
 
-            // Update Bias
-            this.bias[j] -= learningRate * error;
+        // Gradients for W2 and b2
+        const dW2 = [];
+        const dB2 = dLogits.slice(); // Copy
 
-            // Update Weights
-            for (let i = 0; i < inputs.length; i++) {
-                if (inputs[i] !== 0) { // Optimization: sparse inputs
-                    this.weights[j][i] -= learningRate * error * inputs[i];
+        for (let h = 0; h < this.HIDDEN_SIZE; h++) {
+            dW2[h] = [];
+            for (let c = 0; c < this.CLASSES.length; c++) {
+                // Gradient: dL/dW2[h][c] = dLogits[c] * hidden[h] + L2 * W2[h][c]
+                dW2[h][c] = dLogits[c] * hidden[h] + this.L2_LAMBDA * this.W2[h][c];
+            }
+        }
+
+        // Update W2 and b2
+        for (let h = 0; h < this.HIDDEN_SIZE; h++) {
+            for (let c = 0; c < this.CLASSES.length; c++) {
+                this.W2[h][c] -= learningRate * dW2[h][c];
+            }
+        }
+        for (let c = 0; c < this.CLASSES.length; c++) {
+            this.b2[c] -= learningRate * dB2[c];
+        }
+
+        // 4. Backward Pass - Hidden Layer
+        // Backpropagate error to hidden layer
+        const dHidden = new Array(this.HIDDEN_SIZE).fill(0);
+        for (let h = 0; h < this.HIDDEN_SIZE; h++) {
+            for (let c = 0; c < this.CLASSES.length; c++) {
+                dHidden[h] += dLogits[c] * this.W2[h][c];
+            }
+            // Apply Leaky ReLU derivative
+            dHidden[h] *= this.leakyReLU_derivative(z1[h]);
+        }
+
+        // Gradients for W1 and b1
+        const dW1 = [];
+        const dB1 = dHidden.slice(); // Copy
+
+        for (let i = 0; i < inputs.length; i++) {
+            dW1[i] = [];
+            for (let h = 0; h < this.HIDDEN_SIZE; h++) {
+                // Gradient: dL/dW1[i][h] = dHidden[h] * inputs[i] + L2 * W1[i][h]
+                if (inputs[i] !== 0) { // Sparse optimization
+                    dW1[i][h] = dHidden[h] * inputs[i] + this.L2_LAMBDA * this.W1[i][h];
+                } else {
+                    dW1[i][h] = this.L2_LAMBDA * this.W1[i][h]; // Only L2 term
                 }
             }
         }
 
-        console.log(`[NeuralClassifier] 🎓 Trained on "${correctLabel}" (Conf: ${probs[targetIndex].toFixed(2)} -> Target: 1.0)`);
+        // Update W1 and b1
+        for (let i = 0; i < inputs.length; i++) {
+            for (let h = 0; h < this.HIDDEN_SIZE; h++) {
+                this.W1[i][h] -= learningRate * dW1[i][h];
+            }
+        }
+        for (let h = 0; h < this.HIDDEN_SIZE; h++) {
+            this.b1[h] -= learningRate * dB1[h];
+        }
 
-        // Auto-save every few updates? For now, we save explicitly or can debounce.
-        this.saveWeights();
+        console.log(`[NeuralClassifier] 🎓 Trained on "${correctLabel}" (Conf: ${probs[targetIndex].toFixed(2)} → 1.0, LR: ${learningRate.toFixed(4)}, Samples: ${this.totalSamples})`);
+
+        // Auto-save periodically (every 10 samples to reduce I/O)
+        if (this.totalSamples % 10 === 0) {
+            this.saveWeights();
+        }
     }
 
     async saveWeights() {
         const payload = {
-            weights: this.weights,
-            bias: this.bias,
-            version: 1,
+            W1: this.W1,
+            b1: this.b1,
+            W2: this.W2,
+            b2: this.b2,
+            totalSamples: this.totalSamples,
+            version: 2, // Version 2 for 2-layer network
             timestamp: Date.now()
         };
         await chrome.storage.local.set({ 'neural_weights': payload });
@@ -284,10 +385,21 @@ class NeuralClassifier {
         try {
             const result = await chrome.storage.local.get('neural_weights');
             if (result.neural_weights) {
-                this.weights = result.neural_weights.weights;
-                this.bias = result.neural_weights.bias;
-                console.log('[NeuralClassifier] 📂 Loaded trained weights from storage.');
-                return true;
+                const data = result.neural_weights;
+
+                // Check version compatibility
+                if (data.version === 2 && data.W1 && data.W2) {
+                    this.W1 = data.W1;
+                    this.b1 = data.b1;
+                    this.W2 = data.W2;
+                    this.b2 = data.b2;
+                    this.totalSamples = data.totalSamples || 0;
+                    console.log('[NeuralClassifier] 📂 Loaded trained 2-layer weights from storage.');
+                    return true;
+                } else if (data.version === 1) {
+                    console.log('[NeuralClassifier] ⚠️ Found v1 weights (1-layer). Reinitializing to v2 (2-layer).');
+                    return false; // Force reinitialization
+                }
             }
         } catch (e) {
             console.error('[NeuralClassifier] Failed to load weights:', e);
@@ -295,23 +407,37 @@ class NeuralClassifier {
         return false;
     }
 
-    // --- MOCK TRAINING DATA ---
+    // --- WEIGHT INITIALIZATION ---
     generateDummyWeights() {
-        const inputSize = 56; // From FeatureExtractor (was 51, now +5 for placeholder)
+        const inputSize = 56; // From FeatureExtractor
+        const hiddenSize = this.HIDDEN_SIZE;
         const outputSize = this.CLASSES.length;
 
-        // Initialize random small weights (He Initialization-ish)
-        const w = [];
-        for (let c = 0; c < outputSize; c++) {
-            const row = [];
-            for (let i = 0; i < inputSize; i++) {
-                row.push((Math.random() - 0.5) * 0.1);
+        // W1: Input → Hidden (He Initialization for ReLU)
+        // Variance = 2/n_in (He et al., 2015)
+        this.W1 = [];
+        const heScale = Math.sqrt(2.0 / inputSize);
+        for (let i = 0; i < inputSize; i++) {
+            this.W1[i] = [];
+            for (let h = 0; h < hiddenSize; h++) {
+                this.W1[i][h] = (Math.random() - 0.5) * 2 * heScale;
             }
-            w.push(row);
         }
+        this.b1 = new Array(hiddenSize).fill(0); // Zeros for bias
 
-        this.bias = new Array(outputSize).fill(0);
-        return w;
+        // W2: Hidden → Output (Xavier Initialization for Softmax)
+        // Variance = 1/n_in (Glorot & Bengio, 2010)
+        this.W2 = [];
+        const xavierScale = Math.sqrt(1.0 / hiddenSize);
+        for (let h = 0; h < hiddenSize; h++) {
+            this.W2[h] = [];
+            for (let c = 0; c < outputSize; c++) {
+                this.W2[h][c] = (Math.random() - 0.5) * 2 * xavierScale;
+            }
+        }
+        this.b2 = new Array(outputSize).fill(0); // Zeros for bias
+
+        console.log(`[NeuralClassifier] ✨ Initialized 2-layer network: ${inputSize} → ${hiddenSize} → ${outputSize}`);
     }
 }
 
