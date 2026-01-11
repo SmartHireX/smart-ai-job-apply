@@ -57,6 +57,8 @@
                 "content/services/ai/batch-processor.js",
                 "content/services/ai/prefetch-engine.js",
                 "content/core/state-manager.js",
+                "content/services/ai/feature-extractor.js",
+                "content/services/ai/neural-classifier.js",
                 "content/core/action-queue.js",
                 "content/core/orchestrator.js",
                 "content/content.js"
