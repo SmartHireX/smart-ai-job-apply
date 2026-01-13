@@ -270,14 +270,16 @@ class PipelineOrchestrator {
         for (const [selector, res] of Object.entries(batchResults)) {
             if (res.skipExecution) continue;
 
-            const success = await this.executor.fill(selector, res.value, res.confidence);
+            // Find the original field object for metadata
+            const field = sourceFields ? sourceFields.find(f => f.selector === selector) : null;
+
+            // Pass field to executor for change listener attachment
+            const success = await this.executor.fill(selector, res.value, res.confidence, field);
             if (!success) {
                 console.warn(`⚠️ [Pipeline] Execution Failure: Could not fill element`, selector);
             } else {
                 // Auto-Cache: If filled successfully and NOT from cache, save it!
                 if (window.InteractionLog && res.source !== 'selection_cache' && res.source !== 'cache') {
-                    // Find the original field object
-                    const field = sourceFields ? sourceFields.find(f => f.selector === selector) : null;
                     if (field) {
                         // Async cache update (don't await to keep UI snappy)
                         window.InteractionLog.cacheSelection(field, field.label, res.value);

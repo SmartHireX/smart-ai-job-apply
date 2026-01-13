@@ -238,8 +238,10 @@ async function getCachedValue(fieldOrSelector, labelArg) {
         const isRepeating = /job|work|education|employer|school|degree/.test(semanticType);
         if (isRepeating) {
             const index = getFieldIndex(field, label);
+            console.log(`[InteractionLog] 🔍 MultiCache Read: Key=${semanticType} Index=${index} Array=${JSON.stringify(resultValue)}`);
             if (Array.isArray(resultValue)) {
                 resultValue = resultValue[index];
+                console.log(`[InteractionLog] 🔍 Extracted Value: "${resultValue}"`);
             } else if (index > 0) {
                 resultValue = null;
             }

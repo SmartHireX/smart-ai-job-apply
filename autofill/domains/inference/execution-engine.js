@@ -22,8 +22,9 @@ class ExecutionEngine {
      * @param {string|HTMLElement} selectorOrElement 
      * @param {string} value 
      * @param {number} confidence 
+     * @param {Object} fieldMetadata - Optional field object for caching
      */
-    async fill(selectorOrElement, value, confidence = 1.0) {
+    async fill(selectorOrElement, value, confidence = 1.0, fieldMetadata = null) {
         let element = selectorOrElement;
         if (typeof selectorOrElement === 'string') {
             try {
@@ -58,7 +59,27 @@ class ExecutionEngine {
         element.blur();
         element.dispatchEvent(new Event('blur', { bubbles: true }));
 
+        // 6. Attach Manual Edit Listener (Auto-Cache User Changes)
+        this.attachChangeListener(element, fieldMetadata);
+
         return true;
+    }
+
+    /**
+     * Attach a listener to save manual user edits to cache
+     */
+    attachChangeListener(element, fieldMetadata) {
+        if (!element || element._novaEditListenerAttached) return; // Prevent double attach
+
+        element._novaEditListenerAttached = true;
+
+        element.addEventListener('change', () => {
+            if (window.InteractionLog && fieldMetadata) {
+                const newValue = element.value;
+                console.log(`[ExecutionEngine] 📝 User Edit Detected: "${fieldMetadata.label}" -> "${newValue}"`);
+                window.InteractionLog.cacheSelection(fieldMetadata, fieldMetadata.label, newValue);
+            }
+        });
     }
 
     /**

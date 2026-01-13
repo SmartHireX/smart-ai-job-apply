@@ -106,6 +106,12 @@ class SectionController extends window.Handler {
             // 1. Check InteractionLog (Cache) Priority
             if (window.InteractionLog) {
                 const cached = await window.InteractionLog.getCachedValue(field);
+
+                // Debug Log
+                if (cached && cached.value) {
+                    console.log(`[SectionController] 🟢 Cache Candidate: "${field.label}" Val: "${cached.value}" Conf: ${cached.confidence} Idx: ${field.field_index}`);
+                }
+
                 if (cached && cached.value && cached.confidence > 0.6) {
                     mapped[field.selector] = {
                         value: cached.value,
@@ -113,7 +119,10 @@ class SectionController extends window.Handler {
                         source: 'selection_cache', // Preserves cache source
                         trace: this.createTrace('cache_hit', cached.confidence, { source: 'multi_cache' })
                     };
+                    console.log(`[SectionController] ✅ Used Cache for "${field.label}"`);
                     continue; // Skip entity mapping
+                } else if (cached) {
+                    console.log(`[SectionController] 🟡 Cache Rejected (Low Confidence/Empty) for "${field.label}"`);
                 }
             }
 
@@ -122,12 +131,15 @@ class SectionController extends window.Handler {
             const val = this.extractValue(entity, label);
 
             if (val) {
+                console.log(`[SectionController] ⚠️ Using User Data for "${field.label}" (Cache Miss/Skip). Val: "${val}"`);
                 mapped[field.selector] = {
                     value: val,
                     confidence: 1.0,
                     source: source,
                     trace: this.createTrace('history_map', 1.0, { source, entity_field: label })
                 };
+            } else {
+                console.log(`[SectionController] ❌ No Data (Cache or User) for "${field.label}"`);
             }
         }
         return mapped;
