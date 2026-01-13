@@ -69,9 +69,11 @@ class RuleEngine {
             if (field.name && processedNames.has(field.name)) return;
 
             const context = this.getContext(field);
+            if (this.debug) console.log(`🔍 [RuleEngine] Processing: "${field.label || field.name}" Context: [${context}]`);
 
             // Skip History Fields (Handled by HistoryHandler)
             if (this.isHistoryField(context, field)) {
+                if (this.debug) console.log(`⏭️ [RuleEngine] Skipping History Field: "${field.label}"`);
                 remaining.push(field);
                 return;
             }
