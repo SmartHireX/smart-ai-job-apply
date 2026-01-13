@@ -82,13 +82,59 @@ class ExecutionEngine {
             this.nativeValueSetter.call(element, value);
         } else if (tagName === 'textarea' && this.nativeTextAreaSetter) {
             this.nativeTextAreaSetter.call(element, value);
-        } else if (tagName === 'select' && this.nativeSelectSetter) {
-            this.nativeSelectSetter.call(element, value);
+        } else if (tagName === 'select') {
+            // Smart Select Logic
+            this.setSelectValue(element, value);
         } else {
             // Fallback
             element.value = value;
         }
     }
+
+    setSelectValue(element, targetValue) {
+        // 1. Try Direct Set
+        if (this.nativeSelectSetter) {
+            this.nativeSelectSetter.call(element, targetValue);
+        } else {
+            element.value = targetValue;
+        }
+
+        // 2. Verify
+        if (element.value === targetValue) return;
+
+        // 3. Smart Fuzzy Match (Text, Value, Label, ID)
+        const normalize = (str) => String(str || '').toLowerCase().trim();
+        const target = normalize(targetValue);
+
+        // Find best option
+        let bestMatch = null;
+        for (const option of element.options) {
+            // Check all possible identifiers for this option
+            const candidates = [
+                option.value,
+                option.text,
+                option.getAttribute('label'),
+                option.id
+            ];
+
+            // If ANY candidate matches the target
+            if (candidates.some(c => normalize(c) === target)) {
+                bestMatch = option.value;
+                break;
+            }
+        }
+
+        if (bestMatch !== null) {
+            if (this.nativeSelectSetter) {
+                this.nativeSelectSetter.call(element, bestMatch);
+            } else {
+                element.value = bestMatch;
+            }
+            // For robust frameworks (React/Angular), dispatch change
+            this.dispatchEvents(element);
+        }
+    }
+
 
     dispatchEvents(element) {
         const bubbles = { bubbles: true, cancelable: true, view: window };
