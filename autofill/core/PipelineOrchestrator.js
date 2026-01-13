@@ -264,7 +264,10 @@ class PipelineOrchestrator {
         if (!this.executor) return;
         for (const [selector, res] of Object.entries(batchResults)) {
             if (res.skipExecution) continue;
-            await this.executor.fill(selector, res.value, res.confidence);
+            const success = await this.executor.fill(selector, res.value, res.confidence);
+            if (!success) {
+                console.warn(`⚠️ [Pipeline] Execution Failure: Could not fill element`, selector);
+            }
             await this.applyHumanJitter();
         }
     }

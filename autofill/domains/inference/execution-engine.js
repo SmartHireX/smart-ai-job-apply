@@ -26,7 +26,14 @@ class ExecutionEngine {
     async fill(selectorOrElement, value, confidence = 1.0) {
         let element = selectorOrElement;
         if (typeof selectorOrElement === 'string') {
-            element = document.querySelector(selectorOrElement);
+            try {
+                element = document.querySelector(selectorOrElement);
+            } catch (e) {
+                // If querySelector failed, it might be an unescaped ID
+                if (selectorOrElement.startsWith('#')) {
+                    element = document.getElementById(selectorOrElement.substring(1));
+                }
+            }
         }
 
         if (!element) return false;
