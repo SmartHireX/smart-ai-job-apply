@@ -86,8 +86,8 @@ const METADATA_KEY = 'selectionCacheMetadata';
 
 // Helper: Determine if type belongs to MultiCache
 function isMultiCacheType(type) {
-    // 1. Repeating Sections (Jobs, Edu)
-    const isSection = /education|school|degree|employer|job|work|experience/.test(type);
+    // 1. Repeating Sections (Jobs, Edu) - includes dates/titles related to these
+    const isSection = /education|school|degree|employer|job|work|experience|start|end|date/.test(type);
 
     // 2. Explicit Multi-Selects (Skills)
     const isMultiSelect = /skill|technolog|competenc|language/.test(type);
