@@ -112,6 +112,11 @@ class RuleEngine {
     }
 
     resolveSingleField(field, context, facts) {
+        // Debug Context
+        if (this.debug && (context.includes('name') || context.includes('email'))) {
+            console.log(`🔍 [RuleEngine] Checking: "${field.label}" Context: "[${context}]"`);
+        }
+
         // 1. Demographics
         if (context.match(/gender|sex|male|female/)) return this.matchDemographic(field, facts.demographics.gender);
         if (context.includes('veteran')) return this.matchDemographic(field, facts.demographics.veteran);
