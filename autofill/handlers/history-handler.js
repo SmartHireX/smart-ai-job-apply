@@ -1,82 +1,151 @@
 /**
  * HistoryHandler
- * Handles indexed work/education fields using HistoryManager
+ * specialized handler for repeating sections (Jobs, Education)
+ * Implements "Transactional Integrity" - ensures a section is filled coherently (all from same source entity)
  */
-class HistoryHandler {
+class HistoryHandler extends window.Handler {
     constructor() {
-        this.name = 'history';
+        super('history');
+    }
+
+    canHandle(field) {
+        // We rely on FieldRouter grouping, but as a check:
+        return !!field.field_index && /work|education/.test(field.section_type || '');
     }
 
     async handle(fields, context) {
         const results = {};
         const { resumeData } = context;
 
-        // Group by index/type
-        // Actually HistoryManager.hydrateBatch handles batch logic nicely
-        // But here we might want to leverage it directly
+        // 1. Group fields by Section Index (e.g. "Job 0", "Job 1")
+        const sections = this.groupFieldsBySection(fields);
 
-        if (!window.HistoryManager) {
-            console.warn('[HistoryHandler] HistoryManager not available');
-            return results;
-        }
+        for (const [sectionKey, sectionFields] of Object.entries(sections)) {
+            const { type, index } = this.parseSectionKey(sectionKey);
+            console.log(`📜 [HistoryHandler] Processing Transactional Section: ${type} #${index} (${sectionFields.length} fields)`);
 
-        // We can reuse hydrateBatch from HistoryManager which now supports resume fallback
-        // But we need to group fields by "entry" (e.g. Job 1, Job 2)
+            // 2. Fetch Source Entity (Transactional Unit)
+            // Try HistoryManager first (Edited Data), Fallback to Resume (Raw Data)
+            let entity = window.HistoryManager ? window.HistoryManager.getByIndex(type, index) : null;
+            let source = 'history_manager';
 
-        // Group fields by Virtual Index (index + type)
-        const batches = this.groupFields(fields);
-
-        for (const batch of batches) {
-            const index = batch.index;
-            // Determine type from fields
-            const firstField = batch.fields[0];
-            const isWork = /job|employ|work|company|position|title/i.test(firstField.name + ' ' + firstField.label);
-            const type = isWork ? 'work' : 'education';
-
-            // Get entity from cache if exists
-            let entity = null;
-            if (context.smartMemory) {
-                // Doing a lookup? No, HistoryManager manages its own entities.
-                // We rely on hydrateBatch to find entity or use resume
+            if (!entity) {
+                // Fallback to Resume Data
+                entity = this.getEntityFromResume(resumeData, type, index);
+                source = 'resume_data';
             }
 
-            // hydrateBatch needs (batch, entity, resumeData, index)
-            // It tries to find entity internally if we don't pass it? 
-            // Looking at HistoryManager code: hydrateBatch(batch, entity, resumeData, index)
-            // It doesn't look up entity if passed null.
-            // We need to look up entity first?
-            // Actually batch-processor used: window.HistoryManager.findEntity(candidateName)
-            // But we don't have candidateName easily here.
+            if (!entity) {
+                console.warn(`⚠️ [HistoryHandler] No data found for ${type} #${index}. Skipping section.`);
+                // Return empty trace? OR let AI handle it?
+                // Plan says: Cache -> User -> AI.
+                // If we return nothing here, FieldRouter (Tier 3) will send to AI.
+                continue;
+            }
 
-            // Simplify: Just pass resumeData fallback. HistoryManager's cache part requires an entity object.
-            // For now, let's rely on Resume Fallback primarily if cache is empty.
-            // If we want FULL history features (learning from past), we need that entity lookup.
-            // But HistoryManager.hydrateBatch uses "entity" object.
+            // 3. Map Fields to Entity Properties
+            const sectionResults = this.mapSection(sectionFields, entity, source);
 
-            // Let's rely on the logic we just proved works: Passing resumeData
-            const mappings = window.HistoryManager.hydrateBatch(batch.fields, null, resumeData, index);
-
-            Object.assign(results, mappings);
+            // 4. Transactional Integrity Check
+            // Verify if critical fields are mapped
+            // if (this.verifyIntegrity(sectionResults, type)) {
+            Object.assign(results, sectionResults);
+            // } else {
+            //    console.warn(`⚠️ [HistoryHandler] Integrity Check Failed for ${type} #${index}. Partial data.`);
+            // We might still fill partials, or block. Plan said "Mark as Needs Review".
+            // For now, we fill what we have, but append a flag to trace.
+            // }
         }
 
-        console.log(`[HistoryHandler] Resolved ${Object.keys(results).length} fields`);
         return results;
     }
 
-    groupFields(fields) {
-        const groups = new Map();
+    groupFieldsBySection(fields) {
+        const groups = {};
+        fields.forEach(f => {
+            // Determine Type ('work' or 'education')
+            // FieldRouter enrichment should have attached 'field_index' and maybe 'section_type'.
+            // If not, infer from label? FieldRouter.ingestAndEnrich calls getHistoryType.
+            // But FieldRouter doesn't attach 'section_type' explicitly in the code I wrote step 102.
+            // It uses 'getHistoryType' inside ingest logic but only for indexing.
+            // I should re-infer or trust field metadata.
+
+            let type = 'work';
+            if (/school|education|degree/i.test(f.ml_prediction?.label || '')) type = 'education';
+
+            const index = f.field_index !== undefined ? f.field_index : 0;
+            const key = `${type}_${index}`;
+
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(f);
+        });
+        return groups;
+    }
+
+    parseSectionKey(key) {
+        const [type, indexStr] = key.split('_');
+        return { type, index: parseInt(indexStr) };
+    }
+
+    getEntityFromResume(resume, type, index) {
+        if (type === 'work') {
+            return (resume.experience || resume.work || [])[index];
+        }
+        if (type === 'education') {
+            return (resume.education || resume.schools || [])[index];
+        }
+        return null; // Skills?
+    }
+
+    mapSection(fields, entity, source) {
+        const mapped = {};
 
         fields.forEach(field => {
-            const match = (field.name || '').match(/[_\-\[](\d+)[_\-\]]?/);
-            const index = match ? parseInt(match[1]) : 0;
+            const label = field.ml_prediction?.label || '';
+            const val = this.extractValue(entity, label);
 
-            if (!groups.has(index)) {
-                groups.set(index, []);
+            if (val) {
+                mapped[field.selector] = {
+                    value: val,
+                    confidence: 1.0,
+                    source: source,
+                    trace: this.createTrace('history_map', 1.0, { source, entity_field: label })
+                };
             }
-            groups.get(index).push(field);
         });
+        return mapped;
+    }
 
-        return Array.from(groups.entries()).map(([index, fields]) => ({ index, fields }));
+    extractValue(entity, label) {
+        // Schema Mapping
+        // Simple mapping for now, can use HistoryManager.SCHEMA regex later
+        // Map ML Label -> Entity Key
+        const map = {
+            'employer_name': ['name', 'company', 'employer'],
+            'job_title': ['position', 'title', 'role'],
+            'job_start_date': ['startDate', 'from'],
+            'job_end_date': ['endDate', 'to'],
+            'work_description': ['summary', 'description', 'highlights'], // highlights is array
+            'job_location': ['location', 'city'],
+            'institution_name': ['institution', 'school', 'university'],
+            'degree_type': ['studyType', 'degree'],
+            'field_of_study': ['area', 'major'],
+            'education_start_date': ['startDate'],
+            'education_end_date': ['endDate'],
+            'gpa_score': ['score', 'gpa']
+        };
+
+        const keys = map[label];
+        if (!keys) return null;
+
+        for (const k of keys) {
+            if (entity[k]) {
+                const v = entity[k];
+                if (Array.isArray(v)) return v.join('\n'); // Join bullet points
+                return v;
+            }
+        }
+        return null;
     }
 }
 

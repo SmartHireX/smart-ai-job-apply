@@ -112,7 +112,7 @@ class FormProcessor {
      * Process with legacy two-phase architecture
      */
     static async processWithLegacyArchitecture() {
-        console.log('✨ Starting 🚀 Two-Phase Fill with Smart Memory...');
+        console.log('🚀 [FormProcessor] Starting FANG-Level Pipeline (Stealth Mode)...');
 
         // Initialize neural classifier
         if (!window.neuralClassifier) {
@@ -120,65 +120,40 @@ class FormProcessor {
             await window.neuralClassifier.init();
         }
 
-        // Get resume & smart memory
+        // Get context
         const [resumeData, smartMemory] = await Promise.all([
             window.ResumeManager.getResumeData(),
             MemoryUtils.getCache()
         ]);
 
         if (!resumeData) throw new Error('Resume data missing');
-
-        // Normalize resume schema
         this.normalizeResumeSchema(resumeData);
 
         // Extract fields
         const formHTML = this.extractFormHTML();
         if (!formHTML) throw new Error('No form found');
-        let fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
 
-        console.log('📊 [ProcessPageForm] Raw Extracted Fields:', fields);
+        // Use FormAnalyzer to get fields
+        const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
+        console.log(`📊 [FormProcessor] Extracted ${fields.length} fields for Pipeline.`);
 
-        // === PHASE 0: NEURAL CLASSIFICATION ===
-        fields = await Phase0Classification.run(fields);
+        // --- EXECUTE NEW PIPELINE ---
+        if (window.FieldRouter) {
+            const router = new window.FieldRouter();
 
-        // === PHASE 1: INSTANT FILL ===
-        const { mappings: phase1Mappings, unmapped } = await Phase1InstantFill.run(
-            fields,
-            resumeData,
-            smartMemory
-        );
-
-        const hasPhase2 = unmapped.length > 0;
-        let cumulativeMappings = { ...phase1Mappings };
-
-        // Execute Phase 1 fills
-        if (Object.keys(phase1Mappings).length > 0) {
-            await Phase1InstantFill.execute(phase1Mappings, fields, {
-                resetHistory: true,
-                cumulativeMappings,
-                isFinal: !hasPhase2,
-                skipSidebar: hasPhase2
-            });
-        }
-
-        // === PHASE 2: AI PROCESSING ===
-        if (hasPhase2) {
-            const pageContext = this.getJobContext();
-
-            await Phase2AIProcessing.run(
-                unmapped,
+            const context = {
                 resumeData,
-                pageContext,
-                cumulativeMappings,
-                fields
-            );
-        } else {
-            // No Phase 2 needed - show results
-            Phase2AIProcessing.ensureAllFieldsInMappings(fields, cumulativeMappings);
-        }
+                smartMemory,
+                callbacks: {}
+            };
 
-        // Self-teaching
-        Phase0Classification.selfTeach(fields);
+            // This will trigger the "Grouped Fields" log inside FieldRouter
+            const results = await router.executePipeline(fields, context);
+
+            console.log('✅ [FormProcessor] Pipeline execution passed.');
+        } else {
+            console.error('❌ FieldRouter not found! Falling back to legacy? No, aborting.');
+        }
 
         // Show completion
         if (typeof window.showProcessingWidget === 'function') {

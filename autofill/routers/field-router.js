@@ -1,284 +1,280 @@
 /**
  * FieldRouter
- * Decides which handler should process each field
- * Single decision point - eliminate sequential phase checks
+ * Refactored Pipeline Orchestrator for FANG-Level Form Filling
+ * 
+ * Architecture:
+ * 1. Ingestion & Enrichment (TinyML + Indexing)
+ * 2. Grouping (Text, Selector, Multi, General)
+ * 3. Strategy Resolution (Fallback Chains)
+ * 4. Execution Dispatch
  */
 
 class FieldRouter {
     constructor() {
         this.neuralClassifier = new window.NeuralClassifier();
-        this.neuralClassifier.init(); // Fire and forget init
+        this.neuralClassifier.init();
 
-        this.routingRules = {
-            cache: 'Fields with cached values',
-            history: 'Indexed work/education fields',
-            matcher: 'Simple deterministic fields',
-            ai: 'Complex/unknown fields'
+        // Pipeline Stages
+        this.pipeline = {
+            ingestion: this.ingestAndEnrich.bind(this),
+            grouping: this.groupFields.bind(this)
         };
+
+        // Handlers Map
+        this.handlers = {
+            cache: window.CacheHandler ? new window.CacheHandler() : null,
+            history: window.HistoryHandler ? new window.HistoryHandler() : null,
+            matcher: window.MatcherHandler ? new window.MatcherHandler() : null,
+            ai: window.AIHandler ? new window.AIHandler() : null
+        };
+
+        // Execution Engine (The Hands)
+        this.engine = window.ExecutionEngine ? new window.ExecutionEngine() : null;
     }
 
     /**
-     * Route a single field to appropriate handler
-     * @param {Object} field - Field object with selector, name, label, type, etc.
-     * @param {Object} cacheResult - Result from cache check (if any)
-     * @returns {Object} { handler: string, priority: number, reason: string }
+     * Main Entry Point: Execute the Pipeline
+     * Uses strict sequential execution to mimic human behavior (Anti-Detection).
+     * @param {Array} fields - Raw DOM-extracted fields
+     * @param {Object} context - { resumeData, smartMemory }
+     * @returns {Promise<Object>} Results map
      */
-    async route(field, cacheResult = null) {
-        // 0. Neural Classification (The Brain)
-        // Check if pre-classified (Phase 0), otherwise run inference
-        let prediction = field.ml_prediction;
+    async executePipeline(rawFields, context) {
+        const executionId = crypto.randomUUID();
+        console.log(`🚀 [Pipeline:${executionId}] Starting Stealth Execution for ${rawFields.length} fields`);
 
-        if (!prediction) {
-            prediction = this.neuralClassifier.predict(field);
-            // normalization
-            prediction = {
-                label: prediction.label,
-                confidence: prediction.confidence,
-                source: prediction.source
-            };
-            field.ml_prediction = prediction;
-        }
+        // Stage 1: Ingestion & Enrichment
+        const enrichedFields = await this.pipeline.ingestion(rawFields);
 
-        // Priority 1: Use cached value if available
-        // (Even if we know what it is, if we have a locked value, use it)
-        if (cacheResult && cacheResult.cached) {
-            return {
-                handler: 'cache',
-                priority: 1,
-                reason: `Cached in ${cacheResult.source}`,
-                confidence: cacheResult.confidence || 1.0
-            };
-        }
+        // Stage 2: Grouping
+        const groups = this.pipeline.grouping(enrichedFields);
 
-        // Priority 2: Neural Routing (High Confidence > 80%)
-        if (prediction.confidence > 0.8) {
-            // Map Neural Label -> Handler
-            const handler = this.getHandlerForLabel(prediction.label);
-            if (handler !== 'ai') { // If it's a standard field, route it
-                // Calculate Index using Smart Indexing Service
-                let index = 0;
-                if (window.IndexingService) {
-                    const type = this.getHistoryType(prediction.label);
-                    // Check for Section Start (Sequential Logic)
-                    if (window.IndexingService.SECTION_START_FIELDS[type]?.includes(prediction.label)) {
-                        // Only increment if we see the same field again? 
-                        // Actually, IndexingService.getIndex handles the "Get" logic. 
-                        // But the "Increment" logic is usually when we detect a NEW section.
-                        // For now, let's trust getIndex handling explicit/implicit.
+        // --- DEBUG: Print Grouped Fields ---
+        console.group(`📊 [Pipeline:${executionId}] Field Grouping Summary`);
+        console.log(`Texts: ${groups.text.length}, Selectors: ${groups.selector.length}, Multi: ${groups.multi.length}, General: ${groups.general.length}`);
+
+        // Detailed Object View (Full Arrays)
+        console.log('📝 Text Fields:', groups.text);
+        console.log('📝 Selector Fields:', groups.selector);
+        console.log('📝 Multi Fields:', groups.multi);
+        console.log('📝 General Fields:', groups.general);
+        console.groupEnd();
+        // -----------------------------------
+
+        const results = {};
+        const executionOrder = ['text', 'selector', 'multi', 'general'];
+
+        // Stage 3 & 4: Resolution & Execution Loop
+        for (const groupName of executionOrder) {
+            const groupFields = groups[groupName];
+            if (!groupFields || groupFields.length === 0) continue;
+
+            console.log(`⚡ [Pipeline:${executionId}] Processing Group: ${groupName} (${groupFields.length} fields)`);
+
+            if (groupName === 'multi') {
+                // Transactional Batch Processing
+                const batchResults = await this.processMultiValueGroup(groupFields, context);
+                Object.assign(results, batchResults);
+
+                // EXECUTE BATCH FILL
+                if (this.engine) {
+                    for (const [selector, res] of Object.entries(batchResults)) {
+                        await this.engine.fill(selector, res.value, res.confidence);
+                        await this.applyHumanJitter();
                     }
-                    index = window.IndexingService.getIndex(field, type);
-
-                    // ATTACH TO FIELD OBJECT (Crucial for MultiValueHandler)
-                    field.field_index = index;
-
-                    // DEBUG: Log the indexed field
-                    console.log(`🎯 [Indexed Field] "${prediction.label}" Index: ${field.field_index}`, field);
                 }
+            } else {
+                // Linear Sequential Processing
+                for (const field of groupFields) {
+                    const fieldResult = await this.processSingleField(field, groupName, context);
+                    if (fieldResult) {
+                        results[field.selector] = fieldResult;
 
-                return {
-                    handler: handler,
-                    priority: 2,
-                    reason: `Neural Match: ${prediction.label}`,
-                    confidence: prediction.confidence,
-                    index: index // Attach valid index
-                };
+                        // EXECUTE FILL IMMEDIATELY (Stealth)
+                        if (this.engine) {
+                            await this.engine.fill(field.selector, fieldResult.value, fieldResult.confidence);
+                        }
+                    }
+
+                    // Human Jitter (Anti-Detection)
+                    await this.applyHumanJitter();
+                }
+            }
+
+            // Micro-pause between groups
+            await new Promise(r => setTimeout(r, 150));
+        }
+
+        return results;
+    }
+
+    /**
+     * STAGE 1: Ingestion & Enrichment
+     * Adds ML labels, Indices, and Visibility context
+     */
+    async ingestAndEnrich(fields) {
+        const enriched = [];
+
+        for (const field of fields) {
+            // 1. TinyML Classification
+            if (!field.ml_prediction) {
+                field.ml_prediction = this.neuralClassifier.predict(field);
+            }
+
+            // 2. Indexing Service (Job 0 vs Job 1)
+            if (window.IndexingService) {
+                const type = this.getHistoryType(field.ml_prediction.label);
+                field.field_index = window.IndexingService.getIndex(field, type);
+            }
+
+            // 3. Shadow DOM Path (if applicable - checking structure)
+            // (Assumed handled by FormAnalyzer extraction, but we can verify)
+
+            enriched.push(field);
+        }
+        return enriched;
+    }
+
+    /**
+     * STAGE 2: Grouping
+     * Sorts fields into 4 buckets for specialized handling
+     */
+    groupFields(fields) {
+        const groups = {
+            text: [],
+            selector: [],
+            multi: [],
+            general: []
+        };
+
+        fields.forEach(field => {
+            const type = field.field_type || field.type || 'text';
+            const tag = field.tagName || 'INPUT';
+            const label = (field.ml_prediction?.label || '').toLowerCase();
+
+            // 1. Multi-Value / History Transactional
+            // Check if it belongs to a repeating section (Job/Edu) OR is a multi-select
+            if (this.isTransactionalField(field) || type === 'checkbox' || field.multiple || type == 'select-multiple') {
+                groups.multi.push(field);
+                return;
+            }
+
+            // 2. Selectors (Single choice constraints)
+            if (type === 'radio' || tag === 'SELECT' || type === 'date' || type == 'select-one') {
+                groups.selector.push(field);
+                return;
+            }
+
+            // 3. Simple Text (Direct input)
+            if (['text', 'email', 'tel', 'number', 'url', 'password', 'textarea'].includes(type) || tag === 'TEXTAREA') {
+                groups.text.push(field);
+                return;
+            }
+
+            // 4. Fallback
+            groups.general.push(field);
+        });
+
+        return groups;
+    }
+
+    /**
+     * PROCESS SINGLE FIELD (Linear Strategy)
+     * Fallback Chain: Cache -> UserData -> AI
+     */
+    async processSingleField(field, groupType, context) {
+        // 1. Tier 1: Selection Cache (Instant)
+        if (this.handlers.cache) {
+            const cached = await this.handlers.cache.handle([field]); // Batch of 1
+            const res = cached[field.selector];
+            if (res && res.confidence > 0.9) return res;
+        }
+
+        // 2. Tier 2: User Data (Manual/Local)
+        // Delegate to MatcherHandler (DOM/Logic) or Local Logic
+        if (this.handlers.matcher) {
+            // MatcherHandler now focuses on DOM logic but can use LocalMatcher utility
+            // We'll trust its existing resolve logic for now, or use LocalMatcher directly
+            if (window.LocalMatcher) {
+                const { defined } = window.LocalMatcher.resolveFields([field], context.resumeData);
+                const res = defined[field.selector];
+                if (res) return res;
             }
         }
 
-        // Priority 3: Regex Fallback (The Old Ways)
-        // If Neural is unsure, double check with Regex
-        if (this.isHistoryField(field)) {
-            return { handler: 'history', priority: 3, reason: 'Regex: History Field', confidence: 0.9 };
-        }
-        if (this.isMatcherField(field)) {
-            return { handler: 'matcher', priority: 3, reason: this.getMatcherReason(field), confidence: 0.85 };
+        // 3. Tier 3: AI Copilot
+        if (this.handlers.ai) {
+            const aiRes = await this.handlers.ai.handle([field], context); // Batch of 1
+            const res = aiRes[field.selector];
+            if (res) return res;
         }
 
-        // Priority 4: Complex/unknown → AI (LLM)
-        return {
-            handler: 'ai',
-            priority: 4,
-            reason: 'Unknown field type (Low Neural Confidence)',
-            confidence: 0.7
-        };
+        return null;
     }
 
     /**
-     * Maps a Neural Label (e.g. 'company') to a Handler (e.g. 'history')
+     * PROCESS MULTI-VALUE GROUP (Transactional)
+     * Batches fields by 'Index' (Job 0, Job 1) to ensure data integrity
      */
-    getHandlerForLabel(label) {
-        const HISTORY_FIELDS = [
-            'job_title', 'employer_name', 'job_start_date', 'job_end_date', 'work_description', 'job_location',
-            'institution_name', 'degree_type', 'field_of_study', 'gpa_score', 'education_start_date', 'education_end_date'
-        ];
-        const MATCHER_FIELDS = ['sponsorship', 'citizenship', 'gender', 'race', 'veteran', 'disability', 'work_auth', 'clearance', 'legal_age'];
-
-        if (HISTORY_FIELDS.includes(label)) return 'history';
-        if (MATCHER_FIELDS.includes(label)) return 'matcher';
-
-        return 'ai';
+    async processMultiValueGroup(fields, context) {
+        // Group by Index (via HistoryHandler logic or internal)
+        if (this.handlers.history) {
+            // HistoryHandler is designed for this batch processing
+            // We pass the whole clump. It should handle Cache checks internally if robust, 
+            // or we do it here. Plan says: "Array Cache -> Resume -> AI"
+            // For now, delegate to HistoryHandler which implements the Transactional logic in Phase 2
+            return await this.handlers.history.handle(fields, context);
+        }
+        return {};
     }
 
     /**
-     * Helper to determine history type (work vs education)
+     * Anti-Detection Jitter
+     * Random delay between 30ms and 150ms
      */
+    async applyHumanJitter() {
+        const delay = Math.floor(Math.random() * 120) + 30; // 30-150ms
+        await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    // --- Helpers ---
+
     getHistoryType(label) {
-        if (['job_title', 'employer_name', 'job_start_date', 'job_end_date', 'work_description', 'job_location'].includes(label)) return 'work';
-        if (['institution_name', 'degree_type', 'field_of_study', 'gpa_score', 'education_start_date', 'education_end_date'].includes(label)) return 'education';
-        return 'work'; // Default fallback
+        const workLabels = ['job_title', 'employer_name', 'job_start_date', 'job_end_date', 'work_description', 'job_location'];
+        if (workLabels.includes(label)) return 'work';
+        return 'education';
     }
 
-    /**
-     * Route all fields and return grouped by handler
-     * @param {Array} fields - Array of field objects
-     * @param {Object} cacheResults - Map of selector → cache result
-     * @returns {Object} { cache: [], history: [], matcher: [], ai: [] }
-     */
-    routeAll(fields, cacheResults = {}) {
-        const routing = {
-            cache: [],
-            history: [],
-            matcher: [],
-            ai: []
-        };
-
-        const routingDecisions = [];
-
-        fields.forEach(async field => {
-            const cacheResult = cacheResults[field.selector];
-            // Fix: route is now async
-            const decision = await this.route(field, cacheResult);
-
-            routing[decision.handler].push(field);
-
-            routingDecisions.push({
-                field: field.label || field.name,
-                handler: decision.handler,
-                reason: decision.reason,
-                confidence: decision.confidence
-            });
-        });
-
-        console.log('[FieldRouter] Routing summary:', {
-            cache: routing.cache.length,
-            history: routing.history.length,
-            matcher: routing.matcher.length,
-            ai: routing.ai.length
-        });
-
-        if (window.DEBUG_MODE) {
-            console.table(routingDecisions);
-        }
-
-        return routing;
+    isTransactionalField(field) {
+        // Check if it's part of a Job or School block (has index + relevant label)
+        return (field.field_index !== undefined && field.field_index !== null) &&
+            (this.isHistoryField(field));
     }
 
-    /**
-     * Get routing statistics
-     */
-    getRoutingStats(fields, cacheResults = {}) {
-        const routing = this.routeAll(fields, cacheResults);
-        const total = fields.length;
-
-        return {
-            total,
-            cache: { count: routing.cache.length, percent: (routing.cache.length / total * 100).toFixed(1) },
-            history: { count: routing.history.length, percent: (routing.history.length / total * 100).toFixed(1) },
-            matcher: { count: routing.matcher.length, percent: (routing.matcher.length / total * 100).toFixed(1) },
-            ai: { count: routing.ai.length, percent: (routing.ai.length / total * 100).toFixed(1) }
-        };
-    }
-
-    // ========================================
-    // CLASSIFICATION HELPERS
-    // ========================================
-
-    /**
-     * Check if field should go to HistoryManager
-     */
     isHistoryField(field) {
-        const hasIndex = /[_\-\[]\d+[_\-\]]?/.test(field.name || field.id || '');
-
-        // Use section context if available (most accurate)
-        if (field.sectionContext && hasIndex) {
-            const ctx = field.sectionContext;
-            if (ctx.confidence >= 4 && (ctx.context === 'work' || ctx.context === 'education')) {
-                return true;
-            }
-        }
-
-        // Fallback to keyword matching
-        if (hasIndex) {
-            const text = (field.name + ' ' + field.label).toLowerCase();
-            const isWorkField = /job|employ|work|company|position|title|role/i.test(text);
-            const isEduField = /degree|education|school|university|college|institution|major/i.test(text);
-            return isWorkField || isEduField;
-        }
-
-        return false;
-    }
-
-    /**
-     * Check if field should go to LocalMatcher
-     */
-    isMatcherField(field) {
-        const text = (field.name + ' ' + field.label).toLowerCase();
-
-        // Simple deterministic patterns
-        const patterns = [
-            /experience.*years/i,
-            /years.*experience/i,
-            /sponsorship/i,
-            /visa/i,
-            /authorized.*work/i,
-            /relocate/i,
-            /remote/i,
-            /travel/i,
-            /veteran/i,
-            /disability/i,
-            /gender/i,
-            /race/i,
-            /ethnicity/i,
-            /citizenship/i,
-            /clearance/i,
-            /employed.*currently/i,
-            /notice.*period/i
+        const prediction = field.ml_prediction?.label || '';
+        const historyLabels = [
+            'job_title', 'employer_name', 'job_start_date', 'job_end_date', 'work_description',
+            'institution_name', 'degree_type', 'field_of_study', 'gpa_score', 'education_start_date'
         ];
-
-        return patterns.some(pattern => pattern.test(text));
+        return historyLabels.includes(prediction);
     }
 
-    /**
-     * Get reason for matcher routing
-     */
-    getMatcherReason(field) {
-        const text = (field.name + ' ' + field.label).toLowerCase();
-
-        if (/experience|years/i.test(text)) return 'Years of experience question';
-        if (/sponsorship|visa|authorized/i.test(text)) return 'Visa/sponsorship question';
-        if (/relocate|remote|travel/i.test(text)) return 'Work logistics question';
-        if (/veteran|disability|gender|race|ethnicity/i.test(text)) return 'Demographics question';
-        if (/citizenship/i.test(text)) return 'Citizenship question';
-        if (/clearance/i.test(text)) return 'Security clearance question';
-        if (/employed|notice/i.test(text)) return 'Employment status question';
-
-        return 'Deterministic field';
-    }
-
-    /**
-     * Helper: Extract field index
-     */
-    extractFieldIndex(field) {
-        const match = (field.name || '').match(/[_\-\[](\d+)[_\-\]]?/);
-        return match ? parseInt(match[1]) : 0;
+    // Legacy Alias for Backward Compatibility
+    routeAll(fields, cacheResults) {
+        console.warn('⚠️ [Deprecation] FieldRouter.routeAll called. Prefer executePipeline.');
+        // This won't actually execute, just return groupings like before to not break legacy caller
+        // We replicate the minimal logic needed for legacy
+        const groups = this.groupFields(fields);
+        return {
+            cache: [], // Legacy expects these populated
+            history: groups.multi,
+            matcher: groups.selector.concat(groups.text),
+            ai: groups.general
+        };
     }
 }
 
-// Export for use
 if (typeof window !== 'undefined') {
     window.FieldRouter = FieldRouter;
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = FieldRouter;
 }

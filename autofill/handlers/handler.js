@@ -1,6 +1,6 @@
 /**
  * Base Handler Class
- * Interface for all field handlers
+ * Interface for all field handlers in the Pipeline Architecture
  */
 class Handler {
     constructor(name) {
@@ -17,13 +17,26 @@ class Handler {
     }
 
     /**
-     * Process a batch of fields
+     * Process a batch of fields execution
      * @param {Array} fields 
      * @param {Object} context (resume, memory, etc.)
-     * @returns {Promise<Object>} { selector: { value, confidence, source } }
+     * @returns {Promise<Object>} Map of { selector: { value, confidence, source, trace } }
      */
     async handle(fields, context) {
         throw new Error('handle() must be implemented');
+    }
+
+    /**
+     * Create a standardized success trace
+     */
+    createTrace(step, confidence, meta = {}) {
+        return {
+            handler: this.name,
+            step: step,
+            confidence: confidence,
+            timestamp: Date.now(),
+            ...meta
+        };
     }
 }
 

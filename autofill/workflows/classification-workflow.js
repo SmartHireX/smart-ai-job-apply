@@ -17,11 +17,9 @@ class Phase0Classification {
      */
     static async run(fields) {
         if (!window.neuralClassifier) {
-            console.warn('⚠️ Neural Classifier not available');
             return fields;
         }
 
-        console.log('🧠 [Phase 0] Running TinyML Classification on all fields...');
 
         const classificationHash = {}; // Store results in hash map
 
@@ -44,7 +42,6 @@ class Phase0Classification {
             this.attachFieldIndex(field, prediction);
         });
 
-        console.log('🧠 [Phase 0] Classification Complete. Results stored on fields.');
 
         return fields;
     }
@@ -72,7 +69,6 @@ class Phase0Classification {
         if (type) {
             const index = window.IndexingService.getIndex(field, type);
             field.field_index = index;
-            console.log(`🎯 [Indexed Field] "${label}" Index: ${index}`, field);
         }
     }
 

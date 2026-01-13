@@ -1,40 +1,36 @@
 /**
  * MatcherHandler
- * Handles fields using LocalMatcher (deterministic text matching)
+ * Handles interactions for Selector Fields (Radio, Checkbox, Select)
+ * Delegated Logic: Uses LocalMatcher or internal logic for "Selection"
  */
-class MatcherHandler {
+class MatcherHandler extends window.Handler {
     constructor() {
-        this.name = 'matcher';
+        super('matcher');
     }
 
     async handle(fields, context) {
         const results = {};
-
-        if (!window.LocalMatcher) {
-            console.warn('[MatcherHandler] LocalMatcher not available');
-            return results;
-        }
-
-        const matcher = new window.LocalMatcher();
         const { resumeData } = context;
 
-        // Process each field independent (or batch if matcher supports it?)
-        // LocalMatcher.resolveFields takes an array of fields
+        // Processing a batch (usually 1 field in Sequential Pipeline)
+        // But logic is robust for arrays
 
-        const answers = matcher.resolveFields(fields, resumeData);
+        // Strategy: Delegate to LocalMatcher for "Decision"
+        // MatcherHandler is just the "Handler" wrapper now in Pipeline
+        // Ideally FieldRouter called LocalMatcher directly, but we kept this layer.
 
-        // Convert array of {selector, value} to results map
-        answers.forEach(answer => {
-            if (answer && answer.selector && answer.value) {
-                results[answer.selector] = {
-                    value: answer.value,
-                    confidence: 0.9,
-                    source: 'local-matcher'
+        if (window.LocalMatcher) {
+            // LocalMatcher.resolveFields returns { defined: {}, remaining: [] }
+            const { defined } = window.LocalMatcher.resolveFields(fields, resumeData);
+
+            for (const [selector, res] of Object.entries(defined)) {
+                results[selector] = {
+                    ...res,
+                    trace: this.createTrace('local_matcher', res.confidence, { source: res.source })
                 };
             }
-        });
+        }
 
-        console.log(`[MatcherHandler] Resolved ${Object.keys(results).length} fields`);
         return results;
     }
 }
