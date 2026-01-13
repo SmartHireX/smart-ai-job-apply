@@ -415,7 +415,7 @@ class RuleEngine {
 
     isHistoryField(context, field) {
         // Regex for job/edu terms
-        if (field.field_index !== undefined) return true; // Already indexed
+        // REMOVED: if (field.field_index !== undefined) return true; -> This was skipping valid indexed fields like first_name
         return /company|employer|job|title|school|university|degree|major|gpa|start date|end date/.test(context);
     }
 
