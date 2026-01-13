@@ -1,5 +1,5 @@
 /**
- * Selection Cache Module
+ * InteractionLog {Module
  * 
  * Implements Chrome-style heuristic pattern matching for intelligent caching
  * of non-text form field selections (radio, checkbox, select).
@@ -276,12 +276,12 @@ async function getCachedValue(field, label) {
         if (field && field.tagName && (field.tagName.toLowerCase() === 'select' || field.getAttribute('role') === 'listbox')) {
             const isValid = validateOption(field, cached.value);
             if (!isValid) {
-                console.warn(`[SelectionCache] ⚠️ Cached value "${cached.value}" not found in current options for "${label}". Cache Miss forced.`);
+                console.warn(`[InteractionLog] ⚠️ Cached value "${cached.value}" not found in current options for "${label}". Cache Miss forced.`);
                 return null;
             }
         }
 
-        console.log(`[SelectionCache] ✅ Cache HIT for "${label}" → type: ${semanticType}, value: ${cached.value}`);
+        console.log(`[InteractionLog] ✅ Cache HIT for "${label}" → type: ${semanticType}, value: ${cached.value}`);
 
         // Mark as USED for this session
         if (strictListTypes.includes(semanticType)) {

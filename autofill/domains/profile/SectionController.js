@@ -3,9 +3,11 @@
  * specialized handler for repeating sections (Jobs, Education)
  * Implements "Transactional Integrity" - ensures a section is filled coherently (all from same source entity)
  */
-class HistoryHandler extends window.Handler {
+class SectionController extends window.Handler {
     constructor() {
-        super('history');
+        super('section_controller');
+        // Dependency Injection
+        this.store = window.EntityStore || null;
     }
 
     canHandle(field) {
@@ -150,5 +152,5 @@ class HistoryHandler extends window.Handler {
 }
 
 if (typeof window !== 'undefined') {
-    window.HistoryHandler = HistoryHandler;
+    window.SectionController = SectionController;
 }

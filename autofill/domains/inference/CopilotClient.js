@@ -1,13 +1,17 @@
 /**
- * AIHandler
- * Handles fields requiring AI processing (wraps BatchProcessor)
+ * AIResolver
+ * 
+ * Handles fields requiring AI processing (wraps BatchProcessor).
+ * Located in atomic AI resolver directory.
+ * 
  * Features:
  * - Copilot Mode: Generates answers for "Why us?" textareas using Job/Resume context.
  * - Circuit Breaker: Fails fast after N errors.
  */
-class AIHandler extends window.Handler {
+
+class CopilotClient extends window.Handler {
     constructor() {
-        super('ai');
+        super('copilot_client');
         this.errorCount = 0;
         this.CIRCUIT_THRESHOLD = 3;
     }
@@ -18,18 +22,18 @@ class AIHandler extends window.Handler {
 
         // Circuit Breaker Check
         if (this.errorCount >= this.CIRCUIT_THRESHOLD) {
-            console.warn(`[AIHandler] Circuit Breaker Open! Skipping ${fields.length} fields.`);
+            console.warn(`[AIResolver] Circuit Breaker Open! Skipping ${fields.length} fields.`);
             return results;
         }
 
         if (!window.BatchProcessor) {
-            console.warn('[AIHandler] BatchProcessor not available');
+            console.warn('[AIResolver] BatchProcessor not available');
             return results;
         }
 
-        console.log(`[AIHandler] Processing ${fields.length} fields with Copilot/Batch`);
+        console.log(`[AIResolver] Processing ${fields.length} fields with Copilot/Batch`);
 
-        // Separate "Copilot" Candidates (Texareas asking open-ended Qs)
+        // Separate "Copilot" Candidates (Textareas asking open-ended Qs)
         const copilotFields = fields.filter(f => f.tagName === 'TEXTAREA' || (f.type === 'text' && f.maxLength > 100));
         const standardFields = fields.filter(f => !copilotFields.includes(f));
 
@@ -46,13 +50,12 @@ class AIHandler extends window.Handler {
                 // Reset circuit on success
                 this.errorCount = 0;
             } catch (error) {
-                console.error('[AIHandler] Batch Error:', error);
+                console.error('[AIResolver] Batch Error:', error);
                 this.errorCount++;
             }
         }
 
         // 2. Process Copilot Fields (Individually or special batch)
-        // These need richer context (Job Desc)
         if (copilotFields.length > 0) {
             for (const field of copilotFields) {
                 try {
@@ -66,7 +69,7 @@ class AIHandler extends window.Handler {
                         };
                     }
                 } catch (e) {
-                    console.warn(`[AIHandler] Copilot failed for ${field.name}:`, e);
+                    console.warn(`[AIResolver] Copilot failed for ${field.name}:`, e);
                 }
             }
         }
@@ -78,8 +81,6 @@ class AIHandler extends window.Handler {
         // "Why do you want to work at [Company]?"
         // Construct prompt using Resume + Job Description
         // For now, delegate to existing BatchProcessor logic but flag as "High Context"
-        // or call a specialized method if available. 
-        // We'll reuse BatchProcessor for now as it has context building.
 
         // Simulating "Copilot" logic via single-item batch with specific instruction
         const batch = [field];
@@ -89,5 +90,5 @@ class AIHandler extends window.Handler {
 }
 
 if (typeof window !== 'undefined') {
-    window.AIHandler = AIHandler;
+    window.CopilotClient = CopilotClient;
 }

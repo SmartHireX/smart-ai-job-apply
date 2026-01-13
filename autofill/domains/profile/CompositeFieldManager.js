@@ -9,12 +9,11 @@
  * 2. Profile Data (HistoryManager)
  * 3. AI (BatchProcessor - delegation)
  */
-
-class MultiValueHandler {
+class CompositeFieldManager {
 
     constructor() {
-        this.cache = window.SelectionCache;
-        this.history = window.HistoryManager;
+        this.cache = window.InteractionLog;
+        this.store = window.EntityStore;
         this.indexer = window.IndexingService;
     }
 
@@ -24,41 +23,39 @@ class MultiValueHandler {
      * @param {Array} fields - Mixed array of fields
      * @returns {Object} { filled: [], pending: [] }
      */
-    async processGroup(fields) {
+    async processGroup(fields, context) {
         const groups = this.groupFieldsBySection(fields);
         const results = { filled: [], pending: [] };
+        const resumeData = context?.resumeData || {};
 
         for (const [key, group] of Object.entries(groups)) {
             // key is "work_0", "education_1", or "skills_0"
             const [type, indexStr] = key.split('_');
             const index = parseInt(indexStr, 10);
 
-            console.log(`[MultiValueHandler] Processing Group: ${key} (${group.length} fields)`);
+            console.log(`[CompositeManager] Processing Group: ${key} (${group.length} fields)`);
 
             // 1. Fetch Source Data ONCE for the group
-            let sourceData = null;
-            let sourceOrigin = 'none';
+            let profileEntity = null;
+            if (type === 'work' || type === 'education') {
+                profileEntity = this.store ? this.store.getByIndex(type, index) : null;
+            }
 
-            // A. Try Cache (If we have a "Job Object" cached? Unlikely. Cache is usually field-level.)
-            // Actually, for consistency, if we have Profile Data, we should prefer that for WHOLE sections 
-            // to avoid mixing valid profile data with potentially stale partial cache?
-            // User said: "fill with first entry from cache ... if not then user data"
-            // But Cache stores atomic values.
-            // Let's stick to field-level resolution BUT sharing the "Profile Entity" if cache misses.
-
-            // Actually, best strategy for "Job 1":
-            // Get "Job 1" from HistoryManager.
-            // For each field, if Cache exists, use Cache (User override).
-            // If Cache MISSES, use the "Job 1" object we fetched.
-
-            const profileEntity = this.history ? this.history.getByIndex(type, index) : null;
+            // Special Handling for Skills (User Data Fallback)
+            let matchedSkills = [];
+            if (type === 'skills' && window.RuleEngine && resumeData.skills) {
+                // Get all option values from the group (assuming checkboxes)
+                const options = group.map(f => f.value || f.label);
+                matchedSkills = window.RuleEngine.matchSkills(options, resumeData.skills);
+                console.log(`[CompositeManager] Matched ${matchedSkills.length} skills from User Data.`);
+            }
 
             for (const field of group) {
                 // Attach strict index
                 field.field_index = index;
 
-                // 2. Field-Level Resolution with Group Context
-                const result = await this.resolveAndFill(field, type, profileEntity);
+                // 2. Resolve (pass matchedSkills if applicable)
+                const result = await this.resolveAndFill(field, type, profileEntity, matchedSkills);
 
                 if (result.filled) {
                     results.filled.push({ ...field, source: result.source });
@@ -103,67 +100,70 @@ class MultiValueHandler {
      * @param {string} type - 'work', 'education'
      * @param {Object|null} groupEntity - Pre-fetched profile entity for this group (Optimization)
      */
-    async resolveAndFill(field, type, groupEntity = null) {
+    async resolveAndFill(field, type, groupEntity = null, matchedSkills = []) {
         if (!field || !field.element) return { filled: false, source: 'error' };
 
-        // 1. Calculate Index (Smart Indexing)
-        // If index is already attached by Router, use it. Otherwise calculate.
+        // 1. Calculate Index
         const index = field.index !== undefined ? field.index : this.indexer.getIndex(field, type);
-        field.field_index = index; // Store for debugging/reference
+        field.field_index = index;
 
-        console.log(`[MultiValueHandler] Resolving "${field.label}" (${type}) @ Index ${index}`);
+        console.log(`[CompositeManager] Resolving "${field.label}" (${type}) @ Index ${index}`);
 
-        // 2. Strategy 1: Check Selection Cache (User's past interactions)
-        // We check the specific selector + index combination if possible.
-        // Cache usually keyed by Selector.
+        // STRATEGY CHAIN
+
+        // A. Site Cache (Priority)
         if (this.cache) {
             const cached = this.cache.getCachedValue(field.selector || field.xpath);
             if (cached && cached.value) {
-                // If it's a multi-select array or single value
-                const success = this.fill(field.element, cached.value);
-                if (success) return { filled: true, source: 'cache', value: cached.value };
+                if (this.fill(field.element, cached.value)) return { filled: true, source: 'cache', value: cached.value };
             }
         }
 
-        // 3. Strategy 2: Check Profile Data (HistoryManager)
-        if (this.history) {
-            // Use the Group Entity provided, or fetch if missing
-            let data = groupEntity || this.history.getByIndex(type, index);
+        // B. Skills Logic (User Data Fallback)
+        if (type === 'skills' && matchedSkills.length > 0) {
+            // Provide all matched skills to the field. 
+            // The 'fill' logic will handle checking the specific one if it's a checkbox, 
+            // or joining them if it's a text input.
+            if (this.fill(field.element, matchedSkills)) {
+                // AUTO-CACHE: Save the matched skills list
+                if (this.cache) this.cache.cacheSelection(field, field.label, matchedSkills);
+                return { filled: true, source: 'user_skills', value: matchedSkills };
+            }
+        }
 
+        // C. Global Memory
+        if (window.GlobalMemory) {
+            const memRes = await window.GlobalMemory.resolveField(field);
+            if (memRes && memRes.value) {
+                if (this.fill(field.element, memRes.value)) return { filled: true, source: 'global_memory', value: memRes.value };
+            }
+        }
+
+        // D. User Profile (EntityStore for Jobs/Edu)
+        if (this.store && (type === 'work' || type === 'education')) {
+            const data = groupEntity || this.store.getByIndex(type, index);
             if (data) {
-                // Formatting Logic:
-                // If data is an Object (Job), extract the specific field (e.g. "Company Name")
-                // If data is a String (Skill), use it directly.
-                let valueToFill = null;
-
-                if (typeof data === 'object') {
-                    // Map field label to property (e.g. "Employer" -> data.company)
-                    // This requires a Mini-Mapper or relying on Neural Label
-                    const key = field.ml_prediction?.label || field.short_label;
-                    // We need a robust mapping here. 
-                    // Neural Label is usually 'company', 'job_title', etc. 
-                    // HistoryManager Schema uses 'company', 'title'.
-                    if (key && data[key]) {
-                        valueToFill = data[key];
-                    }
-                } else {
-                    // It's a primitive (e.g. "Java" from skills array)
-                    valueToFill = data;
-                }
-
+                const valueToFill = this.extractValueFromEntity(data, field);
                 if (valueToFill) {
-                    // If the field is multi-select but we got a single string, wrap it?
-                    // Or if we got an Array (Skills) and field is multi-select.
-                    const success = this.fill(field.element, valueToFill);
-                    if (success) return { filled: true, source: 'profile', value: valueToFill };
+                    if (this.fill(field.element, valueToFill)) {
+                        // AUTO-CACHE: Save this successful profile fill to site cache for next time
+                        if (this.cache) this.cache.cacheSelection(field, field.label, valueToFill);
+                        return { filled: true, source: 'profile', value: valueToFill };
+                    }
                 }
             }
         }
 
-        // 4. Strategy 3: AI (Deferred)
-        // We report failure here, so the BatchProcessor can pick it up.
-        console.log(`[MultiValueHandler] No data for "${field.label}". Delegating to AI.`);
         return { filled: false, source: 'ai_pending' };
+    }
+
+    extractValueFromEntity(data, field) {
+        if (typeof data !== 'object') return data; // Primitive skill
+
+        const key = field.ml_prediction?.label || field.short_label;
+        if (key && data[key]) return data[key];
+
+        return null;
     }
 
     /**
@@ -245,10 +245,29 @@ class MultiValueHandler {
         return el.closest('label')?.innerText || '';
     }
 
+    /**
+     * Accurate Fuzzy Match
+     * Uses Token Overlap for "React.js" == "React" accuracy
+     */
     fuzzyMatch(a, b) {
-        return String(a).toLowerCase().includes(String(b).toLowerCase());
+        if (!a || !b) return false;
+        const strA = String(a).toLowerCase();
+        const strB = String(b).toLowerCase();
+
+        // 1. Direct Include
+        if (strA.includes(strB) || strB.includes(strA)) return true;
+
+        // 2. Token Jaccard (for multi-word skills like "Machine Learning" vs "ML")
+        const tokensA = new Set(strA.split(/[\s,._-]+/));
+        const tokensB = new Set(strB.split(/[\s,._-]+/));
+
+        let intersect = 0;
+        tokensA.forEach(t => { if (tokensB.has(t)) intersect++; });
+
+        // High threshold for safety
+        return (intersect / Math.min(tokensA.size, tokensB.size)) > 0.75;
     }
 }
 
-if (typeof window !== 'undefined') window.MultiValueHandler = new MultiValueHandler();
-if (typeof module !== 'undefined') module.exports = MultiValueHandler;
+if (typeof window !== 'undefined') window.CompositeFieldManager = new CompositeFieldManager();
+if (typeof module !== 'undefined') module.exports = CompositeFieldManager;

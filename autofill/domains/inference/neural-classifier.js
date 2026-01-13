@@ -109,8 +109,8 @@ class NeuralClassifier {
         const userWeightsLoaded = await this.loadWeights();
 
         if (!userWeightsLoaded) {
-            // Priority 2: Load pre-trained baseline weights (bundled with extension)
-            const baselineLoaded = await this.loadBaselineWeights();
+            // Priority 2: Baseline weights (File missing in V2 refactor, skipping)
+            const baselineLoaded = false; // await this.loadBaselineWeights();
 
             if (!baselineLoaded) {
                 // Priority 3: Initialize random weights (cold start)

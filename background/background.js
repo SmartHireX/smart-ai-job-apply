@@ -12,49 +12,71 @@ console.log('Smart AI Job Apply background service worker started');
 
 // Script injection order for lazy loading
 const CONTENT_SCRIPTS = [
+    // Shared Utils
     'shared/utils/ai-client.js',
     'shared/utils/resume-manager.js',
     'shared/utils/form-extractor.js',
     'shared/utils/form-analyzer.js',
-    'autofill/services/cache/selection-cache.js',
-    'autofill/services/matching/local-matcher.js',
-    'autofill/services/cache/history-manager.js',
-    'autofill/services/cache/cache-manager.js',
+
+    // Autofill Core & Domains (FANG Architecture)
+    'autofill/domains/heuristics/InteractionLog.js',
+    'autofill/domains/heuristics/RuleEngine.js',
+    'autofill/domains/profile/EntityStore.js',
     'autofill/services/indexing/field-indexing-service.js',
-    'autofill/routers/field-router.js',
+    'autofill/core/PipelineOrchestrator.js',
+
+    // Extraction Services
     'autofill/services/extraction/section-detector.js',
     'autofill/services/extraction/sibling-cluster.js',
     'autofill/services/extraction/form-detector.js',
-    'autofill/services/cache/multi-value-handler.js',
-    'autofill/services/ai/batch-processor.js',
-    'autofill/services/ai/prefetch-engine.js',
+
+    // Domain Logic
+    'autofill/domains/profile/CompositeFieldManager.js',
+    'autofill/domains/inference/InferenceBatcher.js',
+    'autofill/domains/inference/prefetch-engine.js',
+
+    // UI
     'autofill/ui/animations/form-visuals.js',
     'autofill/ui/sidebar/drag-resize.js',
     'autofill/ui/sidebar/sidebar-components.js',
     'autofill/ui/premium-inputs/premium-input-renderer.js',
+
+    // Legacy / Shared Handlers
     'autofill/handlers/handler.js',
-    'autofill/handlers/cache-handler.js',
-    'autofill/handlers/matcher-handler.js',
-    'autofill/handlers/history-handler.js',
-    'autofill/handlers/ai-handler.js',
+    'autofill/domains/profile/SectionController.js',
+    'autofill/domains/inference/CopilotClient.js',
+
+    // Shared State
     'shared/state/state-manager.js',
     'shared/state/action-queue.js',
-    'shared/state/orchestrator.js',
-    'autofill/services/ai/feature-extractor.js',
-    'autofill/services/ai/neural-classifier.js',
+
+    // Inference Support
+    'autofill/domains/inference/feature-extractor.js',
+    'autofill/domains/inference/neural-classifier.js',
+    'autofill/domains/inference/execution-engine.js',
+
+    // Infrastructure
     'common/infrastructure/config.js',
     'common/infrastructure/lifecycle.js',
-    'autofill/services/cache/smart-memory-service.js',
+
+    // Core Features
+    'autofill/domains/memory/GlobalMemory.js',
     'autofill/utils/field-utils.js',
     'autofill/features/undo-manager.js',
     'autofill/features/self-healing.js',
     'autofill/features/ai-field-regeneration.js',
+
+    // Workflows
     'autofill/workflows/classification-workflow.js',
     'autofill/workflows/instant-fill-workflow.js',
     'autofill/workflows/ai-fill-workflow.js',
     'autofill/core/form-processor.js',
+
+    // Chatbot
     'chatbot/handlers/context-handler.js',
     'chatbot/services/ai/context-classifier.js',
+
+    // Messaging & Orchestration
     'autofill/handlers/autofill-message-handler.js',
     'autofill/handlers/undo-handler.js',
     'chatbot/handlers/chat-message-handler.js',

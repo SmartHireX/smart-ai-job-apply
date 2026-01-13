@@ -64,11 +64,12 @@ class Lifecycle {
         this.registerService('ResumeManager', window.ResumeManager);
         this.registerService('FormAnalyzer', window.FormAnalyzer);
         this.registerService('AIClient', window.AIClient);
-        this.registerService('BatchProcessor', window.BatchProcessor);
-        this.registerService('SelectionCache', window.SelectionCache);
-        this.registerService('LocalMatcher', window.LocalMatcher);
+        this.registerService('BatchProcessor', window.ExecutionEngine); // Renamed
+        this.registerService('SelectionCache', window.InteractionLog); // Renamed
+        this.registerService('LocalMatcher', window.RuleEngine); // Renamed
         this.registerService('IndexingService', window.IndexingService);
-        this.registerService('HistoryManager', window.HistoryManager);
+        this.registerService('HistoryManager', window.EntityStore); // Renamed
+        this.registerService('PipelineOrchestrator', window.PipelineOrchestrator); // New
         this.registerService('PrefetchEngine', window.PrefetchEngine);
     }
 

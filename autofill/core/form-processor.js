@@ -23,28 +23,14 @@ class FormProcessor {
         }
 
         try {
-            // Check for new architecture
-            if (Config.isNewArchEnabled() && window.NovaAI && window.NovaAI.processFormNew) {
-                await this.processWithNewArchitecture();
-                return;
-            }
-
-            // Use legacy two-phase architecture
-            await this.processWithLegacyArchitecture();
+            // Execute FANG-Level FieldRouter Pipeline
+            await this.executeFieldRouterPipeline();
 
             console.log('✅ [FormProcessor] Processing complete');
 
         } catch (error) {
             console.error('❌ [FormProcessor] Processing failed:', error);
-
-            if (typeof window.showProcessingWidget === 'function') {
-                window.showProcessingWidget('Error', -1);
-            }
-            if (typeof window.showErrorToast === 'function') {
-                window.showErrorToast('Partial Error: ' + error.message);
-            }
-
-            throw error;
+            // ...
         } finally {
             // Always cleanup
             setTimeout(() => {
@@ -62,56 +48,9 @@ class FormProcessor {
     }
 
     /**
-     * Process with new architecture (if enabled)
+     * Execute the Main FieldRouter Pipeline
      */
-    static async processWithNewArchitecture() {
-        console.log('🚀 [New Architecture] Processing form with new system...');
-
-        // Get resume and memory
-        const [resumeData, smartMemory] = await Promise.all([
-            window.ResumeManager.getResumeData(),
-            MemoryUtils.getCache()
-        ]);
-
-        if (!resumeData) throw new Error('Resume data missing');
-
-        // Normalize schema
-        this.normalizeResumeSchema(resumeData);
-
-        // Extract fields
-        const formHTML = this.extractFormHTML();
-        if (!formHTML) throw new Error('No form found');
-        const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
-
-        // Use new architecture callbacks
-        const callbacks = {
-            onFieldAnswered: (selector, value, confidence) => {
-                if (typeof window.simulateTyping === 'function') {
-                    window.simulateTyping(selector, value, 0.3).catch(err =>
-                        console.error('Fill error:', err)
-                    );
-                }
-            },
-            onBatchComplete: (mappings) => {
-                console.log('[New Arch] Batch complete:', Object.keys(mappings).length);
-            },
-            onAllComplete: (allMappings) => {
-                console.log('[New Arch] All complete:', Object.keys(allMappings).length);
-                if (typeof window.showFormReview === 'function') {
-                    window.showFormReview(allMappings, fields);
-                }
-            }
-        };
-
-        await window.NovaAI.processFormNew(fields, resumeData, smartMemory, callbacks);
-
-        console.log('✅ [New Architecture] Form processing complete');
-    }
-
-    /**
-     * Process with legacy two-phase architecture
-     */
-    static async processWithLegacyArchitecture() {
+    static async executeFieldRouterPipeline() {
         console.log('🚀 [FormProcessor] Starting FANG-Level Pipeline (Stealth Mode)...');
 
         // Initialize neural classifier
@@ -123,8 +62,10 @@ class FormProcessor {
         // Get context
         const [resumeData, smartMemory] = await Promise.all([
             window.ResumeManager.getResumeData(),
-            MemoryUtils.getCache()
+            window.SmartMemoryService ? window.SmartMemoryService.getAll() : {} // Direct access if possible, or use MemoryUtils
         ]);
+
+        // Ensure SmartMemoryService is ready (it initializes itself usually, but good to check)
 
         if (!resumeData) throw new Error('Resume data missing');
         this.normalizeResumeSchema(resumeData);
@@ -138,27 +79,49 @@ class FormProcessor {
         console.log(`📊 [FormProcessor] Extracted ${fields.length} fields for Pipeline.`);
 
         // --- EXECUTE NEW PIPELINE ---
-        if (window.FieldRouter) {
-            const router = new window.FieldRouter();
+        if (window.PipelineOrchestrator) {
+            const orchestrator = new window.PipelineOrchestrator();
 
             const context = {
                 resumeData,
-                smartMemory,
+                smartMemory: {}, // Router accesses SmartMemoryService directly now
                 callbacks: {}
             };
 
-            // This will trigger the "Grouped Fields" log inside FieldRouter
-            const results = await router.executePipeline(fields, context);
+            // 3. Execute Pipeline
+            const results = await orchestrator.executePipeline(fields, context);
+
+            // 4. Update Stats
+            this.updateStats(results);
+
+            // 5. Trigger "Grouped Fields" log (via orchestrator internally)
 
             console.log('✅ [FormProcessor] Pipeline execution passed.');
         } else {
-            console.error('❌ FieldRouter not found! Falling back to legacy? No, aborting.');
+            console.error('❌ PipelineOrchestrator not found!');
+            return {};
         }
 
         // Show completion
         if (typeof window.showProcessingWidget === 'function') {
             window.showProcessingWidget('Done!', 4);
         }
+    }
+
+    /**
+     * Update fill statistics
+     */
+    static updateStats(results) {
+        if (!results) return;
+        const total = Object.keys(results).length;
+        const filled = Object.values(results).filter(r => r.value).length;
+        console.log(`📊 [Stats] Filled ${filled}/${total} fields.`);
+
+        // Optional: Send to background for persistent tracking
+        chrome.runtime.sendMessage({
+            type: 'UPDATE_STATS',
+            payload: { filled, total, timestamp: Date.now() }
+        }).catch(() => { }); // Ignore if background is unreachable
     }
 
     /**

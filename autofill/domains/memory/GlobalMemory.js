@@ -8,7 +8,7 @@
  * Smart Memory Utilities
  * Handles smart memory caching, retrieval, and key normalization
  */
-class MemoryUtils {
+class GlobalMemory {
     /**
      * Normalize a label for Smart Memory key
      * @param {string} label - Raw label text
@@ -38,6 +38,41 @@ class MemoryUtils {
         ].join(' ');
 
         return this.normalizeKey(rawString);
+    }
+
+    /**
+     * Resolve a single field against Global Memory
+     */
+    static async resolveField(field) {
+        const cache = await this.getCache();
+        const primaryKey = this.normalizeKey(field.label || field.name);
+        const fallbackKey = this.generateFallbackKey(field);
+
+        if (cache[primaryKey]) return { value: cache[primaryKey].answer, confidence: 0.9 };
+        if (cache[fallbackKey]) return { value: cache[fallbackKey].answer, confidence: 0.7 };
+
+        return null;
+    }
+
+    /**
+     * Batch Resolution for Core Pipeline
+     */
+    static async resolveBatch(fields) {
+        const cache = await this.getCache();
+        const results = {};
+
+        for (const field of fields) {
+            const res = await this.resolveField(field);
+            if (res) {
+                // Return format expected by PipelineOrchestrator
+                results[field.selector] = {
+                    value: res.value,
+                    confidence: res.confidence,
+                    source: 'global_memory'
+                };
+            }
+        }
+        return results;
     }
 
     /**
@@ -190,8 +225,14 @@ class MemoryUtils {
 }
 
 // Legacy compatibility - expose globally
-window.updateSmartMemoryCache = MemoryUtils.updateCache.bind(MemoryUtils);
-window.normalizeSmartMemoryKey = MemoryUtils.normalizeKey.bind(MemoryUtils);
+window.updateSmartMemoryCache = GlobalMemory.updateCache.bind(GlobalMemory);
+window.normalizeSmartMemoryKey = GlobalMemory.normalizeKey.bind(GlobalMemory);
 
-// Export class to global scope
-window.MemoryUtils = MemoryUtils;
+// Export for use
+if (typeof window !== 'undefined') {
+    window.GlobalMemory = GlobalMemory;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = GlobalMemory;
+}

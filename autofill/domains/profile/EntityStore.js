@@ -2,56 +2,14 @@
  * HistoryManager: Structured Entity Caching for Work & Education
  * Source of Truth for User Data (Jobs, Edu, Skills, etc.)
  */
-const HistoryManager = {
-    profile: {
+class EntityStore {
+    profile = {
         work: [],      // Array of Job Objects
         education: [], // Array of Education Objects
 
-        // Multi-Value Arrays (Flat structure)
+        // Skills & General
         skills: [],
-        cities: [],
-        languages: [],
-        job_types: [],
-        industries: [],
-        // ... extendable
-    },
-
-    isInitialized: false,
-
-    // Schema Mapping Config (Descriptive Keys)
-    // Maps Field Labels (Regex) -> Storage Keys
-    SCHEMA: {
-        work: {
-            employer_name: /company|employer|organization|business/i,
-            job_title: /title|role|position|designation/i,
-            job_start_date: /start.*date|from/i,
-            job_end_date: /end.*date|to/i,
-            work_description: /description|responsibilities|duty/i,
-            job_location: /location|city|address/i
-        },
-        education: {
-            institution_name: /school|university|college|institution/i,
-            degree_type: /degree|qualification|major|course/i,
-            field_of_study: /major|field|specialization/i,
-            education_start_date: /start.*date|from/i,
-            education_end_date: /end.*date|to|graduat/i,
-            gpa_score: /gpa|grade|score/i
-        },
-        portfolio: {
-            linkedin: /linkedin/i,
-            github: /github/i,
-            website: /website|portfolio|blog/i,
-            twitter_url: /twitter|x\.com/i
-        },
-        personal: {
-            marital_status: /marital|search_status/i
-        },
-        compensation: {
-            salary_current: /current.*salary/i,
-            salary_expected: /expected.*salary/i,
-            desired_salary_text: /desired.*salary.*text|compensation.*expectation/i
-        }
-    },
+    };
 
     /**
      * Initialize and load data from storage
@@ -64,11 +22,11 @@ const HistoryManager = {
                 this.profile = { ...this.profile, ...result.smart_history_profile };
             }
             this.isInitialized = true;
-            console.log('[HistoryManager] Initialized.');
+            console.log('[EntityStore] Initialized.');
         } catch (e) {
-            console.warn('[HistoryManager] Init failed:', e);
+            console.warn('[EntityStore] Init failed:', e);
         }
-    },
+    }
 
     /**
      * Save current profile to storage
@@ -77,9 +35,9 @@ const HistoryManager = {
         try {
             await chrome.storage.local.set({ 'smart_history_profile': this.profile });
         } catch (e) {
-            console.error('[HistoryManager] Save failed:', e);
+            console.error('[EntityStore] Save failed:', e);
         }
-    },
+    }
 
     /**
      * Retrieve a specific entity by Index
@@ -94,10 +52,10 @@ const HistoryManager = {
         if (index < 0 || index >= list.length) return null;
 
         return list[index];
-    },
+    }
 
     /**
-     * Add or Update an entity (called by BatchProcessor after AI fills)
+     * Add or Update an entity (called by InferenceBatcher after AI fills)
      */
     async upsertEntity(type, newData) {
         // Logic to merge/append data
@@ -121,7 +79,7 @@ const HistoryManager = {
 
         // 1. Validate Data Integrity
         if (!this.validateEntity(newData, primaryKey)) {
-            console.warn('[HistoryManager] Skipped invalid entity:', newData);
+            console.warn('[EntityStore] Skipped invalid entity:', newData);
             return;
         }
 
@@ -136,7 +94,7 @@ const HistoryManager = {
             list.push({ ...newData, created: Date.now(), lastUsed: Date.now() });
         }
         this.save();
-    },
+    }
 
     /**
      * Validate an entity before saving
@@ -156,11 +114,13 @@ const HistoryManager = {
         if (BAD_PATTERNS.test(primaryVal)) return false;
 
         return true;
-    },
+    }
 
     fuzzyMatch(a, b) {
         return (a || '').toLowerCase().includes((b || '').toLowerCase());
     }
-};
+}
 
-if (typeof window !== 'undefined') window.HistoryManager = HistoryManager;
+if (typeof window !== 'undefined') {
+    window.EntityStore = new EntityStore();
+}

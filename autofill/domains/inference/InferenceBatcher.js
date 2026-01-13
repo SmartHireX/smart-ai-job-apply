@@ -127,8 +127,8 @@ function buildSmartContext(resumeData, isFirstBatch = true, previousQA = []) {
     // Calculate total experience
     let totalYears = 0;
     try {
-        if (window.LocalMatcher?.calculateTotalExperience) {
-            totalYears = window.LocalMatcher.calculateTotalExperience(jobs);
+        if (window.RuleEngine?.calculateTotalExperience) {
+            totalYears = window.RuleEngine.calculateTotalExperience(jobs);
         } else {
             totalYears = jobs.length * 1.5; // Rough estimate
         }
@@ -241,8 +241,8 @@ async function checkSmartMemoryForAnswer(field, smartMemory) {
         // --- UNIFIED CACHING FALLBACK ---
         // If Smart Memory (Text) fails, check Selection Cache (Dropdowns/Radios)
         // Scenario: User cached "Gender: Male" from a dropdown. Now encounters "Gender" text input.
-        if (window.SelectionCache && window.SelectionCache.getCachedValue) {
-            const selectionHit = await window.SelectionCache.getCachedValue(element, fieldLabel);
+        if (window.InteractionLog && window.InteractionLog.getCachedValue) {
+            const selectionHit = await window.InteractionLog.getCachedValue(element, fieldLabel);
             if (selectionHit && selectionHit.value) {
                 // Extract value. If it's an array (checkboxes), join it? Text inputs usually want single string.
                 let val = selectionHit.value;
@@ -605,7 +605,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
 
         // --- STRUCTURED CACHE: Match Resume Item -> History Entity ---
         // If we know this is "Job #1", look up what Job #1 corresponds to in Resume, then find in History Cache.
-        if (window.HistoryManager) {
+        if (window.EntityStore) {
             try {
                 // 1. Determine resume context (e.g. School #0)
                 const index = batch[0].virtualIndex !== undefined ? batch[0].virtualIndex : (extractFieldIndex(batch[0]) ?? 0);
@@ -615,9 +615,9 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
                 // Fetch directly by index
                 let entity = null;
                 if (isEdu) {
-                    entity = window.HistoryManager.getByIndex('education', index);
+                    entity = window.EntityStore.getByIndex('education', index);
                 } else if (isWork) {
-                    entity = window.HistoryManager.getByIndex('work', index);
+                    entity = window.EntityStore.getByIndex('work', index);
                 }
 
                 // If entity is found, or if we have Resume Data fallback
@@ -842,12 +842,12 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
 
 // Export functions
 if (typeof window !== 'undefined') {
-    window.BatchProcessor = {
+    window.InferenceBatcher = {
         groupFieldsByType,
         buildSmartContext,
         processBatchWithStreaming,
         processBatchInBackground,
-        processFieldsInBatches,
+        processFieldsInBatches, // Renamed main function
         BATCH_SIZE,
         MAX_RETRIES
     };

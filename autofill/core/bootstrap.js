@@ -19,43 +19,43 @@ const SCRIPT_QUEUE = [
     'shared/utils/form-analyzer.js',
 
     // Autofill Services (18 files)
-    'autofill/services/cache/selection-cache.js',
-    'autofill/services/matching/local-matcher.js',
-    'autofill/services/cache/history-manager.js',
-    'autofill/services/cache/cache-manager.js',
+    'autofill/domains/heuristics/InteractionLog.js',
+    'autofill/domains/heuristics/RuleEngine.js',
+    'autofill/domains/profile/EntityStore.js',
+
     'autofill/services/indexing/field-indexing-service.js',
-    'autofill/routers/field-router.js',
+    'autofill/core/PipelineOrchestrator.js',
     'autofill/services/extraction/section-detector.js',
     'autofill/services/extraction/sibling-cluster.js',
     'autofill/services/extraction/form-detector.js',
-    'autofill/services/cache/multi-value-handler.js',
-    'autofill/services/ai/batch-processor.js',
-    'autofill/services/ai/prefetch-engine.js',
+    'autofill/domains/profile/CompositeFieldManager.js',
+    'autofill/domains/inference/InferenceBatcher.js',
+    'autofill/domains/inference/prefetch-engine.js',
     'autofill/ui/animations/form-visuals.js',
     'autofill/ui/sidebar/drag-resize.js',
     'autofill/ui/sidebar/sidebar-components.js',
     'autofill/ui/premium-inputs/premium-input-renderer.js',
     'autofill/handlers/handler.js',
-    'autofill/handlers/cache-handler.js',
+
 
     // Autofill Handlers (5 more)
-    'autofill/handlers/matcher-handler.js',
-    'autofill/handlers/history-handler.js',
-    'autofill/handlers/ai-handler.js',
+
+    'autofill/domains/profile/SectionController.js',
+    'autofill/domains/inference/CopilotClient.js',
 
     // Shared State (3 files)
     'shared/state/state-manager.js',
     'shared/state/action-queue.js',
-    'shared/state/orchestrator.js',
+
 
     // Common Infrastructure (2 more - constants already loaded)
-    'autofill/services/ai/feature-extractor.js',
-    'autofill/services/ai/neural-classifier.js',
+    'autofill/domains/inference/feature-extractor.js',
+    'autofill/domains/inference/neural-classifier.js',
     'common/infrastructure/config.js',
     'common/infrastructure/lifecycle.js',
 
     // Autofill Core Features (6 files)
-    'autofill/services/cache/smart-memory-service.js',
+    'autofill/domains/memory/GlobalMemory.js',
     'autofill/utils/field-utils.js',
     'autofill/features/undo-manager.js',
     'autofill/features/self-healing.js',
@@ -65,6 +65,7 @@ const SCRIPT_QUEUE = [
     'autofill/workflows/classification-workflow.js',
     'autofill/workflows/instant-fill-workflow.js',
     'autofill/workflows/ai-fill-workflow.js',
+    'autofill/domains/inference/execution-engine.js',
     'autofill/core/form-processor.js',
 
     // Chatbot (4 files)
