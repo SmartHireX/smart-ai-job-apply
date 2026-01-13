@@ -94,9 +94,42 @@ class FormProcessor {
             // 4. Update Stats
             this.updateStats(results);
 
-            // 5. Trigger "Grouped Fields" log (via orchestrator internally)
-
             console.log('✅ [FormProcessor] Pipeline execution passed.');
+
+            // TRIGGER PREVIEW
+            console.log('🖼️ [FormProcessor] Opening Preview...');
+
+            // Map results back to fields
+            fields.forEach(f => {
+                if (results[f.selector]) {
+                    f.value = results[f.selector].value;
+                    f.fieldData = {
+                        ...f.fieldData,
+                        value: results[f.selector].value,
+                        source: results[f.selector].source,
+                        confidence: results[f.selector].confidence
+                    };
+                }
+            });
+
+            // Use global function from sidebar-components.js
+            if (typeof window.showAccordionSidebar === 'function') {
+                window.showAccordionSidebar(fields);
+            } else {
+                console.warn('⚠️ window.showAccordionSidebar is not available');
+            }
+
+            // TRIGGER SUCCESS CELEBRATION
+            if (typeof window.showSuccessToast === 'function') {
+                const totalFilled = Object.values(results).filter(r => r.value).length;
+                const totalReview = fields.length - totalFilled;
+                window.showSuccessToast(totalFilled, totalReview);
+            }
+
+            if (typeof window.triggerConfetti === 'function') {
+                window.triggerConfetti();
+            }
+
         } else {
             console.error('❌ PipelineOrchestrator not found!');
             return {};

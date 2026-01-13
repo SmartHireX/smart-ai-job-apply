@@ -307,3 +307,18 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
     highlightField(element, confidence);
     dispatchChangeEvents(element);
 }
+
+// ===========================================
+// EXPORTS
+// ===========================================
+if (typeof window !== 'undefined') {
+    window.highlightField = highlightField;
+    window.clearAllFieldHighlights = clearAllFieldHighlights;
+    window.simulateTyping = simulateTyping;
+    window.triggerConfetti = triggerConfetti;
+    window.showConnectionBeam = showConnectionBeam;
+    window.hideConnectionBeam = hideConnectionBeam;
+    window.highlightFileField = highlightFileField;
+    window.highlightSubmitButton = highlightSubmitButton;
+    window.showGhostingAnimation = showGhostingAnimation;
+}
