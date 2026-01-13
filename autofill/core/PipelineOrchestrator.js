@@ -256,17 +256,28 @@ class PipelineOrchestrator {
 
     async applyAndCollect(batchResults, globalResults, sourceFields, unresolvedCollection) {
         Object.assign(globalResults, batchResults);
-        await this.executeBatchFills(batchResults);
+        await this.executeBatchFills(batchResults, sourceFields); // Pass source fields for auto-caching
         this.collectUnresolved(sourceFields, batchResults, unresolvedCollection);
     }
 
-    async executeBatchFills(batchResults) {
+    async executeBatchFills(batchResults, sourceFields) {
         if (!this.executor) return;
         for (const [selector, res] of Object.entries(batchResults)) {
             if (res.skipExecution) continue;
+
             const success = await this.executor.fill(selector, res.value, res.confidence);
             if (!success) {
                 console.warn(`⚠️ [Pipeline] Execution Failure: Could not fill element`, selector);
+            } else {
+                // Auto-Cache: If filled successfully and NOT from cache, save it!
+                if (window.InteractionLog && res.source !== 'selection_cache' && res.source !== 'cache') {
+                    // Find the original field object
+                    const field = sourceFields ? sourceFields.find(f => f.selector === selector) : null;
+                    if (field) {
+                        // Async cache update (don't await to keep UI snappy)
+                        window.InteractionLog.cacheSelection(field, field.label, res.value);
+                    }
+                }
             }
             await this.applyHumanJitter();
         }
