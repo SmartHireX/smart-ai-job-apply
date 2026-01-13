@@ -330,6 +330,11 @@ class PipelineOrchestrator {
     // --- Predicates ---
 
     isProfileField(field, type) {
+        // Exclude basics (Name, Email, Phone) from Profile Group so they hit RuleEngine
+        if (field.ml_prediction && ['first_name', 'last_name', 'email', 'phone', 'linkedin'].includes(field.ml_prediction.label)) {
+            return false;
+        }
+
         return (this.isSectionField(field) && field.field_index !== undefined) ||
             type === 'checkbox' || field.multiple || type == 'select-multiple';
     }
