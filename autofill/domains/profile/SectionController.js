@@ -46,7 +46,7 @@ class SectionController extends window.Handler {
             }
 
             // 3. Map Fields to Entity Properties
-            const sectionResults = this.mapSection(sectionFields, entity, source);
+            const sectionResults = await this.mapSection(sectionFields, entity, source);
 
             // 4. Transactional Integrity Check
             // Verify if critical fields are mapped
@@ -99,10 +99,25 @@ class SectionController extends window.Handler {
         return null; // Skills?
     }
 
-    mapSection(fields, entity, source) {
+    async mapSection(fields, entity, source) {
         const mapped = {};
 
-        fields.forEach(field => {
+        for (const field of fields) {
+            // 1. Check InteractionLog (Cache) Priority
+            if (window.InteractionLog) {
+                const cached = await window.InteractionLog.getCachedValue(field);
+                if (cached && cached.value && cached.confidence > 0.6) {
+                    mapped[field.selector] = {
+                        value: cached.value,
+                        confidence: cached.confidence,
+                        source: 'selection_cache', // Preserves cache source
+                        trace: this.createTrace('cache_hit', cached.confidence, { source: 'multi_cache' })
+                    };
+                    continue; // Skip entity mapping
+                }
+            }
+
+            // 2. Map from Entity (Fallback)
             const label = field.ml_prediction?.label || '';
             const val = this.extractValue(entity, label);
 
@@ -114,7 +129,7 @@ class SectionController extends window.Handler {
                     trace: this.createTrace('history_map', 1.0, { source, entity_field: label })
                 };
             }
-        });
+        }
         return mapped;
     }
 

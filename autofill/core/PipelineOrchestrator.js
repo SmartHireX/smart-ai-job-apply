@@ -245,6 +245,11 @@ class PipelineOrchestrator {
             if (remaining.length === 0) break;
             try {
                 const stepResults = await strategy(remaining);
+                const resolvedCount = Object.keys(stepResults).length;
+                if (resolvedCount > 0) {
+                    console.log(`✅ [Pipeline] Strategy resolved ${resolvedCount} fields.`);
+                }
+
                 Object.assign(finalResults, stepResults);
                 remaining = remaining.filter(f => !finalResults[f.selector]);
             } catch (err) {

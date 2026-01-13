@@ -192,7 +192,7 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     }
 
     // 1. Generate Semantic Key
-    const { key: semanticType, isML } = generateSemanticKey(field, label);
+    let { key: semanticType, isML } = generateSemanticKey(field, label);
 
     if (isML) console.log(`[InteractionLog] 🔑 Lookup using ML Key: ${semanticType}`);
     else console.log(`[InteractionLog] 🔑 Lookup using Fallback Key: ${semanticType}`);
