@@ -173,12 +173,12 @@ function getFieldIndex(field, label) {
 
 /**
  * Generates a robust semantic key for caching.
- * Priority 1: High-Confidence ML Prediction (>0.90)
+ * Priority 1: High-Confidence ML Prediction (>= 0.85)
  * Priority 2: Deterministic Fallback (Label + Context -> Normalized -> Sorted)
  */
 function generateSemanticKey(field, label) {
     // A. ML Prediction (High Confidence)
-    if (field.ml_prediction && field.ml_prediction.confidence > 0.90) {
+    if (field.ml_prediction && field.ml_prediction.confidence >= 0.85) {
         return { key: field.ml_prediction.label, isML: true };
     }
 
