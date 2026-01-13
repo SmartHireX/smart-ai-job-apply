@@ -169,6 +169,10 @@ class FormProcessor {
             console.log('🔧 Normalizing Schema: mapped "schools" to "education"');
             resumeData.education = resumeData.schools;
         }
+        if (!resumeData.basics && resumeData.personal) {
+            console.log('🔧 Normalizing Schema: mapped "personal" to "basics"');
+            resumeData.basics = resumeData.personal;
+        }
     }
 
     /**
