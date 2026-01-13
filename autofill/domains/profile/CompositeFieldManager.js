@@ -113,7 +113,9 @@ class CompositeFieldManager {
 
         // A. Site Cache (Priority)
         if (this.cache) {
-            const cached = this.cache.getCachedValue(field.selector || field.xpath);
+            // FIX: Pass FULL field object so InteractionLog can use index/label for MultiCache resolution
+            // Previously only passed selector, which lost the index context
+            const cached = await this.cache.getCachedValue(field);
             if (cached && cached.value) {
                 if (this.fill(field.element, cached.value)) return { filled: true, source: 'cache', value: cached.value };
             }
