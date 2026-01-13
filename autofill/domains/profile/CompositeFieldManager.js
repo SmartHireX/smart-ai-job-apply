@@ -131,15 +131,7 @@ class CompositeFieldManager {
             }
         }
 
-        // C. Global Memory
-        if (window.GlobalMemory) {
-            const memRes = await window.GlobalMemory.resolveField(field);
-            if (memRes && memRes.value) {
-                if (this.fill(field.element, memRes.value)) return { filled: true, source: 'global_memory', value: memRes.value };
-            }
-        }
-
-        // D. User Profile (EntityStore for Jobs/Edu)
+        // C. User Profile (EntityStore for Jobs/Edu)
         if (this.store && (type === 'work' || type === 'education')) {
             const data = groupEntity || this.store.getByIndex(type, index);
             if (data) {
@@ -151,6 +143,14 @@ class CompositeFieldManager {
                         return { filled: true, source: 'profile', value: valueToFill };
                     }
                 }
+            }
+        }
+
+        // D. Global Memory (Last Resort)
+        if (window.GlobalMemory) {
+            const memRes = await window.GlobalMemory.resolveField(field);
+            if (memRes && memRes.value) {
+                if (this.fill(field.element, memRes.value)) return { filled: true, source: 'global_memory', value: memRes.value };
             }
         }
 

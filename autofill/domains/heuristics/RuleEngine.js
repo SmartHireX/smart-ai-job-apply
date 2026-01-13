@@ -25,6 +25,7 @@ class RuleEngine {
         if (this.debug) console.time('LocalMatcher.resolve');
 
         const facts = this.extractFacts(resumeData);
+        if (this.debug) console.log('📊 [RuleEngine] Extracted Facts:', facts);
         const resolved = {};
         const remaining = [];
         const processedNames = new Set();
@@ -124,10 +125,28 @@ class RuleEngine {
         }
 
         // 3. Facts (Direct Map)
-        if (context.includes('phone') || context.includes('mobile')) return facts.contact.phone;
-        if (context.includes('zip') || context.includes('postal')) return facts.contact.zip;
-        if (context.includes('city')) return facts.contact.city;
-        if (context.match(/address|street/)) return facts.contact.address;
+        // Names
+        if (context.includes('first') && context.includes('name')) return this._logMatch(field, facts.basics.firstName || null, 'firstName');
+        if (context.includes('last') && context.includes('name')) return this._logMatch(field, facts.basics.lastName || null, 'lastName');
+        if (context.includes('full') || (context.includes('name') && !context.includes('first') && !context.includes('last') && !context.includes('file') && !context.includes('user'))) return this._logMatch(field, facts.basics.fullName || null, 'fullName');
+
+        // Contact
+        if (context.includes('email')) return this._logMatch(field, facts.basics.email || null, 'email');
+        if (context.includes('phone') || context.includes('mobile')) return this._logMatch(field, facts.contact.phone || null, 'phone');
+        if (context.includes('zip') || context.includes('postal')) return this._logMatch(field, facts.contact.zip || null, 'zip');
+        if (context.includes('city')) return this._logMatch(field, facts.contact.city || null, 'city');
+        if (context.match(/address|street/)) return this._logMatch(field, facts.contact.address || null, 'address');
+
+        // Links
+        if (context.includes('linkedin')) return this._logMatch(field, facts.basics.linkedin || null, 'linkedin');
+        if (context.includes('github') || context.includes('git')) return this._logMatch(field, facts.basics.github || null, 'github');
+        if (context.includes('portfolio') || context.includes('website') || context.includes('url')) return this._logMatch(field, facts.basics.portfolio || null, 'portfolio');
+
+        // Compensation
+        if (context.match(/salary|pay|compensation|ctc|remuneration/)) {
+            if (context.includes('expect') || context.includes('desire')) return this._logMatch(field, facts.compensation.desiredSalary || null, 'desiredSalary');
+            return this._logMatch(field, facts.compensation.currentSalary || facts.compensation.desiredSalary || null, 'currentSalary');
+        }
 
         // 4. Experience Years
         if (context.match(/years?|duration|how long/)) {
@@ -135,6 +154,13 @@ class RuleEngine {
         }
 
         return null;
+    }
+
+    _logMatch(field, value, source) {
+        if (this.debug && value) {
+            console.log(`🎯 [RuleEngine] Matched: "${field.label || field.name}" -> "${value}" (Source: ${source})`);
+        }
+        return value;
     }
 
     // --- RULES ENGINE ---
@@ -281,6 +307,15 @@ class RuleEngine {
 
     extractFacts(resumeData) {
         return {
+            basics: {
+                firstName: resumeData.firstName || resumeData.basics?.firstName,
+                lastName: resumeData.lastName || resumeData.basics?.lastName,
+                fullName: resumeData.name || resumeData.basics?.name || `${resumeData.firstName || ''} ${resumeData.lastName || ''}`.trim(),
+                email: resumeData.email || resumeData.basics?.email,
+                linkedin: this.findProfileUrl(resumeData, 'linkedin'),
+                github: this.findProfileUrl(resumeData, 'github'),
+                portfolio: this.findProfileUrl(resumeData, 'portfolio') || resumeData.basics?.url
+            },
             contact: {
                 phone: resumeData.phone || resumeData.basics?.phone,
                 zip: resumeData.zip || resumeData.basics?.location?.postalCode,
@@ -293,6 +328,11 @@ class RuleEngine {
                 disability: resumeData.customFields?.disabilityStatus,
                 race: resumeData.customFields?.race
             },
+            compensation: {
+                desiredSalary: resumeData.customFields?.desiredSalary,
+                currentSalary: resumeData.customFields?.currentSalary,
+                currency: resumeData.customFields?.currency || 'USD'
+            },
             noticePeriod: resumeData.customFields?.noticePeriod,
             sponsorshipRequired: resumeData.customFields?.sponsorshipRequired === true,
             willingToRelocate: resumeData.customFields?.willingToRelocate === true,
@@ -301,6 +341,15 @@ class RuleEngine {
             totalYearsExp: this.calculateTotalExperience(resumeData.experience || []),
             skills: resumeData.skills || [] // Extract skills
         };
+    }
+
+    findProfileUrl(resumeData, networkFragment) {
+        const profiles = resumeData.profiles || resumeData.basics?.profiles || [];
+        const found = profiles.find(p =>
+            (p.network && p.network.toLowerCase().includes(networkFragment)) ||
+            (p.url && p.url.toLowerCase().includes(networkFragment))
+        );
+        return found ? found.url : null;
     }
 
     calculateTotalExperience(jobs) {
@@ -348,7 +397,13 @@ class RuleEngine {
     }
 
     getContext(field) {
-        return `${(field.label || '').toLowerCase()} ${(field.name || '').toLowerCase()} ${(field.id || '').toLowerCase()}`;
+        const parts = [
+            field.label || '',
+            field.name || '',
+            field.id || '',
+            field.ml_prediction?.label || '' // Critical: Include AI Classification
+        ];
+        return parts.join(' ').toLowerCase();
     }
 
     isHistoryField(context, field) {
