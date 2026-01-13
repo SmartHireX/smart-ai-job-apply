@@ -35,6 +35,9 @@ class PipelineOrchestrator {
         const executionId = crypto.randomUUID();
         console.log(`🚀 [Pipeline:${executionId}] Starting Stealth Execution`);
 
+        // Reset Indexing Service for this run
+        if (window.IndexingService) window.IndexingService.reset();
+
         // 1. Ingest & Enrich
         const enriched = await this.pipeline.ingestion(rawFields);
 
@@ -61,7 +64,7 @@ class PipelineOrchestrator {
 
         // C. PROFILE BATCH (Strategy: SectionController / CompositeFieldManager)
         if (groups.profile.length > 0) {
-            const res = await this.processProfileGroup(groups.profile, context);
+            const res = await this.processMultiSelect(groups.profile, context);
             await this.applyAndCollect(res, results, groups.profile, unresolved);
         }
 
@@ -77,6 +80,55 @@ class PipelineOrchestrator {
         }
 
         return results;
+    }
+
+    ingestAndEnrich(fields) {
+        // Track unique headers to detect new sections (e.g. Job 1 -> Job 2)
+        const seenHeaders = { work: false, education: false };
+
+        return fields.map(field => {
+            // Neural Classification
+            if (!field.ml_prediction && this.neuralClassifier) {
+                field.ml_prediction = this.neuralClassifier.predict(field);
+            }
+
+            // DOM Indexing
+            if (window.IndexingService) {
+                const label = (field.ml_prediction?.label || field.label || field.name || '').toLowerCase();
+                const type = this.getSectionType(label);
+
+                // --- SMART SEQUENTIAL INCREMENT ---
+                // If we hit a "Header Field" (Company/School) and we have ALREADY seen one in this batch,
+                // it implies we have moved to the NEXT section (e.g. Job 1 -> Job 2).
+
+                const isWorkHeader = type === 'work' && (label.includes('company') || label.includes('employer') || label.includes('organization'));
+                const isEduHeader = type === 'education' && (label.includes('school') || label.includes('university') || label.includes('institution'));
+
+                if (isWorkHeader) {
+                    if (seenHeaders.work) {
+                        // We already saw a company, this must be the next one!
+                        window.IndexingService.incrementCounter('work');
+                    }
+                    seenHeaders.work = true;
+                }
+
+                if (isEduHeader) {
+                    if (seenHeaders.education) {
+                        window.IndexingService.incrementCounter('education');
+                    }
+                    seenHeaders.education = true;
+                }
+
+                field.field_index = window.IndexingService.getIndex(field, type);
+
+                // Logging
+                console.log(`🔍 [Enrich] ${label.substring(0, 20)}... | ML: ${field.ml_prediction?.label || 'N/A'} | Idx: ${field.field_index}`);
+
+            } else {
+                console.warn('⚠️ IndexingService missing during enrichment');
+            }
+            return field;
+        });
     }
 
     // ==========================================
@@ -121,7 +173,7 @@ class PipelineOrchestrator {
      * Resolve Profile Fields (Multi-Value / Sections)
      * Logic: SectionController vs CompositeFieldManager
      */
-    async processProfileGroup(fields, context) {
+    async processMultiSelect(fields, context) {
         const results = {};
         const { section, composite } = this.partitionProfileFields(fields);
 
@@ -152,7 +204,8 @@ class PipelineOrchestrator {
         if (!window.InteractionLog) return {};
         const results = {};
         for (const field of fields) {
-            const cached = await window.InteractionLog.getCachedValue(field.selector);
+            // Pass the FULL field object to allow ML-based lookup
+            const cached = await window.InteractionLog.getCachedValue(field);
             if (cached && cached.confidence > 0.9) {
                 results[field.selector] = cached;
             }
@@ -228,21 +281,6 @@ class PipelineOrchestrator {
 
     // --- Helpers ---
 
-    ingestAndEnrich(fields) {
-        return fields.map(field => {
-            // Neural Classification
-            if (!field.ml_prediction && this.neuralClassifier) {
-                field.ml_prediction = this.neuralClassifier.predict(field);
-            }
-            // DOM Indexing
-            if (window.IndexingService) {
-                const type = this.getSectionType(field.ml_prediction?.label);
-                field.field_index = window.IndexingService.getIndex(field, type);
-            }
-            return field;
-        });
-    }
-
     groupFields(fields) {
         const groups = { memory: [], heuristic: [], profile: [], general: [] };
         fields.forEach(field => {
@@ -311,7 +349,13 @@ class PipelineOrchestrator {
     }
 
     logGrouping(groups) {
-        console.log(`📊 [Pipeline] Grouping: Mem:${groups.memory.length} Heu:${groups.heuristic.length} Prof:${groups.profile.length} Gen:${groups.general.length}`);
+        console.log(`📊 [Pipeline] Grouping Summary: Mem:${groups.memory.length} Heu:${groups.heuristic.length} Prof:${groups.profile.length} Gen:${groups.general.length}`);
+
+        // Detailed Group Logging
+        if (groups.memory.length > 0) console.log('🧠 [Group: Memory]', groups.memory);
+        if (groups.heuristic.length > 0) console.log('⚡ [Group: Heuristic]', groups.heuristic);
+        if (groups.profile.length > 0) console.log('👤 [Group: Profile]', groups.profile);
+        if (groups.general.length > 0) console.log('📂 [Group: General]', groups.general);
     }
 
     async applyHumanJitter() {

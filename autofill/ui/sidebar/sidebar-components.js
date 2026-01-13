@@ -1475,20 +1475,67 @@ function attachSelfCorrectionTrigger(element) {
             newValue = element.value;
         }
 
-        // Save to appropriate cache
-        if (isNonTextInput && newValue && window.SelectionCache) {
-            // Save to SelectionCache for radio/checkbox/select
+        // ---------------------------------------------------------
+        // CACHE ROUTING LOGIC
+        // ---------------------------------------------------------
+
+        // 1. Determine Cache Strategy
+        // We use InteractionLog (SelectionCache) for "Known Profile Fields" and "Structured Inputs" (Select/Radio).
+        // We use GlobalMemory (SmartMemory) for "Open-Ended Questions" (Generic Text).
+
+        let handledByInteractionLog = false;
+
+        // Strategy A: Non-Text Inputs (always explicit selection)
+        if (isNonTextInput && window.SelectionCache) {
             await window.SelectionCache.cacheSelection(element, label, newValue);
-            console.log(`💾 [SelectionCache] Learned: "${label}" → ${newValue}`);
-        } else if (newValue && String(newValue).length > 1) {
-            // Save to SmartMemory for text fields
-            const key = normalizeSmartMemoryKey(label);
-            updateSmartMemoryCache({
-                [key]: {
-                    answer: newValue,
-                    timestamp: Date.now()
-                }
-            });
+            console.log(`💾 [SelectionCache] Learned: "${label}" → ${newValue} (Non-Text)`);
+            handledByInteractionLog = true;
+        }
+
+        // Strategy B: "Known" Semantic Text Fields (Email, Job Title, Skills, etc.)
+        else if (window.InteractionLog && window.InteractionLog.classifyFieldType) {
+            // Build signature to check if this is a "Known" type
+            const signature = [
+                (element.name || '').toLowerCase(),
+                (element.id || '').toLowerCase(),
+                (element.placeholder || '').toLowerCase(),
+                (label || '').toLowerCase()
+            ].join(' | ');
+
+            const semanticType = window.InteractionLog.classifyFieldType(signature);
+
+            // Checks: Is it a known type? OR does regex match "MultiCache" keywords?
+            // (Double check for common MultiCache terms just in case regex list is partial)
+            const isMultiCacheTerm = /skill|job|employ|educat|degree|school/i.test(label);
+
+            if (semanticType || isMultiCacheTerm) {
+                await window.InteractionLog.cacheSelection(element, label, newValue);
+                console.log(`💾 [InteractionLog] Learned: "${label}" → ${newValue} (Semantic Match: ${semanticType})`);
+                handledByInteractionLog = true;
+            }
+        }
+
+        // Strategy C: Fallback to Smart Memory (Generic Text)
+        // If not handled by InteractionLog, and it's a valid text string
+        if (!handledByInteractionLog && newValue && String(newValue).length > 1) {
+            const key = window.GlobalMemory ? window.GlobalMemory.normalizeKey(label) : label;
+
+            if (window.GlobalMemory) {
+                await window.GlobalMemory.updateCache({
+                    [key]: {
+                        answer: newValue,
+                        timestamp: Date.now()
+                    }
+                });
+            } else if (window.updateSmartMemoryCache) {
+                // Formatting for legacy bridge if needed
+                await window.updateSmartMemoryCache({
+                    [key]: {
+                        answer: newValue,
+                        timestamp: Date.now()
+                    }
+                });
+            }
             console.log(`🧠 [SmartMemory] Learned: "${label}" → ${newValue}`);
         }
     };

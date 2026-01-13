@@ -62,7 +62,7 @@ class FormProcessor {
         // Get context
         const [resumeData, smartMemory] = await Promise.all([
             window.ResumeManager.getResumeData(),
-            window.SmartMemoryService ? window.SmartMemoryService.getAll() : {} // Direct access if possible, or use MemoryUtils
+            window.GlobalMemory ? window.GlobalMemory.getCache() : {}
         ]);
 
         // Ensure SmartMemoryService is ready (it initializes itself usually, but good to check)

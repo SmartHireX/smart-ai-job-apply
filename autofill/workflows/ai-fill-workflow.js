@@ -184,7 +184,7 @@ class Phase2AIProcessing {
         // Save to smart memory
         if (Object.keys(newCacheEntries).length > 0) {
             console.log(`💾 Saving ${Object.keys(newCacheEntries).length} entries to smart memory...`);
-            await MemoryUtils.updateCache(newCacheEntries);
+            if (window.GlobalMemory) await window.GlobalMemory.updateCache(newCacheEntries);
         } else {
             console.log(`⚠️ No Phase 2 text fields were cached.`);
         }
@@ -210,7 +210,7 @@ class Phase2AIProcessing {
     static createSmartMemoryCacheEntry(label, value) {
         if (!label || label.length <= CACHE_LIMITS.MIN_LABEL_LENGTH) return null;
 
-        const normalizedLabel = MemoryUtils.normalizeKey(label);
+        const normalizedLabel = window.GlobalMemory ? window.GlobalMemory.normalizeKey(label) : label;
 
         // History Guard: Prevent saving structured history fields
         const savePrediction = window.neuralClassifier
@@ -225,14 +225,14 @@ class Phase2AIProcessing {
         }
 
         // Quality validation
-        if (!MemoryUtils.isCacheable(normalizedLabel)) {
+        if (window.GlobalMemory && !window.GlobalMemory.isCacheable(normalizedLabel)) {
             return null;
         }
 
         console.log(`✅ Cached: "${normalizedLabel}" => "${value}"`);
 
         return {
-            [normalizedLabel]: MemoryUtils.createCacheEntry(value)
+            [normalizedLabel]: window.GlobalMemory ? window.GlobalMemory.createCacheEntry(value) : { answer: value, timestamp: Date.now() }
         };
     }
 

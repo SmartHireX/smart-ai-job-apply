@@ -51,16 +51,17 @@ window.undoFormFill = function () {
 };
 
 // Smart Memory
+// Smart Memory
 window.updateSmartMemoryCache = async function (newEntries) {
-    if (window.MemoryUtils) {
-        return await window.MemoryUtils.updateCache(newEntries);
+    if (window.GlobalMemory) {
+        return await window.GlobalMemory.updateCache(newEntries);
     }
-    console.error('❌ MemoryUtils not available');
+    console.error('❌ GlobalMemory (SmartMemory) not available');
 };
 
 window.normalizeSmartMemoryKey = function (label) {
-    if (window.MemoryUtils) {
-        return window.MemoryUtils.normalizeKey(label);
+    if (window.GlobalMemory) {
+        return window.GlobalMemory.normalizeKey(label);
     }
     return label;
 };

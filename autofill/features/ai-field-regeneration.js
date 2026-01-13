@@ -146,12 +146,14 @@ class AIRegeneration {
             element.tagName === 'TEXTAREA';
 
         if (isTextType) {
-            const normalizedLabel = MemoryUtils.normalizeKey(label);
-            const cacheEntry = MemoryUtils.createCacheEntry(value);
+            const normalizedLabel = window.GlobalMemory ? window.GlobalMemory.normalizeKey(label) : label;
 
-            await MemoryUtils.updateCache({
-                [normalizedLabel]: cacheEntry
-            });
+            if (window.GlobalMemory) {
+                const cacheEntry = window.GlobalMemory.createCacheEntry(value);
+                await window.GlobalMemory.updateCache({
+                    [normalizedLabel]: cacheEntry
+                });
+            }
 
             console.log(`🧠 [SmartMemory] Cached regenerated value for "${label}"`);
         }

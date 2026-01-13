@@ -76,7 +76,7 @@ class Phase1InstantFill {
             let fieldLabel = this.extractFieldLabel(field);
 
             // Normalize label
-            fieldLabel = MemoryUtils.normalizeKey(fieldLabel);
+            fieldLabel = window.GlobalMemory ? window.GlobalMemory.normalizeKey(fieldLabel) : fieldLabel;
 
             // Neural Classification Check
             const prediction = field.ml_prediction || { label: 'unknown', confidence: 0, source: 'unknown' };
@@ -87,7 +87,10 @@ class Phase1InstantFill {
                 console.log(`🤖 [Smart Memory] Overriding key with ML Label: "${fieldLabel}" (Conf: ${(prediction.confidence * 100).toFixed(0)}%)`);
             } else {
                 // Fallback to robust key generation
-                fieldLabel = MemoryUtils.generateFallbackKey(field);
+                // Fallback to robust key generation
+                fieldLabel = window.InteractionLog && window.InteractionLog.generateSemanticKey
+                    ? window.InteractionLog.generateSemanticKey(field, fieldLabel).key
+                    : (window.GlobalMemory ? window.GlobalMemory.normalizeKey(fieldLabel) : fieldLabel);
             }
 
             // Store calculated key
