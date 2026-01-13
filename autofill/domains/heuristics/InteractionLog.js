@@ -84,13 +84,33 @@ const SELECTION_CACHE_KEY = 'selectionCache'; // Standard Values
 const MULTI_CACHE_KEY = 'multiCache';         // Arrays (Skills, Jobs, Edu)
 const METADATA_KEY = 'selectionCacheMetadata';
 
-// Helper: Determine if type belongs to MultiCache
-function isMultiCacheType(type) {
-    // 1. Repeating Sections (Jobs, Edu) - includes dates/titles related to these
-    const isSection = /education|school|degree|employer|job|work|experience|start|end|date/.test(type);
+// Helper: Determine if field belongs to MultiCache
+// Priority: ML Label > Field Label/Context
+function isMultiCacheType(semanticKey, field = null) {
+    // 1. If we have field with high-confidence ML prediction, use that
+    if (field && field.ml_prediction && field.ml_prediction.confidence > 0.9) {
+        const mlLabel = field.ml_prediction.label.toLowerCase();
+        // Check if ML label indicates a section field
+        if (/^(job_|employer_|institution_|degree_|education_|work_)/.test(mlLabel)) {
+            return true;
+        }
+        // Skills are also multi
+        if (/skill/.test(mlLabel)) {
+            return true;
+        }
+    }
 
-    // 2. Explicit Multi-Selects (Skills)
-    const isMultiSelect = /skill|technolog|competenc|language/.test(type);
+    // 2. If we have field, check its label and parent context for section keywords
+    if (field) {
+        const context = [field.label, field.parentContext, field.section_type].filter(Boolean).join(' ').toLowerCase();
+        if (/work\s*experience|employment|job\s*history|education|school|university/.test(context)) {
+            return true;
+        }
+    }
+
+    // 3. Fallback: Check the semantic key itself (less reliable)
+    const isSection = /^(job_|employer_|institution_|degree_|education_|work_)/.test(semanticKey);
+    const isMultiSelect = /skill/.test(semanticKey);
 
     return isSection || isMultiSelect;
 }
@@ -201,7 +221,7 @@ async function getCachedValue(fieldOrSelector, labelArg) {
 
     // 2. Select Cache
     let targetCacheKey = SELECTION_CACHE_KEY;
-    if (semanticType && isMultiCacheType(semanticType)) {
+    if (semanticType && isMultiCacheType(semanticType, field)) {
         targetCacheKey = MULTI_CACHE_KEY;
     }
 
@@ -234,7 +254,7 @@ async function getCachedValue(fieldOrSelector, labelArg) {
 
     let resultValue = cached.value;
     // ... (rest of array unpacking logic) ...
-    if (isMultiCacheType(semanticType)) {
+    if (isMultiCacheType(semanticType, field)) {
         const isRepeating = /job|work|education|employer|school|degree/.test(semanticType);
         if (isRepeating) {
             const index = getFieldIndex(field, label);
@@ -302,7 +322,7 @@ async function cacheSelection(field, label, value) {
         if (!semanticType) return;
 
         // ... (rest of saving logic) ...
-        const targetCacheKey = isMultiCacheType(semanticType) ? MULTI_CACHE_KEY : SELECTION_CACHE_KEY;
+        const targetCacheKey = isMultiCacheType(semanticType, field) ? MULTI_CACHE_KEY : SELECTION_CACHE_KEY;
         const cache = await getCache(targetCacheKey);
 
         if (!cache[semanticType]) {
