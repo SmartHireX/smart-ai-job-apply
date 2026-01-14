@@ -100,22 +100,50 @@ class ExecutionEngine {
         const tagName = element.tagName.toLowerCase();
         const type = (element.type || '').toLowerCase();
 
-        // Checkbox/Radio Handling
-        if (type === 'checkbox' || type === 'radio') {
-            const isChecked = (value === true || value === 'true' || value === element.value);
+        // Special Radio Button Handling
+        // For radio groups, we need to find the specific radio button matching the value
+        if (type === 'radio') {
+            const name = element.name;
+            if (name) {
+                // Find all radio buttons in the group
+                const group = document.querySelectorAll(`input[name="${CSS.escape(name)}"]`);
+                let targetRadio = null;
 
-            if (type === 'radio' && !isChecked && element.name) {
-                // If it's a radio and this one isn't the match, find the one that IS
-                const group = document.querySelectorAll(`input[type="radio"][name="${CSS.escape(element.name)}"]`);
-                const match = Array.from(group).find(r => r.value === String(value));
-                if (match) {
-                    if (!match.checked) match.click();
-                    return;
+                // Find the radio button with the matching value (case-insensitive)
+                const targetValue = String(value).toLowerCase().trim();
+                for (const radio of group) {
+                    const radioValue = String(radio.value).toLowerCase().trim();
+                    if (radioValue === targetValue) {
+                        targetRadio = radio;
+                        break;
+                    }
+                }
+
+                // If no exact match, try matching by label text
+                if (!targetRadio) {
+                    for (const radio of group) {
+                        const label = radio.labels?.[0]?.textContent?.toLowerCase().trim() || '';
+                        if (label === targetValue || label.includes(targetValue)) {
+                            targetRadio = radio;
+                            break;
+                        }
+                    }
+                }
+
+                if (targetRadio && !targetRadio.checked) {
+                    console.log(`[ExecutionEngine] 📻 Selecting radio: "${targetRadio.value}" in group "${name}"`);
+                    targetRadio.click();
+                    this.dispatchEvents(targetRadio);
                 }
             }
+            return;
+        }
 
-            if (element.checked !== isChecked) {
-                element.click(); // Click is best for checkboxes/radios to trigger events
+        // Checkbox Handling
+        if (type === 'checkbox') {
+            const shouldBeChecked = value === true || value === 'true' || value === element.value;
+            if (element.checked !== shouldBeChecked) {
+                element.click();
             }
             return;
         }
