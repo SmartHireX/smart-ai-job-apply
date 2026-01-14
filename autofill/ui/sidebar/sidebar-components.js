@@ -1493,8 +1493,16 @@ function attachSelfCorrectionTrigger(element) {
             handledByInteractionLog = true;
         }
 
-        // Strategy B: REMOVED - All text fields go to GlobalMemory, not selectionCache
-        // (Previously this routed semantic text fields like "salary" to selectionCache incorrectly)
+        // Strategy B: MultiCache-eligible text fields (job/education/skills)
+        // Check for multiCache keywords before routing to SmartMemory
+        const fieldContext = [label, element.name, element.id].filter(Boolean).join(' ').toLowerCase();
+        const isMultiCacheEligible = /job|work|employ|education|school|degree|skill|title|employer/.test(fieldContext);
+
+        if (!handledByInteractionLog && isMultiCacheEligible && window.InteractionLog) {
+            await window.InteractionLog.cacheSelection(element, label, newValue);
+            console.log(`📚 [MultiCache] Learned: "${label}" → ${newValue} (Section field)`);
+            handledByInteractionLog = true;
+        }
 
         // Strategy C: Fallback to Smart Memory (Generic Text)
         // If not handled by InteractionLog, and it's a valid text string
