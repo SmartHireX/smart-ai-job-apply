@@ -73,7 +73,7 @@ class SectionController extends window.Handler {
             // I should re-infer or trust field metadata.
 
             let type = 'work';
-            if (/school|education|degree/i.test(f.ml_prediction?.label || '')) type = 'education';
+            if (/school|education|degree|institution/i.test(f.ml_prediction?.label || '')) type = 'education';
 
             const index = f.field_index !== undefined ? f.field_index : 0;
             const key = `${type}_${index}`;
