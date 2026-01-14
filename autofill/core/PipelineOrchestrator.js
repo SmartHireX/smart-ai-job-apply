@@ -412,8 +412,9 @@ class PipelineOrchestrator {
                     const isStructuredInput = ['radio', 'checkbox', 'select', 'select-one', 'select-multiple'].includes(fieldType);
 
                     // Check if this is a multiCache-eligible field (job/education/skills)
+                    // Use centralized routing logic
                     const fieldContext = [field.label, field.name, field.parentContext].filter(Boolean).join(' ').toLowerCase();
-                    const isMultiCacheEligible = /job|work|employ|education|school|degree|skill/.test(fieldContext);
+                    const isMultiCacheEligible = window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, fieldType);
 
                     if (isStructuredInput && window.InteractionLog) {
                         // Structured inputs go to SelectionCache
@@ -515,6 +516,13 @@ class PipelineOrchestrator {
     }
 
     isSectionField(field) {
+        // Use centralized routing logic
+        if (window.FIELD_ROUTING_PATTERNS && typeof window.FIELD_ROUTING_PATTERNS.isMultiValueEligible === 'function') {
+            const fieldContext = [field.label, field.name, field.parentContext].filter(Boolean).join(' ').toLowerCase();
+            return window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, field.type || 'text');
+        }
+
+        // Fallback (should typically be handled by centralized logic)
         const label = field.ml_prediction?.label || '';
         return /job|employer|work|school|degree|education|institution|title/i.test(label);
     }

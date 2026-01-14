@@ -86,7 +86,22 @@ const METADATA_KEY = 'selectionCacheMetadata';
 
 // Helper: Determine if field belongs to MultiCache
 // Priority: ML Label > Field Label/Context
+// EXCLUDES: Profile questions (authorization, visa, veteran, etc.)
 function isMultiCacheType(semanticKey, field = null) {
+    // Use centralized routing logic for Profile Questions check
+    const PROFILE_QUESTIONS_PATTERN = window.FIELD_ROUTING_PATTERNS.PROFILE_QUESTIONS;
+
+    // Check if this is a profile question (should NOT be multiCache)
+    if (field) {
+        const context = [field.label, field.parentContext, field.name].filter(Boolean).join(' ').toLowerCase();
+        if (PROFILE_QUESTIONS_PATTERN.test(context)) {
+            return false; // Profile questions go to SmartMemory, not MultiCache
+        }
+    }
+    if (PROFILE_QUESTIONS_PATTERN.test(semanticKey)) {
+        return false;
+    }
+
     // 1. If we have field with high-confidence ML prediction, use that
     if (field && field.ml_prediction && field.ml_prediction.confidence > 0.9) {
         const mlLabel = field.ml_prediction.label.toLowerCase();
@@ -103,14 +118,14 @@ function isMultiCacheType(semanticKey, field = null) {
     // 2. If we have field, check its label and parent context for section keywords
     if (field) {
         const context = [field.label, field.parentContext, field.section_type, field.name].filter(Boolean).join(' ').toLowerCase();
-        if (/work|employ|job|education|school|university|degree|edu_|work_/.test(context)) {
+        if (/employ|job|education|school|university|degree|edu_|work_/.test(context)) {
             return true;
         }
     }
 
     // 3. Fallback: Check the semantic key itself (includes shortened prefixes)
     // Matches: edu_0_school, work_1_employer, job_title, etc.
-    const isSection = /job|employer|institution|degree|education|work|school|edu_|work_/.test(semanticKey);
+    const isSection = /job|employer|institution|degree|education|school|edu_|work_/.test(semanticKey);
     const isMultiSelect = /skill/.test(semanticKey);
 
     return isSection || isMultiSelect;

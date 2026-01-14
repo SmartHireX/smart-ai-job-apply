@@ -1506,7 +1506,9 @@ function attachSelfCorrectionTrigger(element) {
         // Strategy B: MultiCache-eligible text fields (job/education/skills)
         // Check for multiCache keywords before routing to SmartMemory
         const fieldContext = [label, element.name, element.id].filter(Boolean).join(' ').toLowerCase();
-        const isMultiCacheEligible = /job|work|employ|education|school|degree|skill|title|employer/.test(fieldContext);
+
+        // Use centralized routing logic
+        const isMultiCacheEligible = window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, element.type);
 
         // Resurrect Authoritative Cache Key (from Pipeline/GlobalStore)
         let cacheLabel = element.getAttribute('cache_label');

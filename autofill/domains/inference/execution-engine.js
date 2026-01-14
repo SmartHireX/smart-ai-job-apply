@@ -109,7 +109,9 @@ class ExecutionEngine {
 
         // Check if this is a multiCache-eligible field (job/education/skills)
         const fieldContext = [fieldMetadata.label, fieldMetadata.name, fieldMetadata.parentContext].filter(Boolean).join(' ').toLowerCase();
-        const isMultiCacheEligible = /job|work|employ|education|school|degree|skill|title|employer/.test(fieldContext);
+
+        // Use centralized routing logic
+        const isMultiCacheEligible = window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, element.type);
 
         // console.log(`[ExecutionEngine] 📝 User Edit: "${fieldMetadata.label}" -> "${newValue}" (cacheLabel: ${cacheLabel})`);
 

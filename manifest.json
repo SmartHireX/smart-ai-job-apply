@@ -35,6 +35,7 @@
             ],
             "js": [
                 "common/infrastructure/constants.js",
+                "autofill/core/constants.js",
                 "autofill/core/bootstrap.js"
             ],
             "css": [
@@ -48,6 +49,7 @@
     "web_accessible_resources": [
         {
             "resources": [
+                "autofill/core/constants.js",
                 "chatbot/ui/chat.html",
                 "chatbot/ui/chat.css",
                 "chatbot/ui/chat.js",

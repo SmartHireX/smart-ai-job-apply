@@ -12,6 +12,9 @@ window.__NOVA_LOADING = false;
 
 // Script loading queue (in dependency order)
 const SCRIPT_QUEUE = [
+    // Core Constants (MUST LOAD FIRST)
+    'autofill/core/constants.js',
+
     // Shared Utils (4 files)
     'shared/utils/ai-client.js',
     'shared/utils/resume-manager.js',
