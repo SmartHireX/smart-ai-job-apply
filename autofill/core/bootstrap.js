@@ -32,6 +32,7 @@ const SCRIPT_QUEUE = [
     'autofill/services/extraction/sibling-cluster.js',
     'autofill/services/extraction/form-detector.js',
     'autofill/domains/profile/CompositeFieldManager.js',
+    'autofill/domains/history/HistoryManager.js',
     'autofill/domains/inference/InferenceBatcher.js',
     'autofill/domains/inference/prefetch-engine.js',
     'autofill/ui/animations/form-visuals.js',
