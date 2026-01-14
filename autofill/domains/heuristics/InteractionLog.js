@@ -176,25 +176,53 @@ function getFieldIndex(field, label) {
  * Priority 1: High-Confidence ML Prediction (>0.90)
  * Priority 2: Deterministic Fallback (Label + Context -> Normalized -> Sorted)
  */
-function generateSemanticKey(field, label) {
+function generateSemanticKey(fieldOrElement, label) {
+    // Normalize field/element
+    let field = fieldOrElement;
+    if (typeof HTMLElement !== 'undefined' && fieldOrElement instanceof HTMLElement) {
+        field = {
+            name: fieldOrElement.name,
+            id: fieldOrElement.id,
+            type: fieldOrElement.type || fieldOrElement.tagName.toLowerCase(),
+            ml_prediction: fieldOrElement.__ml_prediction // Check for attached data
+        };
+    }
+
+    // 0. Pre-process Label: Avoid "Generic Labels" (Yes/No/Male/Female)
+    // If the label is a simple value, it's likely from an individual radio button's label.
+    // We want the group label (the question) instead.
+    let targetLabel = label || '';
+    const isGeneric = /^(yes|no|male|female|other|m|f|true|false)$/i.test(targetLabel.trim());
+
+    if (isGeneric && field && field.label && !/^(yes|no|male|female|other|m|f|true|false)$/i.test(field.label.trim())) {
+        targetLabel = field.label;
+    }
+
     // A. ML Prediction (High Confidence)
     if (field.ml_prediction && field.ml_prediction.confidence > 0.90) {
         return { key: field.ml_prediction.label, isML: true };
     }
 
     // B. Robust Fallback
-    const raw = [label, field.parentContext].filter(Boolean).join(' ');
-    const fallbackKey = raw.toLowerCase()
+    // Combination of label, name, and parentContext
+    const rawParts = [targetLabel, field.name, field.parentContext]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
         .replace(/[^a-z0-9\s]/g, '') // Remove special chars
-        .split(/\s+/)
+        .split(/\s+/);
+
+    // Deduplicate, remove stop words, and sort
+    const processedWords = [...new Set(rawParts)]
         .filter(w => w.length > 2 && !/the|and|for|of|enter|your|please|select|choose/.test(w)) // Stop words
-        .sort()
-        .join('_');
+        .sort();
+
+    const fallbackKey = processedWords.join('_');
 
     if (fallbackKey) return { key: fallbackKey, isML: false };
 
     // Final Fallback
-    const finalFallback = normalizeFieldName(label) || 'unknown_field';
+    const finalFallback = normalizeFieldName(targetLabel) || normalizeFieldName(field.name) || 'unknown_field';
     return { key: finalFallback, isML: false };
 }
 
