@@ -369,8 +369,13 @@ class PipelineOrchestrator {
             return false;
         }
 
-        return (this.isSectionField(field) && field.field_index !== undefined) ||
-            type === 'checkbox' || field.multiple || type == 'select-multiple';
+        // Section fields (job/education) ALWAYS go to Profile group, even with cache hits
+        // This ensures SectionController handles them with correct indexing
+        if (this.isSectionField(field)) {
+            return true;
+        }
+
+        return type === 'checkbox' || field.multiple || type == 'select-multiple';
     }
 
     isHeuristicField(type, tag) {
