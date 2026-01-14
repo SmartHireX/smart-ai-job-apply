@@ -523,86 +523,15 @@ function generateSemanticKey(fieldOrElement, label) {
         return { key: field.ml_prediction.label, isML: true, fallbackKey: field.ml_prediction.label };
     }
 
-    // C. ROBUST TOKENIZATION FALLBACK (Enterprise Grade)
-    const rawInput = [field.name, field.label, field.parentContext].filter(Boolean).join(' ') || targetLabel || '';
+    // C. ROBUST TOKENIZED KEY GENERATION (Enterprise Grade)
+    let fallbackKey = '';
 
-    if (rawInput) {
-        // 2. Expanded stop-words (common form noise)
-        const STOP_WORDS = new Set([
-            'the', 'and', 'for', 'of', 'are', 'you', 'have', 'over', 'enter', 'your',
-            'please', 'select', 'choose', 'this', 'that', 'with', 'from', 'will',
-            'what', 'how', 'when', 'where', 'why', 'can', 'could', 'would', 'should',
-            'here', 'there', 'about', 'into', 'through', 'during', 'before', 'after',
-            'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once',
-            'only', 'just', 'more', 'most', 'other', 'some', 'such', 'our', 'us',
-            'field', 'input', 'required', 'optional', 'provide', 'information', 'details'
-        ]);
-
-        // 3. Synonym normalization (canonical forms)
-        const SYNONYM_TO_CANONICAL = {
-            'postal': 'zip', 'zipcode': 'zip', 'postcode': 'zip', 'pincode': 'zip',
-            'tel': 'phone', 'mobile': 'phone', 'cell': 'phone', 'telephone': 'phone',
-            'mail': 'email', 'e-mail': 'email', 'emailaddress': 'email',
-            'given': 'first', 'fname': 'first', 'firstname': 'first',
-            'family': 'last', 'surname': 'last', 'lname': 'last', 'lastname': 'last',
-            'company': 'employer', 'organization': 'employer', 'firm': 'employer',
-            'position': 'job', 'role': 'job', 'occupation': 'job',
-            'university': 'school', 'college': 'school', 'institution': 'school',
-            'qualification': 'degree', 'certification': 'degree',
-            'compensation': 'salary', 'remuneration': 'salary', 'pay': 'salary', 'ctc': 'salary'
-        };
-
-        // 4. Basic stemming (common suffixes)
-        const STEM_RULES = [
-            [/ation$/, ''], [/ment$/, ''], [/ness$/, ''], [/ity$/, ''],
-            [/ing$/, ''], [/ed$/, ''], [/er$/, ''], [/est$/, ''],
-            [/ly$/, ''], [/ful$/, ''], [/less$/, ''], [/able$/, ''], [/ible$/, '']
-        ];
-
-        // 5. Priority tokens (field-specific, should be kept even if short)
-        const PRIORITY_TOKENS = new Set([
-            'zip', 'phone', 'email', 'name', 'first', 'last', 'city', 'state',
-            'job', 'work', 'employer', 'title', 'school', 'degree', 'date',
-            'start', 'end', 'salary', 'linkedin', 'gender', 'veteran', 'visa'
-        ]);
-
-        // Process tokens
-        let tokens = rawInput.toLowerCase()
-            .replace(/[^a-z0-9]/g, ' ')
-            .split(/\s+/)
-            .filter(Boolean);
-
-        // Apply transformations
-        tokens = tokens.map(token => {
-            // Synonym normalization
-            if (SYNONYM_TO_CANONICAL[token]) {
-                token = SYNONYM_TO_CANONICAL[token];
-            }
-
-            // Basic stemming (only for longer words)
-            if (token.length > 5) {
-                for (const [pattern, replacement] of STEM_RULES) {
-                    if (pattern.test(token)) {
-                        const stemmed = token.replace(pattern, replacement);
-                        if (stemmed.length >= 3) {
-                            token = stemmed;
-                        }
-                        break;
-                    }
-                }
-            }
-
-            return token;
-        });
-
-        // Filter: Keep priority tokens OR tokens > 2 chars that aren't stop words
-        tokens = tokens.filter(token =>
-            PRIORITY_TOKENS.has(token) || (token.length > 2 && !STOP_WORDS.has(token))
-        );
-
-        // Unique, sort, and join
-        const uniqueTokens = Array.from(new Set(tokens)).sort();
-        fallbackKey = uniqueTokens.join('_');
+    if (window.KeyGenerator) {
+        fallbackKey = window.KeyGenerator.generateEnterpriseCacheKey(field);
+    } else {
+        // Fallback if KeyGenerator is missing (shouldn't happen)
+        const rawInput = [field.name, field.label, field.parentContext].filter(Boolean).join(' ') || targetLabel || '';
+        fallbackKey = rawInput.toLowerCase().replace(/[^a-z0-9]/g, '_');
     }
 
     fallbackKey = fallbackKey || normalizeFieldName(field.id) || 'unknown_field';

@@ -58,6 +58,7 @@
                 "shared/utils/resume-manager.js",
                 "shared/utils/form-extractor.js",
                 "shared/utils/form-analyzer.js",
+                "autofill/utils/key-generator.js",
                 "autofill/domains/heuristics/InteractionLog.js",
                 "autofill/domains/heuristics/RuleEngine.js",
                 "autofill/domains/history/HistoryManager.js",

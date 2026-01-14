@@ -22,6 +22,7 @@ const SCRIPT_QUEUE = [
     'shared/utils/form-analyzer.js',
 
     // Autofill Services (18 files)
+    'autofill/utils/key-generator.js',
     'autofill/domains/heuristics/InteractionLog.js',
     'autofill/domains/heuristics/RuleEngine.js',
     'autofill/domains/profile/EntityStore.js',

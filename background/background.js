@@ -19,6 +19,7 @@ const CONTENT_SCRIPTS = [
     'shared/utils/form-analyzer.js',
 
     // Autofill Core & Domains (FANG Architecture)
+    'autofill/utils/key-generator.js',
     'autofill/domains/heuristics/InteractionLog.js',
     'autofill/domains/heuristics/RuleEngine.js',
     'autofill/domains/history/HistoryManager.js',
