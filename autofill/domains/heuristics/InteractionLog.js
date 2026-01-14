@@ -250,13 +250,11 @@ async function getCachedValue(fieldOrSelector, labelArg) {
 
     // ... (rest of function logic)
 
-    // 2. Select Cache
-    let targetCacheKey = SELECTION_CACHE_KEY;
-    if (semanticType && isMultiCacheType(semanticType, field)) {
-        targetCacheKey = MULTI_CACHE_KEY;
-    }
+    // 2. Select Cache - Prefer multiCache for eligible fields
+    const isMultiCacheEligible = isMultiCacheType(semanticType, field);
+    let targetCacheKey = isMultiCacheEligible ? MULTI_CACHE_KEY : SELECTION_CACHE_KEY;
 
-    const cache = await getCache(targetCacheKey);
+    let cache = await getCache(targetCacheKey);
     let cached = null;
 
     console.log(`[InteractionLog] 🔎 Cache Keys in ${targetCacheKey}: [${Object.keys(cache).join(', ')}]`);
@@ -270,6 +268,21 @@ async function getCachedValue(fieldOrSelector, labelArg) {
         semanticType = fallbackKey;
         cached = cache[fallbackKey];
         console.log(`[InteractionLog] 🎯 Fallback Hit in ${targetCacheKey}: ${fallbackKey}`);
+    }
+
+    // B. Cross-Cache Fallback: If multiCache-eligible but not found, try selectionCache (backward compat)
+    if (!cached && isMultiCacheEligible) {
+        const legacyCache = await getCache(SELECTION_CACHE_KEY);
+        if (legacyCache[semanticType]) {
+            cached = legacyCache[semanticType];
+            targetCacheKey = SELECTION_CACHE_KEY;
+            console.log(`[InteractionLog] 🔄 Legacy Hit in ${SELECTION_CACHE_KEY}: ${semanticType} (should migrate to multiCache)`);
+        } else if (fallbackKey && legacyCache[fallbackKey]) {
+            cached = legacyCache[fallbackKey];
+            semanticType = fallbackKey;
+            targetCacheKey = SELECTION_CACHE_KEY;
+            console.log(`[InteractionLog] 🔄 Legacy Fallback Hit in ${SELECTION_CACHE_KEY}: ${fallbackKey}`);
+        }
     }
     // B. Fuzzy Search (Secondary)
     else {
@@ -360,7 +373,9 @@ async function cacheSelection(field, label, value) {
         if (!semanticType) return;
 
         // ... (rest of saving logic) ...
-        const targetCacheKey = isMultiCacheType(semanticType, field) ? MULTI_CACHE_KEY : SELECTION_CACHE_KEY;
+        const isMultiCache = isMultiCacheType(semanticType, field);
+        const targetCacheKey = isMultiCache ? MULTI_CACHE_KEY : SELECTION_CACHE_KEY;
+        console.log(`[InteractionLog] 🗄️ Target Cache: ${targetCacheKey} (isMulti: ${isMultiCache}, key: ${semanticType})`);
         const cache = await getCache(targetCacheKey);
 
         if (!cache[semanticType]) {
