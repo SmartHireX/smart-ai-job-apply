@@ -180,60 +180,44 @@ function generateSemanticKey(fieldOrElement, label) {
     // Normalize field/element
     let field = fieldOrElement;
     if (typeof HTMLElement !== 'undefined' && fieldOrElement instanceof HTMLElement) {
-        const wrapper = fieldOrElement.closest('fieldset, .form-group, tr, div[role="group"]');
-        const betterLabel = wrapper ? wrapper.querySelector('legend, label:not([for]), .form-label, h3, h4')?.innerText : null;
-
         field = {
             name: fieldOrElement.name,
             id: fieldOrElement.id,
             type: fieldOrElement.type || fieldOrElement.tagName.toLowerCase(),
-            label: betterLabel || '',
-            ml_prediction: fieldOrElement.__ml_prediction,
-            parentContext: wrapper?.innerText?.split('\n')[0]?.substring(0, 50)
+            ml_prediction: fieldOrElement.__ml_prediction // Check for attached data
         };
     }
 
     // 0. Pre-process Label: Avoid "Generic Labels" (Yes/No/Male/Female)
-    let targetLabel = label || field?.label || '';
+    let targetLabel = label || '';
     const isGeneric = /^(yes|no|male|female|other|m|f|true|false)$/i.test(targetLabel.trim());
 
     if (isGeneric && field && field.label && !/^(yes|no|male|female|other|m|f|true|false)$/i.test(field.label.trim())) {
         targetLabel = field.label;
     }
 
-    // A. ML Prediction (High Confidence)
-    if (field.ml_prediction) {
-        if (field.ml_prediction.confidence > 0.90) {
-            return { key: field.ml_prediction.label, isML: true };
-        } else {
-            console.log(`[InteractionLog] 💡 ML Prediction bypassed (Confidence: ${field.ml_prediction.confidence.toFixed(2)})`);
-        }
-    }
-
-    // B. Robust Fallback
-    // Combination of label, name, and parentContext
+    // B. Robust Fallback Key (always calculate this)
     const rawParts = [targetLabel, field.name, field.parentContext]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
-        .replace(/[^a-z0-9]/g, ' ') // Replace non-alphanumeric with SPACE
+        .replace(/[^a-z0-9]/g, ' ')
         .trim()
         .split(/\s+/);
 
-    // Deduplicate, remove stop words, and sort
-    const stopWords = /^(a|an|the|and|for|of|at|by|enter|your|please|select|choose|are|you|over|what|where|when|which|how|yes|no|true|false|male|female|other|with|from|this|do|does|did|have|has|had|is|am|are|was|were|be|been|being|must|can|should|would|shall|will|may|might)$/i;
-
     const processedWords = [...new Set(rawParts)]
-        .filter(w => w.length > 2 && !stopWords.test(w))
+        .filter(w => w.length > 2 && !/the|and|for|of|enter|your|please|select|choose/.test(w))
         .sort();
 
-    const fallbackKey = processedWords.join('_');
+    const fallbackKey = processedWords.join('_') || normalizeFieldName(targetLabel) || normalizeFieldName(field.name) || 'unknown_field';
 
-    if (fallbackKey) return { key: fallbackKey, isML: false };
+    // A. ML Prediction (High Confidence)
+    if (field.ml_prediction && field.ml_prediction.confidence > 0.90) {
+        // Return BOTH keys so lookup can try ML first, then fallback
+        return { key: field.ml_prediction.label, isML: true, fallbackKey: fallbackKey };
+    }
 
-    // Final Fallback
-    const finalFallback = normalizeFieldName(targetLabel) || normalizeFieldName(field.name) || 'unknown_field';
-    return { key: finalFallback, isML: false };
+    return { key: fallbackKey, isML: false, fallbackKey: fallbackKey };
 }
 
 /**
@@ -250,13 +234,10 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     }
 
     // 1. Generate Semantic Key
-    let { key: semanticType, isML } = generateSemanticKey(field, label);
+    let { key: semanticType, isML, fallbackKey } = generateSemanticKey(field, label);
 
-    console.log(`[InteractionLog] 🔍 Lookup Attempt:
-        - Label: "${label}"
-        - Name: "${field.name || ''}"
-        - Context: "${field.parentContext || ''}"
-        - Key: "${semanticType}" (${isML ? 'ML' : 'Fallback'})`);
+    if (isML) console.log(`[InteractionLog] 🔑 Lookup using ML Key: ${semanticType} (Fallback: ${fallbackKey})`);
+    else console.log(`[InteractionLog] 🔑 Lookup using Fallback Key: ${semanticType}`);
 
     // ... (rest of function logic)
 
@@ -269,10 +250,17 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     const cache = await getCache(targetCacheKey);
     let cached = null;
 
-    // A. Direct Hit
+    console.log(`[InteractionLog] 🔎 Cache Keys in ${targetCacheKey}: [${Object.keys(cache).join(', ')}]`);
+
+    // A. Direct Hit (try ML key first, then fallback key)
     if (cache[semanticType]) {
         cached = cache[semanticType];
         console.log(`[InteractionLog] 🎯 Direct Hit in ${targetCacheKey}: ${semanticType}`);
+    } else if (isML && fallbackKey && cache[fallbackKey]) {
+        // ML key missed, try the fallback key
+        semanticType = fallbackKey;
+        cached = cache[fallbackKey];
+        console.log(`[InteractionLog] 🎯 Fallback Hit in ${targetCacheKey}: ${fallbackKey}`);
     }
     // B. Fuzzy Search (Secondary)
     else {
@@ -349,22 +337,10 @@ function validateSingleOption(field, singleValue) {
     });
 }
 
-let _lastSaveState = new Map();
-
 /**
  * Cache a field selection
  */
 async function cacheSelection(field, label, value) {
-    const { key: semanticType } = generateSemanticKey(field, label);
-    const saveStateKey = `${semanticType}:${value}`;
-    const now = Date.now();
-
-    // Prevent duplicate saves within 500ms for the same key/value
-    if (_lastSaveState.get(saveStateKey) && (now - _lastSaveState.get(saveStateKey) < 500)) {
-        return;
-    }
-    _lastSaveState.set(saveStateKey, now);
-
     const currentOp = _cacheLock.then(async () => {
         // 1. Generate Key
         const { key: semanticType, isML } = generateSemanticKey(field, label);
