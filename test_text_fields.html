@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Fields Testing Playground</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: #334155;
+            --input-border: #475569;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card);
+            padding: 32px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 24px;
+            background: linear-gradient(90deg, var(--primary), #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text);
+            font-size: 1rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.2);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 24px;
+        }
+
+        .btn-submit:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 255, 136, 0.3);
+        }
+
+        .description {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Text Fields Testing</h1>
+        <p class="description">Test basic text inputs (Name, Email, Phone, Salary)</p>
+
+        <form id="text-fields-form">
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" id="first_name" name="first_name" placeholder="e.g. John">
+            </div>
+
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" id="last_name" name="last_name" placeholder="e.g. Doe">
+            </div>
+
+            <div class="form-group">
+                <label for="email_address">Email Address</label>
+                <input type="email" id="email_address" name="email_address" placeholder="e.g. john.doe@example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="phone_number">Phone Number</label>
+                <input type="tel" id="phone_number" name="phone_number" placeholder="e.g. +1 234 567 890">
+            </div>
+
+            <div class="form-group">
+                <label for="current_salary">Current Salary</label>
+                <input type="text" id="current_salary" name="current_salary" placeholder="e.g. 100,000">
+            </div>
+
+            <div class="form-group">
+                <label for="expected_salary">Expected Salary</label>
+                <input type="text" id="expected_salary" name="expected_salary" placeholder="e.g. 120,000">
+            </div>
+
+            <div class="form-group">
+                <label for="linkedin_url">LinkedIn URL</label>
+                <input type="url" id="linkedin_url" name="linkedin_url"
+                    placeholder="e.g. https://linkedin.com/in/johndoe">
+            </div>
+
+            <button type="submit" class="btn-submit">Submit Form</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('text-fields-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            console.log('Form data:', Object.fromEntries(new FormData(e.target)));
+            alert('Form submitted! check console for details.');
+        });
+    </script>
+</body>
+
+</html>

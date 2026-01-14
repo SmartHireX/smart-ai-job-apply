@@ -45,6 +45,7 @@ class FormExtractor {
     extractInputs(container) {
         const inputs = container.querySelectorAll('input');
         const fields = [];
+        const processedGroups = new Set();
 
         inputs.forEach(input => {
             // Skip hidden, submit, button
@@ -52,7 +53,13 @@ class FormExtractor {
                 return;
             }
 
-            const field = this.buildFieldObject(input);
+            // Deduplicate radio/checkbox groups
+            if (['radio', 'checkbox'].includes(input.type) && input.name) {
+                if (processedGroups.has(input.name)) return;
+                processedGroups.add(input.name);
+            }
+
+            const field = this.buildFieldObject(input, container);
             if (field) fields.push(field);
         });
 
@@ -67,7 +74,7 @@ class FormExtractor {
         const fields = [];
 
         selects.forEach(select => {
-            const field = this.buildFieldObject(select);
+            const field = this.buildFieldObject(select, container);
             if (field) fields.push(field);
         });
 
@@ -82,7 +89,7 @@ class FormExtractor {
         const fields = [];
 
         textareas.forEach(textarea => {
-            const field = this.buildFieldObject(textarea);
+            const field = this.buildFieldObject(textarea, container);
             if (field) fields.push(field);
         });
 
@@ -92,7 +99,7 @@ class FormExtractor {
     /**
      * Build field object from DOM element
      */
-    buildFieldObject(element) {
+    buildFieldObject(element, container) {
         const type = element.type || element.tagName.toLowerCase();
         const name = element.name || element.id || `field_${this.fieldCounter++}`;
         const id = element.id || '';
@@ -115,7 +122,7 @@ class FormExtractor {
         }
 
         // Extract label
-        const label = this.extractLabel(element);
+        const label = this.extractLabel(element, container);
 
         // Base field object
         const field = {
@@ -134,7 +141,7 @@ class FormExtractor {
         if (type === 'select' || type === 'select-one' || type === 'select-multiple') {
             field.options = this.extractOptions(element);
         } else if (type === 'radio' || type === 'checkbox') {
-            field.options = this.extractRadioCheckboxOptions(element);
+            field.options = this.extractRadioCheckboxOptions(element, container);
         }
 
         // Add attributes
@@ -146,10 +153,10 @@ class FormExtractor {
     /**
      * Extract label for field
      */
-    extractLabel(element) {
+    extractLabel(element, container = document) {
         // Method 1: <label for="id">
         if (element.id) {
-            const label = document.querySelector(`label[for="${element.id}"]`);
+            const label = container.querySelector(`label[for="${element.id}"]`);
             if (label) return label.textContent.trim();
         }
 
@@ -159,12 +166,29 @@ class FormExtractor {
             return parentLabel.textContent.replace(element.value || '', '').trim();
         }
 
-        // Method 3: aria-label
+        // Method 3: Group Context (Specifically for Radios/Checkboxes)
+        if (['radio', 'checkbox'].includes(element.type) && element.name) {
+            // Find a descriptive question nearby (e.g. in a div.form-group or similar)
+            const wrapper = element.closest('.form-group, fieldset, tr, div');
+            if (wrapper) {
+                // Look for labels, legends, or descriptive text that isn't the option text
+                const groupLabel = wrapper.querySelector('label:not([for]), legend, .form-label, h3, h4, p');
+                if (groupLabel && groupLabel.textContent.trim().length > 3) {
+                    const text = groupLabel.textContent.trim();
+                    // If the found text is just the option text (e.g. "Yes"), keep searching
+                    if (text.toLowerCase() !== element.value.toLowerCase()) {
+                        return text;
+                    }
+                }
+            }
+        }
+
+        // Method 4: aria-label
         if (element.getAttribute('aria-label')) {
             return element.getAttribute('aria-label');
         }
 
-        // Method 4: Previous sibling
+        // Method 5: Previous sibling
         let prev = element.previousElementSibling;
         while (prev && prev.tagName !== 'LABEL') {
             if (prev.textContent && prev.textContent.trim().length < 100) {
@@ -176,7 +200,7 @@ class FormExtractor {
             return prev.textContent.trim();
         }
 
-        // Method 5: Table header (for table-based forms)
+        // Method 6: Table header (for table-based forms)
         const td = element.closest('td');
         if (td) {
             const tr = td.closest('tr');
@@ -213,15 +237,15 @@ class FormExtractor {
     /**
      * Extract options for radio/checkbox groups
      */
-    extractRadioCheckboxOptions(element) {
+    extractRadioCheckboxOptions(element, container = document) {
         const name = element.name;
         if (!name) return [];
 
-        const group = document.querySelectorAll(`input[name="${name}"]`);
+        const group = container.querySelectorAll(`input[name="${name}"]`);
         const options = [];
 
         group.forEach(input => {
-            const label = this.extractLabel(input);
+            const label = this.extractLabel(input, container);
             options.push({
                 value: input.value,
                 text: label || input.value

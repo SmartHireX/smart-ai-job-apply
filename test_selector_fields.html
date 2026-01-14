@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selector Fields Testing Playground</title>
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: #334155;
+            --input-border: #475569;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card);
+            padding: 32px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 24px;
+            background: linear-gradient(90deg, var(--primary), #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        select {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text);
+            font-size: 1rem;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .radio-item input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 24px;
+        }
+
+        .btn-submit:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.3);
+        }
+
+        .description {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Selector Fields Testing</h1>
+        <p class="description">Test Dropdowns, Radio buttons, and Selectors</p>
+
+        <form id="selector-fields-form">
+            <div class="form-group">
+                <label for="gender">Gender Identity</label>
+                <select id="gender" name="gender">
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="non_binary">Non-binary</option>
+                    <option value="decline">Decline to self-identify</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Do you have a security clearance?</label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="security_clearance" value="yes"> Yes
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="security_clearance" value="no"> No
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="citizenship">Citizenship Status</label>
+                <select id="citizenship" name="citizenship">
+                    <option value="">Select Status</option>
+                    <option value="citizen">U.S. Citizen</option>
+                    <option value="resident">Permanent Resident</option>
+                    <option value="visa">Requires Visa Sponsorship</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Are you over the age of 18?</label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="age_check" value="yes"> Yes
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="age_check" value="no"> No
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="veteran_status">Veteran Status</label>
+                <select id="veteran_status" name="veteran_status">
+                    <option value="">Select Status</option>
+                    <option value="v1">I am not a veteran</option>
+                    <option value="v2">I am a veteran</option>
+                    <option value="v3">Prefer not to say</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-submit">Submit Form</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('selector-fields-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            console.log('Form data:', Object.fromEntries(new FormData(e.target)));
+            alert('Form submitted! check console for details.');
+        });
+    </script>
+</body>
+
+</html>
