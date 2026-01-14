@@ -221,8 +221,8 @@ function generateSemanticKey(fieldOrElement, label) {
 
     fallbackKey = fallbackKey || normalizeFieldName(field.id) || 'unknown_field';
 
-    // A. ML Prediction (High Confidence)
-    if (field.ml_prediction && field.ml_prediction.confidence > 0.90) {
+    // A. ML Prediction (High Confidence >= 80%)
+    if (field.ml_prediction && field.ml_prediction.confidence > 0.80) {
         return { key: field.ml_prediction.label, isML: true, fallbackKey: fallbackKey };
     }
 
