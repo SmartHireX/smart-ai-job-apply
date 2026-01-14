@@ -1076,3 +1076,10 @@ function attachHistoryListeners(batch, entityId) {
         }
     });
 }
+
+// Export globally
+if (typeof window !== 'undefined') {
+    window.BatchProcessor = {
+        processFieldsInBatches
+    };
+}
