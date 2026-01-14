@@ -34,10 +34,11 @@ const SCRIPT_QUEUE = [
     'autofill/services/extraction/form-detector.js',
     'autofill/domains/profile/CompositeFieldManager.js',
     'autofill/domains/history/HistoryManager.js',
-    'autofill/domains/inference/InferenceBatcher.js',
+    'autofill/services/ai/AIBatchProcessor.js',
     'autofill/domains/inference/prefetch-engine.js',
     'autofill/ui/animations/form-visuals.js',
     'autofill/ui/sidebar/drag-resize.js',
+    'autofill/ui/sidebar/widget-overlay.js', // Loaded before sidebar for widget utility
     'autofill/ui/sidebar/sidebar-components.js',
     'autofill/ui/premium-inputs/premium-input-renderer.js',
     'autofill/handlers/handler.js',

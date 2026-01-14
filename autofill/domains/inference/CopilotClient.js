@@ -26,8 +26,10 @@ class CopilotClient extends window.Handler {
             return results;
         }
 
-        if (!window.BatchProcessor) {
-            console.warn('[AIResolver] BatchProcessor not available');
+        const batchProcessor = window.AIBatchProcessor || window.BatchProcessor;
+
+        if (!batchProcessor) {
+            console.warn('[AIResolver] BatchProcessor not available (AIBatchProcessor missing)');
             return results;
         }
 
@@ -40,7 +42,7 @@ class CopilotClient extends window.Handler {
         // 1. Process Standard Fields via BatchProcessor
         if (standardFields.length > 0) {
             try {
-                const batchRes = await window.BatchProcessor.processFieldsInBatches(
+                const batchRes = await batchProcessor.processFieldsInBatches(
                     standardFields,
                     resumeData,
                     smartMemory,

@@ -34,7 +34,7 @@ const CONTENT_SCRIPTS = [
 
     // Domain Logic
     'autofill/domains/profile/CompositeFieldManager.js',
-    'autofill/domains/inference/InferenceBatcher.js',
+    'autofill/services/ai/AIBatchProcessor.js',
     'autofill/domains/inference/prefetch-engine.js',
 
     // UI

@@ -138,7 +138,8 @@ class Phase2AIProcessing {
             }
         };
 
-        return await window.BatchProcessor.processFieldsInBatches(
+        const batchProcessor = window.AIBatchProcessor || window.BatchProcessor;
+        return await batchProcessor.processFieldsInBatches(
             unmapped,
             resumeData,
             pageContext,

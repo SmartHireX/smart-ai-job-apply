@@ -717,8 +717,8 @@ function buildCondensedContext(context, resumeData, pageContext = '') {
 }
 
 /**
- * NEW: Map a small batch of fields (1-5) using AI with smart context
- * @param {Array} fields - Batch of 1-5 field objects
+ * NEW: Map a small batch of fields (1-10) using AI with smart context
+ * @param {Array} fields - Batch of 1-10 field objects
  * @param {Object} context - Context object from BatchProcessor (type: 'full' or 'condensed')
  * @param {string} pageContext - Job context
  * @returns {Promise<{success: boolean, mappings?: Object, error?: string}>}
@@ -735,9 +735,10 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
     }
 
     // Ensure we don't exceed batch size
-    if (fields.length > 5) {
-        console.warn('[FormAnalyzer] mapFieldsBatch called with more than 5 fields, truncating...');
-        fields = fields.slice(0, 5);
+    const MAX_BATCH_SIZE = 10;
+    if (fields.length > MAX_BATCH_SIZE) {
+        console.warn(`[FormAnalyzer] mapFieldsBatch called with more than ${MAX_BATCH_SIZE} fields, truncating...`);
+        fields = fields.slice(0, MAX_BATCH_SIZE);
     }
 
     // Filter out invalid fields
