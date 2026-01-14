@@ -52,7 +52,7 @@ function clearAllFieldHighlights() {
         el.style.animation = '';
     });
 
-    console.log(`🧹 Cleared highlights from ${highlighted.length} fields.`);
+    // console.log(`🧹 Cleared highlights from ${highlighted.length} fields.`);
 }
 
 async function simulateTyping(element, value, confidence = 1.0) {

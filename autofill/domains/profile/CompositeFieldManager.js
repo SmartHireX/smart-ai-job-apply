@@ -33,7 +33,7 @@ class CompositeFieldManager {
             const [type, indexStr] = key.split('_');
             const index = parseInt(indexStr, 10);
 
-            console.log(`[CompositeManager] Processing Group: ${key} (${group.length} fields)`);
+            // console.log(`[CompositeManager] Processing Group: ${key} (${group.length} fields)`);
 
             // 1. Fetch Source Data ONCE for the group
             let profileEntity = null;
@@ -47,7 +47,7 @@ class CompositeFieldManager {
                 // Get all option values from the group (assuming checkboxes)
                 const options = group.map(f => f.value || f.label);
                 matchedSkills = window.RuleEngine.matchSkills(options, resumeData.skills);
-                console.log(`[CompositeManager] Matched ${matchedSkills.length} skills from User Data.`);
+                // console.log(`[CompositeManager] Matched ${matchedSkills.length} skills from User Data.`);
             }
 
             for (const field of group) {
@@ -107,7 +107,7 @@ class CompositeFieldManager {
         const index = field.index !== undefined ? field.index : this.indexer.getIndex(field, type);
         field.field_index = index;
 
-        console.log(`[CompositeManager] Resolving "${field.label}" (${type}) @ Index ${index}`);
+        // console.log(`[CompositeManager] Resolving "${field.label}" (${type}) @ Index ${index}`);
 
         // STRATEGY CHAIN
 

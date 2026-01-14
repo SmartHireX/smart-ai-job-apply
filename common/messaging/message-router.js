@@ -33,7 +33,7 @@ class MessageRouter {
         chrome.runtime.onMessage.addListener(this.routeMessage.bind(this));
 
         this.isRegistered = true;
-        console.log('✅ Message router registered');
+        // console.log('✅ Message router registered');
     }
 
     /**
@@ -49,7 +49,7 @@ class MessageRouter {
             return false;
         }
 
-        console.log(`📨 Routing message: ${message.type}`);
+        // console.log(`📨 Routing message: ${message.type}`);
 
         // Try each handler in order
         for (const handler of this.handlers) {
@@ -57,7 +57,7 @@ class MessageRouter {
                 const handled = handler.handle(message, sender, sendResponse);
 
                 if (handled) {
-                    console.log(`✅ Message handled by ${handler.name}`);
+                    // console.log(`✅ Message handled by ${handler.name}`);
                     return handled;
                 }
             } catch (error) {
@@ -80,7 +80,7 @@ class MessageRouter {
         }
 
         this.handlers.push(handler);
-        console.log(`✅ Added custom handler: ${handler.name || 'Anonymous'}`);
+        // console.log(`✅ Added custom handler: ${handler.name || 'Anonymous'}`);
     }
 
     /**
@@ -91,7 +91,7 @@ class MessageRouter {
         const index = this.handlers.indexOf(handler);
         if (index > -1) {
             this.handlers.splice(index, 1);
-            console.log(`✅ Removed handler: ${handler.name || 'Anonymous'}`);
+            // console.log(`✅ Removed handler: ${handler.name || 'Anonymous'}`);
         }
     }
 
@@ -100,7 +100,7 @@ class MessageRouter {
      */
     static clearHandlers() {
         this.handlers = [];
-        console.log('🗑️ All handlers cleared');
+        // console.log('🗑️ All handlers cleared');
     }
 
     /**

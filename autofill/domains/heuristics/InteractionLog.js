@@ -165,6 +165,292 @@ function getFieldIndex(field, label) {
     return 0;
 }
 
+// ============================================================================
+// ADVANCED KEY MATCHER (Global Method)
+// ============================================================================
+
+// --- 1. SYNONYM MAPPING ---
+const SYNONYM_MAP = {
+    // Location
+    'zip': ['postal', 'zipcode', 'postcode', 'pincode'],
+    'city': ['town', 'locality', 'municipality'],
+    'state': ['province', 'region'],
+    'country': ['nation'],
+    'address': ['location', 'street'],
+
+    // Contact
+    'phone': ['tel', 'mobile', 'cell', 'telephone', 'contact'],
+    'email': ['mail', 'e-mail', 'emailaddress'],
+
+    // Name
+    'first': ['given', 'fname', 'firstname'],
+    'last': ['family', 'surname', 'lname', 'lastname'],
+    'name': ['fullname'],
+
+    // Work
+    'employer': ['company', 'organization', 'firm', 'workplace'],
+    'job': ['position', 'role', 'occupation', 'employment'],
+    'title': ['designation', 'jobtitle'],
+    'salary': ['compensation', 'remuneration', 'pay', 'ctc', 'wage'],
+
+    // Education
+    'school': ['university', 'college', 'institution', 'academy'],
+    'degree': ['qualification', 'certification'],
+
+    // Demographics
+    'gender': ['sex'],
+    'veteran': ['military', 'service'],
+    'citizenship': ['nationality', 'citizen'],
+    'visa': ['sponsorship', 'workpermit'],
+    'authorization': ['auth', 'authorisation', 'authorized']
+};
+
+// --- 5. ALIAS REGISTRY (Exact known mappings) ---
+const ALIAS_REGISTRY = {
+    'zip_code': ['postal_code', 'zipcode', 'postcode', 'pin_code', 'pincode'],
+    'first_name': ['firstname', 'fname', 'given_name', 'givenname'],
+    'last_name': ['lastname', 'lname', 'surname', 'family_name', 'familyname'],
+    'phone': ['phone_number', 'phonenumber', 'mobile', 'telephone', 'tel'],
+    'email': ['email_address', 'emailaddress', 'e_mail'],
+    'employer_name': ['company_name', 'companyname', 'organization', 'employer'],
+    'job_title': ['jobtitle', 'position', 'role', 'designation'],
+    'institution_name': ['school_name', 'university', 'college', 'school'],
+    'degree_type': ['degree', 'qualification', 'education_level'],
+    'salary_current': ['current_salary', 'currentsalary', 'current_ctc', 'ctc'],
+    'salary_expected': ['expected_salary', 'expectedsalary', 'expected_ctc'],
+    'linkedin': ['linkedin_url', 'linkedinurl', 'linkedin_profile']
+};
+
+// --- 3. WEIGHTED TOKENS (Higher = More Important) ---
+const TOKEN_WEIGHTS = {
+    // Core identifiers (High weight)
+    'zip': 3, 'postal': 3, 'phone': 3, 'email': 3, 'salary': 3,
+    'first': 3, 'last': 3, 'name': 2.5,
+    'employer': 3, 'job': 2.5, 'title': 2.5, 'institution': 3, 'school': 3,
+    'degree': 3, 'linkedin': 3, 'city': 2.5, 'state': 2.5,
+
+    // Modifiers (Medium weight)
+    'current': 1.5, 'expected': 1.5, 'start': 1.5, 'end': 1.5,
+    'type': 1.5, 'level': 1.5,
+
+    // Generic (Low weight - often noise)
+    'primary': 0.5, 'secondary': 0.5, 'your': 0.3, 'the': 0.2,
+    'please': 0.2, 'enter': 0.2, 'select': 0.2, 'what': 0.3, 'is': 0.2
+};
+
+// --- 2. TOKEN STEMMING ---
+const STEM_MAP = {
+    'employer': 'employ', 'employment': 'employ', 'employed': 'employ',
+    'education': 'educat', 'educational': 'educat',
+    'institution': 'institut', 'institutional': 'institut',
+    'authorization': 'author', 'authorized': 'author', 'authorisation': 'author',
+    'citizenship': 'citizen',
+    'compensation': 'compens', 'compensate': 'compens',
+    'experience': 'exper', 'experienced': 'exper',
+    'qualification': 'qualif', 'qualified': 'qualif'
+};
+
+/**
+ * Apply stemming to a token
+ */
+function stemToken(token) {
+    return STEM_MAP[token] || token;
+}
+
+/**
+ * Expand a token to include its synonyms
+ */
+function expandWithSynonyms(token) {
+    const expanded = new Set([token]);
+
+    // Check if this token is a key in synonym map
+    if (SYNONYM_MAP[token]) {
+        SYNONYM_MAP[token].forEach(syn => expanded.add(syn));
+    }
+
+    // Check if this token is a value in synonym map
+    for (const [key, synonyms] of Object.entries(SYNONYM_MAP)) {
+        if (synonyms.includes(token)) {
+            expanded.add(key);
+            synonyms.forEach(syn => expanded.add(syn));
+        }
+    }
+
+    return expanded;
+}
+
+/**
+ * Get weight for a token
+ */
+function getTokenWeight(token) {
+    return TOKEN_WEIGHTS[token] || 1.0;
+}
+
+/**
+ * Compute Weighted Jaccard Similarity between two sets of tokens.
+ * @param {Set} setA - First set of tokens
+ * @param {Set} setB - Second set of tokens
+ * @returns {number} Similarity score between 0 and 1
+ */
+function weightedJaccardSimilarity(setA, setB) {
+    if (setA.size === 0 && setB.size === 0) return 1;
+    if (setA.size === 0 || setB.size === 0) return 0;
+
+    // Stem and expand both sets
+    const expandedA = new Set();
+    const expandedB = new Set();
+
+    setA.forEach(t => {
+        const stemmed = stemToken(t);
+        expandWithSynonyms(stemmed).forEach(s => expandedA.add(s));
+    });
+
+    setB.forEach(t => {
+        const stemmed = stemToken(t);
+        expandWithSynonyms(stemmed).forEach(s => expandedB.add(s));
+    });
+
+    // Calculate weighted intersection and union
+    let intersectionWeight = 0;
+    let unionWeight = 0;
+
+    const allTokens = new Set([...expandedA, ...expandedB]);
+
+    allTokens.forEach(token => {
+        const weight = getTokenWeight(token);
+        const inA = expandedA.has(token);
+        const inB = expandedB.has(token);
+
+        if (inA && inB) {
+            intersectionWeight += weight;
+        }
+        unionWeight += weight;
+    });
+
+    return unionWeight > 0 ? intersectionWeight / unionWeight : 0;
+}
+
+/**
+ * Check alias registry for exact known mappings
+ */
+function checkAliasRegistry(fieldKey, cache) {
+    const normalizedKey = fieldKey.toLowerCase();
+
+    // Check if fieldKey is a primary key with aliases
+    if (ALIAS_REGISTRY[normalizedKey]) {
+        for (const alias of ALIAS_REGISTRY[normalizedKey]) {
+            if (cache[alias]) {
+                return { matchedKey: alias, similarity: 0.95, value: cache[alias], source: 'alias' };
+            }
+        }
+    }
+
+    // Check if fieldKey is an alias pointing to a primary key
+    for (const [primary, aliases] of Object.entries(ALIAS_REGISTRY)) {
+        if (aliases.includes(normalizedKey) && cache[primary]) {
+            return { matchedKey: primary, similarity: 0.95, value: cache[primary], source: 'alias' };
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Find the best matching cache key using advanced matching.
+ * @param {string} fieldKey - The field's cache_label to match
+ * @param {Object} cache - The cache object to search in
+ * @param {number} threshold - Minimum similarity threshold (default: 0.7)
+ * @param {Object} context - Optional context for confidence-based selection
+ * @returns {Object|null} { matchedKey, similarity, value, source } or null
+ */
+function findBestKeyMatch(fieldKey, cache, threshold = 0.7, context = {}) {
+    if (!fieldKey || !cache || Object.keys(cache).length === 0) return null;
+
+    // 1. EXACT MATCH (Fastest - 100% confidence)
+    if (cache[fieldKey]) {
+        return { matchedKey: fieldKey, similarity: 1.0, value: cache[fieldKey], source: 'exact' };
+    }
+
+    // 2. ALIAS REGISTRY (Known mappings - 95% confidence)
+    const aliasMatch = checkAliasRegistry(fieldKey, cache);
+    if (aliasMatch) {
+        // console.log(`🔗 [KeyMatcher] Alias Match: "${fieldKey}" → "${aliasMatch.matchedKey}"`);
+        return aliasMatch;
+    }
+
+    // 3. WEIGHTED JACCARD SIMILARITY (Fuzzy Match with Synonyms & Stemming)
+    const fieldTokens = new Set(fieldKey.toLowerCase().split('_').filter(t => t.length > 0));
+
+    const candidates = [];
+
+    for (const cacheKey of Object.keys(cache)) {
+        const cacheTokens = new Set(cacheKey.toLowerCase().split('_').filter(t => t.length > 0));
+        const similarity = weightedJaccardSimilarity(fieldTokens, cacheTokens);
+
+        if (similarity >= threshold) {
+            candidates.push({
+                matchedKey: cacheKey,
+                similarity,
+                value: cache[cacheKey],
+                source: 'jaccard'
+            });
+        }
+    }
+
+    // 4. CONFIDENCE-BASED SELECTION (Pick best from candidates)
+    if (candidates.length === 0) return null;
+
+    // Sort by similarity (highest first)
+    candidates.sort((a, b) => b.similarity - a.similarity);
+
+    // If we have context, use it to break ties
+    if (context.mlLabel && candidates.length > 1) {
+        // Prefer candidate that contains the ML label
+        const mlMatch = candidates.find(c =>
+            c.matchedKey.includes(context.mlLabel) || context.mlLabel.includes(c.matchedKey)
+        );
+        if (mlMatch && mlMatch.similarity >= candidates[0].similarity * 0.95) {
+            mlMatch.source = 'jaccard+ml';
+            // console.log(`🤖 [KeyMatcher] ML-Boosted Match: "${fieldKey}" ~ "${mlMatch.matchedKey}" (${(mlMatch.similarity * 100).toFixed(1)}%)`);
+            return mlMatch;
+        }
+    }
+
+    // Return the best match
+    const best = candidates[0];
+    // console.log(`🔍 [KeyMatcher] Weighted Jaccard: "${fieldKey}" ~ "${best.matchedKey}" (${(best.similarity * 100).toFixed(1)}%)`);
+    return best;
+}
+
+// Legacy function for backward compatibility
+function jaccardSimilarity(setA, setB) {
+    if (setA.size === 0 && setB.size === 0) return 1;
+    if (setA.size === 0 || setB.size === 0) return 0;
+
+    const intersection = new Set([...setA].filter(x => setB.has(x)));
+    const union = new Set([...setA, ...setB]);
+
+    return intersection.size / union.size;
+}
+
+// Export for global access
+if (typeof window !== 'undefined') {
+    window.KeyMatcher = {
+        jaccardSimilarity,
+        weightedJaccardSimilarity,
+        findBestKeyMatch,
+        checkAliasRegistry,
+        expandWithSynonyms,
+        stemToken,
+        getTokenWeight,
+        // Expose registries for debugging/extension
+        SYNONYM_MAP,
+        ALIAS_REGISTRY,
+        TOKEN_WEIGHTS,
+        STEM_MAP
+    };
+}
+
 /**
  * Get cached value (Dual-Store Aware)
  */
@@ -195,6 +481,27 @@ function generateSemanticKey(fieldOrElement, label) {
 
     if (isGeneric && field && field.label && !/^(yes|no|male|female|other|m|f|true|false)$/i.test(field.label.trim())) {
         targetLabel = field.label;
+    }
+
+    // A. Pre-Calculated Cache Key (from Pipeline/GlobalStore)
+    // This overrides everything else as it's the authoritative key determined at extraction time.
+    let preCalculatedKey = null;
+    if (typeof HTMLElement !== 'undefined' && fieldOrElement instanceof HTMLElement) {
+        preCalculatedKey = fieldOrElement.getAttribute('cache_label');
+        if (!preCalculatedKey && window.NovaCache) {
+            preCalculatedKey = window.NovaCache[fieldOrElement.id] || window.NovaCache[fieldOrElement.name];
+        }
+    } else if (field) {
+        // For object-based calls: Check field.cache_label FIRST, then NovaCache
+        preCalculatedKey = field.cache_label;
+        if (!preCalculatedKey && window.NovaCache && (field.id || field.name)) {
+            preCalculatedKey = window.NovaCache[field.id] || window.NovaCache[field.name];
+        }
+    }
+    // console.log(`🔍 [CacheDebug] Pre-calculated Key: ${preCalculatedKey}`);
+
+    if (preCalculatedKey) {
+        return { key: preCalculatedKey, isML: true, fallbackKey: preCalculatedKey };
     }
 
     // B. Stable Fallback Key
@@ -245,8 +552,7 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     // 1. Generate Semantic Key
     let { key: semanticType, isML, fallbackKey } = generateSemanticKey(field, label);
 
-    if (isML) console.log(`[InteractionLog] 🔑 Lookup using ML Key: ${semanticType} (Fallback: ${fallbackKey})`);
-    else console.log(`[InteractionLog] 🔑 Lookup using Fallback Key: ${semanticType}`);
+    // console.log(`🔍 [InteractionLog] Lookup Key: "${semanticType}" (isML: ${isML}, fallback: "${fallbackKey}")`);
 
     // ... (rest of function logic)
 
@@ -257,17 +563,17 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     let cache = await getCache(targetCacheKey);
     let cached = null;
 
-    console.log(`[InteractionLog] 🔎 Cache Keys in ${targetCacheKey}: [${Object.keys(cache).join(', ')}]`);
+    // console.log(`[InteractionLog] 🔎 Cache Keys in ${targetCacheKey}: [${Object.keys(cache).join(', ')}]`);
 
     // A. Direct Hit (try ML key first, then fallback key)
     if (cache[semanticType]) {
         cached = cache[semanticType];
-        console.log(`[InteractionLog] 🎯 Direct Hit in ${targetCacheKey}: ${semanticType}`);
+        // console.log(`[InteractionLog] 🎯 Direct Hit in ${targetCacheKey}: ${semanticType}`);
     } else if (isML && fallbackKey && cache[fallbackKey]) {
         // ML key missed, try the fallback key
         semanticType = fallbackKey;
         cached = cache[fallbackKey];
-        console.log(`[InteractionLog] 🎯 Fallback Hit in ${targetCacheKey}: ${fallbackKey}`);
+        // console.log(`[InteractionLog] 🎯 Fallback Hit in ${targetCacheKey}: ${fallbackKey}`);
     }
 
     // B. Cross-Cache Fallback: If multiCache-eligible but not found, try selectionCache (backward compat)
@@ -276,12 +582,12 @@ async function getCachedValue(fieldOrSelector, labelArg) {
         if (legacyCache[semanticType]) {
             cached = legacyCache[semanticType];
             targetCacheKey = SELECTION_CACHE_KEY;
-            console.log(`[InteractionLog] 🔄 Legacy Hit in ${SELECTION_CACHE_KEY}: ${semanticType} (should migrate to multiCache)`);
+            // console.log(`[InteractionLog] 🔄 Legacy Hit in ${SELECTION_CACHE_KEY}: ${semanticType} (should migrate to multiCache)`);
         } else if (fallbackKey && legacyCache[fallbackKey]) {
             cached = legacyCache[fallbackKey];
             semanticType = fallbackKey;
             targetCacheKey = SELECTION_CACHE_KEY;
-            console.log(`[InteractionLog] 🔄 Legacy Fallback Hit in ${SELECTION_CACHE_KEY}: ${fallbackKey}`);
+            // console.log(`[InteractionLog] 🔄 Legacy Fallback Hit in ${SELECTION_CACHE_KEY}: ${fallbackKey}`);
         }
     }
     // B. Fuzzy Search (Secondary)
@@ -293,7 +599,7 @@ async function getCachedValue(fieldOrSelector, labelArg) {
                 if (entry.variants && entry.variants.some(v => v.includes(term) || term.includes(v))) {
                     semanticType = type;
                     cached = entry;
-                    console.log(`[InteractionLog] 🔍 Fuzzy Hit in ${targetCacheKey}: ${term} ~ [${type}]`);
+                    // console.log(`[InteractionLog] 🔍 Fuzzy Hit in ${targetCacheKey}: ${term} ~ [${type}]`);
                     break;
                 }
             }
@@ -309,10 +615,10 @@ async function getCachedValue(fieldOrSelector, labelArg) {
         const isRepeating = /job|work|education|employer|school|degree/.test(semanticType);
         if (isRepeating) {
             const index = getFieldIndex(field, label);
-            console.log(`[InteractionLog] 🔍 MultiCache Read: Key=${semanticType} Index=${index} Array=${JSON.stringify(resultValue)}`);
+            // console.log(`[InteractionLog] 🔍 MultiCache Read: Key=${semanticType} Index=${index} Array=${JSON.stringify(resultValue)}`);
             if (Array.isArray(resultValue)) {
                 resultValue = resultValue[index];
-                console.log(`[InteractionLog] 🔍 Extracted Value: "${resultValue}"`);
+                // console.log(`[InteractionLog] 🔍 Extracted Value: "${resultValue}"`);
             } else if (index > 0) {
                 resultValue = null;
             }
@@ -375,7 +681,7 @@ async function cacheSelection(field, label, value) {
         // ... (rest of saving logic) ...
         const isMultiCache = isMultiCacheType(semanticType, field);
         const targetCacheKey = isMultiCache ? MULTI_CACHE_KEY : SELECTION_CACHE_KEY;
-        console.log(`[InteractionLog] 🗄️ Target Cache: ${targetCacheKey} (isMulti: ${isMultiCache}, key: ${semanticType})`);
+        // console.log(`[InteractionLog] 🗄️ Target Cache: ${targetCacheKey} (isMulti: ${isMultiCache}, key: ${semanticType})`);
         const cache = await getCache(targetCacheKey);
 
         if (!cache[semanticType]) {
@@ -420,11 +726,11 @@ async function cacheSelection(field, label, value) {
         entry.lastUsed = Date.now();
         entry.useCount++;
         const normLabel = normalizeFieldName(label);
-        if (!entry.variants) entry.variants = [];
         if (normLabel && !entry.variants.includes(normLabel)) {
             entry.variants.push(normLabel);
         }
 
+        // console.log(`💾 [InteractionLog] Updated: "${semanticType}" → ${JSON.stringify(entry.value)} (Cache: ${targetCacheKey})`);
         await saveCache(targetCacheKey, cache);
 
         // Meta update
@@ -481,7 +787,7 @@ async function getCacheStats() {
 async function clearCache() {
     // Clears: Selection (Standard), Multi (Arrays), and Smart Memory (Global Fallback)
     await chrome.storage.local.remove([SELECTION_CACHE_KEY, MULTI_CACHE_KEY, METADATA_KEY, 'smartMemory']);
-    console.log('[InteractionLog] 🗑️ All Caches Cleared: Selection, Multi, and SmartMemory');
+    // console.log('[InteractionLog] 🗑️ All Caches Cleared: Selection, Multi, and SmartMemory');
 }
 
 // Export
@@ -494,4 +800,4 @@ window.InteractionLog = {
     classifyFieldType
 };
 window.SelectionCache = window.InteractionLog;
-console.log('[InteractionLog] Module loaded with Dual-Store Support');
+// console.log('[InteractionLog] Module loaded with Dual-Store Support');

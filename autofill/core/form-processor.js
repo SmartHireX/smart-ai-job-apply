@@ -15,7 +15,7 @@ class FormProcessor {
      * @returns {Promise<void>}
      */
     static async process() {
-        console.log('🚀 [FormProcessor] Starting form processing...');
+        // console.log('🚀 [FormProcessor] Starting form processing...');
 
         // Show processing widget
         if (typeof window.showProcessingWidget === 'function') {
@@ -26,7 +26,7 @@ class FormProcessor {
             // Execute FANG-Level FieldRouter Pipeline
             await this.executeFieldRouterPipeline();
 
-            console.log('✅ [FormProcessor] Processing complete');
+            // console.log('✅ [FormProcessor] Processing complete');
 
         } catch (error) {
             console.error('❌ [FormProcessor] Processing failed:', error);
@@ -51,7 +51,7 @@ class FormProcessor {
      * Execute the Main FieldRouter Pipeline
      */
     static async executeFieldRouterPipeline() {
-        console.log('🚀 [FormProcessor] Starting FANG-Level Pipeline (Stealth Mode)...');
+        // console.log('🚀 [FormProcessor] Starting FANG-Level Pipeline (Stealth Mode)...');
 
         // Initialize neural classifier
         if (!window.neuralClassifier) {
@@ -76,7 +76,7 @@ class FormProcessor {
 
         // Use FormAnalyzer to get fields
         const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
-        console.log(`📊 [FormProcessor] Extracted ${fields.length} fields for Pipeline.`);
+        // console.log(`📊 [FormProcessor] Extracted ${fields.length} fields for Pipeline.`);
 
         // --- EXECUTE NEW PIPELINE ---
         if (window.PipelineOrchestrator) {
@@ -94,10 +94,10 @@ class FormProcessor {
             // 4. Update Stats
             this.updateStats(results);
 
-            console.log('✅ [FormProcessor] Pipeline execution passed.');
+            // console.log('✅ [FormProcessor] Pipeline execution passed.');
 
             // TRIGGER PREVIEW
-            console.log('🖼️ [FormProcessor] Opening Preview...');
+            // console.log('🖼️ [FormProcessor] Opening Preview...');
 
             // Map results back to fields
             fields.forEach(f => {
@@ -148,7 +148,7 @@ class FormProcessor {
         if (!results) return;
         const total = Object.keys(results).length;
         const filled = Object.values(results).filter(r => r.value).length;
-        console.log(`📊 [Stats] Filled ${filled}/${total} fields.`);
+        // console.log(`📊 [Stats] Filled ${filled}/${total} fields.`);
 
         // Optional: Send to background for persistent tracking
         chrome.runtime.sendMessage({
@@ -162,15 +162,15 @@ class FormProcessor {
      */
     static normalizeResumeSchema(resumeData) {
         if (!resumeData.experience && resumeData.work) {
-            console.log('🔧 Normalizing Schema: mapped "work" to "experience"');
+            // console.log('🔧 Normalizing Schema: mapped "work" to "experience"');
             resumeData.experience = resumeData.work;
         }
         if (!resumeData.education && resumeData.schools) {
-            console.log('🔧 Normalizing Schema: mapped "schools" to "education"');
+            // console.log('🔧 Normalizing Schema: mapped "schools" to "education"');
             resumeData.education = resumeData.schools;
         }
         if (!resumeData.basics && resumeData.personal) {
-            console.log('🔧 Normalizing Schema: mapped "personal" to "basics"');
+            // console.log('🔧 Normalizing Schema: mapped "personal" to "basics"');
             resumeData.basics = resumeData.personal;
         }
     }

@@ -40,7 +40,7 @@ class UndoManager {
             };
         }
 
-        console.log(`🔄 Reverting ${this.history.length} fields...`);
+        // console.log(`🔄 Reverting ${this.history.length} fields...`);
 
         this.history.forEach(state => {
             FieldUtils.restoreFieldState(state);
@@ -64,7 +64,7 @@ class UndoManager {
      */
     static clear() {
         this.history = [];
-        console.log('🗑️ Undo history cleared');
+        // console.log('🗑️ Undo history cleared');
     }
 
     /**

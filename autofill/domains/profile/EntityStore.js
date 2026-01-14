@@ -22,7 +22,7 @@ class EntityStore {
                 this.profile = { ...this.profile, ...result.smart_history_profile };
             }
             this.isInitialized = true;
-            console.log('[EntityStore] Initialized.');
+            // console.log('[EntityStore] Initialized.');
         } catch (e) {
             console.warn('[EntityStore] Init failed:', e);
         }

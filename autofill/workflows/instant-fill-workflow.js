@@ -18,7 +18,7 @@ class Phase1InstantFill {
      * @returns {Object} { mappings, unmapped }
      */
     static async run(fields, resumeData, smartMemory) {
-        console.log('⚡ [Phase 1] Starting Instant Fill...');
+        // console.log('⚡ [Phase 1] Starting Instant Fill...');
 
         // Step 1: Heuristic Mapping
         let { mappings, unmapped } = this.runHeuristicMapping(fields, resumeData);
@@ -44,7 +44,7 @@ class Phase1InstantFill {
             unmapped = result.finalUnmapped;
         }
 
-        console.log(`⚡ [Phase 1] Complete: ${Object.keys(mappings).length} fields mapped instantly.`);
+        // console.log(`⚡ [Phase 1] Complete: ${Object.keys(mappings).length} fields mapped instantly.`);
 
         return { mappings, unmapped };
     }
@@ -53,11 +53,11 @@ class Phase1InstantFill {
      * Step 1: Heuristic Mapping
      */
     static runHeuristicMapping(fields, resumeData) {
-        console.log('📊 Running Heuristic Mapping...');
+        // console.log('📊 Running Heuristic Mapping...');
 
         const { mappings, unmapped } = window.FormAnalyzer.mapFieldsHeuristically(fields, resumeData);
 
-        console.log(`📊 Heuristic: ${Object.keys(mappings).length} mapped, ${unmapped.length} unmapped`);
+        // console.log(`📊 Heuristic: ${Object.keys(mappings).length} mapped, ${unmapped.length} unmapped`);
 
         return { mappings, unmapped };
     }
@@ -66,48 +66,43 @@ class Phase1InstantFill {
      * Step 2: Smart Memory Check
      */
     static async runSmartMemory(unmapped, smartMemory, heuristicMappings) {
-        console.log(`🧠 Smart Memory Check. Cache Size: ${Object.keys(smartMemory).length}`);
+        // console.log(`🧠 Smart Memory Check. Cache Size: ${Object.keys(smartMemory).length}`);
 
         const memoryHits = {};
         const stillUnmapped = [];
 
         for (const field of unmapped) {
             let foundAnswer = null;
-            let fieldLabel = this.extractFieldLabel(field);
 
-            // Normalize label
-            fieldLabel = window.GlobalMemory ? window.GlobalMemory.normalizeKey(fieldLabel) : fieldLabel;
+            // CENTRALIZED KEY: Use the pre-calculated cache_label from PipelineOrchestrator
+            // This is THE ONLY source of truth for cache keys.
+            let fieldLabel = field.cache_label;
 
-            // Neural Classification Check
-            const prediction = field.ml_prediction || { label: 'unknown', confidence: 0, source: 'unknown' };
-
-            // Use AI label if very confident
-            if (prediction.confidence > CONFIDENCE.NEURAL_HIGH && prediction.label !== 'unknown') {
-                fieldLabel = prediction.label;
-                console.log(`🤖 [Smart Memory] Overriding key with ML Label: "${fieldLabel}" (Conf: ${(prediction.confidence * 100).toFixed(0)}%)`);
-            } else {
-                // Fallback to robust key generation
-                // Fallback to robust key generation
-                fieldLabel = window.InteractionLog && window.InteractionLog.generateSemanticKey
-                    ? window.InteractionLog.generateSemanticKey(field, fieldLabel).key
-                    : (window.GlobalMemory ? window.GlobalMemory.normalizeKey(fieldLabel) : fieldLabel);
+            // Fallback: If cache_label was not set (e.g., field without ml_prediction),
+            // generate a basic key. This should be rare.
+            if (!fieldLabel) {
+                fieldLabel = this.extractFieldLabel(field);
+                fieldLabel = window.GlobalMemory ? window.GlobalMemory.normalizeKey(fieldLabel) : fieldLabel;
+                console.warn(`⚠️ [SmartMemory] Field missing cache_label, using fallback: "${fieldLabel}"`);
             }
 
-            // Store calculated key
+            // console.log(`🔍 [SmartMemory] Lookup Key: "${fieldLabel}"`);
+
+            // Store calculated key on field for downstream use
             field.search_field_name = fieldLabel;
 
             // HISTORY GUARD: Skip Smart Memory for history fields
+            const prediction = field.ml_prediction || { label: 'unknown', confidence: 0 };
             const isHistoryField = HISTORY_LABELS.includes(prediction.label) && prediction.confidence > CONFIDENCE.NEURAL_MATCH;
             const isSafeOverride = SAFE_OVERRIDE_PATTERN.test(fieldLabel);
 
             if (isHistoryField && !isSafeOverride) {
-                console.log(`🛡️ History Guard: Skipping Smart Memory lookup for "${fieldLabel}" (Neural: ${prediction.label})`);
+                // console.log(`🛡️ History Guard: Skipping Smart Memory lookup for "${fieldLabel}" (Neural: ${prediction.label})`);
                 stillUnmapped.push(field);
                 continue;
             }
 
             // Search cache
-            console.log(`🔍 Searching cache for field: "${fieldLabel}"`);
             if (fieldLabel.length > 2) {
                 if (window.SelectionCache && window.SelectionCache.getCachedValue) {
                     try {
@@ -147,7 +142,7 @@ class Phase1InstantFill {
         }
 
         if (Object.keys(memoryHits).length > 0) {
-            console.log(`🧠 Smart Memory rescued ${Object.keys(memoryHits).length} fields!`);
+            // console.log(`🧠 Smart Memory rescued ${Object.keys(memoryHits).length} fields!`);
         }
 
         return { memoryHits, stillUnmapped };
@@ -157,7 +152,7 @@ class Phase1InstantFill {
      * Step 3: Selection Cache
      */
     static async runSelectionCache(unmapped) {
-        console.log('💾 [Phase 1.7] Checking Selection Cache...');
+        // console.log('💾 [Phase 1.7] Checking Selection Cache...');
 
         const cacheHits = {};
         const cacheMisses = [];
@@ -180,7 +175,11 @@ class Phase1InstantFill {
                 continue;
             }
 
-            const label = item.fieldData?.label || element.placeholder || element.name || '';
+            // CENTRALIZED KEY: Use field.cache_label as the lookup key
+            const cacheKey = item.cache_label || item.fieldData?.cache_label;
+            const label = cacheKey || item.fieldData?.label || element.placeholder || element.name || '';
+
+            // console.log(`🔍 [SelectionCache] Lookup Key: "${label}"`);
             const cached = await window.SelectionCache.getCachedValue(element, label);
 
             if (cached) {
@@ -194,7 +193,7 @@ class Phase1InstantFill {
         }
 
         if (Object.keys(cacheHits).length > 0) {
-            console.log(`✅ [SelectionCache] Resolved ${Object.keys(cacheHits).length} fields from cache.`);
+            // console.log(`✅ [SelectionCache] Resolved ${Object.keys(cacheHits).length} fields from cache.`);
         }
 
         return { cacheHits, cacheMisses };
@@ -218,7 +217,7 @@ class Phase1InstantFill {
                 ? cached.value
                 : cached.value.split(',').map(v => v.trim());
 
-            console.log(`💾 [SelectionCache] HIT: "${label}" → ${JSON.stringify(valuesArray)}`);
+            // console.log(`💾 [SelectionCache] HIT: "${label}" → ${JSON.stringify(valuesArray)}`);
 
             return {
                 [item.selector]: {
@@ -239,7 +238,7 @@ class Phase1InstantFill {
                     ? `#${CSS.escape(matchedRadio.id)}`
                     : `input[name="${CSS.escape(matchedRadio.name)}"][value="${CSS.escape(matchedRadio.value)}"]`;
 
-                console.log(`💾 [SelectionCache] HIT: "${label}" → ${cached.value}`);
+                // console.log(`💾 [SelectionCache] HIT: "${label}" → ${cached.value}`);
 
                 return {
                     [radioSelector]: {
@@ -252,7 +251,7 @@ class Phase1InstantFill {
             }
         } else {
             // Select field
-            console.log(`💾 [SelectionCache] HIT: "${label}" → ${cached.value}`);
+            // console.log(`💾 [SelectionCache] HIT: "${label}" → ${cached.value}`);
 
             return {
                 [item.selector]: {
@@ -301,12 +300,12 @@ class Phase1InstantFill {
      * Step 4: Local Semantic Matcher
      */
     static runLocalMatcher(unmapped, resumeData) {
-        console.log('⚡ [Phase 1.8] Running Local Semantic Matcher...');
+        // console.log('⚡ [Phase 1.8] Running Local Semantic Matcher...');
 
         const { defined: localMappings, remaining: finalUnmapped } = window.LocalMatcher.resolveFields(unmapped, resumeData);
 
         if (Object.keys(localMappings).length > 0) {
-            console.log(`✅ [LocalMatcher] Resolved ${Object.keys(localMappings).length} fields without AI.`);
+            // console.log(`✅ [LocalMatcher] Resolved ${Object.keys(localMappings).length} fields without AI.`);
         }
 
         return { localMappings, finalUnmapped };

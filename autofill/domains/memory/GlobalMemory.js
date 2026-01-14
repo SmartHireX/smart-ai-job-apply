@@ -45,11 +45,27 @@ class GlobalMemory {
      */
     static async resolveField(field) {
         const cache = await this.getCache();
-        const primaryKey = this.normalizeKey(field.label || field.name);
+
+        // CENTRALIZED KEY: Use field.cache_label as the primary lookup key
+        // This is THE source of truth set by PipelineOrchestrator
+        const primaryKey = field.cache_label || this.normalizeKey(field.label || field.name);
         const fallbackKey = this.generateFallbackKey(field);
 
+        // console.log(`🔍 [GlobalMemory] Lookup Key: "${primaryKey}" (fallback: "${fallbackKey}")`);
+
+        // 1. EXACT MATCH on primary key
         if (cache[primaryKey]) return { value: cache[primaryKey].answer, confidence: 0.9 };
+
+        // 2. EXACT MATCH on fallback key
         if (cache[fallbackKey]) return { value: cache[fallbackKey].answer, confidence: 0.7 };
+
+        // 3. JACCARD SIMILARITY FALLBACK (using KeyMatcher)
+        if (window.KeyMatcher && window.KeyMatcher.findBestKeyMatch) {
+            const match = window.KeyMatcher.findBestKeyMatch(primaryKey, cache, 0.6);
+            if (match && match.value && match.value.answer) {
+                return { value: match.value.answer, confidence: match.similarity * 0.8 };
+            }
+        }
 
         return null;
     }
@@ -101,7 +117,8 @@ class GlobalMemory {
             const updatedMemory = { ...currentMemory, ...newEntries };
 
             await chrome.storage.local.set({ smartMemory: updatedMemory });
-            console.log(`💾 [SmartMemory] Updated cache with ${Object.keys(newEntries).length} entries`);
+            // console.log(`💾 [SmartMemory] Updated cache keys:`, Object.keys(newEntries));
+            // console.log(`💾 [SmartMemory] Updated cache keys:`, newEntries);
         } catch (error) {
             console.warn('Failed to update smart memory:', error);
         }
@@ -114,7 +131,7 @@ class GlobalMemory {
     static async clearCache() {
         try {
             await chrome.storage.local.remove('smartMemory');
-            console.log('🗑️ Smart Memory cache cleared');
+            // console.log('🗑️ Smart Memory cache cleared');
         } catch (error) {
             console.warn('Failed to clear smart memory:', error);
         }
@@ -216,7 +233,7 @@ class GlobalMemory {
         try {
             const cache = JSON.parse(jsonString);
             await chrome.storage.local.set({ smartMemory: cache });
-            console.log('✅ Smart Memory imported successfully');
+            // console.log('✅ Smart Memory imported successfully');
         } catch (error) {
             console.error('❌ Failed to import smart memory:', error);
             throw error;

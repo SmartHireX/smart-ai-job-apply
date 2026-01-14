@@ -47,7 +47,7 @@ const PrefetchEngine = {
         // Find matching cluster key
         const clusterKey = Object.keys(this.clusters).find(key => label.includes(key));
         if (clusterKey) {
-            console.log(`🚀 [Prefetch] Detected '${clusterKey}' - queueing cluster...`);
+            // console.log(`🚀 [Prefetch] Detected '${clusterKey}' - queueing cluster...`);
             this.triggerPrefetch(clusterKey);
         }
     },
@@ -74,7 +74,7 @@ const PrefetchEngine = {
 
         const val = map[type];
         if (val) {
-            console.log(`⚡ [NativeFastLane] Instant match for '${type}'`);
+            // console.log(`⚡ [NativeFastLane] Instant match for '${type}'`);
 
             // Visual indicator of "Instant Readiness" (Subtle glow)
             element.style.transition = 'box-shadow 0.3s';
@@ -112,7 +112,7 @@ const PrefetchEngine = {
                         // PRE-CALCULATE ANSWER
                         // For now, we just identify valid resume data for this keyword
                         // In full implementation, we'd run the full Jaccard here and store the result.
-                        console.log(`🔮 [Prefetch] Pre-calculating for future field: "${label}"`);
+                        // console.log(`🔮 [Prefetch] Pre-calculating for future field: "${label}"`);
                     }
                 });
             });

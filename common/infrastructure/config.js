@@ -22,7 +22,7 @@ class Config {
      */
     static enableNewArch() {
         localStorage.setItem(FEATURE_FLAGS.NEW_ARCHITECTURE_KEY, 'true');
-        console.log('✅ New Architecture enabled');
+        // console.log('✅ New Architecture enabled');
     }
 
     /**
@@ -30,7 +30,7 @@ class Config {
      */
     static disableNewArch() {
         localStorage.setItem(FEATURE_FLAGS.NEW_ARCHITECTURE_KEY, 'false');
-        console.log('❌ New Architecture disabled (using legacy)');
+        // console.log('❌ New Architecture disabled (using legacy)');
     }
 
     /**

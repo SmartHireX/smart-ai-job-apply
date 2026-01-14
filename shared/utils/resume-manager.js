@@ -135,7 +135,7 @@ async function saveResumeData(data) {
     data.meta.version = (data.meta.version || 0) + 1;
 
     await chrome.storage.local.set({ [RESUME_STORAGE_KEY]: data });
-    console.log('Resume data saved successfully');
+    // console.log('Resume data saved successfully');
 }
 
 /**

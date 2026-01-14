@@ -289,7 +289,7 @@ function extractFieldsFromDOM(source) {
 
         // Enrich with Section Context (SectionDetector)
         if (window.SectionDetector && fields.length > 0) {
-            console.log(`[FormAnalyzer] Enriching ${fields.length} fields with section context...`);
+            // console.log(`[FormAnalyzer] Enriching ${fields.length} fields with section context...`);
             fields.forEach(field => {
                 if (field.element) {
                     // Section Context enrichment REMOVED as per user request
@@ -434,7 +434,7 @@ function extractFieldsFromDOM(source) {
                     const rawContext = window.SectionDetector.getNearestHeadingText(element);
                     if (rawContext) {
                         field.parentContext = rawContext;
-                        console.log(`🎯 [ParentContext] "${field.label}" → "${rawContext}"`);
+                        // console.log(`🎯 [ParentContext] "${field.label}" → "${rawContext}"`);
                     }
                 }
             }
@@ -442,7 +442,7 @@ function extractFieldsFromDOM(source) {
 
         // 3. Sibling Cluster Analysis (Advanced Context)
         if (typeof window.SiblingCluster !== 'undefined') {
-            console.log('✅ [FormAnalyzer] SiblingCluster found, executing analysis...');
+            // console.log('✅ [FormAnalyzer] SiblingCluster found, executing analysis...');
             try {
                 window.SiblingCluster.analyze(fields);
             } catch (err) {
@@ -747,7 +747,7 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
         return { success: true, mappings: {} };
     }
 
-    console.log(`[FormAnalyzer] Processing batch of ${validFields.length} fields with ${context.type || 'unknown'} context`);
+    // console.log(`[FormAnalyzer] Processing batch of ${validFields.length} fields with ${context.type || 'unknown'} context`);
 
     try {
         // Choose prompt template based on context type
@@ -863,7 +863,7 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
             }
         }
 
-        console.log(`[FormAnalyzer] Batch mapped ${Object.keys(validatedMappings).length} fields successfully`);
+        // console.log(`[FormAnalyzer] Batch mapped ${Object.keys(validatedMappings).length} fields successfully`);
         return { success: true, mappings: validatedMappings };
 
     } catch (error) {
@@ -993,7 +993,7 @@ function cleanHTMLForAnalysis(source) {
  */
 async function analyzeAndMapForm(html) {
     // Phase 1: Local Heuristic Analysis (Fast, Cheap)
-    console.log('🚀 Phase 1: Local Heuristic Analysis...');
+    // console.log('🚀 Phase 1: Local Heuristic Analysis...');
 
     // In hybrid mode, we need DOM access. If html is string, extractFieldsFromDOM handles it.
     // Ideally, for better context, we should pass the document structure if possible, 
@@ -1012,11 +1012,11 @@ async function analyzeAndMapForm(html) {
 
     // Apply Heuristics
     const { mappings, unmapped } = mapFieldsHeuristically(fields, resumeData);
-    console.log(`✅ Heuristics Mapped: ${Object.keys(mappings).length}, Unmapped: ${unmapped.length}`);
+    // console.log(`✅ Heuristics Mapped: ${Object.keys(mappings).length}, Unmapped: ${unmapped.length}`);
 
     // Phase 2: AI Analysis for Unmapped Fields (Slow, Smart)
     if (unmapped.length > 0) {
-        console.log('🧠 Phase 2: Delegating complex fields to AI...');
+        // console.log('🧠 Phase 2: Delegating complex fields to AI...');
 
         // We only send the unmapped fields to AI to save tokens
         // BUT AI needs context. We can send the Densified HTML 

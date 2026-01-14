@@ -384,8 +384,8 @@ function showReopenTrigger(allFields) {
 }
 
 function showAccordionSidebar(allFields) {
-    console.log('🎯 Nova AI: Showing Form Review...');
-    console.log(`Total fields: ${allFields.length}`);
+    // console.log('🎯 Nova AI: Showing Form Review...');
+    // console.log(`Total fields: ${allFields.length}`);
 
     // Remove existing sidebar if any
     const existing = document.getElementById('smarthirex-accordion-sidebar');
@@ -797,10 +797,10 @@ function showAccordionSidebar(allFields) {
         }
     });
 
-    console.log(`📄 After Grouping & Re-routing - App Fill: ${finalAppFillFields.length}, Cache: ${finalCacheFields.length}, AI: ${finalAiFields.length}, Manual: ${finalManualFields.length}`);
+    // console.log(`📄 After Grouping & Re-routing - App Fill: ${finalAppFillFields.length}, Cache: ${finalCacheFields.length}, AI: ${finalAiFields.length}, Manual: ${finalManualFields.length}`);
 
     if (finalAppFillFields.length === 0 && finalCacheFields.length === 0 && finalAiFields.length === 0) {
-        console.log('No fields to show in sidebar');
+        // console.log('No fields to show in sidebar');
         return;
     }
 
@@ -1092,7 +1092,7 @@ function showAccordionSidebar(allFields) {
                 }
             } catch (e) {
                 console.warn('Skipping invalid selector click:', selector, 'Error:', e.message);
-                console.log('Field info:', { label: item.textContent, selector: selector, length: selector?.length });
+                // console.log('Field info:', { label: item.textContent, selector: selector, length: selector?.length });
                 showErrorToast('Could not scroll to field (Invalid Selector)');
             }
         });
@@ -1102,7 +1102,7 @@ function showAccordionSidebar(allFields) {
             try {
                 if (!selector) return;
                 const element = document.querySelector(selector);
-                console.log(`[Sidebar Debug] Hovering "${selector}". Found?`, !!element);
+                // console.log(`[Sidebar Debug] Hovering "${selector}". Found?`, !!element);
 
                 if (element) {
                     // Smart Highlight: If radio/checkbox, prefer the entire Group Container over the individual option
@@ -1126,7 +1126,7 @@ function showAccordionSidebar(allFields) {
                         }
                     }
 
-                    console.log(`[Sidebar Debug] Highlight Target:`, target.tagName, target.className);
+                    // console.log(`[Sidebar Debug] Highlight Target:`, target.tagName, target.className);
                     target.classList.add('smarthirex-spotlight');
                     showConnectionBeam(item, target);
                     item._highlightedElement = target; // Store for cleanup
@@ -1336,7 +1336,7 @@ function setSelectValue(element, value) {
     let bestMatchIndex = -1;
     let maxSim = 0;
 
-    console.log(`🔍 [SelectDebug] Setting value for select. Target: "${value}"`);
+    // console.log(`🔍 [SelectDebug] Setting value for select. Target: "${value}"`);
 
     // STRATEGY 1: Exact Match (Value or Text) - Priority #1
     for (let i = 0; i < options.length; i++) {
@@ -1346,7 +1346,7 @@ function setSelectValue(element, value) {
         if (opt.value.toLowerCase() === String(value).toLowerCase() ||
             opt.text.toLowerCase() === String(value).toLowerCase()) {
             bestMatchIndex = i;
-            console.log(`✅ [SelectDebug] Exact match found: "${opt.text}"`);
+            // console.log(`✅ [SelectDebug] Exact match found: "${opt.text}"`);
             break;
         }
     }
@@ -1370,7 +1370,7 @@ function setSelectValue(element, value) {
             }
         });
 
-        console.log(`   🏆 Best Fuzzy Match: "${bestMatchIndex !== -1 ? options[bestMatchIndex].text : 'None'}" (Score: ${maxSim})`);
+        // console.log(`   🏆 Best Fuzzy Match: "${bestMatchIndex !== -1 ? options[bestMatchIndex].text : 'None'}" (Score: ${maxSim})`);
     }
 
     // Apply Best Match
@@ -1379,7 +1379,7 @@ function setSelectValue(element, value) {
         // Force update value attribute too for framework listeners
         element.value = element.options[bestMatchIndex].value;
         dispatchChangeEvents(element);
-        console.log(`✅ [SelectDebug] Applied index ${bestMatchIndex}: "${element.options[bestMatchIndex].text}"`);
+        // console.log(`✅ [SelectDebug] Applied index ${bestMatchIndex}: "${element.options[bestMatchIndex].text}"`);
     } else {
         console.warn(`❌ [SelectDebug] No match found. Max Sim: ${maxSim}`);
     }
@@ -1434,6 +1434,16 @@ function attachSelfCorrectionTrigger(element) {
     const handleChange = async () => {
         const label = getFieldLabel(element);
         const fieldType = element.type || element.tagName?.toLowerCase();
+        /*
+        // console.log(`⚡ [Sidebar] Event Triggered by Field: "${label}"`, {
+            name: element.name,
+            id: element.id,
+            type: fieldType,
+            value: element.value,
+            'ml_attr_label': element.getAttribute('data-nova-ml-label') || 'null',
+            'ml_prop': element.__ml_prediction || 'undefined'
+        });
+        */
 
         // Determine if this is a non-text input (for SelectionCache)
         const isNonTextInput = fieldType === 'radio' || fieldType === 'checkbox' ||
@@ -1489,7 +1499,7 @@ function attachSelfCorrectionTrigger(element) {
         // Strategy A: Non-Text Inputs (always explicit selection)
         if (isNonTextInput && window.SelectionCache) {
             await window.SelectionCache.cacheSelection(element, label, newValue);
-            console.log(`💾 [SelectionCache] Learned: "${label}" → ${newValue} (Non-Text)`);
+            // console.log(`💾 [SelectionCache] Learned: "${label}" → ${newValue} (Non-Text)`);
             handledByInteractionLog = true;
         }
 
@@ -1498,21 +1508,24 @@ function attachSelfCorrectionTrigger(element) {
         const fieldContext = [label, element.name, element.id].filter(Boolean).join(' ').toLowerCase();
         const isMultiCacheEligible = /job|work|employ|education|school|degree|skill|title|employer/.test(fieldContext);
 
-        // Also check for High Confidence ML Predict (e.g. zip_code > 0.8)
-        const mlConf = element.__ml_prediction?.confidence || 0;
-        const isHighConfidence = mlConf > 0.8;
+        // Resurrect Authoritative Cache Key (from Pipeline/GlobalStore)
+        let cacheLabel = element.getAttribute('cache_label');
+        if (!cacheLabel && window.NovaCache) {
+            cacheLabel = window.NovaCache[element.id] || window.NovaCache[element.name];
+        }
+        // console.log(`🔍 [CacheDebug] Cache Label: ${cacheLabel} and element : `, element);
 
-        if (!handledByInteractionLog && (isMultiCacheEligible || isHighConfidence) && window.InteractionLog) {
+        if (!handledByInteractionLog && isMultiCacheEligible && window.InteractionLog) {
             await window.InteractionLog.cacheSelection(element, label, newValue);
-            const reason = isHighConfidence ? `High Conf ML (${mlConf.toFixed(2)})` : 'Section Field';
-            console.log(`📚 [MultiCache] Learned: "${label}" → ${newValue} (${reason})`);
+            // console.log(`📚 [MultiCache] Learned: "${label}" → ${newValue}`);
             handledByInteractionLog = true;
         }
 
         // Strategy C: Fallback to Smart Memory (Generic Text)
         // If not handled by InteractionLog, and it's a valid text string
         if (!handledByInteractionLog && newValue && String(newValue).length > 1) {
-            const key = window.GlobalMemory ? window.GlobalMemory.normalizeKey(label) : label;
+            // Use authoritative cacheLabel if available, otherwise normalize label
+            const key = cacheLabel || (window.GlobalMemory ? window.GlobalMemory.normalizeKey(label) : label);
 
             if (window.GlobalMemory) {
                 await window.GlobalMemory.updateCache({
@@ -1530,7 +1543,7 @@ function attachSelfCorrectionTrigger(element) {
                     }
                 });
             }
-            console.log(`🧠 [SmartMemory] Learned: "${label}" → ${newValue}`);
+            // console.log(`🧠 [SmartMemory] Learned: "${label}" → ${newValue}`);
         }
     };
 

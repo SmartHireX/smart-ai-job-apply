@@ -22,7 +22,7 @@ class SelfHealing {
             return;
         }
 
-        console.log('🛡️ Starting Self-Healing Observer...');
+        // console.log('🛡️ Starting Self-Healing Observer...');
 
         this.observer = new MutationObserver((mutations) => {
             this.handleMutations(mutations);
@@ -115,7 +115,7 @@ class SelfHealing {
             return; // Already has correct value
         }
 
-        console.log(`❤️‍🩹 Self-Healing: Re-filling ${element.name || element.id}`);
+        // console.log(`❤️‍🩹 Self-Healing: Re-filling ${element.name || element.id}`);
 
         // Re-apply value
         if (historyItem.isCheckbox) {
@@ -145,7 +145,7 @@ class SelfHealing {
             this.observer.disconnect();
             this.observer = null;
             this.isActive = false;
-            console.log('🛡️ Self-Healing Observer stopped');
+            // console.log('🛡️ Self-Healing Observer stopped');
         }
     }
 

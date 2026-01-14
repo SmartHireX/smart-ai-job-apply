@@ -34,7 +34,7 @@ class FormExtractor {
         fields.push(...this.extractSelects(container));
         fields.push(...this.extractTextareas(container));
 
-        console.log(`[FormExtractor] Extracted ${fields.length} fields`);
+        // console.log(`[FormExtractor] Extracted ${fields.length} fields`);
 
         return fields;
     }

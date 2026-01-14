@@ -21,13 +21,13 @@ class Phase2AIProcessing {
      */
     static async run(unmapped, resumeData, pageContext, cumulativeMappings, allFields) {
         if (unmapped.length === 0) {
-            console.log('⚡ No unmapped fields, skipping Phase 2');
+            // console.log('⚡ No unmapped fields, skipping Phase 2');
             this.ensureAllFieldsInMappings(allFields, cumulativeMappings);
             return {};
         }
 
-        console.log(`⚡ [Phase 2] AI Needed for ${unmapped.length} complex fields`);
-        console.log(`🚀 Starting BATCHED Processing...`);
+        // console.log(`⚡ [Phase 2] AI Needed for ${unmapped.length} complex fields`);
+        // console.log(`🚀 Starting BATCHED Processing...`);
 
         // Setup AI with retry logic
         const originalCallAI = window.AIClient.callAI;
@@ -48,7 +48,7 @@ class Phase2AIProcessing {
 
             // Cache AI results
             if (Object.keys(allAIMappings).length > 0) {
-                console.log(`🧠 [Phase 2] AI mapped ${Object.keys(allAIMappings).length} fields`);
+                // console.log(`🧠 [Phase 2] AI mapped ${Object.keys(allAIMappings).length} fields`);
                 await this.cacheAIResults(allAIMappings);
             } else {
                 console.warn('⚡ [Phase 2] Batched processing returned no mappings');
@@ -103,7 +103,7 @@ class Phase2AIProcessing {
     static async processBatches(unmapped, resumeData, pageContext, cumulativeMappings, allFields) {
         const callbacks = {
             onBatchStart: (idx, total, labels) => {
-                console.log(`[Batch ${idx}/${total}] Processing: ${labels.join(', ')}`);
+                // console.log(`[Batch ${idx}/${total}] Processing: ${labels.join(', ')}`);
                 if (typeof window.showProcessingWidget === 'function') {
                     window.showProcessingWidget('AI Processing...', 2, {
                         currentBatch: idx,
@@ -121,14 +121,14 @@ class Phase2AIProcessing {
             },
             onBatchComplete: (batchMappings, isBackground) => {
                 if (!isBackground) {
-                    console.log(`✅ Foreground batch complete: ${Object.keys(batchMappings).length} fields`);
+                    // console.log(`✅ Foreground batch complete: ${Object.keys(batchMappings).length} fields`);
                     Object.assign(cumulativeMappings, batchMappings);
                 } else {
-                    console.log(`📦 Background batch cached: ${Object.keys(batchMappings).length} fields`);
+                    // console.log(`📦 Background batch cached: ${Object.keys(batchMappings).length} fields`);
                 }
             },
             onAllComplete: (finalMappings) => {
-                console.log(`🎉 All batches complete: ${Object.keys(finalMappings).length} total fields`);
+                // console.log(`🎉 All batches complete: ${Object.keys(finalMappings).length} total fields`);
 
                 // Ensure all fields are in cumulative mappings
                 this.ensureAllFieldsInMappings(allFields, cumulativeMappings);
@@ -150,7 +150,7 @@ class Phase2AIProcessing {
      * Cache AI results to smart memory and selection cache
      */
     static async cacheAIResults(allAIMappings) {
-        console.log(`💾 Attempting to cache ${Object.keys(allAIMappings).length} Phase 2 fields...`);
+        // console.log(`💾 Attempting to cache ${Object.keys(allAIMappings).length} Phase 2 fields...`);
 
         const newCacheEntries = {};
 
@@ -183,10 +183,10 @@ class Phase2AIProcessing {
 
         // Save to smart memory
         if (Object.keys(newCacheEntries).length > 0) {
-            console.log(`💾 Saving ${Object.keys(newCacheEntries).length} entries to smart memory...`);
+            // console.log(`💾 Saving ${Object.keys(newCacheEntries).length} entries to smart memory...`);
             if (window.GlobalMemory) await window.GlobalMemory.updateCache(newCacheEntries);
         } else {
-            console.log(`⚠️ No Phase 2 text fields were cached.`);
+            // console.log(`⚠️ No Phase 2 text fields were cached.`);
         }
     }
 
@@ -198,7 +198,7 @@ class Phase2AIProcessing {
 
         try {
             await window.SelectionCache.cacheSelection(element, label, value);
-            console.log(`💾 [SelectionCache] AI Learned: "${label}" → ${JSON.stringify(value)}`);
+            // console.log(`💾 [SelectionCache] AI Learned: "${label}" → ${JSON.stringify(value)}`);
         } catch (err) {
             console.warn('[SelectionCache] Failed to cache AI result:', err);
         }
@@ -220,7 +220,7 @@ class Phase2AIProcessing {
         const isHistoryField = HISTORY_LABELS_FOR_SAVE.includes(savePrediction.label);
 
         if (isHistoryField && !SAFE_OVERRIDE_PATTERN.test(normalizedLabel)) {
-            console.log(`🛡️ History Guard: Skipping Smart Memory save for "${normalizedLabel}"`);
+            // console.log(`🛡️ History Guard: Skipping Smart Memory save for "${normalizedLabel}"`);
             return null;
         }
 
@@ -229,7 +229,7 @@ class Phase2AIProcessing {
             return null;
         }
 
-        console.log(`✅ Cached: "${normalizedLabel}" => "${value}"`);
+        // console.log(`✅ Cached: "${normalizedLabel}" => "${value}"`);
 
         return {
             [normalizedLabel]: window.GlobalMemory ? window.GlobalMemory.createCacheEntry(value) : { answer: value, timestamp: Date.now() }

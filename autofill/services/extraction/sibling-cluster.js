@@ -127,7 +127,7 @@ function matchPattern(groupFields, startIndex, cluster) {
             if (!label || label.length < 3 || /text|input|field/i.test(label)) {
                 field.inferredLabel = node.infer;
                 field.parentContext = (field.parentContext || '') + ` (Inferred: ${node.infer})`;
-                console.log(`🧩 [SiblingCluster] Inferred "${node.infer}" for field at index ${startIndex + i}`);
+                // console.log(`🧩 [SiblingCluster] Inferred "${node.infer}" for field at index ${startIndex + i}`);
             }
         }
     }

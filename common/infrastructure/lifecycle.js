@@ -21,7 +21,7 @@ class Lifecycle {
             return;
         }
 
-        console.log('🚀 Nova AI Extension Loading...');
+        // console.log('🚀 Nova AI Extension Loading...');
 
         try {
             // Initialize core services
@@ -34,7 +34,7 @@ class Lifecycle {
             this.registerCleanupHandlers();
 
             this.initialized = true;
-            console.log('✅ Nova AI Extension Loaded Successfully');
+            // console.log('✅ Nova AI Extension Loaded Successfully');
 
         } catch (error) {
             console.error('❌ Extension initialization failed:', error);
@@ -46,7 +46,7 @@ class Lifecycle {
      * Initialize core services
      */
     static async initializeServices() {
-        console.log('⚙️ Initializing services...');
+        // console.log('⚙️ Initializing services...');
 
         // Neural Classifier initialization
         if (window.NeuralClassifier) {
@@ -54,7 +54,7 @@ class Lifecycle {
                 window.neuralClassifier = new window.NeuralClassifier();
                 await window.neuralClassifier.init();
                 this.services.set('NeuralClassifier', window.neuralClassifier);
-                console.log('✅ Neural Classifier initialized');
+                // console.log('✅ Neural Classifier initialized');
             } catch (error) {
                 console.error('❌ Neural Classifier init failed:', error);
             }
@@ -81,7 +81,7 @@ class Lifecycle {
     static registerService(name, instance) {
         if (instance) {
             this.services.set(name, instance);
-            console.log(`✅ ${name} registered`);
+            // console.log(`✅ ${name} registered`);
         } else {
             console.warn(`⚠️ ${name} not available yet`);
         }
@@ -110,7 +110,7 @@ class Lifecycle {
             }
         }, true);
 
-        console.log('✅ Event listeners registered');
+        // console.log('✅ Event listeners registered');
     }
 
     /**
@@ -137,7 +137,7 @@ class Lifecycle {
      * Cleanup resources
      */
     static cleanup() {
-        console.log('🧹 Cleaning up extension resources...');
+        // console.log('🧹 Cleaning up extension resources...');
 
         // Execute all cleanup handlers
         this.cleanupHandlers.forEach(handler => {
@@ -152,7 +152,7 @@ class Lifecycle {
         this.services.clear();
         this.initialized = false;
 
-        console.log('✅ Cleanup complete');
+        // console.log('✅ Cleanup complete');
     }
 
     /**

@@ -14,7 +14,7 @@
  * - Global API exports for backward compatibility
  */
 
-console.log('Nova AI Extension Loaded');
+// console.log('Nova AI Extension Loaded');
 
 // ============ INITIALIZATION ============
 
@@ -119,4 +119,4 @@ window.regenerateFieldWithAI = async function (selector, label, customInstructio
 // Maintain global state for backward compatibility
 window.activeFormUndoHistory = [];
 
-console.log('✅ Content script initialized');
+// console.log('✅ Content script initialized');

@@ -24,7 +24,7 @@ class SectionController extends window.Handler {
 
         for (const [sectionKey, sectionFields] of Object.entries(sections)) {
             const { type, index } = this.parseSectionKey(sectionKey);
-            console.log(`📜 [HistoryHandler] Processing Transactional Section: ${type} #${index} (${sectionFields.length} fields)`);
+            // console.log(`📜 [HistoryHandler] Processing Transactional Section: ${type} #${index} (${sectionFields.length} fields)`);
 
             // 2. Fetch Source Entity (Transactional Unit)
             // Try HistoryManager first (Edited Data), Fallback to Resume (Raw Data)
@@ -109,7 +109,7 @@ class SectionController extends window.Handler {
 
                 // Debug Log
                 if (cached && cached.value) {
-                    console.log(`[SectionController] 🟢 Cache Candidate: "${field.label}" Val: "${cached.value}" Conf: ${cached.confidence} Idx: ${field.field_index}`);
+                    // console.log(`[SectionController] 🟢 Cache Candidate: "${field.label}" Val: "${cached.value}" Conf: ${cached.confidence} Idx: ${field.field_index}`);
                 }
 
                 if (cached && cached.value && cached.confidence > 0.6) {
@@ -119,10 +119,10 @@ class SectionController extends window.Handler {
                         source: 'selection_cache', // Preserves cache source
                         trace: this.createTrace('cache_hit', cached.confidence, { source: 'multi_cache' })
                     };
-                    console.log(`[SectionController] ✅ Used Cache for "${field.label}"`);
+                    // console.log(`[SectionController] ✅ Used Cache for "${field.label}"`);
                     continue; // Skip entity mapping
                 } else if (cached) {
-                    console.log(`[SectionController] 🟡 Cache Rejected (Low Confidence/Empty) for "${field.label}"`);
+                    // console.log(`[SectionController] 🟡 Cache Rejected (Low Confidence/Empty) for "${field.label}"`);
                 }
             }
 
@@ -131,7 +131,7 @@ class SectionController extends window.Handler {
             const val = this.extractValue(entity, label);
 
             if (val) {
-                console.log(`[SectionController] ⚠️ Using User Data for "${field.label}" (Cache Miss/Skip). Val: "${val}"`);
+                // console.log(`[SectionController] ⚠️ Using User Data for "${field.label}" (Cache Miss/Skip). Val: "${val}"`);
                 mapped[field.selector] = {
                     value: val,
                     confidence: 1.0,
@@ -139,7 +139,7 @@ class SectionController extends window.Handler {
                     trace: this.createTrace('history_map', 1.0, { source, entity_field: label })
                 };
             } else {
-                console.log(`[SectionController] ❌ No Data (Cache or User) for "${field.label}"`);
+                // console.log(`[SectionController] ❌ No Data (Cache or User) for "${field.label}"`);
             }
         }
         return mapped;

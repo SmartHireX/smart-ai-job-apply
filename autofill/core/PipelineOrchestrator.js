@@ -33,7 +33,7 @@ class PipelineOrchestrator {
      */
     async executePipeline(rawFields, context) {
         const executionId = crypto.randomUUID();
-        console.log(`🚀 [Pipeline:${executionId}] Starting Stealth Execution`);
+        // console.log(`🚀 [Pipeline:${executionId}] Starting Stealth Execution`);
 
         // Reset Indexing Service for this run
         if (window.IndexingService) window.IndexingService.reset();
@@ -46,8 +46,58 @@ class PipelineOrchestrator {
         // even if the field wasn't auto-filled by the engine.
         enriched.forEach(field => {
             if (field.element && field.ml_prediction) {
-                field.element.__ml_prediction = field.ml_prediction;
+                try {
+                    // Start of REFACTOR: Simplify to "cache_label"
+                    let cacheLabel = '';
+
+                    if (field.ml_prediction.confidence > 0.8) {
+                        cacheLabel = field.ml_prediction.label;
+                    } else {
+                        // Fallback: Robust Tokenized Key (consistent with app heuristics)
+                        // 1. Combine raw inputs
+                        const rawInput = [field.name, field.label, field.parentContext].filter(Boolean).join(' ');
+
+                        // 2. Normalize and Tokenize
+                        const tokens = rawInput.toLowerCase()
+                            .replace(/[^a-z0-9]/g, ' ')
+                            .split(/\s+/)
+                            .filter(w => w.length > 2 && !/the|and|for|of|are|you|have|over|enter|your|please|select|choose/.test(w));
+
+                        // 3. Unique & Sort & Join
+                        const uniqueTokens = Array.from(new Set(tokens)).sort();
+                        cacheLabel = uniqueTokens.join('_') || 'unknown_field';
+                    }
+                    // console.log(`🔍 [CacheDebug] Cache Label: ${cacheLabel}`);
+
+                    // CENTRALIZED: Attach cache_label to field object
+                    // This allows all downstream consumers (workflows, sidebar, InteractionLog)
+                    // to simply access field.cache_label instead of regenerating keys.
+                    field.cache_label = cacheLabel;
+
+                    // 1. Store on DOM for fast access (Primary)
+                    field.element.setAttribute('cache_label', cacheLabel);
+
+                    // 2. Store in Global Cache for persistence (GlobalStore)
+                    if (!window.NovaCache) window.NovaCache = {};
+
+                    if (field.element.id) {
+                        window.NovaCache[field.element.id] = cacheLabel;
+                    } else if (field.element.name) {
+                        // Fallback: If no ID, use Name. This is essential for fields like 'zip_code' often without IDs.
+                        // Collision risk is acceptable compared to data loss.
+                        window.NovaCache[field.element.name] = cacheLabel;
+                    }
+
+                    // console.log(`🏷️ [Pipeline] Cache Label Assigned: "${field.label}" -> "${cacheLabel}" (ML Conf: ${field.ml_prediction.confidence})`);
+                } catch (e) {
+                    console.warn('[Pipeline] Failed to attach Cache Label:', e);
+                }
+            } else {
+                // Even without ML, we should technically assign a fallback cache label, 
+                // but for now we follow the "if ml_prediction" block structure.
+                // console.log(`⚠️ [Pipeline] Field Skipped (No Element/ML): "${field.label}"`);
             }
+
         });
 
         // 2. Group (Memory, Heuristic, Profile, General)
@@ -82,7 +132,7 @@ class PipelineOrchestrator {
 
         // --- PHASE 2: GLOBAL INFERENCE FALLBACK ---
         if (unresolved.length > 0) {
-            console.log(`🤖 [Pipeline] Global Inference Fallback for ${unresolved.length} fields...`);
+            // console.log(`🤖 [Pipeline] Global Inference Fallback for ${unresolved.length} fields...`);
             const aiResults = await this.strategyGlobalInference(unresolved, context);
             await this.applyResults(aiResults);
             Object.assign(results, aiResults);
@@ -131,7 +181,7 @@ class PipelineOrchestrator {
                 field.field_index = window.IndexingService.getIndex(field, type);
 
                 // Logging
-                console.log(`🔍 [Enrich] ${label.substring(0, 20)}... | ML: ${field.ml_prediction?.label || 'N/A'} | Idx: ${field.field_index}`);
+                // console.log(`🔍 [Enrich] ${label.substring(0, 20)}... | ML: ${field.ml_prediction?.label || 'N/A'} | Idx: ${field.field_index}`);
 
             } else {
                 console.warn('⚠️ IndexingService missing during enrichment');
@@ -256,7 +306,7 @@ class PipelineOrchestrator {
                 const stepResults = await strategy(remaining);
                 const resolvedCount = Object.keys(stepResults).length;
                 if (resolvedCount > 0) {
-                    console.log(`✅ [Pipeline] Strategy resolved ${resolvedCount} fields.`);
+                    // console.log(`✅ [Pipeline] Strategy resolved ${resolvedCount} fields.`);
                 }
 
                 Object.assign(finalResults, stepResults);
@@ -405,7 +455,7 @@ class PipelineOrchestrator {
     }
 
     logGrouping(groups) {
-        console.log(`📊 [Pipeline] Grouping Summary: Mem:${groups.memory.length} Heu:${groups.heuristic.length} Multi:${groups.multiValue.length} Gen:${groups.general.length}`);
+        // console.log(`📊 [Pipeline] Grouping Summary: Mem:${groups.memory.length} Heu:${groups.heuristic.length} Multi:${groups.multiValue.length} Gen:${groups.general.length}`);
 
         // Detailed Group Logging
         if (groups.memory.length > 0) console.log('🧠 [Group: Memory]', groups.memory);

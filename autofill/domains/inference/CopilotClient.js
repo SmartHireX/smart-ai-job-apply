@@ -31,7 +31,7 @@ class CopilotClient extends window.Handler {
             return results;
         }
 
-        console.log(`[AIResolver] Processing ${fields.length} fields with Copilot/Batch`);
+        // console.log(`[AIResolver] Processing ${fields.length} fields with Copilot/Batch`);
 
         // Separate "Copilot" Candidates (Textareas asking open-ended Qs)
         const copilotFields = fields.filter(f => f.tagName === 'TEXTAREA' || (f.type === 'text' && f.maxLength > 100));

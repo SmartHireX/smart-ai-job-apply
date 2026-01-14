@@ -22,10 +22,8 @@ class RuleEngine {
      * @param {Object} resumeData - Structured user data
      */
     resolveFields(fields, resumeData) {
-        if (this.debug) console.time('LocalMatcher.resolve');
 
         const facts = this.extractFacts(resumeData);
-        if (this.debug) console.log('📊 [RuleEngine] Extracted Facts:', facts);
         const resolved = {};
         const remaining = [];
         const processedNames = new Set();
@@ -69,11 +67,9 @@ class RuleEngine {
             if (field.name && processedNames.has(field.name)) return;
 
             const context = this.getContext(field);
-            if (this.debug) console.log(`🔍 [RuleEngine] Processing: "${field.label || field.name}" Context: [${context}]`);
 
             // Skip History Fields (Handled by HistoryHandler)
             if (this.isHistoryField(context, field)) {
-                if (this.debug) console.log(`⏭️ [RuleEngine] Skipping History Field: "${field.label}"`);
                 remaining.push(field);
                 return;
             }
@@ -91,7 +87,6 @@ class RuleEngine {
             }
         });
 
-        if (this.debug) console.timeEnd('LocalMatcher.resolve');
         return { defined: resolved, remaining };
     }
 
@@ -116,7 +111,7 @@ class RuleEngine {
     resolveSingleField(field, context, facts) {
         // Debug Context
         if (this.debug && (context.includes('name') || context.includes('email'))) {
-            console.log(`🔍 [RuleEngine] Checking: "${field.label}" Context: "[${context}]"`);
+            // console.log(`🔍 [RuleEngine] Checking: "${field.label}" Context: "[${context}]"`);
         }
 
         // 1. Demographics
@@ -165,7 +160,7 @@ class RuleEngine {
 
     _logMatch(field, value, source) {
         if (this.debug && value) {
-            console.log(`🎯 [RuleEngine] Matched: "${field.label || field.name}" -> "${value}" (Source: ${source})`);
+            // console.log(`🎯 [RuleEngine] Matched: "${field.label || field.name}" -> "${value}" (Source: ${source})`);
         }
         return value;
     }

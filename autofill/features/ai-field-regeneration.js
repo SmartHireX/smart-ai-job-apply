@@ -155,7 +155,7 @@ class AIRegeneration {
                 });
             }
 
-            console.log(`🧠 [SmartMemory] Cached regenerated value for "${label}"`);
+            // console.log(`🧠 [SmartMemory] Cached regenerated value for "${label}"`);
         }
     }
 

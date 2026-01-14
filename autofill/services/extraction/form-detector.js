@@ -13,7 +13,7 @@ let cachedUrl = null;
 function getJobContext() {
     // Cache per URL
     if (cachedUrl === window.location.href && cachedJobContext) {
-        console.log('🧠 Using cached job context');
+        // console.log('🧠 Using cached job context');
         return cachedJobContext;
     }
 
@@ -45,7 +45,7 @@ function getJobContext() {
                     context += `Description: ${cleanText(jobData.description || '')}`;
 
                     if (isValid(context)) {
-                        console.log('🧠 ✅ Extracted from JSON-LD');
+                        // console.log('🧠 ✅ Extracted from JSON-LD');
                         cachedJobContext = context;
                         cachedUrl = window.location.href;
                         return context;
@@ -71,7 +71,7 @@ function getJobContext() {
                 const desc = document.querySelector('#content .section-wrapper')?.innerText || '';
                 if (isValid(title + desc)) {
                     context = `Title: ${title}\nCompany: ${company}\nDescription: ${cleanText(desc.substring(0, 2000))}`;
-                    console.log('🧠 ✅ Extracted from Greenhouse selectors');
+                    // console.log('🧠 ✅ Extracted from Greenhouse selectors');
                 }
             } catch (e) {
                 console.warn('🧠 Greenhouse extraction error:', e.message);
@@ -85,7 +85,7 @@ function getJobContext() {
                 const desc = document.querySelector('.section-wrapper')?.innerText || '';
                 if (isValid(title + desc)) {
                     context = `Title: ${title}\nCompany: ${company}\nDescription: ${cleanText(desc.substring(0, 2000))}`;
-                    console.log('🧠 ✅ Extracted from Lever selectors');
+                    // console.log('🧠 ✅ Extracted from Lever selectors');
                 }
             } catch (e) {
                 console.warn('🧠 Lever extraction error:', e.message);
@@ -100,7 +100,7 @@ function getJobContext() {
                 const desc = document.querySelector('[data-automation-id="jobPostingDescription"]')?.innerText || '';
                 if (isValid(title + desc)) {
                     context = `Title: ${title}\nCompany: ${company}\nDescription: ${cleanText(desc.substring(0, 2000))}`;
-                    console.log('🧠 ✅ Extracted from Workday selectors');
+                    // console.log('🧠 ✅ Extracted from Workday selectors');
                 }
             } catch (e) {
                 console.warn('🧠 Workday extraction error:', e.message);
@@ -126,7 +126,7 @@ function getJobContext() {
         const bodyText = document.body.innerText.substring(0, 2000);
 
         context = `Page Title: ${title}\nHeader: ${h1} | ${h2}\nMeta: ${metaDesc}\nContent: ${cleanText(bodyText)}`;
-        console.log('🧠 ⚠️ Extracted from semantic fallback');
+        // console.log('🧠 ⚠️ Extracted from semantic fallback');
     } catch (e) {
         console.error('🧠 ❌ All context extraction methods failed:', e.message);
         context = 'Context extraction failed. Using resume data only.';

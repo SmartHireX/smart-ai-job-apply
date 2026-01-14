@@ -103,7 +103,7 @@ class NeuralClassifier {
     }
 
     async init() {
-        console.log(`[NeuralClassifier] Initializing TinyML Engine for ${this.CLASSES.length} classes...`);
+        // console.log(`[NeuralClassifier] Initializing TinyML Engine for ${this.CLASSES.length} classes...`);
 
         // Priority 1: Try to load user's trained weights (personalized)
         const userWeightsLoaded = await this.loadWeights();
@@ -115,11 +115,11 @@ class NeuralClassifier {
             if (!baselineLoaded) {
                 // Priority 3: Initialize random weights (cold start)
                 this.generateDummyWeights();
-                console.log('[NeuralClassifier] 🆕 No saved weights. Initialized fresh model.');
+                // console.log('[NeuralClassifier] 🆕 No saved weights. Initialized fresh model.');
             }
         }
 
-        console.log('[NeuralClassifier] Ready.');
+        // console.log('[NeuralClassifier] Ready.');
     }
 
     /**
@@ -394,7 +394,7 @@ class NeuralClassifier {
             this.b1[h] -= learningRate * dB1[h];
         }
 
-        console.log(`[NeuralClassifier] 🎓 Trained on "${correctLabel}" (Conf: ${probs[targetIndex].toFixed(2)} → 1.0, LR: ${learningRate.toFixed(4)}, Samples: ${this.totalSamples})`);
+        // console.log(`[NeuralClassifier] 🎓 Trained on "${correctLabel}" (Conf: ${probs[targetIndex].toFixed(2)} → 1.0, LR: ${learningRate.toFixed(4)}, Samples: ${this.totalSamples})`);
 
         // Auto-save periodically (every 10 samples to reduce I/O)
         if (this.totalSamples % 10 === 0) {
@@ -428,10 +428,10 @@ class NeuralClassifier {
                     this.W2 = data.W2;
                     this.b2 = data.b2;
                     this.totalSamples = data.totalSamples || 0;
-                    console.log('[NeuralClassifier] 📂 Loaded trained 2-layer weights from storage.');
+                    // console.log('[NeuralClassifier] 📂 Loaded trained 2-layer weights from storage.');
                     return true;
                 } else if (data.version === 1) {
-                    console.log('[NeuralClassifier] ⚠️ Found v1 weights (1-layer). Reinitializing to v2 (2-layer).');
+                    // console.log('[NeuralClassifier] ⚠️ Found v1 weights (1-layer). Reinitializing to v2 (2-layer).');
                     return false; // Force reinitialization
                 }
             }
@@ -461,7 +461,7 @@ class NeuralClassifier {
                 this.b2 = data.b2;
                 this.totalSamples = 0; // Reset training counter for user's personalization
 
-                console.log(`[NeuralClassifier] 📦 Loaded pre-trained baseline (v2) - Trained on ${data.metadata?.trainingExamples || 'N/A'} examples`);
+                // console.log(`[NeuralClassifier] 📦 Loaded pre-trained baseline (v2) - Trained on ${data.metadata?.trainingExamples || 'N/A'} examples`);
                 return true;
             }
         } catch (e) {
@@ -500,7 +500,7 @@ class NeuralClassifier {
         }
         this.b2 = new Array(outputSize).fill(0); // Zeros for bias
 
-        console.log(`[NeuralClassifier] ✨ Initialized 2-layer network: ${inputSize} → ${hiddenSize} → ${outputSize}`);
+        // console.log(`[NeuralClassifier] ✨ Initialized 2-layer network: ${inputSize} → ${hiddenSize} → ${outputSize}`);
     }
 }
 // Export

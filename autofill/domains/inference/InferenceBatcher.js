@@ -248,7 +248,7 @@ async function checkSmartMemoryForAnswer(field, smartMemory) {
                 let val = selectionHit.value;
                 if (Array.isArray(val)) val = val.join(', ');
 
-                console.log(`🧠 [UnifiedCache] Rescued specific text field "${fieldLabel}" using SelectionCache data!`);
+                // console.log(`🧠 [UnifiedCache] Rescued specific text field "${fieldLabel}" using SelectionCache data!`);
                 return val;
             }
         }
@@ -273,7 +273,7 @@ async function processBatchWithRetry(batch, resumeData, pageContext, context) {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
             if (attempt > 0) {
-                console.log(`[BatchProcessor] Retry attempt ${attempt} for batch...`);
+                // console.log(`[BatchProcessor] Retry attempt ${attempt} for batch...`);
                 await new Promise(r => setTimeout(r, RETRY_DELAY_MS * attempt));
             }
 
@@ -332,7 +332,7 @@ async function processBatchWithStreaming(batch, resumeData, pageContext, options
         return {};
     }
 
-    console.log(`[BatchProcessor] Processing batch (${batch.length} fields) with streaming...`);
+    // console.log(`[BatchProcessor] Processing batch (${batch.length} fields) with streaming...`);
 
     // Build appropriate context
     const context = buildSmartContext(resumeData, isFirstBatch, previousQA);
@@ -404,12 +404,12 @@ async function processBatchInBackground(batch, resumeData, pageContext, previous
         return {};
     }
 
-    console.log(`[BatchProcessor] Pre-fetching batch in background (${batch.length} fields)...`);
+    // console.log(`[BatchProcessor] Pre-fetching batch in background (${batch.length} fields)...`);
 
     const context = buildSmartContext(resumeData, false, previousQA);
     const mappings = await processBatchWithRetry(batch, resumeData, pageContext, context);
 
-    console.log(`[BatchProcessor] Background batch complete: ${Object.keys(mappings).length} fields`);
+    // console.log(`[BatchProcessor] Background batch complete: ${Object.keys(mappings).length} fields`);
     return mappings;
 }
 
@@ -422,11 +422,11 @@ async function processBatchInBackground(batch, resumeData, pageContext, previous
  * @returns {Promise<Object>} All mappings combined
  */
 async function processFieldsInBatches(fields, resumeData, pageContext, callbacks = {}) {
-    console.log('[BatchProcessor] Starting batched processing...');
+    // console.log('[BatchProcessor] Starting batched processing...');
 
     // Validate inputs
     if (!Array.isArray(fields) || fields.length === 0) {
-        console.log('[BatchProcessor] No fields to process');
+        // console.log('[BatchProcessor] No fields to process');
         if (callbacks.onAllComplete) callbacks.onAllComplete({});
         return {};
     }
@@ -470,7 +470,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
     ].filter(f => f && f.selector); // Filter out invalid fields
 
     if (processingOrder.length === 0) {
-        console.log('[BatchProcessor] No valid fields after filtering');
+        // console.log('[BatchProcessor] No valid fields after filtering');
         if (callbacks.onAllComplete) callbacks.onAllComplete({});
         return {};
     }
@@ -491,7 +491,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
             if (element) {
                 const existingValue = getFieldCurrentValue(element);
                 if (existingValue && existingValue.trim() !== '') {
-                    console.log(`[BatchProcessor] Skip (already filled): "${field.label || field.name}" = "${existingValue.slice(0, 30)}..."`);
+                    // console.log(`[BatchProcessor] Skip (already filled): "${field.label || field.name}" = "${existingValue.slice(0, 30)}..."`);
                     alreadyFilled[field.selector] = {
                         value: existingValue,
                         confidence: 1.0,
@@ -507,7 +507,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
             // Check smart memory for cached answer
             const cachedAnswer = await checkSmartMemoryForAnswer(field, smartMemory);
             if (cachedAnswer) {
-                console.log(`[BatchProcessor] Deduplication: "${field.label || field.name}" from smart memory`);
+                // console.log(`[BatchProcessor] Deduplication: "${field.label || field.name}" from smart memory`);
                 alreadyAnswered[field.selector] = {
                     value: cachedAnswer,
                     confidence: 0.95,
@@ -527,11 +527,11 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
     // Merge pre-filled and deduplicated
     const skippedMappings = { ...alreadyFilled, ...alreadyAnswered };
 
-    console.log(`[BatchProcessor] Skipped ${Object.keys(alreadyFilled).length} pre-filled, ${Object.keys(alreadyAnswered).length} deduplicated`);
+    // console.log(`[BatchProcessor] Skipped ${Object.keys(alreadyFilled).length} pre-filled, ${Object.keys(alreadyAnswered).length} deduplicated`);
 
     // Animate deduplicated fields (fill them into the form)
     if (callbacks.onFieldAnswered && Object.keys(alreadyAnswered).length > 0) {
-        console.log(`[BatchProcessor] Filling ${Object.keys(alreadyAnswered).length} deduplicated fields...`);
+        // console.log(`[BatchProcessor] Filling ${Object.keys(alreadyAnswered).length} deduplicated fields...`);
         for (const [selector, data] of Object.entries(alreadyAnswered)) {
             callbacks.onFieldAnswered(selector, data.value, data.confidence || 0.95);
         }
@@ -542,7 +542,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
 
     // If everything was skipped (pre-filled or deduplicated), return immediately
     if (fieldsToProcess.length === 0) {
-        console.log('[BatchProcessor] All fields were skipped (pre-filled or deduplicated)!');
+        // console.log('[BatchProcessor] All fields were skipped (pre-filled or deduplicated)!');
         if (callbacks.onAllComplete) callbacks.onAllComplete(skippedMappings);
         return skippedMappings;
     }
@@ -561,7 +561,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
     // Split into batches using Smart Batching (Atomic Groups)
     const batches = createSmartBatches(fieldsToProcess);
 
-    console.log(`[BatchProcessor] Created ${batches.length} batches from ${fieldsToProcess.length} fields`);
+    // console.log(`[BatchProcessor] Created ${batches.length} batches from ${fieldsToProcess.length} fields`);
 
     const allMappings = { ...skippedMappings }; // Start with skipped mappings
     const previousQA = []; // Track Q&A for context continuity
@@ -577,7 +577,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
 
         // --- HISTORY GUARD: Prevent Hallucination for Extra Fields ---
         if (checkHistoryBounds(batch, resumeData)) {
-            console.log('[BatchProcessor] History Guard triggered. Auto-filling blanks.');
+            // console.log('[BatchProcessor] History Guard triggered. Auto-filling blanks.');
             const blankMappings = {};
 
             // Resolve all fields as blank
@@ -630,7 +630,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
                     // If we have any hits, use them (Partial Filling Allowed)
                     if (hitCount > 0) {
                         const source = entity ? 'cache' : 'resume';
-                        console.log(`[BatchProcessor] HistoryManager filled ${hitCount} fields from ${source} (index ${index})`);
+                        // console.log(`[BatchProcessor] HistoryManager filled ${hitCount} fields from ${source} (index ${index})`);
                         Object.assign(allMappings, structMappings);
 
                         // Animate filled fields
@@ -640,7 +640,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
                             });
                         }
                     } else if (!entity) {
-                        console.log(`[BatchProcessor] No cache or resume data for index ${index}`);
+                        // console.log(`[BatchProcessor] No cache or resume data for index ${index}`);
                     }
 
                     // Remove filled fields from activeBatch so AI doesn't redo them
@@ -683,7 +683,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
         } catch (e) { console.warn('[BatchProcessor] Cache check error:', e); }
 
         if (hitCount > 0 && hitCount >= activeBatch.length * 0.5) {
-            console.log(`[BatchProcessor] Cache Expansion: ${hitCount}/${activeBatch.length} fields cached. Skipping AI.`);
+            // console.log(`[BatchProcessor] Cache Expansion: ${hitCount}/${activeBatch.length} fields cached. Skipping AI.`);
             Object.assign(allMappings, cacheHits);
 
             // Animate results
@@ -702,7 +702,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
 
         if (backgroundPromise && backgroundBatchIndex === i) {
             // Use prefetched results
-            console.log(`[BatchProcessor] Using prefetched results for batch ${i + 1}`);
+            // console.log(`[BatchProcessor] Using prefetched results for batch ${i + 1}`);
             try {
                 batchMappings = await backgroundPromise;
             } catch (e) {
@@ -781,7 +781,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
             try {
                 const learnedId = await window.HistoryManager.learnFromBatch(batch, batchMappings);
                 if (learnedId) {
-                    console.log(`[BatchProcessor] Learned entity ${learnedId} from batch.`);
+                    // console.log(`[BatchProcessor] Learned entity ${learnedId} from batch.`);
                     attachHistoryListeners(batch, learnedId);
                 }
             } catch (e) { console.warn('[BatchProcessor] Learning failed:', e); }
@@ -826,7 +826,7 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
         }
     }
 
-    console.log(`[BatchProcessor] All batches complete. Total fields: ${Object.keys(allMappings).length}`);
+    // console.log(`[BatchProcessor] All batches complete. Total fields: ${Object.keys(allMappings).length}`);
 
     // Call completion callback
     if (callbacks.onAllComplete) {

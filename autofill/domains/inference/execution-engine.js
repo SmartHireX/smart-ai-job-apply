@@ -101,7 +101,7 @@ class ExecutionEngine {
         const fieldContext = [fieldMetadata.label, fieldMetadata.name, fieldMetadata.parentContext].filter(Boolean).join(' ').toLowerCase();
         const isMultiCacheEligible = /job|work|employ|education|school|degree|skill/.test(fieldContext);
 
-        console.log(`[ExecutionEngine] 📝 User Edit Detected: "${fieldMetadata.label}" -> "${newValue}" (Type: ${fieldType}, MultiCache: ${isMultiCacheEligible})`);
+        // console.log(`[ExecutionEngine] 📝 User Edit Detected: "${fieldMetadata.label}" -> "${newValue}" (Type: ${fieldType}, MultiCache: ${isMultiCacheEligible})`);
 
         if (isStructuredInput && window.InteractionLog) {
             // Structured inputs go to SelectionCache
@@ -156,7 +156,7 @@ class ExecutionEngine {
                 }
 
                 if (targetRadio && !targetRadio.checked) {
-                    console.log(`[ExecutionEngine] 📻 Selecting radio: "${targetRadio.value}" in group "${name}"`);
+                    // console.log(`[ExecutionEngine] 📻 Selecting radio: "${targetRadio.value}" in group "${name}"`);
                     targetRadio.click();
                     this.dispatchEvents(targetRadio);
                 }

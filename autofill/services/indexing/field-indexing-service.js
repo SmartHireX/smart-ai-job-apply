@@ -114,7 +114,7 @@ class IndexingService {
     incrementCounter(type) {
         if (this.counters[type] !== undefined) {
             this.counters[type]++;
-            console.log(`[IndexingService] Incremented ${type} index to ${this.counters[type]}`);
+            // console.log(`[IndexingService] Incremented ${type} index to ${this.counters[type]}`);
         }
     }
 }

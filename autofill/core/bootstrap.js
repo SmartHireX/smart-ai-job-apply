@@ -92,7 +92,7 @@ function injectScript(src) {
         const script = document.createElement('script');
         script.src = chrome.runtime.getURL(src);
         script.onload = () => {
-            console.log(`✅ Loaded: ${src}`);
+            // console.log(`✅ Loaded: ${src}`);
             resolve();
         };
         script.onerror = () => {
@@ -109,12 +109,12 @@ function injectScript(src) {
  */
 async function loadAllScripts() {
     if (window.__NOVA_LOADED) {
-        console.log('✅ Extension already loaded');
+        // console.log('✅ Extension already loaded');
         return true;
     }
 
     if (window.__NOVA_LOADING) {
-        console.log('⏳ Extension loading in progress...');
+        // console.log('⏳ Extension loading in progress...');
         // Wait for loading to complete
         return new Promise((resolve) => {
             const checkInterval = setInterval(() => {
@@ -127,7 +127,7 @@ async function loadAllScripts() {
     }
 
     window.__NOVA_LOADING = true;
-    console.log('🚀 Requesting script injection from background...');
+    // console.log('🚀 Requesting script injection from background...');
 
     try {
         // Ask background script to inject all scripts
@@ -139,7 +139,7 @@ async function loadAllScripts() {
         if (response && response.success) {
             window.__NOVA_LOADED = true;
             window.__NOVA_LOADING = false;
-            console.log(`✅ All ${response.count} scripts loaded successfully!`);
+            // console.log(`✅ All ${response.count} scripts loaded successfully!`);
             return true;
         } else {
             throw new Error(response?.error || 'Injection failed');
@@ -182,7 +182,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Extension activation
     if (message.type === 'ACTIVATE_EXTENSION') {
-        console.log('📢 Extension activation requested');
+        // console.log('📢 Extension activation requested');
 
         loadAllScripts().then(loaded => {
             sendResponse({
@@ -195,4 +195,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
-console.log('🎯 Nova AI Bootstrap loaded (lazy loading enabled)');
+// console.log('🎯 Nova AI Bootstrap loaded (lazy loading enabled)');
