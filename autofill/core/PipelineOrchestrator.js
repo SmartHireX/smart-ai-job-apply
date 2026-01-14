@@ -388,11 +388,11 @@ class PipelineOrchestrator {
 
     isSectionField(field) {
         const label = field.ml_prediction?.label || '';
-        return /job|employer|work|school|degree|education/i.test(label);
+        return /job|employer|work|school|degree|education|institution|title/i.test(label);
     }
 
     getSectionType(label) {
-        return /school|degree|education/.test(label || '') ? 'education' : 'work';
+        return /school|degree|education|institution/.test(label || '') ? 'education' : 'work';
     }
 
     logGrouping(groups) {
