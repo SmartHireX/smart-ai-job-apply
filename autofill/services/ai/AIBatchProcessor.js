@@ -230,6 +230,13 @@ async function processBatchWithRetry(batch, resumeData, pageContext, context) {
             if (lastError.includes('API key') || lastError.includes('unauthorized')) {
                 break;
             }
+
+            // CRITICAL: Stop on Rate Limit
+            if (lastError.includes('Rate limit') || lastError.includes('429') || lastError.includes('Quota exceeded')) {
+                lastError = 'Rate Limit Exceeded'; // Normalize
+                break;
+            }
+
         } catch (e) {
             lastError = e.message;
             console.error(`[BatchProcessor] Batch attempt ${attempt} failed:`, e.message);
@@ -237,7 +244,14 @@ async function processBatchWithRetry(batch, resumeData, pageContext, context) {
     }
 
     console.error(`[BatchProcessor] Batch failed after ${MAX_RETRIES + 1} attempts:`, lastError);
-    // CRITICAL: Notify user if batch fails completely (e.g. Rate Limit)
+
+    // CRITICAL: Notify user and THROW if Rate Limit to stop entirely
+    if (lastError.includes('Rate Limit') || lastError.includes('429')) {
+        throw new Error('RATE_LIMIT_EXCEEDED');
+    }
+
+    // For other errors, just notify and return empty (allow continue?)
+    // Actually, widespread failure might warrant stopping too, but user specifically asked for Rate Limit.
     if (typeof window.showErrorToast === 'function') {
         window.showErrorToast(`AI Batch Failed: ${lastError}`);
     }
@@ -273,7 +287,15 @@ async function processBatchWithStreaming(batch, resumeData, pageContext, options
     }
 
     // Call AI with retry logic
-    const mappings = await processBatchWithRetry(batch, resumeData, pageContext, context);
+    let mappings = {};
+    try {
+        mappings = await processBatchWithRetry(batch, resumeData, pageContext, context);
+    } catch (e) {
+        if (e.message === 'RATE_LIMIT_EXCEEDED') {
+            throw e; // Propagate up
+        }
+        return {};
+    }
 
     if (!mappings || Object.keys(mappings).length === 0) {
         // console.warn('[BatchProcessor] Batch returned no mappings');
@@ -336,6 +358,7 @@ async function processBatchInBackground(batch, resumeData, pageContext, previous
     }
 
     const context = buildSmartContext(resumeData, isFirstBatch, previousQA);
+    // Propagate Rate Limit Errors
     const mappings = await processBatchWithRetry(batch, resumeData, pageContext, context);
 
     return mappings;
@@ -453,7 +476,17 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
         try {
             batchMappings = await currentBatchPromise;
         } catch (e) {
-            console.error(`[BatchProcessor] Batch ${i} failed:`, e);
+            // CRITICAL: Exit loop on Rate Limit
+            if (e.message === 'RATE_LIMIT_EXCEEDED') {
+                if (typeof window.showErrorToast === 'function') {
+                    window.showErrorToast('AI Rate Limit Exceeded. Stopping.');
+                }
+                // Wait 3 seconds for user to see the error
+                await new Promise(r => setTimeout(r, 3000));
+
+                break; // Stop processing further batches, proceed to completion
+            }
+
             batchMappings = {};
         }
 

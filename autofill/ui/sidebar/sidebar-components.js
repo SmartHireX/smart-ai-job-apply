@@ -125,51 +125,60 @@ function removeProcessingWidget() {
 function showSuccessToast(filled, review) {
     const toast = document.createElement('div');
     toast.id = 'smarthirex-success-toast';
+    // Cool Design: Dark Glassmorphism + Gradient Border Glow
     toast.style.cssText = `
-        position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
-        background: #0f172a; color: white; padding: 12px 24px; border-radius: 12px;
-        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); z-index: 2147483647;
-        display: flex; align-items: center; gap: 16px; font-family: 'Inter', sans-serif;
-        border: 1px solid rgba(255,255,255,0.1); animation: slideDownFade 0.4s ease-out;
+        position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
+        background: rgba(15, 23, 42, 0.85); 
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        color: white; padding: 16px 24px; border-radius: 16px;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+        z-index: 2147483647;
+        display: flex; align-items: center; gap: 16px; 
+        font-family: 'Inter', system-ui, sans-serif;
+        animation: slideDownFade 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        min-width: 300px;
+        overflow: hidden;
     `;
 
-    toast.innerHTML = `
-        <div style="background: #10b981; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+    // Add a magical gradient line at the top
+    const gradientLine = document.createElement('div');
+    gradientLine.style.cssText = `
+        position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, #10b981, #3b82f6);
+    `;
+    toast.appendChild(gradientLine);
+
+    toast.innerHTML += `
+        <div style="
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+            width: 40px; height: 40px; border-radius: 12px; 
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            flex-shrink: 0;
+        ">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
         </div>
-        <div style="display: flex; flex-direction: column;">
-            <span style="font-weight: 700; font-size: 14px;">Form Filled Successfully!</span>
-            <span style="font-size: 12px; color: #94a3b8;">${filled} fields matched, ${review} need review</span>
-        </div>
-        <div style="display: flex; gap: 8px; margin-left: 8px;">
-            <!-- Removed Clear Highlights Button -->
-            <button id="smarthirex-toast-undo" style="background: #ef4444; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Undo</button>
+        <div style="display: flex; flex-direction: column; flex-grow: 1;">
+            <span style="font-weight: 700; font-size: 15px; letter-spacing: -0.01em; margin-bottom: 2px;">Completed</span>
+            <span style="font-size: 13px; color: #cbd5e1; font-weight: 500;">
+                <span style="color: #6ee7b7; font-weight: 600;">${filled}</span> fields filled <span style="margin: 0 4px; opacity: 0.3;">|</span> <span style="color: #93c5fd; font-weight: 600;">${review}</span> to review
+            </span>
         </div>
     `;
 
     document.body.appendChild(toast);
 
-    // Event Listeners
-    toast.querySelector('#smarthirex-toast-undo').addEventListener('click', () => {
-        undoFormFill();
-        toast.remove();
-    });
-
-    // Clear highlight listener removed
-    /*
-    toast.querySelector('#smarthirex-toast-clear-highlights').addEventListener('click', () => {
-        clearAllFieldHighlights();
-        toast.remove();
-    });
-    */
-
+    // Auto-remove after 5 seconds (slightly longer to admire the coolness)
     setTimeout(() => {
         if (toast.parentElement) {
             toast.style.opacity = '0';
-            toast.style.transform = 'translate(-50%, -20px)';
-            setTimeout(() => toast.remove(), 400);
+            toast.style.transform = 'translate(-50%, -20px) scale(0.95)';
+            toast.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            setTimeout(() => toast.remove(), 300);
         }
-    }, 6000);
+    }, 5000);
 }
 
 function showUndoToast() {
