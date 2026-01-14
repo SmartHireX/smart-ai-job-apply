@@ -71,11 +71,11 @@ class FormProcessor {
         this.normalizeResumeSchema(resumeData);
 
         // Extract fields
-        const formHTML = this.extractFormHTML();
-        if (!formHTML) throw new Error('No form found');
+        const formElement = document.querySelector('form');
+        if (!formElement) throw new Error('No form found');
 
         // Use FormAnalyzer to get fields
-        const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
+        const fields = window.FormAnalyzer.extractFieldsFromDOM(formElement);
         console.log(`📊 [FormProcessor] Extracted ${fields.length} fields for Pipeline.`);
 
         // --- EXECUTE NEW PIPELINE ---

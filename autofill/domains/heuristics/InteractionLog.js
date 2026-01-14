@@ -221,7 +221,7 @@ function generateSemanticKey(fieldOrElement, label) {
         .split(/\s+/);
 
     // Deduplicate, remove stop words, and sort
-    const stopWords = /^(the|and|for|of|enter|your|please|select|choose|are|you|over|what|where|when|which|how|yes|no|true|false|male|female|other|with|from|this|do|does|did|have|has|had|is|am|are|was|were|be|been|being|must|can|should|would|shall|will|may|might)$/i;
+    const stopWords = /^(a|an|the|and|for|of|at|by|enter|your|please|select|choose|are|you|over|what|where|when|which|how|yes|no|true|false|male|female|other|with|from|this|do|does|did|have|has|had|is|am|are|was|were|be|been|being|must|can|should|would|shall|will|may|might)$/i;
 
     const processedWords = [...new Set(rawParts)]
         .filter(w => w.length > 2 && !stopWords.test(w))
