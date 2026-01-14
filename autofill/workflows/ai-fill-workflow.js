@@ -174,7 +174,7 @@ class Phase2AIProcessing {
 
             // Handle text fields (Smart Memory)
             if (TEXT_FIELD_TYPES.has(fieldType) || tagName === 'textarea') {
-                const cacheEntry = this.createSmartMemoryCacheEntry(label, data.value);
+                const cacheEntry = this.createSmartMemoryCacheEntry(label, data.value, el);
                 if (cacheEntry) {
                     Object.assign(newCacheEntries, cacheEntry);
                 }
@@ -207,32 +207,40 @@ class Phase2AIProcessing {
     /**
      * Create smart memory cache entry
      */
-    static createSmartMemoryCacheEntry(label, value) {
+    static createSmartMemoryCacheEntry(label, value, element = null) {
         if (!label || label.length <= CACHE_LIMITS.MIN_LABEL_LENGTH) return null;
 
-        const normalizedLabel = window.GlobalMemory ? window.GlobalMemory.normalizeKey(label) : label;
+        // CENTRALIZED: Use cache_label as authoritative key
+        let cacheLabel = null;
+        if (element) {
+            cacheLabel = element.getAttribute('cache_label');
+            if (!cacheLabel && window.NovaCache) {
+                cacheLabel = window.NovaCache[element.id] || window.NovaCache[element.name];
+            }
+        }
+        const key = cacheLabel || (window.GlobalMemory ? window.GlobalMemory.normalizeKey(label) : label);
 
         // History Guard: Prevent saving structured history fields
         const savePrediction = window.neuralClassifier
-            ? window.neuralClassifier.predict({ name: normalizedLabel, label: normalizedLabel })
+            ? window.neuralClassifier.predict({ name: key, label: key })
             : { label: 'unknown' };
 
         const isHistoryField = HISTORY_LABELS_FOR_SAVE.includes(savePrediction.label);
 
-        if (isHistoryField && !SAFE_OVERRIDE_PATTERN.test(normalizedLabel)) {
-            // console.log(`🛡️ History Guard: Skipping Smart Memory save for "${normalizedLabel}"`);
+        if (isHistoryField && !SAFE_OVERRIDE_PATTERN.test(key)) {
+            // console.log(`🛡️ History Guard: Skipping Smart Memory save for "${key}"`);
             return null;
         }
 
         // Quality validation
-        if (window.GlobalMemory && !window.GlobalMemory.isCacheable(normalizedLabel)) {
+        if (window.GlobalMemory && !window.GlobalMemory.isCacheable(key)) {
             return null;
         }
 
-        // console.log(`✅ Cached: "${normalizedLabel}" => "${value}"`);
+        // console.log(`✅ Cached: "${key}" => "${value}"`);
 
         return {
-            [normalizedLabel]: window.GlobalMemory ? window.GlobalMemory.createCacheEntry(value) : { answer: value, timestamp: Date.now() }
+            [key]: window.GlobalMemory ? window.GlobalMemory.createCacheEntry(value) : { answer: value, timestamp: Date.now() }
         };
     }
 

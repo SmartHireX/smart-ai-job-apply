@@ -422,8 +422,8 @@ class PipelineOrchestrator {
                         // MultiCache-eligible text fields go to InteractionLog (which routes to multiCache)
                         window.InteractionLog.cacheSelection(field, field.label, res.value);
                     } else if (!isStructuredInput && !isMultiCacheEligible && window.GlobalMemory) {
-                        // Generic text fields go to SmartMemory
-                        const key = window.GlobalMemory.normalizeKey ? window.GlobalMemory.normalizeKey(field.label) : field.label;
+                        // Generic text fields go to SmartMemory using cache_label
+                        const key = field.cache_label || (window.GlobalMemory.normalizeKey ? window.GlobalMemory.normalizeKey(field.label) : field.label);
                         window.GlobalMemory.updateCache({
                             [key]: { answer: res.value, timestamp: Date.now() }
                         });

@@ -146,12 +146,17 @@ class AIRegeneration {
             element.tagName === 'TEXTAREA';
 
         if (isTextType) {
-            const normalizedLabel = window.GlobalMemory ? window.GlobalMemory.normalizeKey(label) : label;
+            // CENTRALIZED: Use cache_label as authoritative key
+            let cacheLabel = element.getAttribute('cache_label');
+            if (!cacheLabel && window.NovaCache) {
+                cacheLabel = window.NovaCache[element.id] || window.NovaCache[element.name];
+            }
+            const key = cacheLabel || (window.GlobalMemory ? window.GlobalMemory.normalizeKey(label) : label);
 
             if (window.GlobalMemory) {
                 const cacheEntry = window.GlobalMemory.createCacheEntry(value);
                 await window.GlobalMemory.updateCache({
-                    [normalizedLabel]: cacheEntry
+                    [key]: cacheEntry
                 });
             }
 
