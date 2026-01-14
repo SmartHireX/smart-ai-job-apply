@@ -183,9 +183,55 @@ class ExecutionEngine {
             return;
         }
 
+        // Date Format Handling
+        // Different input types require different date formats
+        // Using valueAsDate is more reliable than string-based value setting
+        if (type === 'date' || type === 'month') {
+            let parsedDate = null;
+            let formattedValue = String(value).trim();
+
+            // Try to parse the date from various formats
+            if (/^\d{4}-\d{2}-\d{2}$/.test(formattedValue)) {
+                // Already in yyyy-MM-dd format
+                parsedDate = new Date(formattedValue + 'T00:00:00');
+            } else if (/^\d{4}-\d{2}$/.test(formattedValue)) {
+                // yyyy-MM format -> add day 01
+                parsedDate = new Date(formattedValue + '-01T00:00:00');
+            } else if (/^\d{4}$/.test(formattedValue)) {
+                // yyyy format -> January 1st
+                parsedDate = new Date(`${formattedValue}-01-01T00:00:00`);
+            } else if (/^[A-Za-z]+ \d{4}$/.test(formattedValue)) {
+                // "July 2025" format
+                parsedDate = new Date(formattedValue);
+            } else {
+                // Try generic parsing
+                parsedDate = new Date(formattedValue);
+            }
+
+            // If we have a valid date, format it correctly for the input type
+            if (parsedDate && !isNaN(parsedDate.getTime())) {
+                if (type === 'date') {
+                    // Format as yyyy-MM-dd
+                    const year = parsedDate.getFullYear();
+                    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(parsedDate.getDate()).padStart(2, '0');
+                    value = `${year}-${month}-${day}`;
+                } else if (type === 'month') {
+                    // Format as yyyy-MM
+                    const year = parsedDate.getFullYear();
+                    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                    value = `${year}-${month}`;
+                }
+                // console.log(`📅 [DateFormat] Type: ${type}, Original: "${formattedValue}" -> Formatted: "${value}"`);
+            } else {
+                console.warn(`⚠️ [DateFormat] Could not parse date: "${formattedValue}"`);
+            }
+        }
+
         // Standard Value Setting
         // Usage of Native Setter allows bypassing React's "controlled component" logic
         if (tagName === 'input' && this.nativeValueSetter) {
+            console.log(`⚙️ [SetValue] type="${type}", tagName="${tagName}", value="${value}"`);
             this.nativeValueSetter.call(element, value);
         } else if (tagName === 'textarea' && this.nativeTextAreaSetter) {
             this.nativeTextAreaSetter.call(element, value);

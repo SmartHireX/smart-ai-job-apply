@@ -366,6 +366,16 @@ class RuleEngine {
     // --- HELPERS ---
 
     matchSkills(options, userSkills) {
+        // Guard: Ensure userSkills is an array
+        if (!userSkills || !Array.isArray(userSkills)) {
+            // If userSkills is an object (like {technical: [...], soft: [...]}), flatten it
+            if (userSkills && typeof userSkills === 'object') {
+                userSkills = Object.values(userSkills).flat().filter(Boolean);
+            } else {
+                return []; // No skills to match
+            }
+        }
+
         // Return all options that fuzzy match any user skill
         const matched = [];
         const skillSet = new Set(userSkills.map(s => String(s).toLowerCase()));

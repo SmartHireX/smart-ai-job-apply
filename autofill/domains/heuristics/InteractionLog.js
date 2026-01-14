@@ -460,8 +460,9 @@ if (typeof window !== 'undefined') {
 
 /**
  * Generates a robust semantic key for caching.
- * Priority 1: High-Confidence ML Prediction (>0.90)
- * Priority 2: Deterministic Fallback (Label + Context -> Normalized -> Sorted)
+ * Priority 1: Pre-calculated cache_label (authoritative)
+ * Priority 2: ML Prediction (>80% confidence)
+ * Priority 3: Robust Tokenization (synonyms, stemming, priority tokens)
  */
 function generateSemanticKey(fieldOrElement, label) {
     // Normalize field/element
@@ -471,7 +472,8 @@ function generateSemanticKey(fieldOrElement, label) {
             name: fieldOrElement.name,
             id: fieldOrElement.id,
             type: fieldOrElement.type || fieldOrElement.tagName.toLowerCase(),
-            ml_prediction: fieldOrElement.__ml_prediction // Check for attached data
+            ml_prediction: fieldOrElement.__ml_prediction,
+            cache_label: fieldOrElement.getAttribute('cache_label')
         };
     }
 
@@ -483,8 +485,7 @@ function generateSemanticKey(fieldOrElement, label) {
         targetLabel = field.label;
     }
 
-    // A. Pre-Calculated Cache Key (from Pipeline/GlobalStore)
-    // This overrides everything else as it's the authoritative key determined at extraction time.
+    // A. CENTRALIZED: Pre-Calculated Cache Key (from Pipeline/GlobalStore)
     let preCalculatedKey = null;
     if (typeof HTMLElement !== 'undefined' && fieldOrElement instanceof HTMLElement) {
         preCalculatedKey = fieldOrElement.getAttribute('cache_label');
@@ -492,46 +493,74 @@ function generateSemanticKey(fieldOrElement, label) {
             preCalculatedKey = window.NovaCache[fieldOrElement.id] || window.NovaCache[fieldOrElement.name];
         }
     } else if (field) {
-        // For object-based calls: Check field.cache_label FIRST, then NovaCache
         preCalculatedKey = field.cache_label;
         if (!preCalculatedKey && window.NovaCache && (field.id || field.name)) {
             preCalculatedKey = window.NovaCache[field.id] || window.NovaCache[field.name];
         }
     }
-    // console.log(`🔍 [CacheDebug] Pre-calculated Key: ${preCalculatedKey}`);
 
     if (preCalculatedKey) {
         return { key: preCalculatedKey, isML: true, fallbackKey: preCalculatedKey };
     }
 
-    // B. Stable Fallback Key
-    // Priority: field.name (most stable) > simplified label > parentContext
-    // Use ONLY the field name as the primary key for consistency
-    let fallbackKey = '';
-
-    if (field.name) {
-        // Normalize the name (e.g., "age_check" -> "age_check", "security_clearance" -> "security_clearance")
-        fallbackKey = field.name.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    // B. ML Prediction (High Confidence >= 80%)
+    if (field.ml_prediction && field.ml_prediction.confidence > 0.80) {
+        return { key: field.ml_prediction.label, isML: true, fallbackKey: field.ml_prediction.label };
     }
 
-    // If no name, fall back to a simplified version of the label
-    if (!fallbackKey && targetLabel) {
-        const labelWords = targetLabel.toLowerCase()
+    // C. ROBUST TOKENIZATION FALLBACK (matches PipelineOrchestrator logic)
+    let fallbackKey = '';
+    const rawInput = field.name || targetLabel || '';
+
+    if (rawInput) {
+        // Synonym normalization (canonical forms)
+        const SYNONYM_TO_CANONICAL = {
+            'postal': 'zip', 'zipcode': 'zip', 'postcode': 'zip', 'pincode': 'zip',
+            'tel': 'phone', 'mobile': 'phone', 'cell': 'phone', 'telephone': 'phone',
+            'mail': 'email', 'emailaddress': 'email',
+            'given': 'first', 'fname': 'first', 'firstname': 'first',
+            'family': 'last', 'surname': 'last', 'lname': 'last', 'lastname': 'last',
+            'company': 'employer', 'organization': 'employer', 'firm': 'employer',
+            'position': 'job', 'role': 'job', 'occupation': 'job',
+            'university': 'school', 'college': 'school', 'institution': 'school',
+            'qualification': 'degree', 'certification': 'degree',
+            'compensation': 'salary', 'remuneration': 'salary', 'pay': 'salary', 'ctc': 'salary'
+        };
+
+        // Priority tokens (always keep)
+        const PRIORITY_TOKENS = new Set([
+            'zip', 'phone', 'email', 'name', 'first', 'last', 'city', 'state',
+            'job', 'work', 'employer', 'title', 'school', 'degree', 'date',
+            'start', 'end', 'salary', 'linkedin', 'gender', 'veteran', 'visa'
+        ]);
+
+        // Expanded stop-words
+        const STOP_WORDS = new Set([
+            'the', 'and', 'for', 'of', 'are', 'you', 'have', 'over', 'enter', 'your',
+            'please', 'select', 'choose', 'this', 'that', 'with', 'from', 'will',
+            'what', 'how', 'when', 'where', 'why', 'can', 'could', 'would', 'should',
+            'field', 'input', 'required', 'optional', 'provide', 'information', 'details'
+        ]);
+
+        let tokens = rawInput.toLowerCase()
             .replace(/[^a-z0-9]/g, ' ')
-            .trim()
             .split(/\s+/)
-            .filter(w => w.length > 2 && !/the|and|for|of|are|you|have|over|enter|your|please|select|choose/.test(w))
-            .slice(0, 3) // Take only first 3 significant words
-            .sort();
-        fallbackKey = labelWords.join('_');
+            .filter(Boolean);
+
+        // Apply synonym normalization
+        tokens = tokens.map(token => SYNONYM_TO_CANONICAL[token] || token);
+
+        // Filter: Keep priority tokens OR tokens > 2 chars that aren't stop words
+        tokens = tokens.filter(token =>
+            PRIORITY_TOKENS.has(token) || (token.length > 2 && !STOP_WORDS.has(token))
+        );
+
+        // Unique, sort, and join
+        const uniqueTokens = Array.from(new Set(tokens)).sort();
+        fallbackKey = uniqueTokens.join('_');
     }
 
     fallbackKey = fallbackKey || normalizeFieldName(field.id) || 'unknown_field';
-
-    // A. ML Prediction (High Confidence >= 80%)
-    if (field.ml_prediction && field.ml_prediction.confidence > 0.80) {
-        return { key: field.ml_prediction.label, isML: true, fallbackKey: fallbackKey };
-    }
 
     return { key: fallbackKey, isML: false, fallbackKey: fallbackKey };
 }
@@ -672,9 +701,6 @@ async function cacheSelection(field, label, value) {
     const currentOp = _cacheLock.then(async () => {
         // 1. Generate Key
         const { key: semanticType, isML } = generateSemanticKey(field, label);
-
-        if (isML) console.log(`[InteractionLog] � Saving using ML Key: ${semanticType}`);
-        else console.log(`[InteractionLog] � Saving using Fallback Key: ${semanticType}`);
 
         if (!semanticType) return;
 
