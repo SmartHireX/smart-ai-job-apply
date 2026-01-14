@@ -180,13 +180,16 @@ function generateSemanticKey(fieldOrElement, label) {
     // Normalize field/element
     let field = fieldOrElement;
     if (typeof HTMLElement !== 'undefined' && fieldOrElement instanceof HTMLElement) {
+        const wrapper = fieldOrElement.closest('fieldset, .form-group, tr, div[role="group"]');
+        const betterLabel = wrapper ? wrapper.querySelector('legend, label:not([for]), .form-label, h3, h4')?.innerText : null;
+
         field = {
             name: fieldOrElement.name,
             id: fieldOrElement.id,
             type: fieldOrElement.type || fieldOrElement.tagName.toLowerCase(),
+            label: betterLabel || '',
             ml_prediction: fieldOrElement.__ml_prediction,
-            // Try to extract parent context if not provided
-            parentContext: fieldOrElement.closest('fieldset, .form-group, tr, div')?.innerText?.split('\n')[0]?.substring(0, 50)
+            parentContext: wrapper?.innerText?.split('\n')[0]?.substring(0, 50)
         };
     }
 
@@ -199,8 +202,12 @@ function generateSemanticKey(fieldOrElement, label) {
     }
 
     // A. ML Prediction (High Confidence)
-    if (field.ml_prediction && field.ml_prediction.confidence > 0.90) {
-        return { key: field.ml_prediction.label, isML: true };
+    if (field.ml_prediction) {
+        if (field.ml_prediction.confidence > 0.90) {
+            return { key: field.ml_prediction.label, isML: true };
+        } else {
+            console.log(`[InteractionLog] 💡 ML Prediction bypassed (Confidence: ${field.ml_prediction.confidence.toFixed(2)})`);
+        }
     }
 
     // B. Robust Fallback
@@ -214,8 +221,10 @@ function generateSemanticKey(fieldOrElement, label) {
         .split(/\s+/);
 
     // Deduplicate, remove stop words, and sort
+    const stopWords = /^(the|and|for|of|enter|your|please|select|choose|are|you|over|what|where|when|which|how|yes|no|true|false|male|female|other|with|from|this|do|does|did|have|has|had|is|am|are|was|were|be|been|being|must|can|should|would|shall|will|may|might)$/i;
+
     const processedWords = [...new Set(rawParts)]
-        .filter(w => w.length > 2 && !/the|and|for|of|enter|your|please|select|choose/.test(w)) // Stop words
+        .filter(w => w.length > 2 && !stopWords.test(w))
         .sort();
 
     const fallbackKey = processedWords.join('_');
@@ -340,10 +349,22 @@ function validateSingleOption(field, singleValue) {
     });
 }
 
+let _lastSaveState = new Map();
+
 /**
  * Cache a field selection
  */
 async function cacheSelection(field, label, value) {
+    const { key: semanticType } = generateSemanticKey(field, label);
+    const saveStateKey = `${semanticType}:${value}`;
+    const now = Date.now();
+
+    // Prevent duplicate saves within 500ms for the same key/value
+    if (_lastSaveState.get(saveStateKey) && (now - _lastSaveState.get(saveStateKey) < 500)) {
+        return;
+    }
+    _lastSaveState.set(saveStateKey, now);
+
     const currentOp = _cacheLock.then(async () => {
         // 1. Generate Key
         const { key: semanticType, isML } = generateSemanticKey(field, label);

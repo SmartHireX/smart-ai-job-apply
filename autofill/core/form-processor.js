@@ -101,6 +101,11 @@ class FormProcessor {
 
             // Map results back to fields
             fields.forEach(f => {
+                // Attach ML prediction to DOM element for heuristic persistence
+                if (f.element && f.ml_prediction) {
+                    f.element.__ml_prediction = f.ml_prediction;
+                }
+
                 if (results[f.selector]) {
                     f.value = results[f.selector].value;
                     f.fieldData = {
