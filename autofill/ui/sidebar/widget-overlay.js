@@ -63,6 +63,36 @@ function showProcessingWidget(text, step, batchInfo = null) {
     const textSpan = widget.querySelector('.pw-text');
     if (textSpan) textSpan.textContent = text;
 
+    // 2.5 Ensure Progress Bar Exists
+    let progressContainer = widget.querySelector('.pw-progress-container');
+    if (!progressContainer) {
+        const pContainer = document.createElement('div');
+        pContainer.className = 'pw-progress-container';
+        pContainer.style.cssText = `
+            width: 100%;
+            height: 4px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+            position: relative;
+        `;
+
+        const pBar = document.createElement('div');
+        pBar.className = 'pw-progress-bar';
+        pBar.style.cssText = `
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            border-radius: 2px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+        `;
+
+        pContainer.appendChild(pBar);
+        widget.appendChild(pContainer);
+    }
+
     // 3. Update Dots (Only if batchInfo provided)
     if (batchInfo && batchInfo.totalBatches > 1) {
         const dotsContainer = widget.querySelector('.pw-dots-row');
@@ -99,7 +129,23 @@ function showProcessingWidget(text, step, batchInfo = null) {
     }
 }
 
+/**
+ * Update the progress bar percentage
+ * @param {number} percent - 0 to 100
+ */
+function updateProcessingProgress(percent) {
+    const panels = document.querySelectorAll('.smarthirex-panel');
+    const panel = panels[panels.length - 1] || document.getElementById('smarthirex-accordion-sidebar');
+    if (!panel) return;
+
+    const bar = panel.querySelector('.pw-progress-bar');
+    if (bar) {
+        bar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+    }
+}
+
 // Export validation
 if (typeof window !== 'undefined') {
     window.showProcessingWidget = showProcessingWidget;
+    window.updateProcessingProgress = updateProcessingProgress;
 }

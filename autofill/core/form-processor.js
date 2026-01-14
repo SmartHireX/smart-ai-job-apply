@@ -78,14 +78,43 @@ class FormProcessor {
         const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
         // console.log(`📊 [FormProcessor] Extracted ${fields.length} fields for Pipeline.`);
 
-        // --- EXECUTE NEW PIPELINE ---
+        // new pipeline execution
         if (window.PipelineOrchestrator) {
             const orchestrator = new window.PipelineOrchestrator();
 
             const context = {
                 resumeData,
                 smartMemory: {}, // Router accesses SmartMemoryService directly now
-                callbacks: {}
+                callbacks: {
+                    // Inject Progress Callbacks
+                    onBatchStart: (current, total, labels) => {
+                        if (typeof window.showProcessingWidget === 'function') {
+                            // Update Dot State
+                            window.showProcessingWidget('Processing fields with AI...', 2, {
+                                currentBatch: current,
+                                totalBatches: total
+                            });
+
+                            // Calculate progress: Start of batch
+                            // If total=3, Batch 1 Start = 0%, Batch 2 Start = 33%, Batch 3 Start = 66%
+                            const percent = ((current - 1) / total) * 100;
+                            if (typeof window.updateProcessingProgress === 'function') {
+                                window.updateProcessingProgress(percent);
+                            }
+                        }
+                    },
+                    onBatchComplete: (mappings, isFinal) => {
+                        // We could update granular progress here if needed
+                    },
+                    onFieldAnswered: (selector, value, confidence) => {
+                        // Optional: Micro-interactions for specific fields
+                    },
+                    onAllComplete: (mappings) => {
+                        if (typeof window.updateProcessingProgress === 'function') {
+                            window.updateProcessingProgress(100);
+                        }
+                    }
+                }
             };
 
             // 3. Execute Pipeline
@@ -98,6 +127,7 @@ class FormProcessor {
 
             // TRIGGER PREVIEW
             // console.log('🖼️ [FormProcessor] Opening Preview...');
+
 
             // Map results back to fields
             fields.forEach(f => {
