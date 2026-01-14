@@ -1490,6 +1490,22 @@ function attachSelfCorrectionTrigger(element) {
         // CACHE ROUTING LOGIC
         // ---------------------------------------------------------
 
+        // 0. Pre-Flight: Ensure Authoritative Cache Key
+        // Resurrect Authoritative Cache Key (from Pipeline/GlobalStore)
+        let cacheLabel = element.getAttribute('cache_label');
+        if (!cacheLabel && window.NovaCache) {
+            cacheLabel = window.NovaCache[element.id] || window.NovaCache[element.name];
+            if (cacheLabel) {
+                // Force cache_label onto element (for InteractionLog robustness)
+                element.setAttribute('cache_label', cacheLabel);
+            } else {
+                console.warn(`⚠️ [CacheDebug] Lookup Failed for [${element.id}, ${element.name}]. Available Keys:`, Object.keys(window.NovaCache));
+            }
+        } else if (!window.NovaCache) {
+            console.warn(`⚠️ [CacheDebug] window.NovaCache is Missing/Empty!`);
+        }
+        console.log(`🔍 [CacheDebug] Cache Label: ${cacheLabel} and element : `, element);
+
         // 1. Determine Cache Strategy
         // We use InteractionLog (SelectionCache) for "Known Profile Fields" and "Structured Inputs" (Select/Radio).
         // We use GlobalMemory (SmartMemory) for "Open-Ended Questions" (Generic Text).
@@ -1510,11 +1526,7 @@ function attachSelfCorrectionTrigger(element) {
         // Use centralized routing logic
         const isMultiCacheEligible = window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, element.type);
 
-        // Resurrect Authoritative Cache Key (from Pipeline/GlobalStore)
-        let cacheLabel = element.getAttribute('cache_label');
-        if (!cacheLabel && window.NovaCache) {
-            cacheLabel = window.NovaCache[element.id] || window.NovaCache[element.name];
-        }
+        // (Moved cacheLabel logic up)
         // console.log(`🔍 [CacheDebug] Cache Label: ${cacheLabel} and element : `, element);
 
         if (!handledByInteractionLog && isMultiCacheEligible && window.InteractionLog) {

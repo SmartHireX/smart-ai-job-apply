@@ -151,9 +151,8 @@ class PipelineOrchestrator {
 
                     if (field.element.id) {
                         window.NovaCache[field.element.id] = cacheLabel;
-                    } else if (field.element.name) {
-                        // Fallback: If no ID, use Name. This is essential for fields like 'zip_code' often without IDs.
-                        // Collision risk is acceptable compared to data loss.
+                    }
+                    if (field.element.name) {
                         window.NovaCache[field.element.name] = cacheLabel;
                     }
 
