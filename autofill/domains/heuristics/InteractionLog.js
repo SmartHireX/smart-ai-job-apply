@@ -91,7 +91,7 @@ function isMultiCacheType(semanticKey, field = null) {
     if (field && field.ml_prediction && field.ml_prediction.confidence > 0.9) {
         const mlLabel = field.ml_prediction.label.toLowerCase();
         // Check if ML label indicates a section field
-        if (/^(job_|employer_|institution_|degree_|education_|work_)/.test(mlLabel)) {
+        if (/job|employer|institution|degree|education|work|school/.test(mlLabel)) {
             return true;
         }
         // Skills are also multi
@@ -102,14 +102,15 @@ function isMultiCacheType(semanticKey, field = null) {
 
     // 2. If we have field, check its label and parent context for section keywords
     if (field) {
-        const context = [field.label, field.parentContext, field.section_type].filter(Boolean).join(' ').toLowerCase();
-        if (/work\s*experience|employment|job\s*history|education|school|university/.test(context)) {
+        const context = [field.label, field.parentContext, field.section_type, field.name].filter(Boolean).join(' ').toLowerCase();
+        if (/work|employ|job|education|school|university|degree|edu_|work_/.test(context)) {
             return true;
         }
     }
 
-    // 3. Fallback: Check the semantic key itself (less reliable)
-    const isSection = /^(job_|employer_|institution_|degree_|education_|work_)/.test(semanticKey);
+    // 3. Fallback: Check the semantic key itself (includes shortened prefixes)
+    // Matches: edu_0_school, work_1_employer, job_title, etc.
+    const isSection = /job|employer|institution|degree|education|work|school|edu_|work_/.test(semanticKey);
     const isMultiSelect = /skill/.test(semanticKey);
 
     return isSection || isMultiSelect;
