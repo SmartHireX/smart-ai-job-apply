@@ -154,33 +154,41 @@ class FormExtractor {
      * Extract label for field
      */
     extractLabel(element, container = document) {
-        // Method 1: <label for="id">
+        // Method 1: Group Context (Specifically for Radios/Checkboxes) - HIGH PRIORITY
+        // We want "Are you over 18?" instead of "Yes"
+        if (['radio', 'checkbox'].includes(element.type) && element.name) {
+            // Find a descriptive question nearby (e.g. in a div.form-group or similar)
+            const wrapper = element.closest('.form-group, fieldset, tr, .radio-group, .checkbox-group, div[role="group"]');
+            if (wrapper) {
+                // Look for labels, legends, or descriptive text that isn't the option text
+                // We look for labels without 'for' or legends first
+                const groupLabel = wrapper.querySelector('legend, label:not([for]), .form-label, h3, h4, p');
+                if (groupLabel && groupLabel.textContent.trim().length > 3) {
+                    const text = groupLabel.textContent.trim();
+                    // If the found text is just the option text (e.g. "Yes"), keep searching
+                    if (text.toLowerCase() !== (element.value || '').toLowerCase()) {
+                        return text;
+                    }
+                }
+
+                // Fallback: If no label inside wrapper, look at previous sibling of wrapper
+                const prev = wrapper.previousElementSibling;
+                if (prev && (prev.tagName === 'LABEL' || prev.tagName.match(/^H[1-6]$/))) {
+                    return prev.textContent.trim();
+                }
+            }
+        }
+
+        // Method 2: <label for="id">
         if (element.id) {
             const label = container.querySelector(`label[for="${element.id}"]`);
             if (label) return label.textContent.trim();
         }
 
-        // Method 2: Wrapped in <label>
+        // Method 3: Wrapped in <label>
         const parentLabel = element.closest('label');
         if (parentLabel) {
             return parentLabel.textContent.replace(element.value || '', '').trim();
-        }
-
-        // Method 3: Group Context (Specifically for Radios/Checkboxes)
-        if (['radio', 'checkbox'].includes(element.type) && element.name) {
-            // Find a descriptive question nearby (e.g. in a div.form-group or similar)
-            const wrapper = element.closest('.form-group, fieldset, tr, div');
-            if (wrapper) {
-                // Look for labels, legends, or descriptive text that isn't the option text
-                const groupLabel = wrapper.querySelector('label:not([for]), legend, .form-label, h3, h4, p');
-                if (groupLabel && groupLabel.textContent.trim().length > 3) {
-                    const text = groupLabel.textContent.trim();
-                    // If the found text is just the option text (e.g. "Yes"), keep searching
-                    if (text.toLowerCase() !== element.value.toLowerCase()) {
-                        return text;
-                    }
-                }
-            }
         }
 
         // Method 4: aria-label
