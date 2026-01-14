@@ -113,7 +113,9 @@ class ExecutionEngine {
         // Use centralized routing logic
         const isMultiCacheEligible = window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, element.type);
 
-        // console.log(`[ExecutionEngine] 📝 User Edit: "${fieldMetadata.label}" -> "${newValue}" (cacheLabel: ${cacheLabel})`);
+        console.log(`[ExecutionEngine] 📝 User Edit: "${fieldMetadata.label}" -> "${newValue}" (cacheLabel: ${cacheLabel})`);
+
+
 
         if (isStructuredInput && window.InteractionLog) {
             // Structured inputs go to SelectionCache
