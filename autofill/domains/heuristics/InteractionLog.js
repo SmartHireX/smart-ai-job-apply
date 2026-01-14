@@ -184,14 +184,14 @@ function generateSemanticKey(fieldOrElement, label) {
             name: fieldOrElement.name,
             id: fieldOrElement.id,
             type: fieldOrElement.type || fieldOrElement.tagName.toLowerCase(),
-            ml_prediction: fieldOrElement.__ml_prediction // Check for attached data
+            ml_prediction: fieldOrElement.__ml_prediction,
+            // Try to extract parent context if not provided
+            parentContext: fieldOrElement.closest('fieldset, .form-group, tr, div')?.innerText?.split('\n')[0]?.substring(0, 50)
         };
     }
 
     // 0. Pre-process Label: Avoid "Generic Labels" (Yes/No/Male/Female)
-    // If the label is a simple value, it's likely from an individual radio button's label.
-    // We want the group label (the question) instead.
-    let targetLabel = label || '';
+    let targetLabel = label || field?.label || '';
     const isGeneric = /^(yes|no|male|female|other|m|f|true|false)$/i.test(targetLabel.trim());
 
     if (isGeneric && field && field.label && !/^(yes|no|male|female|other|m|f|true|false)$/i.test(field.label.trim())) {
@@ -243,8 +243,11 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     // 1. Generate Semantic Key
     let { key: semanticType, isML } = generateSemanticKey(field, label);
 
-    if (isML) console.log(`[InteractionLog] 🔑 Lookup using ML Key: ${semanticType}`);
-    else console.log(`[InteractionLog] 🔑 Lookup using Fallback Key: ${semanticType}`);
+    console.log(`[InteractionLog] 🔍 Lookup Attempt:
+        - Label: "${label}"
+        - Name: "${field.name || ''}"
+        - Context: "${field.parentContext || ''}"
+        - Key: "${semanticType}" (${isML ? 'ML' : 'Fallback'})`);
 
     // ... (rest of function logic)
 

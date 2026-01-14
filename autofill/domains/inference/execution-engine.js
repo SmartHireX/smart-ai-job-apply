@@ -71,15 +71,26 @@ class ExecutionEngine {
     attachChangeListener(element, fieldMetadata) {
         if (!element || element._novaEditListenerAttached) return; // Prevent double attach
 
-        element._novaEditListenerAttached = true;
+        // For radio/checkbox groups, we want to listen to ALL inputs in the group
+        if (element.name && (element.type === 'radio' || element.type === 'checkbox')) {
+            const group = document.querySelectorAll(`input[name="${CSS.escape(element.name)}"]`);
+            group.forEach(input => {
+                if (input._novaEditListenerAttached) return;
+                input._novaEditListenerAttached = true;
+                input.addEventListener('change', () => this._handleUserEdit(input, fieldMetadata));
+            });
+        } else {
+            element._novaEditListenerAttached = true;
+            element.addEventListener('change', () => this._handleUserEdit(element, fieldMetadata));
+        }
+    }
 
-        element.addEventListener('change', () => {
-            if (window.InteractionLog && fieldMetadata) {
-                const newValue = element.value;
-                console.log(`[ExecutionEngine] 📝 User Edit Detected: "${fieldMetadata.label}" -> "${newValue}"`);
-                window.InteractionLog.cacheSelection(fieldMetadata, fieldMetadata.label, newValue);
-            }
-        });
+    _handleUserEdit(element, fieldMetadata) {
+        if (window.InteractionLog && fieldMetadata) {
+            const newValue = element.type === 'checkbox' ? element.checked : element.value;
+            console.log(`[ExecutionEngine] 📝 User Edit Detected: "${fieldMetadata.label}" -> "${newValue}"`);
+            window.InteractionLog.cacheSelection(fieldMetadata, fieldMetadata.label, newValue);
+        }
     }
 
     /**
@@ -91,7 +102,19 @@ class ExecutionEngine {
 
         // Checkbox/Radio Handling
         if (type === 'checkbox' || type === 'radio') {
-            if (element.checked !== (value === true || value === 'true' || value === element.value)) {
+            const isChecked = (value === true || value === 'true' || value === element.value);
+
+            if (type === 'radio' && !isChecked && element.name) {
+                // If it's a radio and this one isn't the match, find the one that IS
+                const group = document.querySelectorAll(`input[type="radio"][name="${CSS.escape(element.name)}"]`);
+                const match = Array.from(group).find(r => r.value === String(value));
+                if (match) {
+                    if (!match.checked) match.click();
+                    return;
+                }
+            }
+
+            if (element.checked !== isChecked) {
                 element.click(); // Click is best for checkboxes/radios to trigger events
             }
             return;
