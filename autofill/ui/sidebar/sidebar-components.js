@@ -1427,8 +1427,9 @@ function getOptionLabelText(input) {
 }
 
 function attachSelfCorrectionTrigger(element) {
-    if (element.dataset.shLearningAttached) return;
+    if (element.dataset.shLearningAttached || element._novaEditListenerAttached) return;
     element.dataset.shLearningAttached = 'true';
+    element._novaEditListenerAttached = true;
 
     const handleChange = async () => {
         const label = getFieldLabel(element);

@@ -209,7 +209,8 @@ function generateSemanticKey(fieldOrElement, label) {
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, '') // Remove special chars
+        .replace(/[^a-z0-9]/g, ' ') // Replace non-alphanumeric with SPACE
+        .trim()
         .split(/\s+/);
 
     // Deduplicate, remove stop words, and sort
