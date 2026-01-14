@@ -97,11 +97,21 @@ class ExecutionEngine {
         const fieldType = (fieldMetadata.type || element.type || '').toLowerCase();
         const isStructuredInput = ['radio', 'checkbox', 'select', 'select-one', 'select-multiple'].includes(fieldType);
 
+        // CENTRALIZED: Use cache_label as the authoritative key
+        // Priority: fieldMetadata.cache_label > element attribute > NovaCache > fallback
+        let cacheLabel = fieldMetadata.cache_label;
+        if (!cacheLabel && element) {
+            cacheLabel = element.getAttribute('cache_label');
+        }
+        if (!cacheLabel && window.NovaCache) {
+            cacheLabel = window.NovaCache[element.id] || window.NovaCache[element.name];
+        }
+
         // Check if this is a multiCache-eligible field (job/education/skills)
         const fieldContext = [fieldMetadata.label, fieldMetadata.name, fieldMetadata.parentContext].filter(Boolean).join(' ').toLowerCase();
-        const isMultiCacheEligible = /job|work|employ|education|school|degree|skill/.test(fieldContext);
+        const isMultiCacheEligible = /job|work|employ|education|school|degree|skill|title|employer/.test(fieldContext);
 
-        // console.log(`[ExecutionEngine] 📝 User Edit Detected: "${fieldMetadata.label}" -> "${newValue}" (Type: ${fieldType}, MultiCache: ${isMultiCacheEligible})`);
+        // console.log(`[ExecutionEngine] 📝 User Edit: "${fieldMetadata.label}" -> "${newValue}" (cacheLabel: ${cacheLabel})`);
 
         if (isStructuredInput && window.InteractionLog) {
             // Structured inputs go to SelectionCache
@@ -110,8 +120,8 @@ class ExecutionEngine {
             // MultiCache-eligible text fields go to InteractionLog (which routes to multiCache)
             window.InteractionLog.cacheSelection(fieldMetadata, fieldMetadata.label, newValue);
         } else if (!isStructuredInput && !isMultiCacheEligible && window.GlobalMemory) {
-            // Generic text fields go to SmartMemory
-            const key = window.GlobalMemory.normalizeKey ? window.GlobalMemory.normalizeKey(fieldMetadata.label) : fieldMetadata.label;
+            // Generic text fields go to SmartMemory using cache_label
+            const key = cacheLabel || (window.GlobalMemory.normalizeKey ? window.GlobalMemory.normalizeKey(fieldMetadata.label) : fieldMetadata.label);
             window.GlobalMemory.updateCache({
                 [key]: { answer: newValue, timestamp: Date.now() }
             });

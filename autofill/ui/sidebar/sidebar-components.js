@@ -1434,8 +1434,8 @@ function attachSelfCorrectionTrigger(element) {
     const handleChange = async () => {
         const label = getFieldLabel(element);
         const fieldType = element.type || element.tagName?.toLowerCase();
-        /*
-        // console.log(`⚡ [Sidebar] Event Triggered by Field: "${label}"`, {
+
+        console.log(`⚡ [Sidebar] Event Triggered by Field: "${label}"`, {
             name: element.name,
             id: element.id,
             type: fieldType,
@@ -1443,7 +1443,7 @@ function attachSelfCorrectionTrigger(element) {
             'ml_attr_label': element.getAttribute('data-nova-ml-label') || 'null',
             'ml_prop': element.__ml_prediction || 'undefined'
         });
-        */
+
 
         // Determine if this is a non-text input (for SelectionCache)
         const isNonTextInput = fieldType === 'radio' || fieldType === 'checkbox' ||
