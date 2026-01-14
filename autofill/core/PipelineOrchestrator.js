@@ -283,11 +283,18 @@ class PipelineOrchestrator {
                     const fieldType = (field.type || '').toLowerCase();
                     const isStructuredInput = ['radio', 'checkbox', 'select', 'select-one', 'select-multiple'].includes(fieldType);
 
+                    // Check if this is a multiCache-eligible field (job/education/skills)
+                    const fieldContext = [field.label, field.name, field.parentContext].filter(Boolean).join(' ').toLowerCase();
+                    const isMultiCacheEligible = /job|work|employ|education|school|degree|skill/.test(fieldContext);
+
                     if (isStructuredInput && window.InteractionLog) {
                         // Structured inputs go to SelectionCache
                         window.InteractionLog.cacheSelection(field, field.label, res.value);
-                    } else if (!isStructuredInput && window.GlobalMemory) {
-                        // Text fields go to SmartMemory
+                    } else if (isMultiCacheEligible && window.InteractionLog) {
+                        // MultiCache-eligible text fields go to InteractionLog (which routes to multiCache)
+                        window.InteractionLog.cacheSelection(field, field.label, res.value);
+                    } else if (!isStructuredInput && !isMultiCacheEligible && window.GlobalMemory) {
+                        // Generic text fields go to SmartMemory
                         const key = window.GlobalMemory.normalizeKey ? window.GlobalMemory.normalizeKey(field.label) : field.label;
                         window.GlobalMemory.updateCache({
                             [key]: { answer: res.value, timestamp: Date.now() }
