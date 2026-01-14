@@ -196,24 +196,32 @@ function generateSemanticKey(fieldOrElement, label) {
         targetLabel = field.label;
     }
 
-    // B. Robust Fallback Key (always calculate this)
-    const rawParts = [targetLabel, field.name, field.parentContext]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, ' ')
-        .trim()
-        .split(/\s+/);
+    // B. Stable Fallback Key
+    // Priority: field.name (most stable) > simplified label > parentContext
+    // Use ONLY the field name as the primary key for consistency
+    let fallbackKey = '';
 
-    const processedWords = [...new Set(rawParts)]
-        .filter(w => w.length > 2 && !/the|and|for|of|enter|your|please|select|choose/.test(w))
-        .sort();
+    if (field.name) {
+        // Normalize the name (e.g., "age_check" -> "age_check", "security_clearance" -> "security_clearance")
+        fallbackKey = field.name.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    }
 
-    const fallbackKey = processedWords.join('_') || normalizeFieldName(targetLabel) || normalizeFieldName(field.name) || 'unknown_field';
+    // If no name, fall back to a simplified version of the label
+    if (!fallbackKey && targetLabel) {
+        const labelWords = targetLabel.toLowerCase()
+            .replace(/[^a-z0-9]/g, ' ')
+            .trim()
+            .split(/\s+/)
+            .filter(w => w.length > 2 && !/the|and|for|of|are|you|have|over|enter|your|please|select|choose/.test(w))
+            .slice(0, 3) // Take only first 3 significant words
+            .sort();
+        fallbackKey = labelWords.join('_');
+    }
+
+    fallbackKey = fallbackKey || normalizeFieldName(field.id) || 'unknown_field';
 
     // A. ML Prediction (High Confidence)
     if (field.ml_prediction && field.ml_prediction.confidence > 0.90) {
-        // Return BOTH keys so lookup can try ML first, then fallback
         return { key: field.ml_prediction.label, isML: true, fallbackKey: fallbackKey };
     }
 
