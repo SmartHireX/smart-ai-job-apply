@@ -101,6 +101,7 @@ class UndoManager {
 }
 
 // Global export for backward compatibility
+window.UndoManager = UndoManager;
 window.undoFormFill = UndoManager.undo.bind(UndoManager);
 window.activeFormUndoHistory = UndoManager.history;
 

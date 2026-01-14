@@ -419,14 +419,20 @@ function showAccordionSidebar(allFields) {
         const fieldType = item.fieldData?.field_type || element.type || 'text';
         const isFileUpload = fieldType === 'file' || element.type === 'file';
 
+        const value = item.value || element.value;
+        const hasValue = value && String(value).trim().length > 0;
+        // Prioritize explicit source from fieldData (set by FormProcessor)
+        const source = item.source || item.fieldData?.source || 'heuristic';
+
         const fieldInfo = {
             field: element,
             selector: item.selector,
             label,
             confidence: item.confidence,
             fieldType: fieldType,
-            source: item.source || 'heuristic',
-            value: item.value || element.value,
+            source: source,
+            value: value,
+            filled: hasValue,
             isFileUpload
         };
 
@@ -744,67 +750,51 @@ function showAccordionSidebar(allFields) {
     const finalAiFields = [];
     const finalManualFields = [];
 
-    // Process grouped radio/checkbox fields
-    groupedRadioCheckbox.forEach(field => {
-        // Unfilled groups go to Manual
-        if ((field.isRadioGroup || field.isCheckboxGroup) && !field.filled) {
-            finalManualFields.push(field);
-        } else {
-            // Filled groups - categorize by source/confidence
-            if (field.source === 'smart-memory' || field.source === 'selection_cache') {
-                finalCacheFields.push(field);
-            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
-                finalAppFillFields.push(field);
-            } else {
-                finalAiFields.push(field);
-            }
-        }
-    });
-
-    // Process grouped select fields
-    groupedSelects.forEach(field => {
-        // Select groups - route based on filled status
-        if (field.isSelectGroup && !field.filled) {
-            // Unfilled or partially filled groups go to Manual
-            finalManualFields.push(field);
-        } else if (field.isSelectGroup && field.filled) {
-            // Fully filled groups - categorize by source/confidence
-            if (field.source === 'smart-memory' || field.source === 'selection_cache') {
-                finalCacheFields.push(field);
-            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
-                finalAppFillFields.push(field);
-            } else {
-                finalAiFields.push(field);
-            }
-        } else {
-            // Ungrouped single selects - categorize normally
-            const isEmpty = !field.value || String(field.value).trim() === '';
-            if (isEmpty) {
+    // Helper: Categorize a single field
+    function categorizeField(field) {
+        // 1. Manual / Unfilled
+        if (!field.filled && !field.isFileUpload) {
+            // Check if radio/checkbox group is truly unfilled
+            if ((field.isRadioGroup || field.isCheckboxGroup || field.isSelectGroup) && !field.filled) {
                 finalManualFields.push(field);
-            } else if (field.source === 'smart-memory' || field.source === 'selection_cache') {
-                finalCacheFields.push(field);
-            } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
-                finalAppFillFields.push(field);
-            } else {
-                finalAiFields.push(field);
+                return;
+            }
+            // For single inputs
+            if (!field.value && !field.displayValue) {
+                finalManualFields.push(field);
+                return;
             }
         }
-    });
 
-    // Process other (non-radio/checkbox) fields
-    otherFieldsRaw.forEach(field => {
-        const isEmpty = !field.value || String(field.value).trim() === '';
-
-        if (field.isFileUpload || isEmpty) {
+        if (field.isFileUpload) {
             finalManualFields.push(field);
-        } else if (field.source === 'smart-memory' || field.source === 'selection_cache') {
-            finalCacheFields.push(field);
-        } else if (field.confidence >= 0.85 && (field.source === 'heuristic' || field.source === 'local_heuristic' || !field.source || field.source === undefined)) {
-            finalAppFillFields.push(field);
-        } else {
-            finalAiFields.push(field);
+            return;
         }
-    });
+
+        // 2. Classify by Source
+        const source = (field.source || '').toLowerCase();
+
+        // CACHE: Explicit cache sources
+        if (source.includes('smart-memory') || source.includes('selection_cache') || source.includes('cache')) {
+            finalCacheFields.push(field);
+            return;
+        }
+
+        // AI: Explicit AI sources
+        if (source.includes('ai') || source.includes('inference') || source.includes('copilot') || source.includes('gen')) {
+            finalAiFields.push(field);
+            return;
+        }
+
+        // APP FILL: Heuristics, User Data, Resume, or Default (High Confidence)
+        // If source is empty but filled, it's likely a local heuristic
+        finalAppFillFields.push(field);
+    }
+
+    // Process all groups using the helper
+    groupedRadioCheckbox.forEach(categorizeField);
+    groupedSelects.forEach(categorizeField);
+    otherFieldsRaw.forEach(categorizeField);
 
     // console.log(`📄 After Grouping & Re-routing - App Fill: ${finalAppFillFields.length}, Cache: ${finalCacheFields.length}, AI: ${finalAiFields.length}, Manual: ${finalManualFields.length}`);
 

@@ -44,6 +44,11 @@ class ExecutionEngine {
             element.__ml_prediction = fieldMetadata.ml_prediction;
         }
 
+        // Capture State for Undo (CRITICAL FIX)
+        if (window.UndoManager) {
+            window.UndoManager.capture(element);
+        }
+
         // Visual Feedback (Flash)
         this.flashField(element, confidence);
 

@@ -22,7 +22,6 @@ const CONTENT_SCRIPTS = [
     'autofill/utils/key-generator.js',
     'autofill/domains/heuristics/InteractionLog.js',
     'autofill/domains/heuristics/RuleEngine.js',
-    'autofill/domains/history/HistoryManager.js',
     'autofill/domains/profile/EntityStore.js',
     'autofill/services/indexing/field-indexing-service.js',
     'autofill/core/PipelineOrchestrator.js',

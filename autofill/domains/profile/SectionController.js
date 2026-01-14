@@ -27,15 +27,9 @@ class SectionController extends window.Handler {
             // console.log(`📜 [HistoryHandler] Processing Transactional Section: ${type} #${index} (${sectionFields.length} fields)`);
 
             // 2. Fetch Source Entity (Transactional Unit)
-            // Try HistoryManager first (Edited Data), Fallback to Resume (Raw Data)
-            let entity = window.HistoryManager ? window.HistoryManager.getByIndex(type, index) : null;
-            let source = 'history_manager';
-
-            if (!entity) {
-                // Fallback to Resume Data
-                entity = this.getEntityFromResume(resumeData, type, index);
-                source = 'resume_data';
-            }
+            // Fallback to Resume Data
+            let entity = this.getEntityFromResume(resumeData, type, index);
+            let source = 'resume_data';
 
             if (!entity) {
                 console.warn(`⚠️ [HistoryHandler] No data found for ${type} #${index}. Skipping section.`);
