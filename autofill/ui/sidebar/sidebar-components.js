@@ -1498,9 +1498,14 @@ function attachSelfCorrectionTrigger(element) {
         const fieldContext = [label, element.name, element.id].filter(Boolean).join(' ').toLowerCase();
         const isMultiCacheEligible = /job|work|employ|education|school|degree|skill|title|employer/.test(fieldContext);
 
-        if (!handledByInteractionLog && isMultiCacheEligible && window.InteractionLog) {
+        // Also check for High Confidence ML Predict (e.g. zip_code > 0.8)
+        const mlConf = element.__ml_prediction?.confidence || 0;
+        const isHighConfidence = mlConf > 0.8;
+
+        if (!handledByInteractionLog && (isMultiCacheEligible || isHighConfidence) && window.InteractionLog) {
             await window.InteractionLog.cacheSelection(element, label, newValue);
-            console.log(`📚 [MultiCache] Learned: "${label}" → ${newValue} (Section field)`);
+            const reason = isHighConfidence ? `High Conf ML (${mlConf.toFixed(2)})` : 'Section Field';
+            console.log(`📚 [MultiCache] Learned: "${label}" → ${newValue} (${reason})`);
             handledByInteractionLog = true;
         }
 
