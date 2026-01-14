@@ -12,9 +12,6 @@ console.log('Smart AI Job Apply background service worker started');
 
 // Script injection order for lazy loading
 const CONTENT_SCRIPTS = [
-    // Core Constants (MUST LOAD FIRST)
-    'autofill/core/constants.js',
-
     // Shared Utils
     'shared/utils/ai-client.js',
     'shared/utils/resume-manager.js',
