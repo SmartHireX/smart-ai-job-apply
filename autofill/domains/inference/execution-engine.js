@@ -39,6 +39,11 @@ class ExecutionEngine {
 
         if (!element) return false;
 
+        // Attach ML prediction to DOM element for sidebar cache access
+        if (fieldMetadata && fieldMetadata.ml_prediction) {
+            element.__ml_prediction = fieldMetadata.ml_prediction;
+        }
+
         // Visual Feedback (Flash)
         this.flashField(element, confidence);
 
