@@ -71,11 +71,11 @@ class FormProcessor {
         this.normalizeResumeSchema(resumeData);
 
         // Extract fields
-        const formElement = document.querySelector('form');
-        if (!formElement) throw new Error('No form found');
+        const formHTML = this.extractFormHTML();
+        if (!formHTML) throw new Error('No form found');
 
         // Use FormAnalyzer to get fields
-        const fields = window.FormAnalyzer.extractFieldsFromDOM(formElement);
+        const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
         console.log(`📊 [FormProcessor] Extracted ${fields.length} fields for Pipeline.`);
 
         // --- EXECUTE NEW PIPELINE ---
@@ -101,11 +101,6 @@ class FormProcessor {
 
             // Map results back to fields
             fields.forEach(f => {
-                // Attach ML prediction to DOM element for heuristic persistence
-                if (f.element && f.ml_prediction) {
-                    f.element.__ml_prediction = f.ml_prediction;
-                }
-
                 if (results[f.selector]) {
                     f.value = results[f.selector].value;
                     f.fieldData = {
