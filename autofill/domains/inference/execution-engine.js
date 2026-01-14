@@ -86,10 +86,23 @@ class ExecutionEngine {
     }
 
     _handleUserEdit(element, fieldMetadata) {
-        if (window.InteractionLog && fieldMetadata) {
-            const newValue = element.type === 'checkbox' ? element.checked : element.value;
-            console.log(`[ExecutionEngine] 📝 User Edit Detected: "${fieldMetadata.label}" -> "${newValue}"`);
+        if (!fieldMetadata) return;
+
+        const newValue = element.type === 'checkbox' ? element.checked : element.value;
+        const fieldType = (fieldMetadata.type || element.type || '').toLowerCase();
+        const isStructuredInput = ['radio', 'checkbox', 'select', 'select-one', 'select-multiple'].includes(fieldType);
+
+        console.log(`[ExecutionEngine] 📝 User Edit Detected: "${fieldMetadata.label}" -> "${newValue}" (Type: ${fieldType})`);
+
+        if (isStructuredInput && window.InteractionLog) {
+            // Structured inputs go to SelectionCache
             window.InteractionLog.cacheSelection(fieldMetadata, fieldMetadata.label, newValue);
+        } else if (!isStructuredInput && window.GlobalMemory) {
+            // Text fields go to SmartMemory
+            const key = window.GlobalMemory.normalizeKey ? window.GlobalMemory.normalizeKey(fieldMetadata.label) : fieldMetadata.label;
+            window.GlobalMemory.updateCache({
+                [key]: { answer: newValue, timestamp: Date.now() }
+            });
         }
     }
 

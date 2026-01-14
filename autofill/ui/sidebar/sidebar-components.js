@@ -1493,28 +1493,8 @@ function attachSelfCorrectionTrigger(element) {
             handledByInteractionLog = true;
         }
 
-        // Strategy B: "Known" Semantic Text Fields (Email, Job Title, Skills, etc.)
-        else if (window.InteractionLog && window.InteractionLog.classifyFieldType) {
-            // Build signature to check if this is a "Known" type
-            const signature = [
-                (element.name || '').toLowerCase(),
-                (element.id || '').toLowerCase(),
-                (element.placeholder || '').toLowerCase(),
-                (label || '').toLowerCase()
-            ].join(' | ');
-
-            const semanticType = window.InteractionLog.classifyFieldType(signature);
-
-            // Checks: Is it a known type? OR does regex match "MultiCache" keywords?
-            // (Double check for common MultiCache terms just in case regex list is partial)
-            const isMultiCacheTerm = /skill|job|employ|educat|degree|school/i.test(label);
-
-            if (semanticType || isMultiCacheTerm) {
-                await window.InteractionLog.cacheSelection(element, label, newValue);
-                console.log(`💾 [InteractionLog] Learned: "${label}" → ${newValue} (Semantic Match: ${semanticType})`);
-                handledByInteractionLog = true;
-            }
-        }
+        // Strategy B: REMOVED - All text fields go to GlobalMemory, not selectionCache
+        // (Previously this routed semantic text fields like "salary" to selectionCache incorrectly)
 
         // Strategy C: Fallback to Smart Memory (Generic Text)
         // If not handled by InteractionLog, and it's a valid text string
