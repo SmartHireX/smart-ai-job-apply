@@ -62,10 +62,10 @@ class PipelineOrchestrator {
             await this.applyAndCollect(res, results, groups.heuristic, unresolved);
         }
 
-        // C. PROFILE BATCH (Strategy: SectionController / CompositeFieldManager)
-        if (groups.profile.length > 0) {
-            const res = await this.processMultiSelect(groups.profile, context);
-            await this.applyAndCollect(res, results, groups.profile, unresolved);
+        // C. MULTIVALUE BATCH (Strategy: SectionController / CompositeFieldManager)
+        if (groups.multiValue.length > 0) {
+            const res = await this.processMultiSelect(groups.multiValue, context);
+            await this.applyAndCollect(res, results, groups.multiValue, unresolved);
         }
 
         // D. GENERAL (Fallthrough)
@@ -319,13 +319,13 @@ class PipelineOrchestrator {
     // --- Helpers ---
 
     groupFields(fields) {
-        const groups = { memory: [], heuristic: [], profile: [], general: [] };
+        const groups = { memory: [], heuristic: [], multiValue: [], general: [] };
         fields.forEach(field => {
             const type = (field.field_type || field.type || 'text').toLowerCase();
             const tag = (field.tagName || 'INPUT').toLowerCase();
 
-            if (this.isProfileField(field, type)) {
-                groups.profile.push(field); // Contextual/Multi
+            if (this.isMultiValueField(field, type)) {
+                groups.multiValue.push(field); // Contextual/Multi (Job/Edu/Skills)
                 return;
             }
             if (this.isHeuristicField(type, tag)) {
@@ -363,13 +363,13 @@ class PipelineOrchestrator {
 
     // --- Predicates ---
 
-    isProfileField(field, type) {
-        // Exclude basics (Name, Email, Phone) from Profile Group so they hit RuleEngine
+    isMultiValueField(field, type) {
+        // Exclude basics (Name, Email, Phone) from MultiValue Group so they hit RuleEngine
         if (field.ml_prediction && ['first_name', 'last_name', 'email', 'phone', 'linkedin'].includes(field.ml_prediction.label)) {
             return false;
         }
 
-        // Section fields (job/education) ALWAYS go to Profile group, even with cache hits
+        // Section fields (job/education) ALWAYS go to MultiValue group, even with cache hits
         // This ensures SectionController handles them with correct indexing
         if (this.isSectionField(field)) {
             return true;
@@ -396,12 +396,12 @@ class PipelineOrchestrator {
     }
 
     logGrouping(groups) {
-        console.log(`📊 [Pipeline] Grouping Summary: Mem:${groups.memory.length} Heu:${groups.heuristic.length} Prof:${groups.profile.length} Gen:${groups.general.length}`);
+        console.log(`📊 [Pipeline] Grouping Summary: Mem:${groups.memory.length} Heu:${groups.heuristic.length} Multi:${groups.multiValue.length} Gen:${groups.general.length}`);
 
         // Detailed Group Logging
         if (groups.memory.length > 0) console.log('🧠 [Group: Memory]', groups.memory);
         if (groups.heuristic.length > 0) console.log('⚡ [Group: Heuristic]', groups.heuristic);
-        if (groups.profile.length > 0) console.log('👤 [Group: Profile]', groups.profile);
+        if (groups.multiValue.length > 0) console.log('📚 [Group: MultiValue]', groups.multiValue);
         if (groups.general.length > 0) console.log('📂 [Group: General]', groups.general);
     }
 
