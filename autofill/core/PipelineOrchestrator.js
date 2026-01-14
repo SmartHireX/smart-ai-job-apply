@@ -279,10 +279,19 @@ class PipelineOrchestrator {
                 console.warn(`⚠️ [Pipeline] Execution Failure: Could not fill element`, selector);
             } else {
                 // Auto-Cache: If filled successfully and NOT from cache, save it!
-                if (window.InteractionLog && res.source !== 'selection_cache' && res.source !== 'cache') {
-                    if (field) {
-                        // Async cache update (don't await to keep UI snappy)
+                if (res.source !== 'selection_cache' && res.source !== 'cache' && field) {
+                    const fieldType = (field.type || '').toLowerCase();
+                    const isStructuredInput = ['radio', 'checkbox', 'select', 'select-one', 'select-multiple'].includes(fieldType);
+
+                    if (isStructuredInput && window.InteractionLog) {
+                        // Structured inputs go to SelectionCache
                         window.InteractionLog.cacheSelection(field, field.label, res.value);
+                    } else if (!isStructuredInput && window.GlobalMemory) {
+                        // Text fields go to SmartMemory
+                        const key = window.GlobalMemory.normalizeKey ? window.GlobalMemory.normalizeKey(field.label) : field.label;
+                        window.GlobalMemory.updateCache({
+                            [key]: { answer: res.value, timestamp: Date.now() }
+                        });
                     }
                 }
             }
