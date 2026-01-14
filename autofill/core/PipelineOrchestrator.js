@@ -41,6 +41,15 @@ class PipelineOrchestrator {
         // 1. Ingest & Enrich
         const enriched = await this.pipeline.ingestion(rawFields);
 
+        // Eagerly attach ML Metadata to DOM elements
+        // This ensures sidebar/manual edits have access to high-confidence predictions (e.g. zip_code)
+        // even if the field wasn't auto-filled by the engine.
+        enriched.forEach(field => {
+            if (field.element && field.ml_prediction) {
+                field.element.__ml_prediction = field.ml_prediction;
+            }
+        });
+
         // 2. Group (Memory, Heuristic, Profile, General)
         const groups = this.pipeline.grouping(enriched);
         this.logGrouping(groups);
