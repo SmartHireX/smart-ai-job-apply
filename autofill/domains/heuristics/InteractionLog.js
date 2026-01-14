@@ -391,7 +391,8 @@ async function cacheSelection(field, label, value) {
 
         const entry = cache[semanticType];
         // ... (Array vs Scalar Logic) ...
-        const isRepeating = /job|work|education|employer|school|degree/.test(semanticType);
+        // Section fields should be stored as arrays (by index: [0], [1], etc.)
+        const isRepeating = /job|work|education|employer|school|degree|institution|title/.test(semanticType);
 
         if (isRepeating) {
             const index = getFieldIndex(field, label);
