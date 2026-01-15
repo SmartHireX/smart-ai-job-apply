@@ -927,6 +927,24 @@ class NeuralClassifier {
     }
 
     /**
+     * Export current weights for persistence (used by training scripts)
+     * @returns {Object} Weight object
+     */
+    exportWeights() {
+        return {
+            version: 4,
+            W1: this._W1,
+            b1: this._b1,
+            W2: this._W2,
+            b2: this._b2,
+            W3: this._W3,
+            b3: this._b3,
+            totalSamples: this._totalSamples,
+            timestamp: Date.now()
+        };
+    }
+
+    /**
      * Save weights to Chrome storage
      * @private
      * @returns {Promise<void>}
