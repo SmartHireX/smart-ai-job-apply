@@ -106,7 +106,7 @@ class FeatureExtractor {
     /**
      * Vectorize a field object into an array of numbers
      * @param {Object} field - The field object constructed by FormExtractor
-     * @returns {Array<number>} Input vector for the model (59 dimensions)
+     * @returns {Array<number>} Input vector for the model (79 dimensions)
      */
     extract(field) {
         // Safety check: Return zero vector for null/undefined
@@ -142,13 +142,17 @@ class FeatureExtractor {
             this._calculateVisualWeight(field),                             // Visual prominence [0-1]
             (computedRole === 'combobox' || computedRole === 'listbox') ? 1 : 0,  // Is complex select?
 
-            // 3. Textual Features (50 dims) - Hashed Bag of Words
+            // 3. Textual Features (65 dims) - Hashed Bag of Words + Semantic
             ...this._hashTextEnhanced(computedLabel || '', 20),             // Label (20 slots)
             ...this._hashTextEnhanced((field.name || '') + ' ' + (field.id || '') + ' ' + (getAttr('data-automation-id') || field.automationId || ''), 20), // Name/ID/Automation (20 slots)
             ...this._hashTextEnhanced(field.placeholder || '', 5),          // Placeholder (5 slots)
             ...this._hashTextEnhanced(getAttr('context') || field.context || '', 5),  // Section (5 slots)
             ...this._hashTextEnhanced(field.parentContext || '', 10),       // Parent heading (10 slots)
-            ...this._hashTextEnhanced(field.siblingContext || '', 10)       // Neighbors (10 slots)
+            ...this._hashTextEnhanced(field.siblingContext || '', 10),      // Neighbors (10 slots)
+
+            // 4. Semantic Similarity Features (5 dims) **NEW**
+            // Edit distance similarity to: email, phone, name, address, date
+            ...this._semanticSimilarity((field.name || '') + ' ' + (computedLabel || ''))
         ];
 
         // Scale all features to [0, 1] range for better training
@@ -380,6 +384,54 @@ class FeatureExtractor {
     isType(field, type) {
         return this._isType(field, type);
     }
+
+    /**
+     * Calculate Levenshtein distance (edit distance) between two strings
+     * Used for semantic similarity of field names
+     * @param {string} a - First string
+     * @param {string} b - Second string
+     * @returns {number} Edit distance
+     */
+    _levenshtein(a, b) {
+        if (!a || !b) return Math.max(a?.length || 0, b?.length || 0);
+
+        const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
+
+        for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+        for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+
+        for (let j = 1; j <= b.length; j++) {
+            for (let i = 1; i <= a.length; i++) {
+                const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
+                matrix[j][i] = Math.min(
+                    matrix[j][i - 1] + 1,      // deletion
+                    matrix[j - 1][i] + 1,      // insertion
+                    matrix[j - 1][i - 1] + indicator  // substitution
+                );
+            }
+        }
+
+        return matrix[b.length][a.length];
+    }
+
+    /**
+     * Calculate semantic similarity features using edit distance
+     * Compares field name to common patterns
+     * @param {string} text - Field name or label
+     * @returns {number[]} Similarity scores [0-1] for common field types
+     */
+    _semanticSimilarity(text) {
+        if (!text) return [0, 0, 0, 0, 0];
+
+        const normalized = text.toLowerCase().replace(/[^a-z]/g, '');
+        const commonFields = ['email', 'phone', 'name', 'address', 'date'];
+
+        return commonFields.map(field => {
+            const distance = this._levenshtein(normalized, field);
+            const maxLen = Math.max(normalized.length, field.length) || 1;
+            return 1.0 - (distance / maxLen);  // Convert distance to similarity [0-1]
+        });
+    }
 }
 
 // ============================================================================
@@ -387,7 +439,6 @@ class FeatureExtractor {
 // ============================================================================
 
 if (typeof window !== 'undefined') {
-    window.FeatureExtractor = FeatureExtractor;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
