@@ -247,7 +247,7 @@ class NeuralClassifier {
             'address_line_1', 'address_line_2', 'city', 'state', 'zip_code', 'country',
             'current_location', 'timezone', 'relocation', 'preferred_location',
             // Work Experience (33-44)
-            'job_title', 'current_title', 'employer_name', 'current_company',
+            'job_title', 'current_title', 'company_name', 'current_company',
             'job_start_date', 'job_end_date', 'job_current', 'job_description',
             'job_location', 'years_experience', 'industry', 'department',
             // Education (45-57)

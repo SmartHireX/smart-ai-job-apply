@@ -82,7 +82,7 @@
         // =========================================================================
         JOB_TITLE: 'job_title',
         CURRENT_TITLE: 'current_title',
-        EMPLOYER_NAME: 'employer_name',
+        COMPANY_NAME: 'company_name',
         CURRENT_COMPANY: 'current_company',
         JOB_START_DATE: 'job_start_date',
         JOB_END_DATE: 'job_end_date',
@@ -305,7 +305,7 @@
         // Work Experience
         [FIELD_TYPES.JOB_TITLE]: FIELD_CATEGORIES.WORK_EXPERIENCE,
         [FIELD_TYPES.CURRENT_TITLE]: FIELD_CATEGORIES.WORK_EXPERIENCE,
-        [FIELD_TYPES.EMPLOYER_NAME]: FIELD_CATEGORIES.WORK_EXPERIENCE,
+        [FIELD_TYPES.COMPANY_NAME]: FIELD_CATEGORIES.WORK_EXPERIENCE,
         [FIELD_TYPES.CURRENT_COMPANY]: FIELD_CATEGORIES.WORK_EXPERIENCE,
         [FIELD_TYPES.JOB_START_DATE]: FIELD_CATEGORIES.WORK_EXPERIENCE,
         [FIELD_TYPES.JOB_END_DATE]: FIELD_CATEGORIES.WORK_EXPERIENCE,
@@ -485,7 +485,7 @@
         // Work Experience (33-44)
         'job_title',            // 33
         'current_title',        // 34
-        'employer_name',        // 35
+        'company_name',        // 35
         'current_company',      // 36
         'job_start_date',       // 37
         'job_end_date',         // 38
