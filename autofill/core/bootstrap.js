@@ -55,6 +55,9 @@ const SCRIPT_QUEUE = [
 
     // Common Infrastructure (2 more - constants already loaded)
     'autofill/domains/inference/feature-extractor.js',
+    'autofill/domains/inference/FieldTypes.js',
+    'autofill/domains/inference/HeuristicEngine.js',
+    'autofill/domains/inference/OptimizedMathKernel.js',
     'autofill/domains/inference/neural-classifier.js',
     'common/infrastructure/config.js',
     'common/infrastructure/lifecycle.js',

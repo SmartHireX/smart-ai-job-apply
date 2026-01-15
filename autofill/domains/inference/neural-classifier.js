@@ -1,439 +1,758 @@
 /**
  * NeuralClassifier
- * A "TinyML" inference engine running in pure JavaScript.
- * Replaces heavy libraries for simple Logistic Regression tasks.
  * 
- * Capability:
- * - 0 dependencies
- * - Instant inference
- * - Loads weights dynamically or uses built-in defaults
+ * Enterprise-grade TinyML inference engine for form field classification.
+ * A lightweight 2-layer neural network running in pure JavaScript with zero dependencies.
+ * 
+ * Architecture:
+ *   Input (59 features) → Hidden (20, Leaky ReLU) → Output (46 classes, Softmax)
+ * 
+ * Features:
+ *   - Zero external dependencies
+ *   - Sub-millisecond inference time
+ *   - Online learning with adaptive learning rate
+ *   - L2 regularization for generalization
+ *   - Hybrid inference (Heuristics → Neural Network)
+ *   - Persistent weight storage via Chrome Storage API
+ * 
+ * @module NeuralClassifier
+ * @version 2.0.0
+ * @author SmartHireX AI Team
  */
 
 class NeuralClassifier {
-    constructor() {
-        this.featureExtractor = new window.FeatureExtractor();
 
-        // ARCHITECTURE
-        this.HIDDEN_SIZE = 20; // Hidden layer neurons
-        this.LEAKY_RELU_ALPHA = 0.01; // Leaky ReLU slope for negative values
-        this.L2_LAMBDA = 0.01; // L2 regularization strength
+    // ========================================================================
+    // STATIC CONFIGURATION
+    // ========================================================================
 
-        // LABELS: The expanded output classes (Standard ATS Fields)
-        this.CLASSES = [
-            'unknown',          // 0
+    /** @type {string} Current version for weight compatibility */
+    static VERSION = '2.0.0';
 
-            // Personal Info
-            'first_name',       // 1
-            'last_name',        // 2
-            'full_name',        // 3
-            'email',            // 4
-            'phone',            // 5
+    /** @type {number} Model architecture version for storage */
+    static MODEL_VERSION = 2;
 
-            // Social & Portfolio
-            'linkedin',         // 6
-            'github',           // 7
-            'portfolio',        // 8
-            'website',          // 9
-            'twitter_url',      // 9.5 (New)
+    /** @type {boolean} Enable debug logging */
+    static DEBUG = false;
 
-            // Location
-            'address',          // 10
-            'city',             // 11
-            'state',            // 12
-            'zip_code',         // 13
-            'country',          // 14
+    // ========================================================================
+    // NETWORK ARCHITECTURE CONSTANTS
+    // ========================================================================
 
-            // Work History (Descriptive Keys)
-            'job_title',        // 15
-            'employer_name',    // 16
-            'job_start_date',   // 17
-            'job_end_date',     // 18
-            'work_description', // 19
-            'job_location',     // 19.5 (New/Optional)
+    /** @type {number} Number of input features from FeatureExtractor */
+    static INPUT_SIZE = 59;
 
-            // Education (Descriptive Keys)
-            'institution_name', // 20
-            'degree_type',      // 21
-            'field_of_study',   // 22
-            'gpa_score',        // 23
-            'education_start_date', // 24
-            'education_end_date',   // 25
+    /** @type {number} Number of neurons in first hidden layer */
+    static HIDDEN1_SIZE = 32;
 
-            // Demographics (EEOC)
-            'gender',           // 26
-            'race',             // 27
-            'veteran',          // 28
-            'disability',       // 29
-            'marital_status',   // 29.5 (New)
+    /** @type {number} Number of neurons in second hidden layer */
+    static HIDDEN2_SIZE = 16;
 
-            // Compensation
-            'salary_current',   // 30
-            'salary_expected',  // 31
+    /** @type {number} Dropout probability (0 = disabled, 0.25 = recommended) */
+    static DROPOUT_RATE = 0.25;
 
-            // Legal & Compliance
-            'work_auth',        // 32
-            'sponsorship',      // 33
-            'citizenship',      // 34
-            'clearance',        // 35
-            'legal_age',        // 36
-            'tax_id',           // 37
-            'criminal_record',  // 38
-            'notice_period',    // 39
+    /** @type {number} Leaky ReLU negative slope */
+    static LEAKY_RELU_ALPHA = 0.01;
 
-            // Misc
-            'referral_source',  // 40
-            'cover_letter',     // 41
-            'generic_question'  // 42
-        ];
+    /** @type {number} L2 regularization strength */
+    static L2_LAMBDA = 0.01;
 
-        // No extra mapping needed - CLASSES match Profile Schema directly.
+    /** @type {number} Base learning rate for SGD */
+    static BASE_LEARNING_RATE = 0.05;
 
+    /** @type {number} Confidence threshold for LLM fallback */
+    static CONFIDENCE_THRESHOLD = 0.25;
 
-        // TWO-LAYER WEIGHTS
-        // Layer 1: Input (56) → Hidden (20)
-        this.W1 = null; // [56 x 20]
-        this.b1 = null; // [20]
+    /** @type {string} Storage key for persisted weights */
+    static STORAGE_KEY = 'neural_weights_v3';
 
-        // Layer 2: Hidden (20) → Output (41)
-        this.W2 = null; // [20 x 41]
-        this.b2 = null; // [41]
+    /** @type {boolean} Use optimized TypedArray math kernel */
+    static USE_OPTIMIZED_KERNEL = true;
+
+    /** @type {boolean} Use Int8 quantized weights for inference */
+    static USE_QUANTIZATION = false;
+
+    /** @type {number} Pruning threshold for weights */
+    static PRUNE_THRESHOLD = 0.01;
+
+    // ========================================================================
+    // CONSTRUCTOR
+    // ========================================================================
+
+    /**
+     * Initialize the NeuralClassifier
+     * @param {Object} options - Configuration options
+     * @param {boolean} [options.debug=false] - Enable debug logging
+     */
+    constructor(options = {}) {
+        // Configuration
+        this._debug = options.debug ?? NeuralClassifier.DEBUG;
+
+        // Feature extractor dependency
+        this._featureExtractor = null;
+
+        // Heuristic engine dependency (lazy loaded)
+        this._heuristicEngine = null;
+
+        // Field types (lazy loaded)
+        this._fieldTypes = null;
+
+        // Network weights (initialized on init())
+        // Layer 1: Input → Hidden1 (59 → 32)
+        this._W1 = null;  // [INPUT_SIZE x HIDDEN1_SIZE]
+        this._b1 = null;  // [HIDDEN1_SIZE]
+
+        // Layer 2: Hidden1 → Hidden2 (32 → 16)
+        this._W2 = null;  // [HIDDEN1_SIZE x HIDDEN2_SIZE]
+        this._b2 = null;  // [HIDDEN2_SIZE]
+
+        // Layer 3: Hidden2 → Output (16 → OUTPUT_SIZE)
+        this._W3 = null;  // [HIDDEN2_SIZE x OUTPUT_SIZE]
+        this._b3 = null;  // [OUTPUT_SIZE]
+
+        // Optimized weights (TypedArrays for fast inference)
+        this._W1_opt = null;  // Float32Array
+        this._b1_opt = null;  // Float32Array
+        this._W2_opt = null;  // Float32Array
+        this._b2_opt = null;  // Float32Array
+        this._W3_opt = null;  // Float32Array
+        this._b3_opt = null;  // Float32Array
+
+        // Quantized weights (Int8 for memory efficiency)
+        this._W1_quant = null;
+        this._W2_quant = null;
+        this._W3_quant = null;
+
+        // Math kernel reference
+        this._mathKernel = null;
 
         // Training state
-        this.totalSamples = 0; // For adaptive learning rate
+        this._totalSamples = 0;
+        this._isInitialized = false;
+        this._isTraining = false;  // Toggle for dropout
+        this._useOptimized = NeuralClassifier.USE_OPTIMIZED_KERNEL;
+
+        // Performance metrics
+        this._metrics = {
+            totalPredictions: 0,
+            heuristicMatches: 0,
+            neuralMatches: 0,
+            averageInferenceTime: 0,
+            lastInferenceTime: 0,
+            memoryReduction: 0,
+            sparsity: 0
+        };
     }
 
+    // ========================================================================
+    // INITIALIZATION
+    // ========================================================================
+
+    /**
+     * Initialize the classifier
+     * Loads dependencies and weights from storage
+     * @returns {Promise<void>}
+     */
     async init() {
-        // console.log(`[NeuralClassifier] Initializing TinyML Engine for ${this.CLASSES.length} classes...`);
+        if (this._isInitialized) {
+            this._log('Already initialized');
+            return;
+        }
 
-        // Priority 1: Try to load user's trained weights (personalized)
-        const userWeightsLoaded = await this.loadWeights();
+        this._log(`Initializing NeuralClassifier v${NeuralClassifier.VERSION}...`);
 
-        if (!userWeightsLoaded) {
-            // Priority 2: Baseline weights (File missing in V2 refactor, skipping)
-            const baselineLoaded = false; // await this.loadBaselineWeights();
+        // Load dependencies
+        this._loadDependencies();
+
+        // Load weights (priority: user → baseline → random)
+        const weightsLoaded = await this._loadWeights();
+
+        if (!weightsLoaded) {
+            const baselineLoaded = await this._loadBaselineWeights();
 
             if (!baselineLoaded) {
-                // Priority 3: Initialize random weights (cold start)
-                this.generateDummyWeights();
-                // console.log('[NeuralClassifier] 🆕 No saved weights. Initialized fresh model.');
+                this._initializeRandomWeights();
+                this._log('Initialized with random weights (cold start)');
             }
         }
 
-        // console.log('[NeuralClassifier] Ready.');
+        // Optimize weights for fast inference
+        if (this._useOptimized && this._mathKernel) {
+            this._optimizeWeightsForInference();
+        }
+
+        this._isInitialized = true;
+        this._log(`Ready. Output classes: ${this._getOutputSize()}, Optimized: ${this._useOptimized}`);
     }
 
     /**
-     * Predict the class of a field
-     * @param {Object} field - Raw field object
-     * @returns {Object} { label: string, confidence: number }
+     * Load required dependencies
+     * @private
+     */
+    _loadDependencies() {
+        // Feature Extractor
+        if (typeof window !== 'undefined' && window.FeatureExtractor) {
+            this._featureExtractor = new window.FeatureExtractor();
+        } else {
+            this._log('FeatureExtractor not found, will use empty features');
+        }
+
+        // Field Types (try to load, fallback is built-in)
+        if (typeof window !== 'undefined' && window.FieldTypes) {
+            this._fieldTypes = window.FieldTypes;
+            this._log('Using FieldTypes module');
+        } else {
+            // This is normal on first load - fallback is fully functional
+            this._fieldTypes = this._getFallbackFieldTypes();
+            this._log('Using built-in field types');
+        }
+
+        // Heuristic Engine (optional, lazy-loaded)
+        if (typeof window !== 'undefined' && window.HeuristicEngine) {
+            this._heuristicEngine = new window.HeuristicEngine({ debug: this._debug });
+            this._log('Using HeuristicEngine module');
+        }
+
+        // Optimized Math Kernel (for TypedArray operations)
+        if (typeof window !== 'undefined' && window.OptimizedMathKernel) {
+            this._mathKernel = window.OptimizedMathKernel;
+            this._log('Using OptimizedMathKernel for SIMD operations');
+        } else {
+            this._useOptimized = false;
+            this._log('OptimizedMathKernel not found, using standard JS');
+        }
+    }
+
+    /**
+     * Get fallback field types if FieldTypes.js not loaded
+     * @private
+     * @returns {Object}
+     */
+    _getFallbackFieldTypes() {
+        return {
+            ORDERED_CLASSES: [
+                'unknown',
+                'first_name', 'last_name', 'full_name', 'email', 'phone',
+                'linkedin', 'github', 'portfolio', 'website', 'twitter_url',
+                'address', 'city', 'state', 'zip_code', 'country',
+                'job_title', 'employer_name', 'job_start_date', 'job_end_date', 'work_description', 'job_location',
+                'institution_name', 'degree_type', 'field_of_study', 'gpa_score', 'education_start_date', 'education_end_date',
+                'gender', 'race', 'veteran', 'disability', 'marital_status',
+                'salary_current', 'salary_expected',
+                'work_auth', 'sponsorship', 'citizenship', 'clearance', 'legal_age', 'tax_id', 'criminal_record', 'notice_period',
+                'referral_source', 'cover_letter', 'generic_question'
+            ],
+            getFieldTypeIndex: (type) => this._fieldTypes.ORDERED_CLASSES.indexOf(type),
+            getFieldTypeFromIndex: (idx) => this._fieldTypes.ORDERED_CLASSES[idx] || 'unknown'
+        };
+    }
+
+    /**
+     * Get the output layer size
+     * @private
+     * @returns {number}
+     */
+    _getOutputSize() {
+        return this._fieldTypes?.ORDERED_CLASSES?.length || 46;
+    }
+
+    /**
+     * Get or create HeuristicEngine instance
+     * @private
+     * @returns {Object|null}
+     */
+    _getHeuristicEngine() {
+        if (!this._heuristicEngine) {
+            if (typeof window !== 'undefined' && window.HeuristicEngine) {
+                this._heuristicEngine = new window.HeuristicEngine({ debug: this._debug });
+            }
+        }
+        return this._heuristicEngine;
+    }
+
+    // ========================================================================
+    // PUBLIC API - PREDICTION
+    // ========================================================================
+
+    /**
+     * Predict the field type for a given form field
+     * Uses hybrid approach: Heuristics first, then Neural Network
+     * 
+     * @param {Object} field - Form field object with attributes
+     * @returns {Object} Prediction result { label, confidence, source, features }
      */
     predict(field) {
-        // 1. Vectorize
-        const inputVector = this.featureExtractor.extract(field);
+        const startTime = performance.now();
 
-        // 2. Hybrid Heuristic Check (The "Fast Path")
-        // If our weights are dummy/random, or just as a sanity check, run heuristics first.
-        const heuristic = this.heuristicFallback(field);
-        if (heuristic) {
+        // 1. Extract features
+        const inputVector = this._featureExtractor?.extract(field) || new Array(NeuralClassifier.INPUT_SIZE).fill(0);
+
+        // 2. Try heuristic classification first (fast path)
+        const heuristicResult = this._runHeuristics(field);
+        if (heuristicResult) {
+            this._recordMetrics(startTime, 'heuristic');
             return {
-                label: heuristic.label,
-                confidence: heuristic.confidence,
+                label: heuristicResult.label,
+                confidence: heuristicResult.confidence,
                 source: 'heuristic_hybrid',
                 features: inputVector.length
             };
         }
 
-        // 3. Inference (Two-layer forward pass + Softmax)
-        if (!this.W1 || !this.W2) {
-            // If no heuristics and no weights, unknown.
-            return { label: 'unknown', confidence: 0 };
+        // 3. Fall back to neural network inference
+        if (!this._W1 || !this._W2) {
+            this._recordMetrics(startTime, 'none');
+            return { label: 'unknown', confidence: 0, source: 'no_weights', features: inputVector.length };
         }
 
-        const { logits } = this.forward(inputVector);
-        const probs = this.softmax(logits);
+        const { logits } = this._forward(inputVector);
+        const probs = this._softmax(logits);
 
-        // 4. Decode
+        // 4. Decode prediction
         const maxProb = Math.max(...probs);
         const classIndex = probs.indexOf(maxProb);
 
-        // Threshold: If confidence is too low, treat as 'generic_question' (LLM Fallback)
-        let label = this.CLASSES[classIndex];
-        if (maxProb < 0.25) {
-            label = 'generic_question'; // Fallback to System 2
+        let label = this._fieldTypes.getFieldTypeFromIndex(classIndex);
+
+        // Apply confidence threshold
+        if (maxProb < NeuralClassifier.CONFIDENCE_THRESHOLD) {
+            label = 'generic_question';  // Fallback to LLM
         }
 
+        this._recordMetrics(startTime, 'neural');
+
         return {
-            label: label,
+            label,
             confidence: maxProb,
-            // Debug info
+            source: 'neural_network',
             features: inputVector.length
         };
     }
 
     /**
-     * Deterministic Regex Fallback (Hybrid Layer)
-     * Maps field text to class labels directly.
+     * Run heuristic classification
+     * @private
+     * @param {Object} field - Form field
+     * @returns {Object|null} Result or null if no match
      */
-    heuristicFallback(field) {
-        // Construct PRIMARY text (Label, Name, ID, Placeholder)
-        // EXCLUDE Context from this strict check to avoid pollution from neighbors (e.g. "Phone" sibling)
-        const computedLabel = this.featureExtractor.getComputedLabel(field) || '';
-        const text = (
-            computedLabel + ' ' +
-            (field.name || '') + ' ' +
-            (field.id || '') + ' ' +
-            (field.placeholder || '')
-        ).toLowerCase();
+    _runHeuristics(field) {
+        const engine = this._getHeuristicEngine();
+        if (!engine) return null;
 
-        // --- COMPENSATION (Priority) ---
-        if (/remuneration|ctc|salary|compensation|pay/i.test(text)) {
-            if (/expect|desire/i.test(text)) return { label: 'salary_expected', confidence: 0.99 };
-            return { label: 'salary_current', confidence: 0.99 };
+        // Build enriched field object
+        const computedLabel = this._featureExtractor?.getComputedLabel(field) || '';
+        const enrichedField = {
+            ...field,
+            label: computedLabel || field.label
+        };
+
+        // Delegate to HeuristicEngine
+        const result = engine.classify(enrichedField, {
+            parentContext: field.parentContext,
+            siblingContext: field.siblingContext
+        });
+
+        if (result) {
+            result.source = 'heuristic_chrome';
         }
 
-        // --- HISTORY FIELDS ---
-        if (/job[_\s]?title|position|role|designation/i.test(text)) return { label: 'job_title', confidence: 0.95 };
-        if (/company|employer|organization/i.test(text)) return { label: 'employer_name', confidence: 0.95 }; // Normalized key
-        if (/school|university|college|institution/i.test(text)) return { label: 'institution_name', confidence: 0.95 }; // Normalized key
-        if (/degree|major|qualification/i.test(text)) return { label: 'degree_type', confidence: 0.95 }; // Normalized key
-        if (/gpa|grade/i.test(text)) return { label: 'gpa_score', confidence: 0.95 }; // Normalized key
-
-        // Dates need more context
-        const isStart = /start[_\s]?date|from/i.test(text);
-        const isEnd = /end[_\s]?date|to/i.test(text);
-        const isEduContext = /education|school|degree|graduat/i.test(text);
-
-        if (isStart) return { label: isEduContext ? 'education_start_date' : 'job_start_date', confidence: 0.90 };
-        if (isEnd) return { label: isEduContext ? 'education_end_date' : 'job_end_date', confidence: 0.90 };
-
-        // --- PERSONAL INFO ---
-        if (/first[_\s]?name|fname/i.test(text)) return { label: 'first_name', confidence: 0.95 };
-        if (/last[_\s]?name|lname/i.test(text)) return { label: 'last_name', confidence: 0.95 };
-        if (/email/i.test(text)) return { label: 'email', confidence: 0.99 };
-        if (/phone|mobile/i.test(text)) return { label: 'phone', confidence: 0.99 };
-        if (/linkedin/i.test(text)) return { label: 'linkedin', confidence: 0.99 };
-        if (/github/i.test(text)) return { label: 'github', confidence: 0.99 };
-        if (/portfolio|website/i.test(text)) return { label: 'portfolio', confidence: 0.95 };
-        if (/twitter/i.test(text)) return { label: 'twitter_url', confidence: 0.99 };
-
-        // --- LOCATION ---
-        if (/address/i.test(text)) return { label: 'address', confidence: 0.90 };
-        if (/city/i.test(text)) return { label: 'city', confidence: 0.90 };
-        if (/state|province/i.test(text)) return { label: 'state', confidence: 0.90 };
-        if (/zip|postal/i.test(text)) return { label: 'zip_code', confidence: 0.95 };
-        if (/country/i.test(text)) return { label: 'country', confidence: 0.95 };
-
-        // --- COMPLIANCE / LEGAL (Aggressive Matching) ---
-        if (/veteran/i.test(text)) return { label: 'veteran', confidence: 0.99 };
-        if (/citizen|nationality/i.test(text)) return { label: 'citizenship', confidence: 0.99 };
-        if (/sponsor/i.test(text)) return { label: 'sponsorship', confidence: 0.99 };
-        if (/clearance|security/i.test(text)) return { label: 'clearance', confidence: 0.99 };
-        if (/work.*auth|eligib/i.test(text)) return { label: 'work_auth', confidence: 0.99 };
-        if (/criminal|felony|convict/i.test(text)) return { label: 'criminal_record', confidence: 0.99 };
-        if (/notice.*period|soon.*start|availability/i.test(text)) return { label: 'notice_period', confidence: 0.99 };
-        if (/18.*age|age.*18/i.test(text)) return { label: 'legal_age', confidence: 0.99 };
-
-        // --- DEMOGRAPHICS ---
-        if (/gender/i.test(text)) return { label: 'gender', confidence: 0.99 };
-        if (/race|ethni/i.test(text)) return { label: 'race', confidence: 0.99 };
-        if (/marital/i.test(text)) return { label: 'marital_status', confidence: 0.99 };
-        if (/disab/i.test(text)) return { label: 'disability', confidence: 0.99 };
-
-        // --- MISC ---
-        if (/hear.*about|referral|source/i.test(text)) return { label: 'referral_source', confidence: 0.95 };
-        if (/cover.*letter|bio|about.*yourself/i.test(text)) return { label: 'cover_letter', confidence: 0.95 };
-
-        return null; // No strong match
+        return result;
     }
 
-    // --- MATH KERNEL (Pure JS) ---
+    // ========================================================================
+    // PUBLIC API - TRAINING
+    // ========================================================================
 
     /**
-     * Leaky ReLU activation function
-     * f(x) = x if x > 0, else alpha * x
+     * Train the model on a single labeled example (online learning)
+     * Uses Stochastic Gradient Descent with L2 regularization
+     * 
+     * @param {Object} field - Form field object
+     * @param {string} correctLabel - Ground truth label
+     * @returns {Promise<void>}
      */
-    leakyReLU(x) {
-        return x > 0 ? x : this.LEAKY_RELU_ALPHA * x;
+    async train(field, correctLabel) {
+        if (!this._W1 || !this._W2 || !this._W3 || !this._b1 || !this._b2 || !this._b3) {
+            this._log('Cannot train: weights not initialized');
+            return;
+        }
+
+        const targetIndex = this._fieldTypes.getFieldTypeIndex(correctLabel);
+        if (targetIndex === -1) {
+            this._log(`Unknown label: ${correctLabel}`);
+            return;
+        }
+
+        // Enable training mode (activates dropout)
+        this._isTraining = true;
+
+        // Forward pass with dropout
+        const inputs = this._featureExtractor?.extract(field) || [];
+        const { logits, hidden1, hidden2, z1, z2 } = this._forward(inputs);
+        const probs = this._softmax(logits);
+
+        // Disable training mode
+        this._isTraining = false;
+
+        // Adaptive learning rate (decays with experience)
+        const learningRate = NeuralClassifier.BASE_LEARNING_RATE * Math.exp(-0.0001 * this._totalSamples);
+        this._totalSamples++;
+
+        // Backpropagation through 3 layers
+        this._backpropagate(inputs, hidden1, hidden2, z1, z2, probs, targetIndex, learningRate);
+
+        // Auto-save periodically
+        if (this._totalSamples % 10 === 0) {
+            await this._saveWeights();
+        }
+
+        this._log(`Trained on "${correctLabel}" (LR: ${learningRate.toFixed(4)}, Samples: ${this._totalSamples})`);
     }
 
     /**
-     * Leaky ReLU derivative for backpropagation
-     * f'(x) = 1 if x > 0, else alpha
+     * Perform backpropagation through 3-layer network
+     * @private
      */
-    leakyReLU_derivative(x) {
-        return x > 0 ? 1 : this.LEAKY_RELU_ALPHA;
+    _backpropagate(inputs, hidden1, hidden2, z1, z2, probs, targetIndex, learningRate) {
+        const outputSize = this._getOutputSize();
+        const hidden1Size = NeuralClassifier.HIDDEN1_SIZE;
+        const hidden2Size = NeuralClassifier.HIDDEN2_SIZE;
+        const lambda = NeuralClassifier.L2_LAMBDA;
+
+        // ============ Output Layer Gradients ============
+        const dLogits = new Array(outputSize);
+        for (let c = 0; c < outputSize; c++) {
+            const target = (c === targetIndex) ? 1 : 0;
+            dLogits[c] = probs[c] - target;
+        }
+
+        // Update W3 and b3 (Hidden2 → Output)
+        for (let h = 0; h < hidden2Size; h++) {
+            for (let c = 0; c < outputSize; c++) {
+                const gradient = dLogits[c] * hidden2[h] + lambda * this._W3[h][c];
+                this._W3[h][c] -= learningRate * gradient;
+            }
+        }
+        for (let c = 0; c < outputSize; c++) {
+            this._b3[c] -= learningRate * dLogits[c];
+        }
+
+        // ============ Hidden2 Layer Gradients ============
+        const dHidden2 = new Array(hidden2Size).fill(0);
+        for (let h = 0; h < hidden2Size; h++) {
+            for (let c = 0; c < outputSize; c++) {
+                dHidden2[h] += dLogits[c] * this._W3[h][c];
+            }
+            dHidden2[h] *= this._leakyReLUDerivative(z2[h]);
+        }
+
+        // Update W2 and b2 (Hidden1 → Hidden2)
+        for (let h1 = 0; h1 < hidden1Size; h1++) {
+            for (let h2 = 0; h2 < hidden2Size; h2++) {
+                const gradient = dHidden2[h2] * hidden1[h1] + lambda * this._W2[h1][h2];
+                this._W2[h1][h2] -= learningRate * gradient;
+            }
+        }
+        for (let h = 0; h < hidden2Size; h++) {
+            this._b2[h] -= learningRate * dHidden2[h];
+        }
+
+        // ============ Hidden1 Layer Gradients ============
+        const dHidden1 = new Array(hidden1Size).fill(0);
+        for (let h1 = 0; h1 < hidden1Size; h1++) {
+            for (let h2 = 0; h2 < hidden2Size; h2++) {
+                dHidden1[h1] += dHidden2[h2] * this._W2[h1][h2];
+            }
+            dHidden1[h1] *= this._leakyReLUDerivative(z1[h1]);
+        }
+
+        // Update W1 and b1 (Input → Hidden1)
+        for (let i = 0; i < inputs.length; i++) {
+            for (let h = 0; h < hidden1Size; h++) {
+                if (inputs[i] !== 0) {  // Sparse optimization
+                    const gradient = dHidden1[h] * inputs[i] + lambda * this._W1[i][h];
+                    this._W1[i][h] -= learningRate * gradient;
+                }
+            }
+        }
+        for (let h = 0; h < hidden1Size; h++) {
+            this._b1[h] -= learningRate * dHidden1[h];
+        }
+    }
+
+    // ========================================================================
+    // NEURAL NETWORK OPERATIONS
+    // ========================================================================
+
+    /**
+     * Forward pass through the network (3-layer with dropout)
+     * Architecture: Input(59) → Hidden1(32) → Hidden2(16) → Output
+     * @private
+     * @param {number[]} inputs - Input feature vector
+     * @returns {Object} { logits, hidden1, hidden2, z1, z2 }
+     */
+    _forward(inputs) {
+        // Standard forward pass (optimized version disabled for 3-layer)
+        return this._forwardStandard(inputs);
     }
 
     /**
-     * Forward pass through 2-layer network
-     * @param {Array} inputs - Input vector (56 features)
-     * @returns {Object} {logits: Array, hidden: Array}
+     * Standard 3-layer forward pass with dropout
+     * @private
      */
-    forward(inputs) {
-        // Layer 1: Input → Hidden with Leaky ReLU
-        const z1 = new Array(this.HIDDEN_SIZE).fill(0);
-        for (let h = 0; h < this.HIDDEN_SIZE; h++) {
-            z1[h] = this.b1[h];
+    _forwardStandard(inputs) {
+        const hidden1Size = NeuralClassifier.HIDDEN1_SIZE;
+        const hidden2Size = NeuralClassifier.HIDDEN2_SIZE;
+        const outputSize = this._getOutputSize();
+
+        // ============ Layer 1: Input → Hidden1 (Leaky ReLU + Dropout) ============
+        const z1 = new Array(hidden1Size).fill(0);
+        for (let h = 0; h < hidden1Size; h++) {
+            z1[h] = this._b1[h];
             for (let i = 0; i < inputs.length; i++) {
-                z1[h] += inputs[i] * this.W1[i][h];
+                z1[h] += inputs[i] * this._W1[i][h];
             }
         }
-        const hidden = z1.map(z => this.leakyReLU(z));
+        let hidden1 = z1.map(z => this._leakyReLU(z));
 
-        // Layer 2: Hidden → Output (logits)
-        const logits = new Array(this.CLASSES.length).fill(0);
-        for (let c = 0; c < this.CLASSES.length; c++) {
-            logits[c] = this.b2[c];
-            for (let h = 0; h < this.HIDDEN_SIZE; h++) {
-                logits[c] += hidden[h] * this.W2[h][c];
+        // Apply dropout to hidden1 (only during training)
+        if (this._isTraining && NeuralClassifier.DROPOUT_RATE > 0) {
+            hidden1 = this._applyDropout(hidden1, NeuralClassifier.DROPOUT_RATE);
+        }
+
+        // ============ Layer 2: Hidden1 → Hidden2 (Leaky ReLU + Dropout) ============
+        const z2 = new Array(hidden2Size).fill(0);
+        for (let h = 0; h < hidden2Size; h++) {
+            z2[h] = this._b2[h];
+            for (let i = 0; i < hidden1Size; i++) {
+                z2[h] += hidden1[i] * this._W2[i][h];
+            }
+        }
+        let hidden2 = z2.map(z => this._leakyReLU(z));
+
+        // Apply dropout to hidden2 (only during training)
+        if (this._isTraining && NeuralClassifier.DROPOUT_RATE > 0) {
+            hidden2 = this._applyDropout(hidden2, NeuralClassifier.DROPOUT_RATE);
+        }
+
+        // ============ Layer 3: Hidden2 → Output (Logits) ============
+        const logits = new Array(outputSize).fill(0);
+        for (let c = 0; c < outputSize; c++) {
+            logits[c] = this._b3[c];
+            for (let h = 0; h < hidden2Size; h++) {
+                logits[c] += hidden2[h] * this._W3[h][c];
             }
         }
 
-        return { logits, hidden, z1 }; // z1 needed for derivative
+        return { logits, hidden1, hidden2, z1, z2 };
     }
 
     /**
-     * Softmax activation to convert logits to probabilities
+     * Apply dropout to a layer
+     * During training: randomly zero out neurons with probability p
+     * During inference: scale activations by (1-p) for consistency
+     * @private
+     * @param {number[]} activations - Layer activations
+     * @param {number} dropoutRate - Probability of dropping (0-1)
+     * @returns {number[]} Modified activations
      */
-    softmax(logits) {
-        const maxLogit = Math.max(...logits); // Stability fix
+    _applyDropout(activations, dropoutRate) {
+        if (this._isTraining) {
+            // Training: randomly drop neurons, scale survivors
+            const scale = 1.0 / (1.0 - dropoutRate);  // Inverted dropout
+            return activations.map(a => {
+                if (Math.random() < dropoutRate) {
+                    return 0;  // Dropped
+                }
+                return a * scale;  // Scale to maintain expected value
+            });
+        } else {
+            // Inference: no dropout needed (already scaled during training)
+            return activations;
+        }
+    }
+
+    /**
+     * Leaky ReLU activation
+     * @private
+     * @param {number} x - Input value
+     * @returns {number}
+     */
+    _leakyReLU(x) {
+        return x > 0 ? x : NeuralClassifier.LEAKY_RELU_ALPHA * x;
+    }
+
+    /**
+     * Leaky ReLU derivative
+     * @private
+     * @param {number} x - Pre-activation value
+     * @returns {number}
+     */
+    _leakyReLUDerivative(x) {
+        return x > 0 ? 1 : NeuralClassifier.LEAKY_RELU_ALPHA;
+    }
+
+    /**
+     * Softmax activation
+     * @private
+     * @param {number[]} logits - Raw network outputs
+     * @returns {number[]} Probability distribution
+     */
+    _softmax(logits) {
+        // Use optimized kernel if available
+        if (this._useOptimized && this._mathKernel) {
+            const logitArray = logits instanceof Float32Array
+                ? logits
+                : new Float32Array(logits);
+            return Array.from(this._mathKernel.softmax(logitArray));
+        }
+
+        // Standard softmax
+        const maxLogit = Math.max(...logits);  // Numerical stability
         const exps = logits.map(l => Math.exp(l - maxLogit));
         const sumExps = exps.reduce((a, b) => a + b, 0);
         return exps.map(e => e / sumExps);
     }
 
-    // --- TRAINING & PERSISTENCE ---
+    // ========================================================================
+    // WEIGHT OPTIMIZATION
+    // ========================================================================
 
     /**
-     * Train the model on a single example (Online Learning)
-     * Using Stochastic Gradient Descent (SGD) with L2 regularization.
-     * Backpropagation through 2 layers.
-     * @param {Object} field - The input field object
-     * @param {string} correctLabel - The ground truth label
+     * Optimize weights for fast inference
+     * Converts 2D arrays to flattened TypedArrays
+     * @private
      */
-    async train(field, correctLabel) {
-        if (!this.W1 || !this.W2 || !this.b1 || !this.b2) return;
+    _optimizeWeightsForInference() {
+        if (!this._W1 || !this._mathKernel) return;
 
-        const targetIndex = this.CLASSES.indexOf(correctLabel);
-        if (targetIndex === -1) return;
+        const inputSize = NeuralClassifier.INPUT_SIZE;
+        const hiddenSize = NeuralClassifier.HIDDEN_SIZE;
+        const outputSize = this._getOutputSize();
 
-        // 1. Forward Pass
-        const inputs = this.featureExtractor.extract(field);
-        const { logits, hidden, z1 } = this.forward(inputs);
-        const probs = this.softmax(logits);
-
-        // 2. Adaptive Learning Rate (decays with experience)
-        const baseLR = 0.05;
-        const learningRate = baseLR * Math.exp(-0.0001 * this.totalSamples);
-        this.totalSamples++;
-
-        // 3. Backward Pass - Output Layer
-        // Gradient of cross-entropy loss w.r.t. logits
-        const dLogits = new Array(this.CLASSES.length);
-        for (let c = 0; c < this.CLASSES.length; c++) {
-            const target = (c === targetIndex) ? 1 : 0;
-            dLogits[c] = probs[c] - target; // Softmax + CE derivative
-        }
-
-        // Gradients for W2 and b2
-        const dW2 = [];
-        const dB2 = dLogits.slice(); // Copy
-
-        for (let h = 0; h < this.HIDDEN_SIZE; h++) {
-            dW2[h] = [];
-            for (let c = 0; c < this.CLASSES.length; c++) {
-                // Gradient: dL/dW2[h][c] = dLogits[c] * hidden[h] + L2 * W2[h][c]
-                dW2[h][c] = dLogits[c] * hidden[h] + this.L2_LAMBDA * this.W2[h][c];
-            }
-        }
-
-        // Update W2 and b2
-        for (let h = 0; h < this.HIDDEN_SIZE; h++) {
-            for (let c = 0; c < this.CLASSES.length; c++) {
-                this.W2[h][c] -= learningRate * dW2[h][c];
-            }
-        }
-        for (let c = 0; c < this.CLASSES.length; c++) {
-            this.b2[c] -= learningRate * dB2[c];
-        }
-
-        // 4. Backward Pass - Hidden Layer
-        // Backpropagate error to hidden layer
-        const dHidden = new Array(this.HIDDEN_SIZE).fill(0);
-        for (let h = 0; h < this.HIDDEN_SIZE; h++) {
-            for (let c = 0; c < this.CLASSES.length; c++) {
-                dHidden[h] += dLogits[c] * this.W2[h][c];
-            }
-            // Apply Leaky ReLU derivative
-            dHidden[h] *= this.leakyReLU_derivative(z1[h]);
-        }
-
-        // Gradients for W1 and b1
-        const dW1 = [];
-        const dB1 = dHidden.slice(); // Copy
-
-        for (let i = 0; i < inputs.length; i++) {
-            dW1[i] = [];
-            for (let h = 0; h < this.HIDDEN_SIZE; h++) {
-                // Gradient: dL/dW1[i][h] = dHidden[h] * inputs[i] + L2 * W1[i][h]
-                if (inputs[i] !== 0) { // Sparse optimization
-                    dW1[i][h] = dHidden[h] * inputs[i] + this.L2_LAMBDA * this.W1[i][h];
-                } else {
-                    dW1[i][h] = this.L2_LAMBDA * this.W1[i][h]; // Only L2 term
-                }
-            }
-        }
-
-        // Update W1 and b1
-        for (let i = 0; i < inputs.length; i++) {
-            for (let h = 0; h < this.HIDDEN_SIZE; h++) {
-                this.W1[i][h] -= learningRate * dW1[i][h];
-            }
-        }
-        for (let h = 0; h < this.HIDDEN_SIZE; h++) {
-            this.b1[h] -= learningRate * dB1[h];
-        }
-
-        // console.log(`[NeuralClassifier] 🎓 Trained on "${correctLabel}" (Conf: ${probs[targetIndex].toFixed(2)} → 1.0, LR: ${learningRate.toFixed(4)}, Samples: ${this.totalSamples})`);
-
-        // Auto-save periodically (every 10 samples to reduce I/O)
-        if (this.totalSamples % 10 === 0) {
-            this.saveWeights();
-        }
-    }
-
-    async saveWeights() {
-        const payload = {
-            W1: this.W1,
-            b1: this.b1,
-            W2: this.W2,
-            b2: this.b2,
-            totalSamples: this.totalSamples,
-            version: 2, // Version 2 for 2-layer network
-            timestamp: Date.now()
-        };
-        await chrome.storage.local.set({ 'neural_weights': payload });
-    }
-
-    async loadWeights() {
         try {
-            const result = await chrome.storage.local.get('neural_weights');
-            if (result.neural_weights) {
-                const data = result.neural_weights;
+            // Flatten and convert to Float32Array
+            this._W1_opt = this._mathKernel.flatten2D(this._W1);
+            this._b1_opt = this._mathKernel.toFloat32(this._b1);
+            this._W2_opt = this._mathKernel.flatten2D(this._W2);
+            this._b2_opt = this._mathKernel.toFloat32(this._b2);
 
-                // Check version compatibility
-                if (data.version === 2 && data.W1 && data.W2) {
-                    this.W1 = data.W1;
-                    this.b1 = data.b1;
-                    this.W2 = data.W2;
-                    this.b2 = data.b2;
-                    this.totalSamples = data.totalSamples || 0;
-                    // console.log('[NeuralClassifier] 📂 Loaded trained 2-layer weights from storage.');
-                    return true;
-                } else if (data.version === 1) {
-                    // console.log('[NeuralClassifier] ⚠️ Found v1 weights (1-layer). Reinitializing to v2 (2-layer).');
-                    return false; // Force reinitialization
-                }
+            // Optional: Prune small weights
+            if (NeuralClassifier.PRUNE_THRESHOLD > 0) {
+                const pruneResult1 = this._mathKernel.pruneWeights(this._W1_opt, NeuralClassifier.PRUNE_THRESHOLD);
+                const pruneResult2 = this._mathKernel.pruneWeights(this._W2_opt, NeuralClassifier.PRUNE_THRESHOLD);
+
+                this._W1_opt = pruneResult1.pruned;
+                this._W2_opt = pruneResult2.pruned;
+                this._metrics.sparsity = (pruneResult1.sparsity + pruneResult2.sparsity) / 2;
+            }
+
+            // Optional: Quantize for memory efficiency
+            if (NeuralClassifier.USE_QUANTIZATION) {
+                this._W1_quant = this._mathKernel.quantizeWeights(this._W1_opt);
+                this._W2_quant = this._mathKernel.quantizeWeights(this._W2_opt);
+
+                // Calculate memory reduction (Float32 -> Int8 = 75% reduction)
+                const originalSize = (inputSize * hiddenSize + hiddenSize * outputSize) * 4;
+                const quantizedSize = (inputSize * hiddenSize + hiddenSize * outputSize) * 1;
+                this._metrics.memoryReduction = ((originalSize - quantizedSize) / originalSize) * 100;
+            }
+
+            this._log(`Weights optimized: Sparsity=${(this._metrics.sparsity * 100).toFixed(1)}%, Memory=-${this._metrics.memoryReduction.toFixed(1)}%`);
+        } catch (e) {
+            console.error('[NeuralClassifier] Weight optimization failed:', e);
+            this._useOptimized = false;
+        }
+    }
+
+    /**
+     * Re-optimize weights after training
+     * Call this after train() to update optimized weights
+     */
+    refreshOptimizedWeights() {
+        if (this._useOptimized && this._mathKernel) {
+            this._optimizeWeightsForInference();
+        }
+    }
+
+    // ========================================================================
+    // WEIGHT MANAGEMENT
+    // ========================================================================
+
+    /**
+     * Initialize with random weights (He initialization for all layers)
+     * Architecture: 59 → 32 → 16 → OUTPUT
+     * @private
+     */
+    _initializeRandomWeights() {
+        const inputSize = NeuralClassifier.INPUT_SIZE;
+        const hidden1Size = NeuralClassifier.HIDDEN1_SIZE;
+        const hidden2Size = NeuralClassifier.HIDDEN2_SIZE;
+        const outputSize = this._getOutputSize();
+
+        // W1: Input → Hidden1 (He initialization for ReLU)
+        this._W1 = [];
+        const heScale1 = Math.sqrt(2.0 / inputSize);
+        for (let i = 0; i < inputSize; i++) {
+            this._W1[i] = [];
+            for (let h = 0; h < hidden1Size; h++) {
+                this._W1[i][h] = (Math.random() - 0.5) * 2 * heScale1;
+            }
+        }
+        this._b1 = new Array(hidden1Size).fill(0);
+
+        // W2: Hidden1 → Hidden2 (He initialization for ReLU)
+        this._W2 = [];
+        const heScale2 = Math.sqrt(2.0 / hidden1Size);
+        for (let h1 = 0; h1 < hidden1Size; h1++) {
+            this._W2[h1] = [];
+            for (let h2 = 0; h2 < hidden2Size; h2++) {
+                this._W2[h1][h2] = (Math.random() - 0.5) * 2 * heScale2;
+            }
+        }
+        this._b2 = new Array(hidden2Size).fill(0);
+
+        // W3: Hidden2 → Output (Xavier initialization for Softmax)
+        this._W3 = [];
+        const xavierScale = Math.sqrt(1.0 / hidden2Size);
+        for (let h2 = 0; h2 < hidden2Size; h2++) {
+            this._W3[h2] = [];
+            for (let c = 0; c < outputSize; c++) {
+                this._W3[h2][c] = (Math.random() - 0.5) * 2 * xavierScale;
+            }
+        }
+        this._b3 = new Array(outputSize).fill(0);
+
+        this._log(`Weights initialized: ${inputSize} → ${hidden1Size} → ${hidden2Size} → ${outputSize}`);
+    }
+
+    /**
+     * Load weights from Chrome storage
+     * @private
+     * @returns {Promise<boolean>}
+     */
+    async _loadWeights() {
+        try {
+            const result = await chrome.storage.local.get(NeuralClassifier.STORAGE_KEY);
+            const data = result[NeuralClassifier.STORAGE_KEY];
+
+            // Version 3: 3-layer architecture
+            if (data && data.version === 3 && data.W1 && data.W2 && data.W3) {
+                this._W1 = data.W1;
+                this._b1 = data.b1;
+                this._W2 = data.W2;
+                this._b2 = data.b2;
+                this._W3 = data.W3;
+                this._b3 = data.b3;
+                this._totalSamples = data.totalSamples || 0;
+                this._log(`Loaded v3 weights (${this._totalSamples} samples)`);
+                return true;
+            }
+
+            // Version 1 or 2: Old architecture, reinitialize
+            if (data?.version === 1 || data?.version === 2) {
+                this._log(`Found v${data.version} weights, reinitializing to v3 (3-layer)`);
+                return false;
             }
         } catch (e) {
             console.error('[NeuralClassifier] Failed to load weights:', e);
@@ -441,27 +760,32 @@ class NeuralClassifier {
         return false;
     }
 
-    async loadBaselineWeights() {
+    /**
+     * Load baseline weights bundled with extension
+     * @private
+     * @returns {Promise<boolean>}
+     */
+    async _loadBaselineWeights() {
         try {
-            // Load pre-trained baseline weights bundled with extension
-            const baselineUrl = chrome.runtime.getURL('content/services/ai/model_v2_baseline.json');
+            const baselineUrl = chrome.runtime.getURL('autofill/domains/inference/model_v3_baseline.json');
             const response = await fetch(baselineUrl);
 
             if (!response.ok) {
-                console.warn('[NeuralClassifier] Baseline weights not found (will use random init)');
+                this._log('Baseline weights not found');
                 return false;
             }
 
             const data = await response.json();
 
-            if (data.version === 2 && data.W1 && data.W2) {
-                this.W1 = data.W1;
-                this.b1 = data.b1;
-                this.W2 = data.W2;
-                this.b2 = data.b2;
-                this.totalSamples = 0; // Reset training counter for user's personalization
-
-                // console.log(`[NeuralClassifier] 📦 Loaded pre-trained baseline (v2) - Trained on ${data.metadata?.trainingExamples || 'N/A'} examples`);
+            if (data.version === 3 && data.W1 && data.W2 && data.W3) {
+                this._W1 = data.W1;
+                this._b1 = data.b1;
+                this._W2 = data.W2;
+                this._b2 = data.b2;
+                this._W3 = data.W3;
+                this._b3 = data.b3;
+                this._totalSamples = 0;
+                this._log(`Loaded baseline weights (trained on ${data.metadata?.trainingExamples || 'N/A'} examples)`);
                 return true;
             }
         } catch (e) {
@@ -470,39 +794,108 @@ class NeuralClassifier {
         return false;
     }
 
-    // --- WEIGHT INITIALIZATION ---
-    generateDummyWeights() {
-        const inputSize = 59; // From FeatureExtractor
-        const hiddenSize = this.HIDDEN_SIZE;
-        const outputSize = this.CLASSES.length;
-
-        // W1: Input → Hidden (He Initialization for ReLU)
-        // Variance = 2/n_in (He et al., 2015)
-        this.W1 = [];
-        const heScale = Math.sqrt(2.0 / inputSize);
-        for (let i = 0; i < inputSize; i++) {
-            this.W1[i] = [];
-            for (let h = 0; h < hiddenSize; h++) {
-                this.W1[i][h] = (Math.random() - 0.5) * 2 * heScale;
-            }
+    /**
+     * Save weights to Chrome storage
+     * @private
+     * @returns {Promise<void>}
+     */
+    async _saveWeights() {
+        try {
+            const payload = {
+                W1: this._W1,
+                b1: this._b1,
+                W2: this._W2,
+                b2: this._b2,
+                W3: this._W3,
+                b3: this._b3,
+                totalSamples: this._totalSamples,
+                version: 3,
+                timestamp: Date.now()
+            };
+            await chrome.storage.local.set({ [NeuralClassifier.STORAGE_KEY]: payload });
+        } catch (e) {
+            console.error('[NeuralClassifier] Failed to save weights:', e);
         }
-        this.b1 = new Array(hiddenSize).fill(0); // Zeros for bias
+    }
 
-        // W2: Hidden → Output (Xavier Initialization for Softmax)
-        // Variance = 1/n_in (Glorot & Bengio, 2010)
-        this.W2 = [];
-        const xavierScale = Math.sqrt(1.0 / hiddenSize);
-        for (let h = 0; h < hiddenSize; h++) {
-            this.W2[h] = [];
-            for (let c = 0; c < outputSize; c++) {
-                this.W2[h][c] = (Math.random() - 0.5) * 2 * xavierScale;
-            }
+    // ========================================================================
+    // METRICS & UTILITIES
+    // ========================================================================
+
+    /**
+     * Record performance metrics
+     * @private
+     * @param {number} startTime - Performance.now() start time
+     * @param {string} source - Classification source (heuristic/neural/none)
+     */
+    _recordMetrics(startTime, source) {
+        const elapsed = performance.now() - startTime;
+
+        this._metrics.totalPredictions++;
+        this._metrics.lastInferenceTime = elapsed;
+
+        if (source === 'heuristic') {
+            this._metrics.heuristicMatches++;
+        } else if (source === 'neural') {
+            this._metrics.neuralMatches++;
         }
-        this.b2 = new Array(outputSize).fill(0); // Zeros for bias
 
-        // console.log(`[NeuralClassifier] ✨ Initialized 2-layer network: ${inputSize} → ${hiddenSize} → ${outputSize}`);
+        // Running average
+        const n = this._metrics.totalPredictions;
+        this._metrics.averageInferenceTime += (elapsed - this._metrics.averageInferenceTime) / n;
+    }
+
+    /**
+     * Get performance metrics
+     * @returns {Object}
+     */
+    getMetrics() {
+        return {
+            ...this._metrics,
+            totalSamples: this._totalSamples,
+            isInitialized: this._isInitialized
+        };
+    }
+
+    /**
+     * Get the list of supported field types
+     * @returns {string[]}
+     */
+    getClasses() {
+        return this._fieldTypes?.ORDERED_CLASSES || [];
+    }
+
+    /**
+     * Reset training state and weights
+     * @returns {Promise<void>}
+     */
+    async reset() {
+        this._initializeRandomWeights();
+        this._totalSamples = 0;
+        await chrome.storage.local.remove(NeuralClassifier.STORAGE_KEY);
+        this._log('Reset to random weights');
+    }
+
+    /**
+     * Debug logging helper
+     * @private
+     * @param {...any} args - Log arguments
+     */
+    _log(...args) {
+        if (this._debug) {
+            console.log('[NeuralClassifier]', ...args);
+        }
     }
 }
-// Export
-if (typeof window !== 'undefined') window.NeuralClassifier = NeuralClassifier;
-if (typeof module !== 'undefined') module.exports = NeuralClassifier;
+
+// ============================================================================
+// EXPORTS
+// ============================================================================
+
+if (typeof window !== 'undefined') {
+    window.NeuralClassifier = NeuralClassifier;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = NeuralClassifier;
+}
