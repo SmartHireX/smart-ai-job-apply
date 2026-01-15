@@ -415,7 +415,26 @@ function showAccordionSidebar(allFields) {
         const element = document.querySelector(item.selector);
         if (!element || !isFieldVisible(element)) return;
 
-        const label = item.fieldData?.label || getFieldLabel(element);
+        // Smart Label Logic
+        let label = item.fieldData?.label || getFieldLabel(element);
+        const ml = item.fieldData?.ml_prediction || item.ml_prediction;
+
+        if (ml && ml.confidence > 0.8 && ml.label) {
+            // High confidence: Use ML Label (Clean)
+            label = ml.label;
+            // Capitalize first letter
+            label = label.charAt(0).toUpperCase() + label.slice(1).replace(/_/g, ' ');
+        } else {
+            // Low confidence or No ML: Use DOM Label + Context
+            const context = item.fieldData?.parentContext || item.parentContext || '';
+            if (context) {
+                label = `${label} (${context})`;
+            }
+        }
+
+        // Index stored separately for badge display
+        const index = item.fieldData?.field_index ?? item.field_index ?? 0;
+        const indexBadge = index > 0 ? index + 1 : null;
         const fieldType = item.fieldData?.field_type || element.type || 'text';
         const isFileUpload = fieldType === 'file' || element.type === 'file';
 
@@ -433,7 +452,10 @@ function showAccordionSidebar(allFields) {
             source: source,
             value: value,
             filled: hasValue,
-            isFileUpload
+            value: value,
+            filled: hasValue,
+            isFileUpload,
+            indexBadge // Add indexBadge to fieldInfo
         };
 
         // Separate radio/checkbox/select from other fields
@@ -811,6 +833,26 @@ function showAccordionSidebar(allFields) {
     const panel = document.createElement('div');
     panel.id = 'smarthirex-accordion-sidebar';
     panel.innerHTML = `
+        <style>
+            .index-badge {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #f1f5f9;
+                color: #475569;
+                border: 1px solid #cbd5e1;
+                font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                font-size: 10px;
+                font-weight: 600;
+                padding: 1px 5px;
+                border-radius: 4px;
+                margin-left: 6px;
+                vertical-align: middle;
+                height: 16px;
+                min-width: 16px;
+                letter-spacing: -0.01em;
+            }
+        </style>
         <div class="resize-handle top"></div>
         <div class="resize-handle right"></div>
         <div class="resize-handle bottom"></div>
@@ -861,7 +903,7 @@ function showAccordionSidebar(allFields) {
             <div class="tab-content active" data-tab="app">
                 ${finalAppFillFields.map(item => `
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
-                        <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
+                        <div class="field-label">${item.label}${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
                     </div>
                 `).join('')}
                 ${finalAppFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
@@ -883,7 +925,7 @@ function showAccordionSidebar(allFields) {
         return `
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
-                            <div class="field-label">${item.label}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
+                            <div class="field-label">${item.label}${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
                             
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
@@ -916,7 +958,7 @@ function showAccordionSidebar(allFields) {
             return `
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
-                            <div class="field-label">${item.label}${(!isTextBased && item.displayValue) ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
+                            <div class="field-label">${item.label}${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}${(!isTextBased && item.displayValue) ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
                             
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div class="${confClass}" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
@@ -939,7 +981,7 @@ function showAccordionSidebar(allFields) {
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
                             <div class="field-label">
-                                ${item.isFileUpload ? '📁 ' : ''}${item.label}
+                                ${item.isFileUpload ? '📁 ' : ''}${item.label}${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}
                             </div>
                         </div>
                         ${item.isFileUpload ? '<div class="field-note">File upload required</div>' : '<div class="field-note">Not filled</div>'}
