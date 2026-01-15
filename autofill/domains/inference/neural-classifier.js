@@ -40,13 +40,13 @@ class NeuralClassifier {
     // ========================================================================
 
     /** @type {number} Number of input features from FeatureExtractor */
-    static INPUT_SIZE = 59;
+    static INPUT_SIZE = 79;
 
     /** @type {number} Number of neurons in first hidden layer */
-    static HIDDEN1_SIZE = 32;
+    static HIDDEN1_SIZE = 128;
 
     /** @type {number} Number of neurons in second hidden layer */
-    static HIDDEN2_SIZE = 16;
+    static HIDDEN2_SIZE = 64;
 
     /** @type {number} Dropout probability (0 = disabled, 0.25 = recommended) */
     static DROPOUT_RATE = 0.25;

@@ -30,7 +30,7 @@ class FeatureExtractor {
     static VOCAB_SIZE = 100;
 
     /** @type {number} Feature vector dimension (must match neural network) */
-    static FEATURE_DIM = 59;
+    static FEATURE_DIM = 79;
 
     /** @type {boolean} Enable debug logging */
     static DEBUG = false;
@@ -143,8 +143,8 @@ class FeatureExtractor {
             (computedRole === 'combobox' || computedRole === 'listbox') ? 1 : 0,  // Is complex select?
 
             // 3. Textual Features (50 dims) - Hashed Bag of Words
-            ...this._hashTextEnhanced(computedLabel || '', 10),             // Label (10 slots)
-            ...this._hashTextEnhanced(field.name || '', 10),                // Name/ID (10 slots)
+            ...this._hashTextEnhanced(computedLabel || '', 20),             // Label (20 slots)
+            ...this._hashTextEnhanced((field.name || '') + ' ' + (field.id || '') + ' ' + (getAttr('data-automation-id') || field.automationId || ''), 20), // Name/ID/Automation (20 slots)
             ...this._hashTextEnhanced(field.placeholder || '', 5),          // Placeholder (5 slots)
             ...this._hashTextEnhanced(getAttr('context') || field.context || '', 5),  // Section (5 slots)
             ...this._hashTextEnhanced(field.parentContext || '', 10),       // Parent heading (10 slots)

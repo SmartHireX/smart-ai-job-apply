@@ -1,0 +1,154 @@
+[
+    {
+        "features": {
+            "label": "Are you legally authorized to work in the United States?",
+            "name": "legally_authorized",
+            "id": "legally-authorized",
+            "automationId": "questionnaire_areYouLegallyAuthorizedToWorkInTheUnitedStates",
+            "placeholder": "",
+            "ariaLabel": "Work Authorization Question"
+        },
+        "label": "work_authorization"
+    },
+    {
+        "features": {
+            "label": "Do you now or in the future require sponsorship for employment visa status (e.g., H-1B status)?",
+            "name": "require_sponsorship",
+            "id": "require-sponsorship",
+            "automationId": "questionnaire_willYouNowOrInTheFutureRequireSponsorshipForEmploymentVisaStatus",
+            "placeholder": ""
+        },
+        "label": "sponsorship_required"
+    },
+    {
+        "features": {
+            "label": "Voluntary Self-Identification of Disability",
+            "name": "disability_status",
+            "id": "disability",
+            "automationId": "disabilityStatus",
+            "placeholder": "Select an option"
+        },
+        "label": "disability_status"
+    },
+    {
+        "features": {
+            "label": "Veteran Status",
+            "name": "veteran",
+            "id": "veteranStatus",
+            "automationId": "veteranStatus",
+            "placeholder": "Select veteran status"
+        },
+        "label": "veteran_status"
+    },
+    {
+        "features": {
+            "label": "Gender",
+            "name": "gender",
+            "id": "gender",
+            "automationId": "gender",
+            "placeholder": "Select gender"
+        },
+        "label": "gender"
+    },
+    {
+        "features": {
+            "label": "Race/Ethnicity",
+            "name": "ethnicity",
+            "id": "ethnicity",
+            "automationId": "ethnicity",
+            "placeholder": "Select race"
+        },
+        "label": "race_ethnicity"
+    },
+    {
+        "features": {
+            "label": "Middle Name (Optional)",
+            "name": "middle_name",
+            "id": "middleName",
+            "automationId": "legalNameSection_middleName",
+            "placeholder": ""
+        },
+        "label": "middle_name"
+    },
+    {
+        "features": {
+            "label": "Middle Initial",
+            "name": "mi",
+            "id": "mi",
+            "placeholder": "M.I."
+        },
+        "label": "middle_name"
+    },
+    {
+        "features": {
+            "label": "GPA",
+            "name": "gpa",
+            "id": "gpa",
+            "automationId": "education_gpa",
+            "placeholder": "0.00"
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Cumulative GPA",
+            "name": "cumulative_gpa",
+            "id": "cumulativeGpa",
+            "placeholder": ""
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Are you 18 years of age or older?",
+            "name": "is_18_or_older",
+            "id": "age-check",
+            "automationId": "questionnaire_ageCheck"
+        },
+        "label": "age_check"
+    },
+    {
+        "features": {
+            "label": "How did you hear about us?",
+            "name": "source",
+            "id": "source",
+            "automationId": "questionnaire_source"
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Please provide a link to your portfolio website.",
+            "name": "portfolio_url",
+            "id": "portfolio",
+            "placeholder": "https://..."
+        },
+        "label": "portfolio_url"
+    },
+    {
+        "features": {
+            "label": "Personal Website",
+            "name": "website",
+            "id": "website",
+            "placeholder": "Website URL"
+        },
+        "label": "portfolio_url"
+    },
+    {
+        "features": {
+            "label": "GitHub Profile",
+            "name": "github",
+            "id": "github_url"
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "LinkedIn Profile",
+            "name": "linkedin",
+            "id": "linkedin_url",
+            "automationId": "linkedin"
+        },
+        "label": "linkedin_url"
+    }
+]

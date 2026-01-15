@@ -36,10 +36,10 @@ const NeuralClassifier = require('../../autofill/domains/inference/neural-classi
 const CONFIG = {
     datasetPath: path.join(__dirname, 'training_data.json'),
     outputPath: path.join(__dirname, '../../autofill/domains/inference/model_v4_baseline.json'),
-    iterations: 30000,
-    testSplit: 0.2, // 20% for testing
-    logEvery: 1000,
-    saveEvery: 5000
+    iterations: 500000,
+    testSplit: 0.04, // 4% for testing (10k samples)
+    logEvery: 50000,
+    saveEvery: 100000
 };
 
 // ============================================================================
