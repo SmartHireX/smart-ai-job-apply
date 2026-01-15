@@ -1,6 +1,6 @@
 /**
- * Neural Network Training Script
- * Trains the NeuralClassifier on synthetic data
+ * Robust Neural Network Training Script V4
+ * Uses folder-based data organization: train-dataset/ and test-dataset/
  * 
  * Usage: node scripts/train/train_model.js
  */
@@ -34,34 +34,125 @@ const NeuralClassifier = require('../../autofill/domains/inference/neural-classi
 // CONFIGURATION
 // ============================================================================
 const CONFIG = {
-    datasetPath: path.join(__dirname, 'training_data.json'),
+    // Folder-based paths
+    trainFolder: path.join(__dirname, 'train-dataset'),
+    testFolder: path.join(__dirname, 'test-dataset'),
     outputPath: path.join(__dirname, '../../autofill/domains/inference/model_v4_baseline.json'),
     iterations: 500000,
-    testSplit: 0.04, // 4% for testing (10k samples)
     logEvery: 50000,
     saveEvery: 100000
 };
 
 // ============================================================================
+// DATA LOADING
+// ============================================================================
+function loadDatasetsFromFolder(folderPath) {
+    let merged = [];
+    if (!fs.existsSync(folderPath)) {
+        console.warn(`   ⚠️ Folder not found: ${folderPath}`);
+        return merged;
+    }
+
+    const files = fs.readdirSync(folderPath).filter(f => f.endsWith('.json'));
+    for (const file of files) {
+        const filePath = path.join(folderPath, file);
+        try {
+            const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            console.log(`   Loaded ${data.length} samples from ${file}`);
+            merged = merged.concat(data);
+        } catch (e) {
+            console.warn(`   ⚠️ Failed to parse ${file}: ${e.message}`);
+        }
+    }
+    return merged;
+}
+
+function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function balanceDataset(data) {
+    // Count samples per class
+    const classCounts = {};
+    for (const sample of data) {
+        classCounts[sample.label] = (classCounts[sample.label] || 0) + 1;
+    }
+
+    // Find median count (not max, to avoid extreme oversampling)
+    const counts = Object.values(classCounts);
+    counts.sort((a, b) => a - b);
+    const medianCount = counts[Math.floor(counts.length / 2)];
+    const targetCount = Math.max(medianCount, 20); // At least 20 per class
+
+    // Oversample minority classes up to target (but not beyond 3x original)
+    const balanced = [...data];
+    for (const sample of data) {
+        const currentCount = classCounts[sample.label];
+        if (currentCount < targetCount) {
+            const oversamplFactor = Math.min(Math.floor(targetCount / currentCount), 3) - 1;
+            for (let i = 0; i < oversamplFactor; i++) {
+                balanced.push({ ...sample });
+            }
+        }
+    }
+
+    return shuffleArray(balanced);
+}
+
+// ============================================================================
 // TRAINING LOGIC
 // ============================================================================
 async function train() {
-    console.log('🧠 Neural Classifier Training Script');
-    console.log('====================================');
+    console.log('🧠 Neural Classifier Training Script V4');
+    console.log('========================================');
 
-    // Load dataset
-    console.log(`📂 Loading dataset from ${CONFIG.datasetPath}...`);
-    const rawData = JSON.parse(fs.readFileSync(CONFIG.datasetPath, 'utf8'));
-    console.log(`   Loaded ${rawData.length} samples`);
+    // Load training data from folder
+    console.log('\n📂 Loading TRAINING datasets from train-dataset/...');
+    let trainData = loadDatasetsFromFolder(CONFIG.trainFolder);
+    console.log(`   Total training samples: ${trainData.length}`);
 
-    // Split into train/test
-    const splitIdx = Math.floor(rawData.length * (1 - CONFIG.testSplit));
-    const trainData = rawData.slice(0, splitIdx);
-    const testData = rawData.slice(splitIdx);
-    console.log(`   Train: ${trainData.length}, Test: ${testData.length}`);
+    // Load test data from folder
+    console.log('\n📂 Loading TEST datasets from test-dataset/...');
+    let testData = loadDatasetsFromFolder(CONFIG.testFolder);
+    console.log(`   Total test samples: ${testData.length}`);
+
+    if (trainData.length === 0) {
+        console.error('❌ No training data found!');
+        return;
+    }
+
+    if (testData.length === 0) {
+        console.warn('⚠️ No test data found, will use 10% of training for testing');
+        trainData = shuffleArray(trainData);
+        const splitIdx = Math.floor(trainData.length * 0.9);
+        testData = trainData.slice(splitIdx);
+        trainData = trainData.slice(0, splitIdx);
+    }
+
+    // Balance the training dataset
+    console.log('\n⚖️ Balancing training dataset...');
+    trainData = balanceDataset(trainData);
+    console.log(`   Balanced training samples: ${trainData.length}`);
+
+    // Show class distribution
+    const classDist = {};
+    for (const s of trainData) {
+        classDist[s.label] = (classDist[s.label] || 0) + 1;
+    }
+    const numClasses = Object.keys(classDist).length;
+    console.log(`\n📊 Training on ${numClasses} classes:`);
+    Object.entries(classDist)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .forEach(([k, v]) => console.log(`   ${k}: ${v}`));
+    if (numClasses > 10) console.log(`   ... and ${numClasses - 10} more`);
 
     // Initialize classifier
-    console.log('🔧 Initializing NeuralClassifier...');
+    console.log('\n🔧 Initializing NeuralClassifier...');
     const classifier = new NeuralClassifier({ debug: false });
     await classifier.init();
     console.log('   Classifier ready.');
@@ -69,7 +160,6 @@ async function train() {
     // Training loop
     console.log(`\n🏋️ Starting training (${CONFIG.iterations} iterations)...`);
     const startTime = Date.now();
-    let losses = [];
 
     for (let i = 0; i < CONFIG.iterations; i++) {
         // Pick random sample
@@ -96,9 +186,10 @@ async function train() {
     // Final save
     const finalWeights = classifier.exportWeights();
     finalWeights.metadata = {
-        trainingExamples: CONFIG.iterations,
+        trainingIterations: CONFIG.iterations,
         trainSetSize: trainData.length,
         testSetSize: testData.length,
+        numClasses: numClasses,
         trainedAt: new Date().toISOString()
     };
     fs.writeFileSync(CONFIG.outputPath, JSON.stringify(finalWeights, null, 2));
@@ -107,21 +198,29 @@ async function train() {
     // ============================================================================
     // EVALUATION
     // ============================================================================
-    console.log('\n📊 Evaluating on test set...');
+    console.log('\n📊 Evaluating on TEST set...');
     let correct = 0;
     let total = testData.length;
 
+    const confusionMatrix = {};
     for (const sample of testData) {
         const prediction = classifier.predict(sample.features);
-        if (prediction.label === sample.label) {
+        const pred = prediction.label;
+        const actual = sample.label;
+
+        if (pred === actual) {
             correct++;
         }
+
+        // Track confusion
+        if (!confusionMatrix[actual]) confusionMatrix[actual] = {};
+        confusionMatrix[actual][pred] = (confusionMatrix[actual][pred] || 0) + 1;
     }
 
     const accuracy = ((correct / total) * 100).toFixed(2);
-    console.log(`   Accuracy: ${accuracy}% (${correct}/${total})`);
+    console.log(`\n   🎯 OVERALL ACCURACY: ${accuracy}% (${correct}/${total})`);
 
-    // Per-class breakdown (top 5 worst)
+    // Per-class breakdown
     const classStats = {};
     for (const sample of testData) {
         if (!classStats[sample.label]) {
@@ -134,15 +233,35 @@ async function train() {
         }
     }
 
-    const worstClasses = Object.entries(classStats)
-        .map(([label, stats]) => ({ label, accuracy: stats.correct / stats.total }))
-        .sort((a, b) => a.accuracy - b.accuracy)
-        .slice(0, 5);
+    const sortedClasses = Object.entries(classStats)
+        .map(([label, stats]) => ({
+            label,
+            accuracy: stats.total > 0 ? stats.correct / stats.total : 0,
+            total: stats.total,
+            correct: stats.correct
+        }))
+        .sort((a, b) => a.accuracy - b.accuracy);
 
-    console.log('\n   Worst performing classes:');
-    worstClasses.forEach(c => {
-        console.log(`     - ${c.label}: ${(c.accuracy * 100).toFixed(1)}%`);
+    console.log('\n   ❌ Worst performing classes:');
+    sortedClasses.slice(0, 8).forEach(c => {
+        console.log(`     - ${c.label}: ${(c.accuracy * 100).toFixed(1)}% (${c.correct}/${c.total})`);
     });
+
+    console.log('\n   ✅ Best performing classes:');
+    sortedClasses.slice(-8).reverse().forEach(c => {
+        console.log(`     - ${c.label}: ${(c.accuracy * 100).toFixed(1)}% (${c.correct}/${c.total})`);
+    });
+
+    // Classes at 100%
+    const perfectClasses = sortedClasses.filter(c => c.accuracy === 1);
+    console.log(`\n   Classes at 100%: ${perfectClasses.length}/${numClasses}`);
+
+    // Classes at 0%
+    const zeroClasses = sortedClasses.filter(c => c.accuracy === 0);
+    console.log(`   Classes at 0%: ${zeroClasses.length}`);
+    if (zeroClasses.length > 0 && zeroClasses.length <= 10) {
+        console.log(`     ${zeroClasses.map(c => c.label).join(', ')}`);
+    }
 
     console.log('\n🎉 Done!');
 }

@@ -1,0 +1,1190 @@
+[
+    {
+        "features": {
+            "label": "Cover Letter *",
+            "name": "coverLetter",
+            "automationId": "cover-letter-textarea",
+            "placeholder": "Why are you interested in this role?",
+            "parentContext": "Application Documents",
+            "siblingContext": "Required"
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Tell us why you'd be a good fit",
+            "name": "whyGoodFit",
+            "automationId": "qa-cover",
+            "placeholder": "Your motivation",
+            "parentContext": "Application",
+            "siblingContext": null
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Anschreiben *",
+            "name": "wd-CoverLetter",
+            "automationId": "input-anschreiben",
+            "placeholder": "Warum möchten Sie bei uns arbeiten?",
+            "parentContext": "Bewerbungsunterlagen",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Carta de presentación *",
+            "name": "carta_es",
+            "automationId": "lever-cover",
+            "placeholder": "¿Por qué este puesto?",
+            "parentContext": "Documentos",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Lettre de motivation *",
+            "name": "lettre_fr",
+            "automationId": "gh-cover",
+            "placeholder": "Pourquoi ce poste?",
+            "parentContext": "Documents",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Additional Comments",
+            "name": "additionalComments",
+            "automationId": "input-comments",
+            "placeholder": "Anything else?",
+            "parentContext": "Application",
+            "siblingContext": null
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Why do you want to work here? *",
+            "name": "whyWorkHere",
+            "automationId": "why-here-textarea",
+            "placeholder": "Your answer",
+            "parentContext": "Application Questions",
+            "siblingContext": "Max 500 words"
+        },
+        "label": "why_company"
+    },
+    {
+        "features": {
+            "label": "What interests you about this company?",
+            "name": "companyInterest",
+            "automationId": "qa-why-company",
+            "placeholder": "Tell us",
+            "parentContext": "Motivation",
+            "siblingContext": null
+        },
+        "label": "why_company"
+    },
+    {
+        "features": {
+            "label": "Warum möchten Sie bei uns arbeiten? *",
+            "name": "wd-WhyCompany",
+            "automationId": "input-warum",
+            "placeholder": "Ihre Motivation",
+            "parentContext": "Fragen",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "why_company"
+    },
+    {
+        "features": {
+            "label": "¿Por qué quieres trabajar aquí? *",
+            "name": "porQueAqui_es",
+            "automationId": "lever-why",
+            "placeholder": "Su respuesta",
+            "parentContext": "Preguntas",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "why_company"
+    },
+    {
+        "features": {
+            "label": "Pourquoi voulez-vous travailler ici? *",
+            "name": "pourquoiIci_fr",
+            "automationId": "gh-why",
+            "placeholder": "Votre réponse",
+            "parentContext": "Questions",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "why_company"
+    },
+    {
+        "features": {
+            "label": "Motivation",
+            "name": "motivation",
+            "automationId": "input-motivation",
+            "placeholder": "Why join us?",
+            "parentContext": "Essay",
+            "siblingContext": null
+        },
+        "label": "why_company"
+    },
+    {
+        "features": {
+            "label": "What are your strengths?",
+            "name": "strengths",
+            "automationId": "strengths-textarea",
+            "placeholder": "List your Top 3",
+            "parentContext": "Self Assessment",
+            "siblingContext": null
+        },
+        "label": "strengths"
+    },
+    {
+        "features": {
+            "label": "Key Strengths",
+            "name": "keyStrengths",
+            "automationId": "qa-strengths",
+            "placeholder": "Your strengths",
+            "parentContext": "Personality",
+            "siblingContext": null
+        },
+        "label": "strengths"
+    },
+    {
+        "features": {
+            "label": "Ihre Stärken",
+            "name": "wd-Strengths",
+            "automationId": "input-staerken",
+            "placeholder": "Top 3 Stärken",
+            "parentContext": "Selbsteinschätzung",
+            "siblingContext": "Optional"
+        },
+        "label": "strengths"
+    },
+    {
+        "features": {
+            "label": "Fortalezas",
+            "name": "fortalezas_es",
+            "automationId": "lever-strengths",
+            "placeholder": "Sus fortalezas",
+            "parentContext": "Autoevaluación",
+            "siblingContext": "Opcional"
+        },
+        "label": "strengths"
+    },
+    {
+        "features": {
+            "label": "Points forts",
+            "name": "pointsForts_fr",
+            "automationId": "gh-strengths",
+            "placeholder": "Vos forces",
+            "parentContext": "Auto-évaluation",
+            "siblingContext": "Facultatif"
+        },
+        "label": "strengths"
+    },
+    {
+        "features": {
+            "label": "Top Skills",
+            "name": "topSkills",
+            "automationId": "input-top-skills",
+            "placeholder": "Your best skills",
+            "parentContext": "Abilities",
+            "siblingContext": null
+        },
+        "label": "strengths"
+    },
+    {
+        "features": {
+            "label": "What are your weaknesses?",
+            "name": "weaknesses",
+            "automationId": "weaknesses-textarea",
+            "placeholder": "Areas for improvement",
+            "parentContext": "Self Assessment",
+            "siblingContext": null
+        },
+        "label": "weaknesses"
+    },
+    {
+        "features": {
+            "label": "Areas of Development",
+            "name": "areasOfDev",
+            "automationId": "qa-weaknesses",
+            "placeholder": "Your weaknesses",
+            "parentContext": "Growth",
+            "siblingContext": null
+        },
+        "label": "weaknesses"
+    },
+    {
+        "features": {
+            "label": "Ihre Schwächen",
+            "name": "wd-Weaknesses",
+            "automationId": "input-schwaechen",
+            "placeholder": "Verbesserungspotenzial",
+            "parentContext": "Selbsteinschätzung",
+            "siblingContext": "Optional"
+        },
+        "label": "weaknesses"
+    },
+    {
+        "features": {
+            "label": "Debilidades",
+            "name": "debilidades_es",
+            "automationId": "lever-weaknesses",
+            "placeholder": "Áreas de mejora",
+            "parentContext": "Autoevaluación",
+            "siblingContext": "Opcional"
+        },
+        "label": "weaknesses"
+    },
+    {
+        "features": {
+            "label": "Points faibles",
+            "name": "pointsFaibles_fr",
+            "automationId": "gh-weaknesses",
+            "placeholder": "Domaines d'amélioration",
+            "parentContext": "Auto-évaluation",
+            "siblingContext": "Facultatif"
+        },
+        "label": "weaknesses"
+    },
+    {
+        "features": {
+            "label": "Development Areas",
+            "name": "devAreas",
+            "automationId": "input-dev",
+            "placeholder": "What to improve",
+            "parentContext": "Growth",
+            "siblingContext": null
+        },
+        "label": "weaknesses"
+    },
+    {
+        "features": {
+            "label": "Describe a challenge you've overcome",
+            "name": "challenge",
+            "automationId": "challenge-textarea",
+            "placeholder": "Tell your story",
+            "parentContext": "Behavioral Questions",
+            "siblingContext": null
+        },
+        "label": "challenge"
+    },
+    {
+        "features": {
+            "label": "Biggest Challenge",
+            "name": "biggestChallenge",
+            "automationId": "qa-challenge",
+            "placeholder": "Your experience",
+            "parentContext": "Stories",
+            "siblingContext": null
+        },
+        "label": "challenge"
+    },
+    {
+        "features": {
+            "label": "Beschreiben Sie eine Herausforderung",
+            "name": "wd-Challenge",
+            "automationId": "input-heraus",
+            "placeholder": "Ihre Geschichte",
+            "parentContext": "Erfahrungen",
+            "siblingContext": "Optional"
+        },
+        "label": "challenge"
+    },
+    {
+        "features": {
+            "label": "Desafío superado",
+            "name": "desafio_es",
+            "automationId": "lever-challenge",
+            "placeholder": "Su historia",
+            "parentContext": "Experiencias",
+            "siblingContext": "Opcional"
+        },
+        "label": "challenge"
+    },
+    {
+        "features": {
+            "label": "Défi surmonté",
+            "name": "defi_fr",
+            "automationId": "gh-challenge",
+            "placeholder": "Votre histoire",
+            "parentContext": "Expériences",
+            "siblingContext": "Facultatif"
+        },
+        "label": "challenge"
+    },
+    {
+        "features": {
+            "label": "Difficult Situation",
+            "name": "difficultSituation",
+            "automationId": "input-difficult",
+            "placeholder": "Describe",
+            "parentContext": "Behavioral",
+            "siblingContext": null
+        },
+        "label": "challenge"
+    },
+    {
+        "features": {
+            "label": "Where do you see yourself in 5 years?",
+            "name": "fiveYears",
+            "automationId": "five-years-textarea",
+            "placeholder": "Your career goals",
+            "parentContext": "Career Goals",
+            "siblingContext": null
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "Career Goals",
+            "name": "careerGoals",
+            "automationId": "qa-goals",
+            "placeholder": "Future aspirations",
+            "parentContext": "Vision",
+            "siblingContext": null
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "Karriereziele",
+            "name": "wd-CareerGoals",
+            "automationId": "input-ziele",
+            "placeholder": "In 5 Jahren",
+            "parentContext": "Zukunft",
+            "siblingContext": "Optional"
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "Objetivos profesionales",
+            "name": "objetivos_es",
+            "automationId": "lever-goals",
+            "placeholder": "En 5 años",
+            "parentContext": "Carrera",
+            "siblingContext": "Opcional"
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "Objectifs de carrière",
+            "name": "objectifs_fr",
+            "automationId": "gh-goals",
+            "placeholder": "Dans 5 ans",
+            "parentContext": "Carrière",
+            "siblingContext": "Facultatif"
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "Future Plans",
+            "name": "futurePlans",
+            "automationId": "input-future",
+            "placeholder": "Your vision",
+            "parentContext": "Aspirations",
+            "siblingContext": null
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "Desired Job Level",
+            "name": "desiredLevel",
+            "automationId": "level-select",
+            "placeholder": "Entry / Mid / Senior",
+            "parentContext": "Preferences",
+            "siblingContext": "Optional"
+        },
+        "label": "job_level"
+    },
+    {
+        "features": {
+            "label": "Seniority Level",
+            "name": "seniorityLevel",
+            "automationId": "qa-level",
+            "placeholder": "Your level",
+            "parentContext": "Experience",
+            "siblingContext": null
+        },
+        "label": "job_level"
+    },
+    {
+        "features": {
+            "label": "Gewünschte Ebene",
+            "name": "wd-Level",
+            "automationId": "input-ebene",
+            "placeholder": "Junior / Mid / Senior",
+            "parentContext": "Präferenzen",
+            "siblingContext": "Optional"
+        },
+        "label": "job_level"
+    },
+    {
+        "features": {
+            "label": "Nivel deseado",
+            "name": "nivel_es",
+            "automationId": "lever-level",
+            "placeholder": "Junior / Mid / Senior",
+            "parentContext": "Preferencias",
+            "siblingContext": "Opcional"
+        },
+        "label": "job_level"
+    },
+    {
+        "features": {
+            "label": "Niveau souhaité",
+            "name": "niveau_fr",
+            "automationId": "gh-level",
+            "placeholder": "Junior / Intermédiaire / Senior",
+            "parentContext": "Préférences",
+            "siblingContext": "Facultatif"
+        },
+        "label": "job_level"
+    },
+    {
+        "features": {
+            "label": "Experience Level",
+            "name": "expLevel",
+            "automationId": "input-exp-level",
+            "placeholder": "Select",
+            "parentContext": "Profile",
+            "siblingContext": null
+        },
+        "label": "job_level"
+    },
+    {
+        "features": {
+            "label": "Years of Experience *",
+            "name": "yearsExperience",
+            "automationId": "years-exp-input",
+            "placeholder": "Total years",
+            "parentContext": "Background",
+            "siblingContext": "Required"
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Total Work Experience",
+            "name": "totalExp",
+            "automationId": "qa-years",
+            "placeholder": "In years",
+            "parentContext": "Professional History",
+            "siblingContext": null
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Berufserfahrung (Jahre) *",
+            "name": "wd-YearsExp",
+            "automationId": "input-jahre",
+            "placeholder": "Anzahl Jahre",
+            "parentContext": "Erfahrung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Años de experiencia *",
+            "name": "anyosExp_es",
+            "automationId": "lever-years",
+            "placeholder": "Número de años",
+            "parentContext": "Experiencia",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Années d'expérience *",
+            "name": "anneesExp_fr",
+            "automationId": "gh-years",
+            "placeholder": "Nombre d'années",
+            "parentContext": "Expérience",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Experience (Years)",
+            "name": "expYears",
+            "automationId": "input-years",
+            "placeholder": "Number",
+            "parentContext": "Qualifications",
+            "siblingContext": null
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Highest Degree Earned *",
+            "name": "highestDegree",
+            "automationId": "degree-select",
+            "placeholder": "Select degree",
+            "parentContext": "Education",
+            "siblingContext": "Required"
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Education Level",
+            "name": "eduLevel",
+            "automationId": "qa-degree",
+            "placeholder": "Your highest degree",
+            "parentContext": "Academic",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Höchster Abschluss *",
+            "name": "wd-Degree",
+            "automationId": "input-abschluss",
+            "placeholder": "Abschluss wählen",
+            "parentContext": "Bildung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Nivel educativo *",
+            "name": "nivelEdu_es",
+            "automationId": "lever-degree",
+            "placeholder": "Seleccionar",
+            "parentContext": "Educación",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Niveau d'études *",
+            "name": "niveauEtudes_fr",
+            "automationId": "gh-degree",
+            "placeholder": "Sélectionner",
+            "parentContext": "Formation",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Qualification",
+            "name": "qualification",
+            "automationId": "input-qual",
+            "placeholder": "Degree",
+            "parentContext": "Education",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Major / Field of Study *",
+            "name": "majorField",
+            "automationId": "major-input",
+            "placeholder": "e.g. Computer Science",
+            "parentContext": "Education",
+            "siblingContext": "Required"
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Field of Study",
+            "name": "fieldStudy",
+            "automationId": "qa-major",
+            "placeholder": "Your major",
+            "parentContext": "Academic",
+            "siblingContext": null
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Studienfach *",
+            "name": "wd-Major",
+            "automationId": "input-fach",
+            "placeholder": "z.B. Informatik",
+            "parentContext": "Bildung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Especialidad *",
+            "name": "especialidad_es",
+            "automationId": "lever-major",
+            "placeholder": "p.ej. Ingeniería",
+            "parentContext": "Educación",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Domaine d'études *",
+            "name": "domaineEtudes_fr",
+            "automationId": "gh-major",
+            "placeholder": "p.ex. Informatique",
+            "parentContext": "Formation",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Concentration",
+            "name": "concentration",
+            "automationId": "input-concentration",
+            "placeholder": "Field",
+            "parentContext": "Education",
+            "siblingContext": null
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Honors / Awards",
+            "name": "honors",
+            "automationId": "honors-input",
+            "placeholder": "Academic honors",
+            "parentContext": "Education",
+            "siblingContext": "Optional"
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Academic Honors",
+            "name": "academicHonors",
+            "automationId": "qa-honors",
+            "placeholder": "Any awards?",
+            "parentContext": "Achievements",
+            "siblingContext": null
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Auszeichnungen",
+            "name": "wd-Honors",
+            "automationId": "input-auszeichnungen",
+            "placeholder": "Akademische Auszeichnungen",
+            "parentContext": "Leistungen",
+            "siblingContext": "Optional"
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Honores / Premios",
+            "name": "honores_es",
+            "automationId": "lever-honors",
+            "placeholder": "Premios académicos",
+            "parentContext": "Logros",
+            "siblingContext": "Opcional"
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Distinctions",
+            "name": "distinctions_fr",
+            "automationId": "gh-honors",
+            "placeholder": "Prix académiques",
+            "parentContext": "Réalisations",
+            "siblingContext": "Facultatif"
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Awards",
+            "name": "awards",
+            "automationId": "input-awards",
+            "placeholder": "List awards",
+            "parentContext": "Recognition",
+            "siblingContext": null
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Publications",
+            "name": "publications",
+            "automationId": "pubs-input",
+            "placeholder": "Research or articles",
+            "parentContext": "Academic Contributions",
+            "siblingContext": "Optional"
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "Published Work",
+            "name": "publishedWork",
+            "automationId": "qa-pubs",
+            "placeholder": "Your publications",
+            "parentContext": "Research",
+            "siblingContext": null
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "Publikationen",
+            "name": "wd-Publications",
+            "automationId": "input-publikationen",
+            "placeholder": "Forschung oder Artikel",
+            "parentContext": "Akademische Beiträge",
+            "siblingContext": "Optional"
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "Publicaciones",
+            "name": "publicaciones_es",
+            "automationId": "lever-pubs",
+            "placeholder": "Investigación o artículos",
+            "parentContext": "Investigación",
+            "siblingContext": "Opcional"
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "Publications",
+            "name": "publications_fr",
+            "automationId": "gh-pubs",
+            "placeholder": "Recherche ou articles",
+            "parentContext": "Recherche",
+            "siblingContext": "Facultatif"
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "Research Papers",
+            "name": "researchPapers",
+            "automationId": "input-research",
+            "placeholder": "Papers",
+            "parentContext": "Academic",
+            "siblingContext": null
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "How did you hear about this position? *",
+            "name": "howHeard",
+            "automationId": "how-heard-select",
+            "placeholder": "Select source",
+            "parentContext": "Application",
+            "siblingContext": "Required"
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Source of Application",
+            "name": "appSource",
+            "automationId": "qa-source",
+            "placeholder": "Where did you see this?",
+            "parentContext": "Tracking",
+            "siblingContext": null
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Wie haben Sie von dieser Stelle erfahren? *",
+            "name": "wd-Source",
+            "automationId": "input-quelle-stelle",
+            "placeholder": "Quelle wählen",
+            "parentContext": "Bewerbung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "¿Cómo se enteró? *",
+            "name": "comoEntero_es",
+            "automationId": "lever-heard",
+            "placeholder": "Seleccionar fuente",
+            "parentContext": "Solicitud",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Comment avez-vous entendu parler? *",
+            "name": "comment_fr",
+            "automationId": "gh-heard",
+            "placeholder": "Sélectionner source",
+            "parentContext": "Candidature",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Job Source",
+            "name": "jobSource",
+            "automationId": "input-job-source",
+            "placeholder": "Source",
+            "parentContext": "Analytics",
+            "siblingContext": null
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Referral Name",
+            "name": "referralName",
+            "automationId": "referral-name-input",
+            "placeholder": "Who referred you?",
+            "parentContext": "Referral",
+            "siblingContext": "If applicable"
+        },
+        "label": "referral_name"
+    },
+    {
+        "features": {
+            "label": "Employee Referral",
+            "name": "empReferral",
+            "automationId": "qa-referral",
+            "placeholder": "Name of employee",
+            "parentContext": "Internal",
+            "siblingContext": null
+        },
+        "label": "referral_name"
+    },
+    {
+        "features": {
+            "label": "Empfehlungsgeber",
+            "name": "wd-Referral",
+            "automationId": "input-empfehlung",
+            "placeholder": "Name der Person",
+            "parentContext": "Empfehlung",
+            "siblingContext": "Falls zutreffend"
+        },
+        "label": "referral_name"
+    },
+    {
+        "features": {
+            "label": "Nombre del referente",
+            "name": "nombreRef_es",
+            "automationId": "lever-referral",
+            "placeholder": "¿Quién le refirió?",
+            "parentContext": "Referencia",
+            "siblingContext": "Si aplica"
+        },
+        "label": "referral_name"
+    },
+    {
+        "features": {
+            "label": "Nom du référent",
+            "name": "nomRef_fr",
+            "automationId": "gh-referral",
+            "placeholder": "Qui vous a référé?",
+            "parentContext": "Référence",
+            "siblingContext": "Si applicable"
+        },
+        "label": "referral_name"
+    },
+    {
+        "features": {
+            "label": "Referred By",
+            "name": "referredBy",
+            "automationId": "input-referred",
+            "placeholder": "Name",
+            "parentContext": "Source",
+            "siblingContext": null
+        },
+        "label": "referral_name"
+    },
+    {
+        "features": {
+            "label": "Referral Code",
+            "name": "referralCode",
+            "automationId": "referral-code-input",
+            "placeholder": "Enter code",
+            "parentContext": "Referral",
+            "siblingContext": "Optional"
+        },
+        "label": "referral_code"
+    },
+    {
+        "features": {
+            "label": "Promo Code",
+            "name": "promoCode",
+            "automationId": "qa-code",
+            "placeholder": "Referral/promo code",
+            "parentContext": "Marketing",
+            "siblingContext": null
+        },
+        "label": "referral_code"
+    },
+    {
+        "features": {
+            "label": "Empfehlungscode",
+            "name": "wd-RefCode",
+            "automationId": "input-code",
+            "placeholder": "Code eingeben",
+            "parentContext": "Empfehlung",
+            "siblingContext": "Optional"
+        },
+        "label": "referral_code"
+    },
+    {
+        "features": {
+            "label": "Código de referencia",
+            "name": "codigoRef_es",
+            "automationId": "lever-code",
+            "placeholder": "Ingrese código",
+            "parentContext": "Referencia",
+            "siblingContext": "Opcional"
+        },
+        "label": "referral_code"
+    },
+    {
+        "features": {
+            "label": "Code de parrainage",
+            "name": "codeParrain_fr",
+            "automationId": "gh-code",
+            "placeholder": "Entrer code",
+            "parentContext": "Référence",
+            "siblingContext": "Facultatif"
+        },
+        "label": "referral_code"
+    },
+    {
+        "features": {
+            "label": "Ref Code",
+            "name": "refCode",
+            "automationId": "input-ref-code",
+            "placeholder": "Code",
+            "parentContext": "Tracking",
+            "siblingContext": null
+        },
+        "label": "referral_code"
+    },
+    {
+        "features": {
+            "label": "Are you 18 or older? *",
+            "name": "ageVerify",
+            "automationId": "age-verify-checkbox",
+            "placeholder": null,
+            "parentContext": "Legal",
+            "siblingContext": "Required"
+        },
+        "label": "age_verification"
+    },
+    {
+        "features": {
+            "label": "I am at least 18 years old",
+            "name": "over18",
+            "automationId": "qa-age",
+            "placeholder": null,
+            "parentContext": "Compliance",
+            "siblingContext": null
+        },
+        "label": "age_verification"
+    },
+    {
+        "features": {
+            "label": "Ich bin mindestens 18 Jahre alt *",
+            "name": "wd-AgeVerify",
+            "automationId": "input-alter",
+            "placeholder": null,
+            "parentContext": "Recht",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "age_verification"
+    },
+    {
+        "features": {
+            "label": "Tengo al menos 18 años *",
+            "name": "mayorEdad_es",
+            "automationId": "lever-age",
+            "placeholder": null,
+            "parentContext": "Legal",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "age_verification"
+    },
+    {
+        "features": {
+            "label": "J'ai au moins 18 ans *",
+            "name": "majeur_fr",
+            "automationId": "gh-age",
+            "placeholder": null,
+            "parentContext": "Légal",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "age_verification"
+    },
+    {
+        "features": {
+            "label": "Age Confirmation",
+            "name": "ageConfirm",
+            "automationId": "input-age-confirm",
+            "placeholder": null,
+            "parentContext": "Verification",
+            "siblingContext": null
+        },
+        "label": "age_verification"
+    },
+    {
+        "features": {
+            "label": "Have you worked for us before? *",
+            "name": "workedBefore",
+            "automationId": "worked-before-select",
+            "placeholder": "Yes / No",
+            "parentContext": "Employment History",
+            "siblingContext": "Required"
+        },
+        "label": "previous_employment"
+    },
+    {
+        "features": {
+            "label": "Previous Employee",
+            "name": "prevEmployee",
+            "automationId": "qa-prev-emp",
+            "placeholder": "Have you worked here?",
+            "parentContext": "History",
+            "siblingContext": null
+        },
+        "label": "previous_employment"
+    },
+    {
+        "features": {
+            "label": "Haben Sie schon für uns gearbeitet? *",
+            "name": "wd-PrevEmp",
+            "automationId": "input-fruher",
+            "placeholder": "Ja / Nein",
+            "parentContext": "Beschäftigungshistorie",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "previous_employment"
+    },
+    {
+        "features": {
+            "label": "¿Ha trabajado aquí antes? *",
+            "name": "trabajoAntes_es",
+            "automationId": "lever-prev",
+            "placeholder": "Sí / No",
+            "parentContext": "Historial",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "previous_employment"
+    },
+    {
+        "features": {
+            "label": "Avez-vous déjà travaillé ici? *",
+            "name": "travailleAvant_fr",
+            "automationId": "gh-prev",
+            "placeholder": "Oui / Non",
+            "parentContext": "Historique",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "previous_employment"
+    },
+    {
+        "features": {
+            "label": "Former Employee",
+            "name": "formerEmp",
+            "automationId": "input-former",
+            "placeholder": "Select",
+            "parentContext": "Background",
+            "siblingContext": null
+        },
+        "label": "previous_employment"
+    },
+    {
+        "features": {
+            "label": "Submitted By (if not applicant)",
+            "name": "submittedBy",
+            "automationId": "submitted-by-input",
+            "placeholder": "Recruiter name",
+            "parentContext": "Application Meta",
+            "siblingContext": "Optional"
+        },
+        "label": "submitted_by"
+    },
+    {
+        "features": {
+            "label": "Recruiting Agency",
+            "name": "recruitingAgency",
+            "automationId": "qa-agency",
+            "placeholder": "Agency name",
+            "parentContext": "Source",
+            "siblingContext": null
+        },
+        "label": "submitted_by"
+    },
+    {
+        "features": {
+            "label": "Eingereicht von",
+            "name": "wd-SubmittedBy",
+            "automationId": "input-eingereicht",
+            "placeholder": "Name des Recruiters",
+            "parentContext": "Meta",
+            "siblingContext": "Optional"
+        },
+        "label": "submitted_by"
+    },
+    {
+        "features": {
+            "label": "Presentado por",
+            "name": "presentadoPor_es",
+            "automationId": "lever-submitted",
+            "placeholder": "Nombre del reclutador",
+            "parentContext": "Meta",
+            "siblingContext": "Opcional"
+        },
+        "label": "submitted_by"
+    },
+    {
+        "features": {
+            "label": "Soumis par",
+            "name": "soumisPar_fr",
+            "automationId": "gh-submitted",
+            "placeholder": "Nom du recruteur",
+            "parentContext": "Meta",
+            "siblingContext": "Facultatif"
+        },
+        "label": "submitted_by"
+    },
+    {
+        "features": {
+            "label": "Agent Name",
+            "name": "agentName",
+            "automationId": "input-agent",
+            "placeholder": "Submitter",
+            "parentContext": "Third Party",
+            "siblingContext": null
+        },
+        "label": "submitted_by"
+    }
+]

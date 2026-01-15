@@ -1,0 +1,706 @@
+[
+    {
+        "features": {
+            "label": "Job Title *",
+            "name": "jobTitle",
+            "automationId": "job-title-input",
+            "placeholder": "Your position",
+            "parentContext": "Experience",
+            "siblingContext": "Required"
+        },
+        "label": "job_title"
+    },
+    {
+        "features": {
+            "label": "Position Held",
+            "name": "positionHeld",
+            "automationId": "qa-job-title",
+            "placeholder": "Title",
+            "parentContext": "Work History",
+            "siblingContext": null
+        },
+        "label": "job_title"
+    },
+    {
+        "features": {
+            "label": "Berufsbezeichnung *",
+            "name": "berufsbezeichnung",
+            "automationId": "input-job-title",
+            "placeholder": "Position",
+            "parentContext": "Erfahrung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "job_title"
+    },
+    {
+        "features": {
+            "label": "Título del puesto",
+            "name": "tituloPuesto",
+            "automationId": "lever-job-title",
+            "placeholder": "Su puesto",
+            "parentContext": "Experiencia",
+            "siblingContext": "Opcional"
+        },
+        "label": "job_title"
+    },
+    {
+        "features": {
+            "label": "Company Name *",
+            "name": "companyName",
+            "automationId": "company-name-input",
+            "placeholder": "Employer",
+            "parentContext": "Experience",
+            "siblingContext": "Required"
+        },
+        "label": "company_name"
+    },
+    {
+        "features": {
+            "label": "Organization",
+            "name": "organization",
+            "automationId": "qa-company",
+            "placeholder": "Company",
+            "parentContext": "Work History",
+            "siblingContext": null
+        },
+        "label": "company_name"
+    },
+    {
+        "features": {
+            "label": "Firmenname *",
+            "name": "firmenname",
+            "automationId": "input-company-name",
+            "placeholder": "Arbeitgeber",
+            "parentContext": "Erfahrung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "company_name"
+    },
+    {
+        "features": {
+            "label": "Nombre de empresa",
+            "name": "nombreEmpresa",
+            "automationId": "lever-company-name",
+            "placeholder": "Empleador",
+            "parentContext": "Experiencia",
+            "siblingContext": "Opcional"
+        },
+        "label": "company_name"
+    },
+    {
+        "features": {
+            "label": "Start Date *",
+            "name": "startDate",
+            "automationId": "start-date-input",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Experience",
+            "siblingContext": "When you started"
+        },
+        "label": "job_start_date"
+    },
+    {
+        "features": {
+            "label": "From Date",
+            "name": "fromDate",
+            "automationId": "qa-start-date",
+            "placeholder": "Start",
+            "parentContext": "Employment",
+            "siblingContext": null
+        },
+        "label": "job_start_date"
+    },
+    {
+        "features": {
+            "label": "Beginn",
+            "name": "beginn",
+            "automationId": "input-start-date",
+            "placeholder": "MM/JJJJ",
+            "parentContext": "Beschäftigung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "job_start_date"
+    },
+    {
+        "features": {
+            "label": "Fecha inicio",
+            "name": "fechaInicio",
+            "automationId": "lever-start-date",
+            "placeholder": "MM/AAAA",
+            "parentContext": "Empleo",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "job_start_date"
+    },
+    {
+        "features": {
+            "label": "End Date",
+            "name": "endDate",
+            "automationId": "end-date-input",
+            "placeholder": "MM/YYYY or Present",
+            "parentContext": "Experience",
+            "siblingContext": "Leave blank if current"
+        },
+        "label": "job_end_date"
+    },
+    {
+        "features": {
+            "label": "To Date",
+            "name": "toDate",
+            "automationId": "qa-end-date",
+            "placeholder": "End",
+            "parentContext": "Employment",
+            "siblingContext": null
+        },
+        "label": "job_end_date"
+    },
+    {
+        "features": {
+            "label": "Ende",
+            "name": "ende",
+            "automationId": "input-end-date",
+            "placeholder": "MM/JJJJ",
+            "parentContext": "Beschäftigung",
+            "siblingContext": "Aktuell?"
+        },
+        "label": "job_end_date"
+    },
+    {
+        "features": {
+            "label": "Fecha fin",
+            "name": "fechaFin",
+            "automationId": "lever-end-date",
+            "placeholder": "MM/AAAA",
+            "parentContext": "Empleo",
+            "siblingContext": "Presente?"
+        },
+        "label": "job_end_date"
+    },
+    {
+        "features": {
+            "label": "Currently working here",
+            "name": "currentlyWorking",
+            "automationId": "current-job-checkbox",
+            "placeholder": null,
+            "parentContext": "Experience",
+            "siblingContext": "Check if current"
+        },
+        "label": "job_current"
+    },
+    {
+        "features": {
+            "label": "Present position",
+            "name": "presentPosition",
+            "automationId": "qa-current-job",
+            "placeholder": null,
+            "parentContext": "Employment",
+            "siblingContext": null
+        },
+        "label": "job_current"
+    },
+    {
+        "features": {
+            "label": "Aktuelle Position",
+            "name": "aktuellePosition",
+            "automationId": "input-current-job",
+            "placeholder": null,
+            "parentContext": "Beschäftigung",
+            "siblingContext": "Ankreuzen"
+        },
+        "label": "job_current"
+    },
+    {
+        "features": {
+            "label": "Empleo actual",
+            "name": "empleoActual",
+            "automationId": "lever-current-job",
+            "placeholder": null,
+            "parentContext": "Empleo",
+            "siblingContext": "Marcar"
+        },
+        "label": "job_current"
+    },
+    {
+        "features": {
+            "label": "Responsibilities",
+            "name": "responsibilities",
+            "automationId": "responsibilities-textarea",
+            "placeholder": "Describe your duties",
+            "parentContext": "Experience",
+            "siblingContext": "Max 500 words"
+        },
+        "label": "job_description"
+    },
+    {
+        "features": {
+            "label": "Job Duties",
+            "name": "jobDuties",
+            "automationId": "qa-job-description",
+            "placeholder": "What did you do?",
+            "parentContext": "Work History",
+            "siblingContext": null
+        },
+        "label": "job_description"
+    },
+    {
+        "features": {
+            "label": "Aufgaben",
+            "name": "aufgaben",
+            "automationId": "input-job-description",
+            "placeholder": "Beschreibung",
+            "parentContext": "Erfahrung",
+            "siblingContext": "Optional"
+        },
+        "label": "job_description"
+    },
+    {
+        "features": {
+            "label": "Responsabilidades",
+            "name": "responsabilidades",
+            "automationId": "lever-job-description",
+            "placeholder": "Sus tareas",
+            "parentContext": "Experiencia",
+            "siblingContext": "Opcional"
+        },
+        "label": "job_description"
+    },
+    {
+        "features": {
+            "label": "Degree *",
+            "name": "degree",
+            "automationId": "degree-select",
+            "placeholder": "Select degree",
+            "parentContext": "Education",
+            "siblingContext": "Required"
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Academic Degree",
+            "name": "academicDegree",
+            "automationId": "qa-degree",
+            "placeholder": "Your degree",
+            "parentContext": "Academic",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Abschluss *",
+            "name": "abschluss",
+            "automationId": "input-degree",
+            "placeholder": "Abschluss wählen",
+            "parentContext": "Bildung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Título",
+            "name": "titulo",
+            "automationId": "lever-degree",
+            "placeholder": "Su título",
+            "parentContext": "Educación",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Field of Study *",
+            "name": "fieldOfStudy",
+            "automationId": "field-input",
+            "placeholder": "e.g. Computer Science",
+            "parentContext": "Education",
+            "siblingContext": "Required"
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Major",
+            "name": "major",
+            "automationId": "qa-major",
+            "placeholder": "Your major",
+            "parentContext": "Academic",
+            "siblingContext": null
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Studienfach",
+            "name": "studienfach",
+            "automationId": "input-major",
+            "placeholder": "z.B. Informatik",
+            "parentContext": "Bildung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Especialidad",
+            "name": "especialidad",
+            "automationId": "lever-major",
+            "placeholder": "Su especialidad",
+            "parentContext": "Educación",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Graduation Date *",
+            "name": "graduationDate",
+            "automationId": "grad-date-input",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Education",
+            "siblingContext": "When you graduated"
+        },
+        "label": "graduation_date"
+    },
+    {
+        "features": {
+            "label": "Date of Graduation",
+            "name": "dateOfGraduation",
+            "automationId": "qa-grad-date",
+            "placeholder": "Grad date",
+            "parentContext": "Academic",
+            "siblingContext": null
+        },
+        "label": "graduation_date"
+    },
+    {
+        "features": {
+            "label": "Abschlussdatum",
+            "name": "abschlussdatum",
+            "automationId": "input-grad-date",
+            "placeholder": "MM/JJJJ",
+            "parentContext": "Bildung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "graduation_date"
+    },
+    {
+        "features": {
+            "label": "Fecha de graduación",
+            "name": "fechaGraduacion",
+            "automationId": "lever-grad-date",
+            "placeholder": "MM/AAAA",
+            "parentContext": "Educación",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "graduation_date"
+    },
+    {
+        "features": {
+            "label": "GPA",
+            "name": "gpa",
+            "automationId": "gpa-input",
+            "placeholder": "3.8",
+            "parentContext": "Education",
+            "siblingContext": "On 4.0 scale"
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Grade Average",
+            "name": "gradeAverage",
+            "automationId": "qa-gpa",
+            "placeholder": "Your GPA",
+            "parentContext": "Academic Performance",
+            "siblingContext": null
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Notendurchschnitt",
+            "name": "notendurchschnitt",
+            "automationId": "input-gpa",
+            "placeholder": "z.B. 1.5",
+            "parentContext": "Bildung",
+            "siblingContext": "Optional"
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Promedio",
+            "name": "promedio",
+            "automationId": "lever-gpa",
+            "placeholder": "p.ej. 8.5",
+            "parentContext": "Educación",
+            "siblingContext": "Opcional"
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Skills *",
+            "name": "skills",
+            "automationId": "skills-input",
+            "placeholder": "List your skills",
+            "parentContext": "Qualifications",
+            "siblingContext": "Comma separated"
+        },
+        "label": "skills"
+    },
+    {
+        "features": {
+            "label": "Core Competencies",
+            "name": "coreCompetencies",
+            "automationId": "qa-skills",
+            "placeholder": "Your skills",
+            "parentContext": "Abilities",
+            "siblingContext": null
+        },
+        "label": "skills"
+    },
+    {
+        "features": {
+            "label": "Fähigkeiten",
+            "name": "faehigkeiten",
+            "automationId": "input-skills",
+            "placeholder": "Ihre Fähigkeiten",
+            "parentContext": "Qualifikationen",
+            "siblingContext": "Kommagetrennt"
+        },
+        "label": "skills"
+    },
+    {
+        "features": {
+            "label": "Habilidades",
+            "name": "habilidades",
+            "automationId": "lever-skills",
+            "placeholder": "Sus habilidades",
+            "parentContext": "Competencias",
+            "siblingContext": "Separadas por comas"
+        },
+        "label": "skills"
+    },
+    {
+        "features": {
+            "label": "Years of Experience *",
+            "name": "yearsOfExperience",
+            "automationId": "years-exp-input",
+            "placeholder": "Total years",
+            "parentContext": "Background",
+            "siblingContext": "Required"
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Total Experience",
+            "name": "totalExperience",
+            "automationId": "qa-years-exp",
+            "placeholder": "In years",
+            "parentContext": "Career",
+            "siblingContext": null
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Jahre Erfahrung",
+            "name": "jahreErfahrung",
+            "automationId": "input-years-exp",
+            "placeholder": "Anzahl",
+            "parentContext": "Hintergrund",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Años de experiencia",
+            "name": "anyosExperiencia",
+            "automationId": "lever-years-exp",
+            "placeholder": "Total",
+            "parentContext": "Carrera",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Certifications",
+            "name": "certifications",
+            "automationId": "certs-input",
+            "placeholder": "AWS, PMP, etc.",
+            "parentContext": "Qualifications",
+            "siblingContext": "Optional"
+        },
+        "label": "certifications"
+    },
+    {
+        "features": {
+            "label": "Professional Credentials",
+            "name": "professionalCredentials",
+            "automationId": "qa-certs",
+            "placeholder": "Your certs",
+            "parentContext": "Credentials",
+            "siblingContext": null
+        },
+        "label": "certifications"
+    },
+    {
+        "features": {
+            "label": "Zertifizierungen",
+            "name": "zertifizierungen",
+            "automationId": "input-certs",
+            "placeholder": "Ihre Zertifikate",
+            "parentContext": "Qualifikationen",
+            "siblingContext": "Optional"
+        },
+        "label": "certifications"
+    },
+    {
+        "features": {
+            "label": "Certificaciones",
+            "name": "certificaciones",
+            "automationId": "lever-certs",
+            "placeholder": "Sus certificados",
+            "parentContext": "Credenciales",
+            "siblingContext": "Opcional"
+        },
+        "label": "certifications"
+    },
+    {
+        "features": {
+            "label": "Languages",
+            "name": "languages",
+            "automationId": "languages-input",
+            "placeholder": "English, Spanish...",
+            "parentContext": "Skills",
+            "siblingContext": "Languages you speak"
+        },
+        "label": "languages"
+    },
+    {
+        "features": {
+            "label": "Language Proficiency",
+            "name": "languageProficiency",
+            "automationId": "qa-languages",
+            "placeholder": "Your languages",
+            "parentContext": "Communication",
+            "siblingContext": null
+        },
+        "label": "languages"
+    },
+    {
+        "features": {
+            "label": "Sprachen",
+            "name": "sprachen",
+            "automationId": "input-languages",
+            "placeholder": "Ihre Sprachen",
+            "parentContext": "Fähigkeiten",
+            "siblingContext": "Optional"
+        },
+        "label": "languages"
+    },
+    {
+        "features": {
+            "label": "Idiomas",
+            "name": "idiomas",
+            "automationId": "lever-languages",
+            "placeholder": "Sus idiomas",
+            "parentContext": "Comunicación",
+            "siblingContext": "Opcional"
+        },
+        "label": "languages"
+    },
+    {
+        "features": {
+            "label": "Honors/Awards",
+            "name": "honorsAwards",
+            "automationId": "honors-input",
+            "placeholder": "Academic honors",
+            "parentContext": "Education",
+            "siblingContext": "Optional"
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Academic Distinctions",
+            "name": "academicDistinctions",
+            "automationId": "qa-honors",
+            "placeholder": "Any awards?",
+            "parentContext": "Achievements",
+            "siblingContext": null
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Auszeichnungen",
+            "name": "auszeichnungen",
+            "automationId": "input-honors",
+            "placeholder": "Ihre Auszeichnungen",
+            "parentContext": "Bildung",
+            "siblingContext": "Optional"
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Honores",
+            "name": "honores",
+            "automationId": "lever-honors",
+            "placeholder": "Sus premios",
+            "parentContext": "Logros",
+            "siblingContext": "Opcional"
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Publications",
+            "name": "publications",
+            "automationId": "pubs-input",
+            "placeholder": "Research publications",
+            "parentContext": "Academic",
+            "siblingContext": "Optional"
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "Research Output",
+            "name": "researchOutput",
+            "automationId": "qa-pubs",
+            "placeholder": "Your publications",
+            "parentContext": "Scholarship",
+            "siblingContext": null
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "Publikationen",
+            "name": "publikationen",
+            "automationId": "input-pubs",
+            "placeholder": "Ihre Publikationen",
+            "parentContext": "Forschung",
+            "siblingContext": "Optional"
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "Publicaciones",
+            "name": "publicaciones",
+            "automationId": "lever-pubs",
+            "placeholder": "Sus publicaciones",
+            "parentContext": "Investigación",
+            "siblingContext": "Opcional"
+        },
+        "label": "publications"
+    }
+]

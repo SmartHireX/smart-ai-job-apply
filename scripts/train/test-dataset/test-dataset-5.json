@@ -1,0 +1,662 @@
+[
+    {
+        "features": {
+            "label": "Portfolio URL",
+            "name": "portfolioUrl",
+            "automationId": "portfolio-input",
+            "placeholder": "yourportfolio.com",
+            "parentContext": "Links",
+            "siblingContext": "Your work"
+        },
+        "label": "portfolio_url"
+    },
+    {
+        "features": {
+            "label": "Personal Website",
+            "name": "personalWebsite",
+            "automationId": "qa-portfolio",
+            "placeholder": "Portfolio link",
+            "parentContext": "Professional Links",
+            "siblingContext": null
+        },
+        "label": "portfolio_url"
+    },
+    {
+        "features": {
+            "label": "Portfolio",
+            "name": "portfolio",
+            "automationId": "input-portfolio",
+            "placeholder": "URL",
+            "parentContext": "Links",
+            "siblingContext": "Optional"
+        },
+        "label": "portfolio_url"
+    },
+    {
+        "features": {
+            "label": "Twitter/X",
+            "name": "twitterHandle",
+            "automationId": "twitter-input",
+            "placeholder": "@username",
+            "parentContext": "Social",
+            "siblingContext": "Optional"
+        },
+        "label": "twitter_url"
+    },
+    {
+        "features": {
+            "label": "X Profile",
+            "name": "xProfile",
+            "automationId": "qa-twitter",
+            "placeholder": "Your X",
+            "parentContext": "Social Media",
+            "siblingContext": null
+        },
+        "label": "twitter_url"
+    },
+    {
+        "features": {
+            "label": "Twitter",
+            "name": "twitter",
+            "automationId": "input-twitter",
+            "placeholder": "@handle",
+            "parentContext": "Soziale Medien",
+            "siblingContext": "Optional"
+        },
+        "label": "twitter_url"
+    },
+    {
+        "features": {
+            "label": "Instagram",
+            "name": "instagram",
+            "automationId": "instagram-input",
+            "placeholder": "@username",
+            "parentContext": "Social",
+            "siblingContext": "Optional"
+        },
+        "label": "instagram_url"
+    },
+    {
+        "features": {
+            "label": "IG Handle",
+            "name": "igHandle",
+            "automationId": "qa-instagram",
+            "placeholder": "Your Instagram",
+            "parentContext": "Social Media",
+            "siblingContext": null
+        },
+        "label": "instagram_url"
+    },
+    {
+        "features": {
+            "label": "Instagram-Handle",
+            "name": "instagramHandle",
+            "automationId": "input-instagram",
+            "placeholder": "@name",
+            "parentContext": "Soziale Medien",
+            "siblingContext": "Optional"
+        },
+        "label": "instagram_url"
+    },
+    {
+        "features": {
+            "label": "YouTube Channel",
+            "name": "youtubeChannel",
+            "automationId": "youtube-input",
+            "placeholder": "Channel URL",
+            "parentContext": "Social",
+            "siblingContext": "Optional"
+        },
+        "label": "youtube_url"
+    },
+    {
+        "features": {
+            "label": "YT Channel",
+            "name": "ytChannel",
+            "automationId": "qa-youtube",
+            "placeholder": "Your YouTube",
+            "parentContext": "Content",
+            "siblingContext": null
+        },
+        "label": "youtube_url"
+    },
+    {
+        "features": {
+            "label": "YouTube",
+            "name": "youtube",
+            "automationId": "input-youtube",
+            "placeholder": "Kanal-URL",
+            "parentContext": "Soziale Medien",
+            "siblingContext": "Optional"
+        },
+        "label": "youtube_url"
+    },
+    {
+        "features": {
+            "label": "Cover Letter *",
+            "name": "coverLetter",
+            "automationId": "cover-letter-textarea",
+            "placeholder": "Why this role?",
+            "parentContext": "Application",
+            "siblingContext": "Required"
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Letter of Interest",
+            "name": "letterOfInterest",
+            "automationId": "qa-cover",
+            "placeholder": "Your motivation",
+            "parentContext": "Documents",
+            "siblingContext": null
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Anschreiben",
+            "name": "anschreiben",
+            "automationId": "input-cover",
+            "placeholder": "Motivation",
+            "parentContext": "Bewerbung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Why do you want to work here? *",
+            "name": "whyWorkHere",
+            "automationId": "why-here-textarea",
+            "placeholder": "Your answer",
+            "parentContext": "Questions",
+            "siblingContext": "Max 500 words"
+        },
+        "label": "why_company"
+    },
+    {
+        "features": {
+            "label": "Company Interest",
+            "name": "companyInterest",
+            "automationId": "qa-why",
+            "placeholder": "Tell us",
+            "parentContext": "Motivation",
+            "siblingContext": null
+        },
+        "label": "why_company"
+    },
+    {
+        "features": {
+            "label": "Warum wir?",
+            "name": "warumWir",
+            "automationId": "input-why",
+            "placeholder": "Ihre Antwort",
+            "parentContext": "Fragen",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "why_company"
+    },
+    {
+        "features": {
+            "label": "What are your strengths?",
+            "name": "strengths",
+            "automationId": "strengths-textarea",
+            "placeholder": "Top 3",
+            "parentContext": "Self Assessment",
+            "siblingContext": null
+        },
+        "label": "strengths"
+    },
+    {
+        "features": {
+            "label": "Key Strengths",
+            "name": "keyStrengths",
+            "automationId": "qa-strengths",
+            "placeholder": "Your strengths",
+            "parentContext": "Personality",
+            "siblingContext": null
+        },
+        "label": "strengths"
+    },
+    {
+        "features": {
+            "label": "Stärken",
+            "name": "staerken",
+            "automationId": "input-strengths",
+            "placeholder": "Top 3",
+            "parentContext": "Selbsteinschätzung",
+            "siblingContext": "Optional"
+        },
+        "label": "strengths"
+    },
+    {
+        "features": {
+            "label": "What are your weaknesses?",
+            "name": "weaknesses",
+            "automationId": "weaknesses-textarea",
+            "placeholder": "Areas for improvement",
+            "parentContext": "Self Assessment",
+            "siblingContext": null
+        },
+        "label": "weaknesses"
+    },
+    {
+        "features": {
+            "label": "Development Areas",
+            "name": "developmentAreas",
+            "automationId": "qa-weaknesses",
+            "placeholder": "Your weaknesses",
+            "parentContext": "Growth",
+            "siblingContext": null
+        },
+        "label": "weaknesses"
+    },
+    {
+        "features": {
+            "label": "Schwächen",
+            "name": "schwaechen",
+            "automationId": "input-weaknesses",
+            "placeholder": "Verbesserungspotenzial",
+            "parentContext": "Selbsteinschätzung",
+            "siblingContext": "Optional"
+        },
+        "label": "weaknesses"
+    },
+    {
+        "features": {
+            "label": "Describe a challenge",
+            "name": "challenge",
+            "automationId": "challenge-textarea",
+            "placeholder": "Tell your story",
+            "parentContext": "Behavioral",
+            "siblingContext": null
+        },
+        "label": "challenge"
+    },
+    {
+        "features": {
+            "label": "Biggest Challenge",
+            "name": "biggestChallenge",
+            "automationId": "qa-challenge",
+            "placeholder": "Your experience",
+            "parentContext": "Stories",
+            "siblingContext": null
+        },
+        "label": "challenge"
+    },
+    {
+        "features": {
+            "label": "Herausforderung",
+            "name": "herausforderung",
+            "automationId": "input-challenge",
+            "placeholder": "Geschichte",
+            "parentContext": "Erfahrungen",
+            "siblingContext": "Optional"
+        },
+        "label": "challenge"
+    },
+    {
+        "features": {
+            "label": "Career Goals",
+            "name": "careerGoals",
+            "automationId": "goals-textarea",
+            "placeholder": "Where do you see yourself in 5 years?",
+            "parentContext": "Vision",
+            "siblingContext": null
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "Future Aspirations",
+            "name": "futureAspirations",
+            "automationId": "qa-goals",
+            "placeholder": "Your goals",
+            "parentContext": "Aspirations",
+            "siblingContext": null
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "Karriereziele",
+            "name": "karriereziele",
+            "automationId": "input-goals",
+            "placeholder": "In 5 Jahren",
+            "parentContext": "Zukunft",
+            "siblingContext": "Optional"
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "How did you hear about us? *",
+            "name": "referralSource",
+            "automationId": "source-select",
+            "placeholder": "Select source",
+            "parentContext": "Application",
+            "siblingContext": "Required"
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Application Source",
+            "name": "applicationSource",
+            "automationId": "qa-source",
+            "placeholder": "Where from?",
+            "parentContext": "Tracking",
+            "siblingContext": null
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Quelle",
+            "name": "quelle",
+            "automationId": "input-source",
+            "placeholder": "Wählen",
+            "parentContext": "Bewerbung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Referral Name",
+            "name": "referralName",
+            "automationId": "referral-name-input",
+            "placeholder": "Who referred you?",
+            "parentContext": "Referral",
+            "siblingContext": "If applicable"
+        },
+        "label": "referral_name"
+    },
+    {
+        "features": {
+            "label": "Referred By",
+            "name": "referredBy",
+            "automationId": "qa-referral",
+            "placeholder": "Employee name",
+            "parentContext": "Internal",
+            "siblingContext": null
+        },
+        "label": "referral_name"
+    },
+    {
+        "features": {
+            "label": "Empfehlung von",
+            "name": "empfehlungVon",
+            "automationId": "input-referral",
+            "placeholder": "Name",
+            "parentContext": "Empfehlung",
+            "siblingContext": "Falls zutreffend"
+        },
+        "label": "referral_name"
+    },
+    {
+        "features": {
+            "label": "Referral Code",
+            "name": "referralCode",
+            "automationId": "code-input",
+            "placeholder": "Enter code",
+            "parentContext": "Referral",
+            "siblingContext": "Optional"
+        },
+        "label": "referral_code"
+    },
+    {
+        "features": {
+            "label": "Promo Code",
+            "name": "promoCode",
+            "automationId": "qa-code",
+            "placeholder": "Code",
+            "parentContext": "Marketing",
+            "siblingContext": null
+        },
+        "label": "referral_code"
+    },
+    {
+        "features": {
+            "label": "Code",
+            "name": "code",
+            "automationId": "input-code",
+            "placeholder": "Code",
+            "parentContext": "Empfehlung",
+            "siblingContext": "Optional"
+        },
+        "label": "referral_code"
+    },
+    {
+        "features": {
+            "label": "Full Name *",
+            "name": "fullName",
+            "automationId": "full-name-input",
+            "placeholder": "John Smith",
+            "parentContext": "Personal",
+            "siblingContext": "Required"
+        },
+        "label": "full_name"
+    },
+    {
+        "features": {
+            "label": "Complete Name",
+            "name": "completeName",
+            "automationId": "qa-fullname",
+            "placeholder": "First and last",
+            "parentContext": "Identity",
+            "siblingContext": null
+        },
+        "label": "full_name"
+    },
+    {
+        "features": {
+            "label": "Vollständiger Name",
+            "name": "vollstaendigerName",
+            "automationId": "input-fullname",
+            "placeholder": "Name",
+            "parentContext": "Persönliches",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "full_name"
+    },
+    {
+        "features": {
+            "label": "Middle Name",
+            "name": "middleName",
+            "automationId": "middle-input",
+            "placeholder": "Optional",
+            "parentContext": "Personal",
+            "siblingContext": null
+        },
+        "label": "middle_name"
+    },
+    {
+        "features": {
+            "label": "Middle Initial",
+            "name": "middleInitial",
+            "automationId": "qa-middle",
+            "placeholder": "M.I.",
+            "parentContext": "Name",
+            "siblingContext": null
+        },
+        "label": "middle_name"
+    },
+    {
+        "features": {
+            "label": "Zweiter Vorname",
+            "name": "zweiterVorname",
+            "automationId": "input-middle",
+            "placeholder": "Optional",
+            "parentContext": "Name",
+            "siblingContext": "Optional"
+        },
+        "label": "middle_name"
+    },
+    {
+        "features": {
+            "label": "Preferred Name",
+            "name": "preferredName",
+            "automationId": "preferred-input",
+            "placeholder": "Nickname",
+            "parentContext": "Personal",
+            "siblingContext": "What to call you"
+        },
+        "label": "preferred_name"
+    },
+    {
+        "features": {
+            "label": "Go By",
+            "name": "goBy",
+            "automationId": "qa-preferred",
+            "placeholder": "Preferred",
+            "parentContext": "Profile",
+            "siblingContext": null
+        },
+        "label": "preferred_name"
+    },
+    {
+        "features": {
+            "label": "Rufname",
+            "name": "rufname",
+            "automationId": "input-preferred",
+            "placeholder": "Spitzname",
+            "parentContext": "Persönliches",
+            "siblingContext": "Optional"
+        },
+        "label": "preferred_name"
+    },
+    {
+        "features": {
+            "label": "Headline",
+            "name": "headline",
+            "automationId": "headline-input",
+            "placeholder": "Senior Engineer",
+            "parentContext": "Profile",
+            "siblingContext": "Brief title"
+        },
+        "label": "headline"
+    },
+    {
+        "features": {
+            "label": "Professional Title",
+            "name": "professionalTitle",
+            "automationId": "qa-headline",
+            "placeholder": "Your tagline",
+            "parentContext": "Summary",
+            "siblingContext": null
+        },
+        "label": "headline"
+    },
+    {
+        "features": {
+            "label": "Kurzbeschreibung",
+            "name": "kurzbeschreibung",
+            "automationId": "input-headline",
+            "placeholder": "Titel",
+            "parentContext": "Profil",
+            "siblingContext": "In einem Satz"
+        },
+        "label": "headline"
+    },
+    {
+        "features": {
+            "label": "Summary",
+            "name": "summary",
+            "automationId": "summary-input",
+            "placeholder": "Career overview",
+            "parentContext": "Profile",
+            "siblingContext": "Max 300 words"
+        },
+        "label": "summary"
+    },
+    {
+        "features": {
+            "label": "About Me",
+            "name": "aboutMe",
+            "automationId": "qa-summary",
+            "placeholder": "About yourself",
+            "parentContext": "Profile",
+            "siblingContext": null
+        },
+        "label": "summary"
+    },
+    {
+        "features": {
+            "label": "Über mich",
+            "name": "ueberMich",
+            "automationId": "input-summary",
+            "placeholder": "Beschreibung",
+            "parentContext": "Profil",
+            "siblingContext": "Max 500 Zeichen"
+        },
+        "label": "summary"
+    },
+    {
+        "features": {
+            "label": "Secondary Email",
+            "name": "secondaryEmail",
+            "automationId": "alt-email-input",
+            "placeholder": "Backup email",
+            "parentContext": "Contact",
+            "siblingContext": "Optional"
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Alternative Email",
+            "name": "alternativeEmail",
+            "automationId": "qa-alt-email",
+            "placeholder": "Another email",
+            "parentContext": "Contact",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Zweit-E-Mail",
+            "name": "zweitEmail",
+            "automationId": "input-alt-email",
+            "placeholder": "Alternative",
+            "parentContext": "Kontakt",
+            "siblingContext": "Optional"
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Profile Photo",
+            "name": "profilePhoto",
+            "automationId": "photo-upload",
+            "placeholder": null,
+            "parentContext": "Profile",
+            "siblingContext": "Optional headshot"
+        },
+        "label": "profile_photo"
+    },
+    {
+        "features": {
+            "label": "Avatar",
+            "name": "avatar",
+            "automationId": "qa-photo",
+            "placeholder": "Upload",
+            "parentContext": "Personalization",
+            "siblingContext": null
+        },
+        "label": "profile_photo"
+    },
+    {
+        "features": {
+            "label": "Profilbild",
+            "name": "profilbild",
+            "automationId": "input-photo",
+            "placeholder": null,
+            "parentContext": "Profil",
+            "siblingContext": "Optional"
+        },
+        "label": "profile_photo"
+    }
+]

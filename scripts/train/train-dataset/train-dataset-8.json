@@ -1,0 +1,4457 @@
+[
+    {
+        "features": {
+            "label": "Search site...",
+            "name": "q",
+            "automationId": "top-nav-search",
+            "placeholder": "Enter keywords",
+            "parentContext": "Navigation",
+            "siblingContext": "Press Enter to search"
+        },
+        "label": "unknown"
+    },
+    {
+        "features": {
+            "label": "Sign up for newsletter",
+            "name": "chk_news",
+            "automationId": "footer-newsletter-optin",
+            "placeholder": null,
+            "parentContext": "Footer",
+            "siblingContext": "Get weekly updates"
+        },
+        "label": "unknown"
+    },
+    {
+        "features": {
+            "label": "Enter Coupon Code",
+            "name": "promo",
+            "automationId": "checkout-promo-input",
+            "placeholder": "SAVE20",
+            "parentContext": "Order Summary",
+            "siblingContext": "One code per order"
+        },
+        "label": "unknown"
+    },
+    {
+        "features": {
+            "label": "First Name *",
+            "name": "wd-Candidate-FirstName",
+            "automationId": "input-first-name",
+            "placeholder": "Jane",
+            "parentContext": "Personal Information",
+            "siblingContext": "Required field"
+        },
+        "label": "first_name"
+    },
+    {
+        "features": {
+            "label": "Vorname",
+            "name": "input_first_name_99",
+            "automationId": "react-select-2-input",
+            "placeholder": "z.B. Max",
+            "parentContext": "Kontaktinformationen",
+            "siblingContext": "Bitte geben Sie Ihren Vornamen an"
+        },
+        "label": "first_name"
+    },
+    {
+        "features": {
+            "label": "Prénom :",
+            "name": "ctl00_MainContent_txtFirstName",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Détails du profil",
+            "siblingContext": null
+        },
+        "label": "first_name"
+    },
+    {
+        "features": {
+            "label": "Middle Name",
+            "name": "wd-MiddleName-input",
+            "automationId": "data-qa-middle-name",
+            "placeholder": "Optional",
+            "parentContext": "Legal Name",
+            "siblingContext": null
+        },
+        "label": "middle_name"
+    },
+    {
+        "features": {
+            "label": "Segundo nombre",
+            "name": "ember442",
+            "automationId": null,
+            "placeholder": "Opcional",
+            "parentContext": "Identificación",
+            "siblingContext": null
+        },
+        "label": "middle_name"
+    },
+    {
+        "features": {
+            "label": "M.I.",
+            "name": "middle_initial",
+            "automationId": "test-id-mi",
+            "placeholder": "A",
+            "parentContext": "Candidate Detail",
+            "siblingContext": "Middle Initial"
+        },
+        "label": "middle_name"
+    },
+    {
+        "features": {
+            "label": "Last Name *",
+            "name": "wd-LastName",
+            "automationId": "last-name-field",
+            "placeholder": "Doe",
+            "parentContext": "Personal Details",
+            "siblingContext": "Must match legal ID"
+        },
+        "label": "last_name"
+    },
+    {
+        "features": {
+            "label": "Nachname",
+            "name": "family_name",
+            "automationId": "gh-input-lastname",
+            "placeholder": "Müller",
+            "parentContext": "Bewerberdaten",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "last_name"
+    },
+    {
+        "features": {
+            "label": "Apellidos :",
+            "name": "input_6_last",
+            "automationId": null,
+            "placeholder": "García",
+            "parentContext": "Información Personal",
+            "siblingContext": "Ingrese ambos si aplica"
+        },
+        "label": "last_name"
+    },
+    {
+        "features": {
+            "label": "Full Name *",
+            "name": "full_name_input",
+            "automationId": "lever-fullname",
+            "placeholder": "Enter your full name",
+            "parentContext": "Application",
+            "siblingContext": "First and last"
+        },
+        "label": "full_name"
+    },
+    {
+        "features": {
+            "label": "Nom complet",
+            "name": "field-102",
+            "automationId": "identity-full-name",
+            "placeholder": "Jean Dupont",
+            "parentContext": "Informations de base",
+            "siblingContext": null
+        },
+        "label": "full_name"
+    },
+    {
+        "features": {
+            "label": "Complete Name",
+            "name": "react-input-name",
+            "automationId": "qa-full-name",
+            "placeholder": null,
+            "parentContext": "Account Setup",
+            "siblingContext": "Provide legal name"
+        },
+        "label": "full_name"
+    },
+    {
+        "features": {
+            "label": "Preferred Name",
+            "name": "nickname",
+            "automationId": "preferred-name-field",
+            "placeholder": "e.g. 'AJ'",
+            "parentContext": "Personal Details",
+            "siblingContext": "What should we call you?"
+        },
+        "label": "preferred_name"
+    },
+    {
+        "features": {
+            "label": "Alias / Known As",
+            "name": "wd-PreferredName",
+            "automationId": "data-id-preferred",
+            "placeholder": null,
+            "parentContext": "Candidate Info",
+            "siblingContext": "Optional"
+        },
+        "label": "preferred_name"
+    },
+    {
+        "features": {
+            "label": "Nombre preferido",
+            "name": "input_pref_name",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Perfil",
+            "siblingContext": "Cómo prefiere ser llamado"
+        },
+        "label": "preferred_name"
+    },
+    {
+        "features": {
+            "label": "Headline",
+            "name": "profile_headline",
+            "automationId": "gh-headline",
+            "placeholder": "Fullstack Engineer with 5 years experience",
+            "parentContext": "Professional Summary",
+            "siblingContext": "Briefly describe your professional identity"
+        },
+        "label": "headline"
+    },
+    {
+        "features": {
+            "label": "Personal Tagline",
+            "name": "tagline",
+            "automationId": "lever-headline",
+            "placeholder": "Software Architect | AWS Certified",
+            "parentContext": "Public Profile",
+            "siblingContext": null
+        },
+        "label": "headline"
+    },
+    {
+        "features": {
+            "label": "Encabezado del perfil",
+            "name": "input_headline_react",
+            "automationId": "qa-profile-title",
+            "placeholder": "p. ej. Desarrollador Senior",
+            "parentContext": "Información Profesional",
+            "siblingContext": null
+        },
+        "label": "headline"
+    },
+    {
+        "features": {
+            "label": "Summary",
+            "name": "about_me",
+            "automationId": "summary-textarea",
+            "placeholder": "Tell us about yourself...",
+            "parentContext": "Profile Info",
+            "siblingContext": "Max 500 characters"
+        },
+        "label": "summary"
+    },
+    {
+        "features": {
+            "label": "Professional Bio",
+            "name": "wd-Bio",
+            "automationId": "input-bio",
+            "placeholder": "Experience in...",
+            "parentContext": "Application Summary",
+            "siblingContext": null
+        },
+        "label": "summary"
+    },
+    {
+        "features": {
+            "label": "Zusammenfassung",
+            "name": "bio_text",
+            "automationId": "gh-bio",
+            "placeholder": "Kurze Beschreibung Ihrer Karriere",
+            "parentContext": "Berufliches Profil",
+            "siblingContext": null
+        },
+        "label": "summary"
+    },
+    {
+        "features": {
+            "label": "Profile Photo",
+            "name": "avatar_upload",
+            "automationId": "profile-pic-btn",
+            "placeholder": null,
+            "parentContext": "Account Settings",
+            "siblingContext": "JPG or PNG, max 2MB"
+        },
+        "label": "profile_photo"
+    },
+    {
+        "features": {
+            "label": "Photo d'identité",
+            "name": "photo_file",
+            "automationId": "data-qa-photo",
+            "placeholder": null,
+            "parentContext": "Paramètres",
+            "siblingContext": "Uploader votre image"
+        },
+        "label": "profile_photo"
+    },
+    {
+        "features": {
+            "label": "Headshot",
+            "name": "wd-PhotoUpload",
+            "automationId": "input-headshot",
+            "placeholder": null,
+            "parentContext": "Personalization",
+            "siblingContext": "Optional"
+        },
+        "label": "profile_photo"
+    },
+    {
+        "features": {
+            "label": "Email Address *",
+            "name": "email_primary",
+            "automationId": "email-field",
+            "placeholder": "example@email.com",
+            "parentContext": "Contact Details",
+            "siblingContext": "We will use this for all communication"
+        },
+        "label": "email"
+    },
+    {
+        "features": {
+            "label": "Correo electrónico",
+            "name": "user_email",
+            "automationId": "lever-email",
+            "placeholder": "nombre@correo.com",
+            "parentContext": "Información de contacto",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "email"
+    },
+    {
+        "features": {
+            "label": "E-Mail-Adresse",
+            "name": "wd-CandidateEmail",
+            "automationId": "gh-input-email",
+            "placeholder": null,
+            "parentContext": "Bewerbung",
+            "siblingContext": null
+        },
+        "label": "email"
+    },
+    {
+        "features": {
+            "label": "Secondary Email",
+            "name": "email_alt",
+            "automationId": "alt-email",
+            "placeholder": "backup@email.com",
+            "parentContext": "Contact Info",
+            "siblingContext": "Optional"
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Alternative E-Mail",
+            "name": "wd-SecondaryEmail",
+            "automationId": "data-qa-alt-email",
+            "placeholder": null,
+            "parentContext": "Kontakt",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Email 2",
+            "name": "input_email_2",
+            "automationId": "test-id-email2",
+            "placeholder": null,
+            "parentContext": "Personal Info",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Phone Number *",
+            "name": "phone_main",
+            "automationId": "gh-phone",
+            "placeholder": "+1 555-0123",
+            "parentContext": "Contact",
+            "siblingContext": "Include country code"
+        },
+        "label": "phone"
+    },
+    {
+        "features": {
+            "label": "Téléphone",
+            "name": "ctl00_Main_txtPhone",
+            "automationId": "qa-phone-input",
+            "placeholder": null,
+            "parentContext": "Coordonnées",
+            "siblingContext": "Format: 0612345678"
+        },
+        "label": "phone"
+    },
+    {
+        "features": {
+            "label": "Teléfono de contacto",
+            "name": "phone_number",
+            "automationId": "lever-phone",
+            "placeholder": null,
+            "parentContext": "Datos Personales",
+            "siblingContext": null
+        },
+        "label": "phone"
+    },
+    {
+        "features": {
+            "label": "Mobile Phone",
+            "name": "wd-MobileNumber",
+            "automationId": "mobile-field",
+            "placeholder": "555-555-5555",
+            "parentContext": "Contact Details",
+            "siblingContext": "Can we text you?"
+        },
+        "label": "phone_mobile"
+    },
+    {
+        "features": {
+            "label": "Handynummer",
+            "name": "mobile_phone",
+            "automationId": "gh-mobile",
+            "placeholder": null,
+            "parentContext": "Kontakt",
+            "siblingContext": null
+        },
+        "label": "phone_mobile"
+    },
+    {
+        "features": {
+            "label": "Celular",
+            "name": "cell_phone",
+            "automationId": "test-id-cell",
+            "placeholder": null,
+            "parentContext": "Personal Info",
+            "siblingContext": null
+        },
+        "label": "phone_mobile"
+    },
+    {
+        "features": {
+            "label": "Home Phone",
+            "name": "phone_home_field",
+            "automationId": "home-phone-input",
+            "placeholder": null,
+            "parentContext": "Contact Info",
+            "siblingContext": null
+        },
+        "label": "phone_home"
+    },
+    {
+        "features": {
+            "label": "Téléphone fixe",
+            "name": "wd-HomePhone",
+            "automationId": "qa-home-phone",
+            "placeholder": null,
+            "parentContext": "Coordonnées",
+            "siblingContext": null
+        },
+        "label": "phone_home"
+    },
+    {
+        "features": {
+            "label": "Teléfono fijo",
+            "name": "landline",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Información Personal",
+            "siblingContext": null
+        },
+        "label": "phone_home"
+    },
+    {
+        "features": {
+            "label": "LinkedIn Profile URL",
+            "name": "linkedin",
+            "automationId": "gh-linkedin",
+            "placeholder": "[https://linkedin.com/in/username](https://www.google.com/search?q=https://linkedin.com/in/username)",
+            "parentContext": "Social Networks",
+            "siblingContext": null
+        },
+        "label": "linkedin_url"
+    },
+    {
+        "features": {
+            "label": "LinkedIn Profile",
+            "name": "wd-LinkedIn-URL",
+            "automationId": "data-qa-linkedin",
+            "placeholder": "URL",
+            "parentContext": "Links",
+            "siblingContext": "Highly recommended"
+        },
+        "label": "linkedin_url"
+    },
+    {
+        "features": {
+            "label": "Enlace LinkedIn",
+            "name": "lever-linkedin",
+            "automationId": "input-linkedin",
+            "placeholder": null,
+            "parentContext": "Perfiles Sociales",
+            "siblingContext": null
+        },
+        "label": "linkedin_url"
+    },
+    {
+        "features": {
+            "label": "GitHub URL",
+            "name": "github_link",
+            "automationId": "gh-github",
+            "placeholder": "[github.com/yourhandle](https://github.com/yourhandle)",
+            "parentContext": "Developer Profile",
+            "siblingContext": "Link to your code repos"
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "GitHub Profile",
+            "name": "github_url_field",
+            "automationId": "qa-github",
+            "placeholder": null,
+            "parentContext": "Links",
+            "siblingContext": null
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "Compte GitHub",
+            "name": "wd-GitHub",
+            "automationId": null,
+            "placeholder": "https://...",
+            "parentContext": "Réseaux sociaux",
+            "siblingContext": null
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "Portfolio URL",
+            "name": "portfolio_link",
+            "automationId": "gh-portfolio",
+            "placeholder": "yourportfolio.com",
+            "parentContext": "Attachments & Links",
+            "siblingContext": "Showcase your work"
+        },
+        "label": "portfolio_url"
+    },
+    {
+        "features": {
+            "label": "Personal Portfolio",
+            "name": "wd-Portfolio",
+            "automationId": "data-qa-portfolio",
+            "placeholder": "https://",
+            "parentContext": "Links",
+            "siblingContext": null
+        },
+        "label": "portfolio_url"
+    },
+    {
+        "features": {
+            "label": "Enlace de portafolio",
+            "name": "portfolio_url",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Información adicional",
+            "siblingContext": null
+        },
+        "label": "portfolio_url"
+    },
+    {
+        "features": {
+            "label": "Personal Website",
+            "name": "website",
+            "automationId": "gh-website",
+            "placeholder": "https://",
+            "parentContext": "Social Presence",
+            "siblingContext": null
+        },
+        "label": "website_url"
+    },
+    {
+        "features": {
+            "label": "Website URL",
+            "name": "wd-Website-URL",
+            "automationId": "qa-website",
+            "placeholder": null,
+            "parentContext": "External Links",
+            "siblingContext": null
+        },
+        "label": "website_url"
+    },
+    {
+        "features": {
+            "label": "Site Web",
+            "name": "personal_site",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Profil",
+            "siblingContext": null
+        },
+        "label": "website_url"
+    },
+    {
+        "features": {
+            "label": "Twitter Profile",
+            "name": "twitter_link",
+            "automationId": "gh-twitter",
+            "placeholder": "@username",
+            "parentContext": "Social Links",
+            "siblingContext": null
+        },
+        "label": "twitter_url"
+    },
+    {
+        "features": {
+            "label": "X (Twitter) URL",
+            "name": "wd-Twitter",
+            "automationId": "qa-twitter",
+            "placeholder": null,
+            "parentContext": "External Links",
+            "siblingContext": null
+        },
+        "label": "twitter_url"
+    },
+    {
+        "features": {
+            "label": "Enlace Twitter",
+            "name": "input_twitter",
+            "automationId": null,
+            "placeholder": "[twitter.com/](https://twitter.com/)...",
+            "parentContext": "Redes Sociales",
+            "siblingContext": null
+        },
+        "label": "twitter_url"
+    },
+    {
+        "features": {
+            "label": "Facebook URL",
+            "name": "fb_link",
+            "automationId": "qa-facebook",
+            "placeholder": null,
+            "parentContext": "Social Profiles",
+            "siblingContext": null
+        },
+        "label": "facebook_url"
+    },
+    {
+        "features": {
+            "label": "Lien Facebook",
+            "name": "facebook_url_field",
+            "automationId": null,
+            "placeholder": "[facebook.com/](https://facebook.com/)...",
+            "parentContext": "Profil",
+            "siblingContext": null
+        },
+        "label": "facebook_url"
+    },
+    {
+        "features": {
+            "label": "Facebook Profile",
+            "name": "wd-Facebook",
+            "automationId": "gh-fb",
+            "placeholder": null,
+            "parentContext": "External Media",
+            "siblingContext": null
+        },
+        "label": "facebook_url"
+    },
+    {
+        "features": {
+            "label": "Instagram Handle",
+            "name": "insta_url",
+            "automationId": "qa-insta",
+            "placeholder": "[instagram.com/](https://instagram.com/)...",
+            "parentContext": "Social",
+            "siblingContext": null
+        },
+        "label": "instagram_url"
+    },
+    {
+        "features": {
+            "label": "Instagram Profile",
+            "name": "wd-Instagram",
+            "automationId": "gh-instagram",
+            "placeholder": null,
+            "parentContext": "Links",
+            "siblingContext": null
+        },
+        "label": "instagram_url"
+    },
+    {
+        "features": {
+            "label": "Enlace de Instagram",
+            "name": "ig_link",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Redes Sociales",
+            "siblingContext": null
+        },
+        "label": "instagram_url"
+    },
+    {
+        "features": {
+            "label": "Google Scholar Link",
+            "name": "scholar_url",
+            "automationId": "qa-scholar",
+            "placeholder": "[scholar.google.com/citations?user=](https://scholar.google.com/citations?user=)...",
+            "parentContext": "Academic Profile",
+            "siblingContext": "Optional for researchers"
+        },
+        "label": "google_scholar_url"
+    },
+    {
+        "features": {
+            "label": "Google Scholar URL",
+            "name": "wd-ScholarURL",
+            "automationId": "gh-scholar",
+            "placeholder": null,
+            "parentContext": "Education & Research",
+            "siblingContext": null
+        },
+        "label": "google_scholar_url"
+    },
+    {
+        "features": {
+            "label": "Enlace Google Scholar",
+            "name": "scholar_profile",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Publicaciones",
+            "siblingContext": null
+        },
+        "label": "google_scholar_url"
+    },
+    {
+        "features": {
+            "label": "Other Website",
+            "name": "other_url_1",
+            "automationId": "qa-other-url",
+            "placeholder": "https://",
+            "parentContext": "Additional Links",
+            "siblingContext": "Blogs, personal projects, etc."
+        },
+        "label": "other_url"
+    },
+    {
+        "features": {
+            "label": "Sonstiger Link",
+            "name": "misc_url",
+            "automationId": "gh-other-link",
+            "placeholder": null,
+            "parentContext": "Profile Links",
+            "siblingContext": null
+        },
+        "label": "other_url"
+    },
+    {
+        "features": {
+            "label": "Autre lien URL",
+            "name": "wd-OtherURL",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Liens externes",
+            "siblingContext": null
+        },
+        "label": "other_url"
+    },
+    {
+        "features": {
+            "label": "Address Line 1 *",
+            "name": "address_1",
+            "automationId": "gh-address-1",
+            "placeholder": "Street address, P.O. box",
+            "parentContext": "Location Details",
+            "siblingContext": null
+        },
+        "label": "address_line_1"
+    },
+    {
+        "features": {
+            "label": "Street Address",
+            "name": "wd-AddressLine1",
+            "automationId": "qa-street-address",
+            "placeholder": "Enter your street address",
+            "parentContext": "Primary Address",
+            "siblingContext": "Required"
+        },
+        "label": "address_line_1"
+    },
+    {
+        "features": {
+            "label": "Dirección (Calle y Número)",
+            "name": "calle_numero",
+            "automationId": "lever-address1",
+            "placeholder": null,
+            "parentContext": "Ubicación",
+            "siblingContext": null
+        },
+        "label": "address_line_1"
+    },
+    {
+        "features": {
+            "label": "Address Line 2",
+            "name": "address_2",
+            "automationId": "gh-address-2",
+            "placeholder": "Apartment, suite, unit, building, floor, etc.",
+            "parentContext": "Location Details",
+            "siblingContext": "Optional"
+        },
+        "label": "address_line_2"
+    },
+    {
+        "features": {
+            "label": "Suite / Apt / Other",
+            "name": "wd-AddressLine2",
+            "automationId": "qa-apt-suite",
+            "placeholder": null,
+            "parentContext": "Primary Address",
+            "siblingContext": null
+        },
+        "label": "address_line_2"
+    },
+    {
+        "features": {
+            "label": "Piso / Departamento",
+            "name": "address_extra",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Dirección",
+            "siblingContext": null
+        },
+        "label": "address_line_2"
+    },
+    {
+        "features": {
+            "label": "City *",
+            "name": "city",
+            "automationId": "gh-city",
+            "placeholder": "e.g. San Francisco",
+            "parentContext": "Address Information",
+            "siblingContext": null
+        },
+        "label": "city"
+    },
+    {
+        "features": {
+            "label": "Stadt",
+            "name": "wd-City",
+            "automationId": "qa-city",
+            "placeholder": "Berlin",
+            "parentContext": "Standort",
+            "siblingContext": null
+        },
+        "label": "city"
+    },
+    {
+        "features": {
+            "label": "Ville",
+            "name": "town_city",
+            "automationId": "lever-city",
+            "placeholder": null,
+            "parentContext": "Adresse",
+            "siblingContext": null
+        },
+        "label": "city"
+    },
+    {
+        "features": {
+            "label": "State / Province *",
+            "name": "state_province",
+            "automationId": "gh-state",
+            "placeholder": "Select State",
+            "parentContext": "Address Information",
+            "siblingContext": null
+        },
+        "label": "state"
+    },
+    {
+        "features": {
+            "label": "Estado / Región",
+            "name": "wd-State",
+            "automationId": "qa-state",
+            "placeholder": null,
+            "parentContext": "Ubicación",
+            "siblingContext": null
+        },
+        "label": "state"
+    },
+    {
+        "features": {
+            "label": "Bundesland",
+            "name": "input-state-1",
+            "automationId": "lever-state",
+            "placeholder": "z.B. Bayern",
+            "parentContext": "Adresse",
+            "siblingContext": null
+        },
+        "label": "state"
+    },
+    {
+        "features": {
+            "label": "Zip / Postal Code *",
+            "name": "zip_code",
+            "automationId": "gh-zip",
+            "placeholder": "94105",
+            "parentContext": "Address Information",
+            "siblingContext": null
+        },
+        "label": "zip_code"
+    },
+    {
+        "features": {
+            "label": "Postleitzahl",
+            "name": "wd-PostalCode",
+            "automationId": "qa-zip",
+            "placeholder": "10115",
+            "parentContext": "Anschrift",
+            "siblingContext": null
+        },
+        "label": "zip_code"
+    },
+    {
+        "features": {
+            "label": "Código Postal",
+            "name": "postal_code_field",
+            "automationId": "lever-zip",
+            "placeholder": null,
+            "parentContext": "Domicilio",
+            "siblingContext": null
+        },
+        "label": "zip_code"
+    },
+    {
+        "features": {
+            "label": "Country *",
+            "name": "country_select",
+            "automationId": "gh-country",
+            "placeholder": "Select Country",
+            "parentContext": "Address Information",
+            "siblingContext": null
+        },
+        "label": "country"
+    },
+    {
+        "features": {
+            "label": "Land",
+            "name": "wd-CountryCode",
+            "automationId": "qa-country",
+            "placeholder": null,
+            "parentContext": "Standort",
+            "siblingContext": null
+        },
+        "label": "country"
+    },
+    {
+        "features": {
+            "label": "Pays",
+            "name": "country_input",
+            "automationId": "lever-country",
+            "placeholder": "France",
+            "parentContext": "Adresse",
+            "siblingContext": null
+        },
+        "label": "country"
+    },
+    {
+        "features": {
+            "label": "Current Location",
+            "name": "location_current",
+            "automationId": "gh-current-location",
+            "placeholder": "City, State",
+            "parentContext": "Contact Info",
+            "siblingContext": "Where are you based?"
+        },
+        "label": "current_location"
+    },
+    {
+        "features": {
+            "label": "Ubicación actual",
+            "name": "wd-CurrentLocation",
+            "automationId": "qa-location",
+            "placeholder": null,
+            "parentContext": "Resumen",
+            "siblingContext": null
+        },
+        "label": "current_location"
+    },
+    {
+        "features": {
+            "label": "Where do you live?",
+            "name": "live_at",
+            "automationId": "lever-location",
+            "placeholder": "e.g. London, UK",
+            "parentContext": "Candidate Info",
+            "siblingContext": null
+        },
+        "label": "current_location"
+    },
+    {
+        "features": {
+            "label": "Timezone",
+            "name": "timezone_select",
+            "automationId": "gh-timezone",
+            "placeholder": "(GMT-08:00) Pacific Time",
+            "parentContext": "Preferences",
+            "siblingContext": "Used for scheduling interviews"
+        },
+        "label": "timezone"
+    },
+    {
+        "features": {
+            "label": "Zeitzone",
+            "name": "wd-Timezone",
+            "automationId": "qa-timezone",
+            "placeholder": null,
+            "parentContext": "Einstellungen",
+            "siblingContext": null
+        },
+        "label": "timezone"
+    },
+    {
+        "features": {
+            "label": "Fuseau horaire",
+            "name": "tz_input",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Disponibilité",
+            "siblingContext": null
+        },
+        "label": "timezone"
+    },
+    {
+        "features": {
+            "label": "Are you willing to relocate? *",
+            "name": "relocation_opt",
+            "automationId": "gh-relocation",
+            "placeholder": "-- Select --",
+            "parentContext": "Preferences",
+            "siblingContext": "Relocation assistance may be available"
+        },
+        "label": "relocation"
+    },
+    {
+        "features": {
+            "label": "¿Está dispuesto a mudarse?",
+            "name": "wd-Relocation",
+            "automationId": "qa-relocate",
+            "placeholder": null,
+            "parentContext": "Preguntas de solicitud",
+            "siblingContext": null
+        },
+        "label": "relocation"
+    },
+    {
+        "features": {
+            "label": "Willingness to relocate",
+            "name": "can_relocate",
+            "automationId": "lever-relocation",
+            "placeholder": "Yes / No / Maybe",
+            "parentContext": "Candidate Questionnaire",
+            "siblingContext": null
+        },
+        "label": "relocation"
+    },
+    {
+        "features": {
+            "label": "Preferred Location(s)",
+            "name": "location_preferences",
+            "automationId": "gh-pref-location",
+            "placeholder": "e.g. New York, remote",
+            "parentContext": "Work Preferences",
+            "siblingContext": "Separate with commas"
+        },
+        "label": "preferred_location"
+    },
+    {
+        "features": {
+            "label": "Desired Office",
+            "name": "wd-PreferredOffice",
+            "automationId": "qa-office-pref",
+            "placeholder": "Select location",
+            "parentContext": "Future Role",
+            "siblingContext": null
+        },
+        "label": "preferred_location"
+    },
+    {
+        "features": {
+            "label": "Ubicación deseada",
+            "name": "input-pref-loc-9",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Preferencias de trabajo",
+            "siblingContext": null
+        },
+        "label": "preferred_location"
+    },
+    {
+        "features": {
+            "label": "Job Title",
+            "name": "job_title_input",
+            "automationId": "gh-job-title",
+            "placeholder": "Software Engineer",
+            "parentContext": "Work Experience",
+            "siblingContext": "Include level if known"
+        },
+        "label": "job_title"
+    },
+    {
+        "features": {
+            "label": "Puesto",
+            "name": "wd-JobTitle",
+            "automationId": "qa-title",
+            "placeholder": "p. ej. Gerente",
+            "parentContext": "Historial Laboral",
+            "siblingContext": null
+        },
+        "label": "job_title"
+    },
+    {
+        "features": {
+            "label": "Titre du poste",
+            "name": "exp_title",
+            "automationId": "lever-title",
+            "placeholder": "Analyste",
+            "parentContext": "Expérience professionnelle",
+            "siblingContext": null
+        },
+        "label": "job_title"
+    },
+    {
+        "features": {
+            "label": "Current Job Title",
+            "name": "current_title_field",
+            "automationId": "gh-current-title",
+            "placeholder": "Product Manager",
+            "parentContext": "Current Employment",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Berufsbezeichnung (aktuell)",
+            "name": "wd-CurrentJobTitle",
+            "automationId": "qa-current-title",
+            "placeholder": null,
+            "parentContext": "Derzeitige Position",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "What is your current role?",
+            "name": "input_current_role",
+            "automationId": null,
+            "placeholder": "e.g. Senior Dev",
+            "parentContext": "Profile Info",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Company / Employer *",
+            "name": "employer",
+            "automationId": "gh-employer",
+            "placeholder": "Acme Corp",
+            "parentContext": "Experience",
+            "siblingContext": null
+        },
+        "label": "employer_name"
+    },
+    {
+        "features": {
+            "label": "Arbeitgeber",
+            "name": "wd-EmployerName",
+            "automationId": "qa-employer",
+            "placeholder": null,
+            "parentContext": "Berufserfahrung",
+            "siblingContext": null
+        },
+        "label": "employer_name"
+    },
+    {
+        "features": {
+            "label": "Nom de l'entreprise",
+            "name": "company_name",
+            "automationId": "lever-company",
+            "placeholder": "Google, Inc.",
+            "parentContext": "Expérience",
+            "siblingContext": null
+        },
+        "label": "employer_name"
+    },
+    {
+        "features": {
+            "label": "Current Company",
+            "name": "current_company_input",
+            "automationId": "gh-current-company",
+            "placeholder": "Where do you work now?",
+            "parentContext": "Current Role",
+            "siblingContext": null
+        },
+        "label": "current_company"
+    },
+    {
+        "features": {
+            "label": "Empresa actual",
+            "name": "wd-CurrentCompany",
+            "automationId": "qa-curr-comp",
+            "placeholder": null,
+            "parentContext": "Empleo actual",
+            "siblingContext": null
+        },
+        "label": "current_company"
+    },
+    {
+        "features": {
+            "label": "Current Employer",
+            "name": "input_curr_emp",
+            "automationId": "lever-curr-comp",
+            "placeholder": null,
+            "parentContext": "Profile Summary",
+            "siblingContext": null
+        },
+        "label": "current_company"
+    },
+    {
+        "features": {
+            "label": "Start Date",
+            "name": "job_start",
+            "automationId": "gh-start-date",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Experience Details",
+            "siblingContext": null
+        },
+        "label": "job_start_date"
+    },
+    {
+        "features": {
+            "label": "Fecha de inicio",
+            "name": "wd-StartDate",
+            "automationId": "qa-start",
+            "placeholder": "DD/MM/AAAA",
+            "parentContext": "Historial",
+            "siblingContext": null
+        },
+        "label": "job_start_date"
+    },
+    {
+        "features": {
+            "label": "From",
+            "name": "exp_from",
+            "automationId": "lever-from",
+            "placeholder": "Month Year",
+            "parentContext": "Work History",
+            "siblingContext": null
+        },
+        "label": "job_start_date"
+    },
+    {
+        "features": {
+            "label": "End Date",
+            "name": "job_end",
+            "automationId": "gh-end-date",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Experience Details",
+            "siblingContext": "Leave blank if current"
+        },
+        "label": "job_end_date"
+    },
+    {
+        "features": {
+            "label": "Fecha de finalización",
+            "name": "wd-EndDate",
+            "automationId": "qa-end",
+            "placeholder": "DD/MM/AAAA",
+            "parentContext": "Historial",
+            "siblingContext": null
+        },
+        "label": "job_end_date"
+    },
+    {
+        "features": {
+            "label": "To",
+            "name": "exp_to",
+            "automationId": "lever-to",
+            "placeholder": "Present",
+            "parentContext": "Work History",
+            "siblingContext": null
+        },
+        "label": "job_end_date"
+    },
+    {
+        "features": {
+            "label": "I currently work here",
+            "name": "is_current_job",
+            "automationId": "gh-current-checkbox",
+            "placeholder": null,
+            "parentContext": "Job Detail",
+            "siblingContext": null
+        },
+        "label": "job_current"
+    },
+    {
+        "features": {
+            "label": "Trabajo actual",
+            "name": "wd-IsCurrent",
+            "automationId": "qa-current-chk",
+            "placeholder": null,
+            "parentContext": "Experiencia",
+            "siblingContext": null
+        },
+        "label": "job_current"
+    },
+    {
+        "features": {
+            "label": "Current position?",
+            "name": "input_current_pos",
+            "automationId": "lever-current",
+            "placeholder": null,
+            "parentContext": "Employment",
+            "siblingContext": null
+        },
+        "label": "job_current"
+    },
+    {
+        "features": {
+            "label": "Job Description",
+            "name": "description_text",
+            "automationId": "gh-description",
+            "placeholder": "Key responsibilities and achievements",
+            "parentContext": "Work History",
+            "siblingContext": "Keep it concise"
+        },
+        "label": "job_description"
+    },
+    {
+        "features": {
+            "label": "Descripción del puesto",
+            "name": "wd-JobDescription",
+            "automationId": "qa-desc",
+            "placeholder": null,
+            "parentContext": "Detalles del empleo",
+            "siblingContext": null
+        },
+        "label": "job_description"
+    },
+    {
+        "features": {
+            "label": "Achievements & Duties",
+            "name": "exp_desc",
+            "automationId": "lever-description",
+            "placeholder": "What did you do?",
+            "parentContext": "Professional Experience",
+            "siblingContext": null
+        },
+        "label": "job_description"
+    },
+    {
+        "features": {
+            "label": "Location",
+            "name": "job_location_input",
+            "automationId": "gh-job-loc",
+            "placeholder": "City, Country",
+            "parentContext": "Work History",
+            "siblingContext": "Where was this job based?"
+        },
+        "label": "job_location"
+    },
+    {
+        "features": {
+            "label": "Ubicación del empleo",
+            "name": "wd-ExpLocation",
+            "automationId": "qa-exp-loc",
+            "placeholder": null,
+            "parentContext": "Experiencia Laboral",
+            "siblingContext": null
+        },
+        "label": "job_location"
+    },
+    {
+        "features": {
+            "label": "Office Location",
+            "name": "exp_loc",
+            "automationId": "lever-exp-loc",
+            "placeholder": "London / Remote",
+            "parentContext": "History",
+            "siblingContext": null
+        },
+        "label": "job_location"
+    },
+    {
+        "features": {
+            "label": "Total Years of Experience",
+            "name": "years_exp_input",
+            "automationId": "gh-years-exp",
+            "placeholder": "e.g. 5",
+            "parentContext": "Experience Summary",
+            "siblingContext": "Round to nearest year"
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Años de experiencia total",
+            "name": "wd-TotalYearsExp",
+            "automationId": "qa-years",
+            "placeholder": null,
+            "parentContext": "Calificaciones",
+            "siblingContext": null
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Relevant Experience (Years)",
+            "name": "relevant_years",
+            "automationId": "lever-years",
+            "placeholder": null,
+            "parentContext": "Application Details",
+            "siblingContext": null
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Industry",
+            "name": "industry_select",
+            "automationId": "gh-industry",
+            "placeholder": "Select Industry",
+            "parentContext": "Professional Profile",
+            "siblingContext": "Most relevant industry"
+        },
+        "label": "industry"
+    },
+    {
+        "features": {
+            "label": "Sector",
+            "name": "wd-Industry",
+            "automationId": "qa-sector",
+            "placeholder": null,
+            "parentContext": "Detalles del perfil",
+            "siblingContext": null
+        },
+        "label": "industry"
+    },
+    {
+        "features": {
+            "label": "Industrie",
+            "name": "industry_field",
+            "automationId": "lever-industry",
+            "placeholder": "Technik / Finanzen",
+            "parentContext": "Berufserfahrung",
+            "siblingContext": null
+        },
+        "label": "industry"
+    },
+    {
+        "features": {
+            "label": "Department",
+            "name": "dept_input",
+            "automationId": "gh-dept",
+            "placeholder": "e.g. Engineering",
+            "parentContext": "Experience Details",
+            "siblingContext": null
+        },
+        "label": "department"
+    },
+    {
+        "features": {
+            "label": "Departamento",
+            "name": "wd-Department",
+            "automationId": "qa-dept",
+            "placeholder": null,
+            "parentContext": "Historial Laboral",
+            "siblingContext": null
+        },
+        "label": "department"
+    },
+    {
+        "features": {
+            "label": "Abteilung",
+            "name": "exp_department",
+            "automationId": "lever-dept",
+            "placeholder": "IT / Personal",
+            "parentContext": "Erfahrung",
+            "siblingContext": null
+        },
+        "label": "department"
+    },
+    {
+        "features": {
+            "label": "Institution Name *",
+            "name": "school_name",
+            "automationId": "gh-school",
+            "placeholder": "University of...",
+            "parentContext": "Education History",
+            "siblingContext": null
+        },
+        "label": "institution_name"
+    },
+    {
+        "features": {
+            "label": "Name der Bildungseinrichtung",
+            "name": "wd-SchoolName",
+            "automationId": "qa-school",
+            "placeholder": null,
+            "parentContext": "Ausbildung",
+            "siblingContext": null
+        },
+        "label": "institution_name"
+    },
+    {
+        "features": {
+            "label": "Nom de l'école / université",
+            "name": "edu_school",
+            "automationId": "lever-school",
+            "placeholder": null,
+            "parentContext": "Éducation",
+            "siblingContext": null
+        },
+        "label": "institution_name"
+    },
+    {
+        "features": {
+            "label": "School",
+            "name": "school_field",
+            "automationId": "gh-school-name",
+            "placeholder": "College Name",
+            "parentContext": "Education",
+            "siblingContext": null
+        },
+        "label": "school_name"
+    },
+    {
+        "features": {
+            "label": "Escuela",
+            "name": "wd-School",
+            "automationId": "qa-school-name",
+            "placeholder": null,
+            "parentContext": "Formación Académica",
+            "siblingContext": null
+        },
+        "label": "school_name"
+    },
+    {
+        "features": {
+            "label": "Educational Institution",
+            "name": "edu_inst",
+            "automationId": "lever-inst",
+            "placeholder": null,
+            "parentContext": "Education Detail",
+            "siblingContext": null
+        },
+        "label": "school_name"
+    },
+    {
+        "features": {
+            "label": "Degree Type",
+            "name": "degree_select",
+            "automationId": "gh-degree",
+            "placeholder": "Select Degree (e.g. BS, MS)",
+            "parentContext": "Education Details",
+            "siblingContext": null
+        },
+        "label": "degree_type"
+    },
+    {
+        "features": {
+            "label": "Grado / Título",
+            "name": "wd-Degree",
+            "automationId": "qa-degree",
+            "placeholder": null,
+            "parentContext": "Educación",
+            "siblingContext": null
+        },
+        "label": "degree_type"
+    },
+    {
+        "features": {
+            "label": "Abschluss",
+            "name": "edu_degree",
+            "automationId": "lever-degree",
+            "placeholder": "Bachelor, Master, etc.",
+            "parentContext": "Studium",
+            "siblingContext": null
+        },
+        "label": "degree_type"
+    },
+    {
+        "features": {
+            "label": "Field of Study",
+            "name": "discipline",
+            "automationId": "gh-major",
+            "placeholder": "e.g. Computer Science",
+            "parentContext": "Education Detail",
+            "siblingContext": null
+        },
+        "label": "field_of_study"
+    },
+    {
+        "features": {
+            "label": "Campo de estudio",
+            "name": "wd-FieldOfStudy",
+            "automationId": "qa-fos",
+            "placeholder": null,
+            "parentContext": "Educación",
+            "siblingContext": null
+        },
+        "label": "field_of_study"
+    },
+    {
+        "features": {
+            "label": "Studienrichtung",
+            "name": "edu_fos",
+            "automationId": "lever-fos",
+            "placeholder": "Maschinenbau",
+            "parentContext": "Akademischer Hintergrund",
+            "siblingContext": null
+        },
+        "label": "field_of_study"
+    },
+    {
+        "features": {
+            "label": "Major",
+            "name": "major_input",
+            "automationId": "gh-major-field",
+            "placeholder": "Economics",
+            "parentContext": "Degree Info",
+            "siblingContext": null
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Especialidad (Major)",
+            "name": "wd-Major",
+            "automationId": "qa-major",
+            "placeholder": null,
+            "parentContext": "Detalles Académicos",
+            "siblingContext": null
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Spécialisation",
+            "name": "edu_major",
+            "automationId": "lever-major",
+            "placeholder": null,
+            "parentContext": "Formation",
+            "siblingContext": null
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Minor",
+            "name": "minor_input",
+            "automationId": "gh-minor",
+            "placeholder": "Mathematics",
+            "parentContext": "Education History",
+            "siblingContext": "Optional"
+        },
+        "label": "minor"
+    },
+    {
+        "features": {
+            "label": "Especialidad secundaria (Minor)",
+            "name": "wd-Minor",
+            "automationId": "qa-minor",
+            "placeholder": null,
+            "parentContext": "Educación",
+            "siblingContext": null
+        },
+        "label": "minor"
+    },
+    {
+        "features": {
+            "label": "Nebenfach",
+            "name": "edu_minor",
+            "automationId": "lever-minor",
+            "placeholder": null,
+            "parentContext": "Studium",
+            "siblingContext": null
+        },
+        "label": "minor"
+    },
+    {
+        "features": {
+            "label": "GPA",
+            "name": "gpa_field",
+            "automationId": "gh-gpa",
+            "placeholder": "3.8",
+            "parentContext": "Academic Performance",
+            "siblingContext": "Scale of 4.0"
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Promedio (GPA)",
+            "name": "wd-GPA",
+            "automationId": "qa-gpa",
+            "placeholder": null,
+            "parentContext": "Educación",
+            "siblingContext": null
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Note / GPA",
+            "name": "edu_gpa",
+            "automationId": "lever-gpa",
+            "placeholder": "e.g. 1.3 or 3.9",
+            "parentContext": "University Info",
+            "siblingContext": null
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Graduation Date",
+            "name": "grad_date",
+            "automationId": "gh-grad-date",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Education History",
+            "siblingContext": "Actual or expected"
+        },
+        "label": "graduation_date"
+    },
+    {
+        "features": {
+            "label": "Fecha de graduación",
+            "name": "wd-GraduationDate",
+            "automationId": "qa-grad",
+            "placeholder": null,
+            "parentContext": "Educación",
+            "siblingContext": null
+        },
+        "label": "graduation_date"
+    },
+    {
+        "features": {
+            "label": "Abschlussdatum",
+            "name": "edu_end",
+            "automationId": "lever-grad",
+            "placeholder": "YYYY",
+            "parentContext": "Ausbildung",
+            "siblingContext": null
+        },
+        "label": "graduation_date"
+    },
+    {
+        "features": {
+            "label": "Start Date",
+            "name": "edu_start_date",
+            "automationId": "gh-edu-start",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Education",
+            "siblingContext": null
+        },
+        "label": "education_start_date"
+    },
+    {
+        "features": {
+            "label": "Fecha de inicio de estudios",
+            "name": "wd-EduStartDate",
+            "automationId": "qa-edu-start",
+            "placeholder": null,
+            "parentContext": "Historial Académico",
+            "siblingContext": null
+        },
+        "label": "education_start_date"
+    },
+    {
+        "features": {
+            "label": "Beginn",
+            "name": "edu_from",
+            "automationId": "lever-edu-start",
+            "placeholder": "Year",
+            "parentContext": "Ausbildungsdetails",
+            "siblingContext": null
+        },
+        "label": "education_start_date"
+    },
+    {
+        "features": {
+            "label": "End Date",
+            "name": "edu_end_date",
+            "automationId": "gh-edu-end",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Education History",
+            "siblingContext": "Leave blank if ongoing"
+        },
+        "label": "education_end_date"
+    },
+    {
+        "features": {
+            "label": "Fecha de fin de estudios",
+            "name": "wd-EduEndDate",
+            "automationId": "qa-edu-end",
+            "placeholder": null,
+            "parentContext": "Historial Académico",
+            "siblingContext": null
+        },
+        "label": "education_end_date"
+    },
+    {
+        "features": {
+            "label": "Ende",
+            "name": "edu_to",
+            "automationId": "lever-edu-end",
+            "placeholder": "Year / Present",
+            "parentContext": "Ausbildungsdetails",
+            "siblingContext": null
+        },
+        "label": "education_end_date"
+    },
+    {
+        "features": {
+            "label": "I am currently enrolled",
+            "name": "is_current_edu",
+            "automationId": "gh-edu-current",
+            "placeholder": null,
+            "parentContext": "Education Detail",
+            "siblingContext": null
+        },
+        "label": "education_current"
+    },
+    {
+        "features": {
+            "label": "En curso",
+            "name": "wd-EduCurrent",
+            "automationId": "qa-edu-curr",
+            "placeholder": null,
+            "parentContext": "Formación",
+            "siblingContext": null
+        },
+        "label": "education_current"
+    },
+    {
+        "features": {
+            "label": "Aktuell im Studium",
+            "name": "edu_ongoing",
+            "automationId": "lever-edu-current",
+            "placeholder": null,
+            "parentContext": "Ausbildung",
+            "siblingContext": null
+        },
+        "label": "education_current"
+    },
+    {
+        "features": {
+            "label": "Honors / Awards",
+            "name": "edu_honors",
+            "automationId": "gh-honors",
+            "placeholder": "Dean's List, Cum Laude",
+            "parentContext": "Education Details",
+            "siblingContext": null
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Distinciones / Honores",
+            "name": "wd-Honors",
+            "automationId": "qa-honors",
+            "placeholder": null,
+            "parentContext": "Educación",
+            "siblingContext": null
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Auszeichnungen",
+            "name": "edu_awards",
+            "automationId": "lever-honors",
+            "placeholder": null,
+            "parentContext": "Akademischer Werdegang",
+            "siblingContext": null
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Education Level",
+            "name": "edu_level_select",
+            "automationId": "gh-edu-level",
+            "placeholder": "High School, Bachelors, Masters, etc.",
+            "parentContext": "Education Info",
+            "siblingContext": "Highest level completed"
+        },
+        "label": "education_level"
+    },
+    {
+        "features": {
+            "label": "Nivel de estudios",
+            "name": "wd-EducationLevel",
+            "automationId": "qa-edu-level",
+            "placeholder": null,
+            "parentContext": "Resumen Académico",
+            "siblingContext": null
+        },
+        "label": "education_level"
+    },
+    {
+        "features": {
+            "label": "Bildungsabschluss",
+            "name": "edu_rank",
+            "automationId": "lever-edu-level",
+            "placeholder": null,
+            "parentContext": "Profil",
+            "siblingContext": null
+        },
+        "label": "education_level"
+    },
+    {
+        "features": {
+            "label": "Skills",
+            "name": "skills_textarea",
+            "automationId": "gh-skills",
+            "placeholder": "Java, React, SQL...",
+            "parentContext": "Qualifications",
+            "siblingContext": "Enter tags separated by commas"
+        },
+        "label": "skills"
+    },
+    {
+        "features": {
+            "label": "Competencias",
+            "name": "wd-Skills",
+            "automationId": "qa-skills",
+            "placeholder": null,
+            "parentContext": "Habilidades",
+            "siblingContext": null
+        },
+        "label": "skills"
+    },
+    {
+        "features": {
+            "label": "Fähigkeiten",
+            "name": "skills_input",
+            "automationId": "lever-skills",
+            "placeholder": "Python, Projektmanagement...",
+            "parentContext": "Berufliches Profil",
+            "siblingContext": null
+        },
+        "label": "skills"
+    },
+    {
+        "features": {
+            "label": "Technical Skills",
+            "name": "tech_skills_field",
+            "automationId": "gh-tech-skills",
+            "placeholder": "Programming languages, tools...",
+            "parentContext": "Qualifications",
+            "siblingContext": null
+        },
+        "label": "technical_skills"
+    },
+    {
+        "features": {
+            "label": "Habilidades técnicas",
+            "name": "wd-TechSkills",
+            "automationId": "qa-tech-skills",
+            "placeholder": null,
+            "parentContext": "Perfil Técnico",
+            "siblingContext": null
+        },
+        "label": "technical_skills"
+    },
+    {
+        "features": {
+            "label": "Hard Skills",
+            "name": "lever-hard-skills",
+            "automationId": "input-tech",
+            "placeholder": "Kubernetes, Docker, etc.",
+            "parentContext": "Expertise",
+            "siblingContext": null
+        },
+        "label": "technical_skills"
+    },
+    {
+        "features": {
+            "label": "Certifications",
+            "name": "certs_input",
+            "automationId": "gh-certs",
+            "placeholder": "AWS Solution Architect, PMP",
+            "parentContext": "Certifications & Licenses",
+            "siblingContext": null
+        },
+        "label": "certifications"
+    },
+    {
+        "features": {
+            "label": "Certificaciones",
+            "name": "wd-Certifications",
+            "automationId": "qa-certs",
+            "placeholder": null,
+            "parentContext": "Formación continua",
+            "siblingContext": null
+        },
+        "label": "certifications"
+    },
+    {
+        "features": {
+            "label": "Zertifikate",
+            "name": "cert_field",
+            "automationId": "lever-certs",
+            "placeholder": null,
+            "parentContext": "Qualifikationen",
+            "siblingContext": null
+        },
+        "label": "certifications"
+    },
+    {
+        "features": {
+            "label": "Licenses",
+            "name": "license_field",
+            "automationId": "gh-license",
+            "placeholder": "Driver's license, CPA, etc.",
+            "parentContext": "Professional Qualifications",
+            "siblingContext": null
+        },
+        "label": "licenses"
+    },
+    {
+        "features": {
+            "label": "Licencias",
+            "name": "wd-Licenses",
+            "automationId": "qa-licenses",
+            "placeholder": null,
+            "parentContext": "Habilidades",
+            "siblingContext": null
+        },
+        "label": "licenses"
+    },
+    {
+        "features": {
+            "label": "Lizenzen / Berechtigungen",
+            "name": "license_input",
+            "automationId": "lever-license",
+            "placeholder": null,
+            "parentContext": "Zusatzinfos",
+            "siblingContext": null
+        },
+        "label": "licenses"
+    },
+    {
+        "features": {
+            "label": "Languages",
+            "name": "lang_input",
+            "automationId": "gh-languages",
+            "placeholder": "English, Spanish, French...",
+            "parentContext": "Personal Info",
+            "siblingContext": null
+        },
+        "label": "languages"
+    },
+    {
+        "features": {
+            "label": "Idiomas",
+            "name": "wd-Languages",
+            "automationId": "qa-languages",
+            "placeholder": null,
+            "parentContext": "Comunicación",
+            "siblingContext": null
+        },
+        "label": "languages"
+    },
+    {
+        "features": {
+            "label": "Sprachen",
+            "name": "lang_field",
+            "automationId": "lever-languages",
+            "placeholder": null,
+            "parentContext": "Profil",
+            "siblingContext": null
+        },
+        "label": "languages"
+    },
+    {
+        "features": {
+            "label": "Language Proficiency",
+            "name": "lang_level_select",
+            "automationId": "gh-lang-level",
+            "placeholder": "Native, Fluent, Professional...",
+            "parentContext": "Languages",
+            "siblingContext": "Per language"
+        },
+        "label": "language_proficiency"
+    },
+    {
+        "features": {
+            "label": "Nivel de idioma",
+            "name": "wd-LangProficiency",
+            "automationId": "qa-lang-prof",
+            "placeholder": null,
+            "parentContext": "Idiomas",
+            "siblingContext": null
+        },
+        "label": "language_proficiency"
+    },
+    {
+        "features": {
+            "label": "Sprachkenntnisse",
+            "name": "lever-lang-level",
+            "automationId": "data-qa-lang-level",
+            "placeholder": "Verhandlungssicher, etc.",
+            "parentContext": "Fähigkeiten",
+            "siblingContext": null
+        },
+        "label": "language_proficiency"
+    },
+    {
+        "features": {
+            "label": "Years of experience with this skill",
+            "name": "skill_years",
+            "automationId": "gh-skill-years",
+            "placeholder": "e.g. 3",
+            "parentContext": "Skill Detail",
+            "siblingContext": null
+        },
+        "label": "years_skill"
+    },
+    {
+        "features": {
+            "label": "Años de experiencia en la habilidad",
+            "name": "wd-SkillYears",
+            "automationId": "qa-skill-years",
+            "placeholder": null,
+            "parentContext": "Competencias técnicas",
+            "siblingContext": null
+        },
+        "label": "years_skill"
+    },
+    {
+        "features": {
+            "label": "Erfahrung in Jahren",
+            "name": "skill_dur",
+            "automationId": "lever-skill-dur",
+            "placeholder": null,
+            "parentContext": "Kenntnisse",
+            "siblingContext": "Wie lange nutzen Sie dieses Tool?"
+        },
+        "label": "years_skill"
+    },
+    {
+        "features": {
+            "label": "Skill Level",
+            "name": "skill_rating",
+            "automationId": "gh-skill-level",
+            "placeholder": "Beginner, Intermediate, Expert",
+            "parentContext": "Skills & Expertise",
+            "siblingContext": "Self-assessment"
+        },
+        "label": "skill_level"
+    },
+    {
+        "features": {
+            "label": "Nivel de maestría",
+            "name": "wd-SkillLevel",
+            "automationId": "qa-skill-lvl",
+            "placeholder": "1-5",
+            "parentContext": "Habilidades Técnicas",
+            "siblingContext": null
+        },
+        "label": "skill_level"
+    },
+    {
+        "features": {
+            "label": "Expertise Level",
+            "name": "lever-skill-level",
+            "automationId": "input-skill-level",
+            "placeholder": null,
+            "parentContext": "Qualifications",
+            "siblingContext": null
+        },
+        "label": "skill_level"
+    },
+    {
+        "features": {
+            "label": "Reference Name",
+            "name": "ref_name",
+            "automationId": "gh-ref-name",
+            "placeholder": "Full Name",
+            "parentContext": "References",
+            "siblingContext": null
+        },
+        "label": "reference_name"
+    },
+    {
+        "features": {
+            "label": "Nombre de la referencia",
+            "name": "wd-RefName",
+            "automationId": "qa-ref-name",
+            "placeholder": null,
+            "parentContext": "Referencias",
+            "siblingContext": null
+        },
+        "label": "reference_name"
+    },
+    {
+        "features": {
+            "label": "Referenz Name",
+            "name": "ref_full_name",
+            "automationId": "lever-ref-name",
+            "placeholder": null,
+            "parentContext": "Referenzkontakte",
+            "siblingContext": null
+        },
+        "label": "reference_name"
+    },
+    {
+        "features": {
+            "label": "Reference Email",
+            "name": "ref_email",
+            "automationId": "gh-ref-email",
+            "placeholder": "email@example.com",
+            "parentContext": "References",
+            "siblingContext": null
+        },
+        "label": "reference_email"
+    },
+    {
+        "features": {
+            "label": "Correo de la referencia",
+            "name": "wd-RefEmail",
+            "automationId": "qa-ref-email",
+            "placeholder": null,
+            "parentContext": "Referencias",
+            "siblingContext": null
+        },
+        "label": "reference_email"
+    },
+    {
+        "features": {
+            "label": "E-Mail der Referenzperson",
+            "name": "ref_contact_email",
+            "automationId": "lever-ref-email",
+            "placeholder": null,
+            "parentContext": "Referenzkontakte",
+            "siblingContext": null
+        },
+        "label": "reference_email"
+    },
+    {
+        "features": {
+            "label": "Reference Phone",
+            "name": "ref_phone",
+            "automationId": "gh-ref-phone",
+            "placeholder": "+1...",
+            "parentContext": "References",
+            "siblingContext": null
+        },
+        "label": "reference_phone"
+    },
+    {
+        "features": {
+            "label": "Teléfono de la referencia",
+            "name": "wd-RefPhone",
+            "automationId": "qa-ref-phone",
+            "placeholder": null,
+            "parentContext": "Referencias",
+            "siblingContext": null
+        },
+        "label": "reference_phone"
+    },
+    {
+        "features": {
+            "label": "Telefonnummer der Referenz",
+            "name": "ref_tel",
+            "automationId": "lever-ref-phone",
+            "placeholder": null,
+            "parentContext": "Kontakte",
+            "siblingContext": null
+        },
+        "label": "reference_phone"
+    },
+    {
+        "features": {
+            "label": "Relationship",
+            "name": "ref_rel",
+            "automationId": "gh-ref-rel",
+            "placeholder": "e.g. Former Manager",
+            "parentContext": "References",
+            "siblingContext": "How do you know this person?"
+        },
+        "label": "reference_relationship"
+    },
+    {
+        "features": {
+            "label": "Relación con la referencia",
+            "name": "wd-RefRel",
+            "automationId": "qa-ref-rel",
+            "placeholder": null,
+            "parentContext": "Referencias",
+            "siblingContext": null
+        },
+        "label": "reference_relationship"
+    },
+    {
+        "features": {
+            "label": "Art der Beziehung",
+            "name": "ref_type",
+            "automationId": "lever-ref-rel",
+            "placeholder": "z.B. Vorgesetzter",
+            "parentContext": "Referenzen",
+            "siblingContext": null
+        },
+        "label": "reference_relationship"
+    },
+    {
+        "features": {
+            "label": "Gender",
+            "name": "gender_select",
+            "automationId": "eeoc-gender",
+            "placeholder": "Select Gender",
+            "parentContext": "Voluntary Self-Identification",
+            "siblingContext": "We are an equal opportunity employer"
+        },
+        "label": "gender"
+    },
+    {
+        "features": {
+            "label": "Género",
+            "name": "wd-Gender",
+            "automationId": "qa-gender",
+            "placeholder": null,
+            "parentContext": "Diversidad",
+            "siblingContext": "Información opcional"
+        },
+        "label": "gender"
+    },
+    {
+        "features": {
+            "label": "Geschlecht",
+            "name": "gender_field",
+            "automationId": "gh-gender",
+            "placeholder": "-- Auswählen --",
+            "parentContext": "Chancengleichheit",
+            "siblingContext": null
+        },
+        "label": "gender"
+    },
+    {
+        "features": {
+            "label": "Gender Identity",
+            "name": "gender_identity_input",
+            "automationId": "gh-gender-identity",
+            "placeholder": "e.g. Non-binary",
+            "parentContext": "Equal Employment Opportunity",
+            "siblingContext": "Optional"
+        },
+        "label": "gender_identity"
+    },
+    {
+        "features": {
+            "label": "Identidad de género",
+            "name": "wd-GenderIdentity",
+            "automationId": "qa-gender-id",
+            "placeholder": null,
+            "parentContext": "Diversidad e Inclusión",
+            "siblingContext": null
+        },
+        "label": "gender_identity"
+    },
+    {
+        "features": {
+            "label": "Identité de genre",
+            "name": "gender_id_field",
+            "automationId": "lever-gender-identity",
+            "placeholder": null,
+            "parentContext": "Informations facultatives",
+            "siblingContext": null
+        },
+        "label": "gender_identity"
+    },
+    {
+        "features": {
+            "label": "Pronouns",
+            "name": "pronoun_select",
+            "automationId": "gh-pronouns",
+            "placeholder": "They/Them, She/Her, He/Him",
+            "parentContext": "Personal Details",
+            "siblingContext": null
+        },
+        "label": "pronouns"
+    },
+    {
+        "features": {
+            "label": "Pronombres",
+            "name": "wd-Pronouns",
+            "automationId": "qa-pronouns",
+            "placeholder": null,
+            "parentContext": "Perfil",
+            "siblingContext": null
+        },
+        "label": "pronouns"
+    },
+    {
+        "features": {
+            "label": "Pronoms",
+            "name": "input_pronouns",
+            "automationId": "lever-pronouns",
+            "placeholder": "Ses pronoms",
+            "parentContext": "Informations de base",
+            "siblingContext": null
+        },
+        "label": "pronouns"
+    },
+    {
+        "features": {
+            "label": "Race",
+            "name": "race_select",
+            "automationId": "eeoc-race",
+            "placeholder": "Select Race",
+            "parentContext": "Voluntary Self-Identification",
+            "siblingContext": "Choose the option you most identify with"
+        },
+        "label": "race"
+    },
+    {
+        "features": {
+            "label": "Raza",
+            "name": "wd-Race",
+            "automationId": "qa-race",
+            "placeholder": null,
+            "parentContext": "Igualdad de Oportunidades",
+            "siblingContext": null
+        },
+        "label": "race"
+    },
+    {
+        "features": {
+            "label": "Ethnischer Hintergrund",
+            "name": "race_ethnicity_field",
+            "automationId": "gh-race",
+            "placeholder": "-- Bitte wählen --",
+            "parentContext": "Diversität",
+            "siblingContext": null
+        },
+        "label": "race"
+    },
+    {
+        "features": {
+            "label": "Ethnicity",
+            "name": "ethnicity_input",
+            "automationId": "gh-ethnicity",
+            "placeholder": "Hispanic, Not Hispanic...",
+            "parentContext": "Equal Opportunity",
+            "siblingContext": null
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Etnicidad",
+            "name": "wd-Ethnicity",
+            "automationId": "qa-ethnicity",
+            "placeholder": null,
+            "parentContext": "Identificación voluntaria",
+            "siblingContext": null
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Origine ethnique",
+            "name": "lever-ethnicity",
+            "automationId": "input-ethnicity",
+            "placeholder": null,
+            "parentContext": "Déclaration",
+            "siblingContext": null
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Veteran Status",
+            "name": "veteran_select",
+            "automationId": "eeoc-veteran",
+            "placeholder": "Select Status",
+            "parentContext": "Voluntary Self-Identification",
+            "siblingContext": "Are you a protected veteran?"
+        },
+        "label": "veteran"
+    },
+    {
+        "features": {
+            "label": "Estatus de veterano",
+            "name": "wd-Veteran",
+            "automationId": "qa-veteran",
+            "placeholder": null,
+            "parentContext": "Diversidad",
+            "siblingContext": null
+        },
+        "label": "veteran"
+    },
+    {
+        "features": {
+            "label": "Vétéran",
+            "name": "lever-veteran",
+            "automationId": "input-veteran",
+            "placeholder": "Oui / Non",
+            "parentContext": "Égalité",
+            "siblingContext": null
+        },
+        "label": "veteran"
+    },
+    {
+        "features": {
+            "label": "Disability Status",
+            "name": "disability_select",
+            "automationId": "eeoc-disability",
+            "placeholder": "Select...",
+            "parentContext": "Voluntary Self-Identification",
+            "siblingContext": "Form CC-305"
+        },
+        "label": "disability"
+    },
+    {
+        "features": {
+            "label": "Discapacidad",
+            "name": "wd-Disability",
+            "automationId": "qa-disability",
+            "placeholder": null,
+            "parentContext": "Auto-identificación",
+            "siblingContext": null
+        },
+        "label": "disability"
+    },
+    {
+        "features": {
+            "label": "Behinderung",
+            "name": "lever-disability",
+            "automationId": "input-disability",
+            "placeholder": null,
+            "parentContext": "Informationen",
+            "siblingContext": "Haben Sie eine Schwerbehinderung?"
+        },
+        "label": "disability"
+    },
+    {
+        "features": {
+            "label": "Marital Status",
+            "name": "marital_select",
+            "automationId": "gh-marital",
+            "placeholder": "Single, Married, etc.",
+            "parentContext": "Personal Information",
+            "siblingContext": "Optional in some regions"
+        },
+        "label": "marital_status"
+    },
+    {
+        "features": {
+            "label": "Estado civil",
+            "name": "wd-MaritalStatus",
+            "automationId": "qa-marital",
+            "placeholder": null,
+            "parentContext": "Datos de perfil",
+            "siblingContext": null
+        },
+        "label": "marital_status"
+    },
+    {
+        "features": {
+            "label": "Familienstand",
+            "name": "marital_field",
+            "automationId": "lever-marital",
+            "placeholder": null,
+            "parentContext": "Angaben zur Person",
+            "siblingContext": null
+        },
+        "label": "marital_status"
+    },
+    {
+        "features": {
+            "label": "Current Salary",
+            "name": "salary_cur",
+            "automationId": "gh-salary-current",
+            "placeholder": "e.g. 80000",
+            "parentContext": "Compensation Details",
+            "siblingContext": "Annual base pay"
+        },
+        "label": "salary_current"
+    },
+    {
+        "features": {
+            "label": "Salario actual",
+            "name": "wd-SalaryCurrent",
+            "automationId": "qa-salary-cur",
+            "placeholder": null,
+            "parentContext": "Información financiera",
+            "siblingContext": null
+        },
+        "label": "salary_current"
+    },
+    {
+        "features": {
+            "label": "Current Pay",
+            "name": "input_current_pay",
+            "automationId": "lever-salary-cur",
+            "placeholder": null,
+            "parentContext": "Application",
+            "siblingContext": null
+        },
+        "label": "salary_current"
+    },
+    {
+        "features": {
+            "label": "Expected Salary",
+            "name": "salary_exp",
+            "automationId": "gh-salary-expected",
+            "placeholder": "Desired amount",
+            "parentContext": "Compensation Details",
+            "siblingContext": "Total annual expectation"
+        },
+        "label": "salary_expected"
+    },
+    {
+        "features": {
+            "label": "Salario esperado",
+            "name": "wd-SalaryExpected",
+            "automationId": "qa-salary-exp",
+            "placeholder": "p. ej. 50000",
+            "parentContext": "Expectativas",
+            "siblingContext": null
+        },
+        "label": "salary_expected"
+    },
+    {
+        "features": {
+            "label": "Gehaltsvorstellung",
+            "name": "salary_expectation",
+            "automationId": "lever-salary-exp",
+            "placeholder": "Wunschgehalt",
+            "parentContext": "Bewerbung",
+            "siblingContext": null
+        },
+        "label": "salary_expected"
+    },
+    {
+        "features": {
+            "label": "Minimum Salary",
+            "name": "salary_min",
+            "automationId": "gh-salary-min",
+            "placeholder": "Minimum acceptable",
+            "parentContext": "Compensation",
+            "siblingContext": null
+        },
+        "label": "salary_minimum"
+    },
+    {
+        "features": {
+            "label": "Salario mínimo aceptable",
+            "name": "wd-SalaryMin",
+            "automationId": "qa-salary-min",
+            "placeholder": null,
+            "parentContext": "Requisitos",
+            "siblingContext": null
+        },
+        "label": "salary_minimum"
+    },
+    {
+        "features": {
+            "label": "Minimales Gehalt",
+            "name": "min_pay_input",
+            "automationId": "lever-salary-min",
+            "placeholder": null,
+            "parentContext": "Präferenzen",
+            "siblingContext": null
+        },
+        "label": "salary_minimum"
+    },
+    {
+        "features": {
+            "label": "Currency",
+            "name": "salary_curr_select",
+            "automationId": "gh-currency",
+            "placeholder": "USD, EUR, GBP...",
+            "parentContext": "Compensation",
+            "siblingContext": null
+        },
+        "label": "salary_currency"
+    },
+    {
+        "features": {
+            "label": "Moneda",
+            "name": "wd-Currency",
+            "automationId": "qa-currency",
+            "placeholder": "Seleccionar",
+            "parentContext": "Detalles financieros",
+            "siblingContext": null
+        },
+        "label": "salary_currency"
+    },
+    {
+        "features": {
+            "label": "Währung",
+            "name": "currency_field",
+            "automationId": "lever-currency",
+            "placeholder": null,
+            "parentContext": "Vergütung",
+            "siblingContext": null
+        },
+        "label": "salary_currency"
+    },
+    {
+        "features": {
+            "label": "Expected Bonus",
+            "name": "bonus_exp",
+            "automationId": "gh-bonus",
+            "placeholder": "% or fixed amount",
+            "parentContext": "Compensation",
+            "siblingContext": null
+        },
+        "label": "bonus_expected"
+    },
+    {
+        "features": {
+            "label": "Bono esperado",
+            "name": "wd-BonusExp",
+            "automationId": "qa-bonus",
+            "placeholder": null,
+            "parentContext": "Expectativas de compensación",
+            "siblingContext": null
+        },
+        "label": "bonus_expected"
+    },
+    {
+        "features": {
+            "label": "Bonuszahlungen (Erwartung)",
+            "name": "bonus_input",
+            "automationId": "lever-bonus",
+            "placeholder": null,
+            "parentContext": "Gehalt",
+            "siblingContext": null
+        },
+        "label": "bonus_expected"
+    },
+    {
+        "features": {
+            "label": "Expected Equity",
+            "name": "equity_exp",
+            "automationId": "gh-equity",
+            "placeholder": "Stock options / RSU",
+            "parentContext": "Compensation",
+            "siblingContext": null
+        },
+        "label": "equity_expected"
+    },
+    {
+        "features": {
+            "label": "Acciones / Equity",
+            "name": "wd-EquityExp",
+            "automationId": "qa-equity",
+            "placeholder": null,
+            "parentContext": "Compensación total",
+            "siblingContext": null
+        },
+        "label": "equity_expected"
+    },
+    {
+        "features": {
+            "label": "Beteiligungserwartung",
+            "name": "equity_field",
+            "automationId": "lever-equity",
+            "placeholder": null,
+            "parentContext": "Vergütungspaket",
+            "siblingContext": null
+        },
+        "label": "equity_expected"
+    },
+    {
+        "features": {
+            "label": "Available Start Date",
+            "name": "start_date_input",
+            "automationId": "gh-start-date-avail",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Availability",
+            "siblingContext": "When can you start?"
+        },
+        "label": "start_date"
+    },
+    {
+        "features": {
+            "label": "Fecha de incorporación",
+            "name": "wd-StartDateAvail",
+            "automationId": "qa-start-date",
+            "placeholder": "DD/MM/AAAA",
+            "parentContext": "Disponibilidad",
+            "siblingContext": null
+        },
+        "label": "start_date"
+    },
+    {
+        "features": {
+            "label": "Earliest Start Date",
+            "name": "earliest_start",
+            "automationId": "lever-start-date",
+            "placeholder": "Soonest possible",
+            "parentContext": "Application Detail",
+            "siblingContext": null
+        },
+        "label": "start_date"
+    },
+    {
+        "features": {
+            "label": "Availability",
+            "name": "availability_text",
+            "automationId": "gh-availability",
+            "placeholder": "e.g. In 2 weeks",
+            "parentContext": "Schedule",
+            "siblingContext": null
+        },
+        "label": "availability"
+    },
+    {
+        "features": {
+            "label": "Disponibilidad",
+            "name": "wd-Availability",
+            "automationId": "qa-avail",
+            "placeholder": null,
+            "parentContext": "Datos de empleo",
+            "siblingContext": null
+        },
+        "label": "availability"
+    },
+    {
+        "features": {
+            "label": "Verfügbarkeit",
+            "name": "availability_field",
+            "automationId": "lever-availability",
+            "placeholder": "z.B. Ab sofort",
+            "parentContext": "Bewerbung",
+            "siblingContext": null
+        },
+        "label": "availability"
+    },
+    {
+        "features": {
+            "label": "Notice Period",
+            "name": "notice_period_input",
+            "automationId": "gh-notice",
+            "placeholder": "e.g. 1 month",
+            "parentContext": "Availability",
+            "siblingContext": "Required by current employer?"
+        },
+        "label": "notice_period"
+    },
+    {
+        "features": {
+            "label": "Periodo de preaviso",
+            "name": "wd-NoticePeriod",
+            "automationId": "qa-notice",
+            "placeholder": null,
+            "parentContext": "Contrato actual",
+            "siblingContext": null
+        },
+        "label": "notice_period"
+    },
+    {
+        "features": {
+            "label": "Kündigungsfrist",
+            "name": "notice_field",
+            "automationId": "lever-notice",
+            "placeholder": "z.B. 3 Monate",
+            "parentContext": "Bewerberprofil",
+            "siblingContext": null
+        },
+        "label": "notice_period"
+    },
+    {
+        "features": {
+            "label": "Work Type Preference",
+            "name": "work_type_select",
+            "automationId": "gh-work-type",
+            "placeholder": "Full-time, Part-time, Contract",
+            "parentContext": "Preferences",
+            "siblingContext": null
+        },
+        "label": "work_type"
+    },
+    {
+        "features": {
+            "label": "Tipo de jornada",
+            "name": "wd-WorkType",
+            "automationId": "qa-work-type",
+            "placeholder": null,
+            "parentContext": "Preferencias de empleo",
+            "siblingContext": null
+        },
+        "label": "work_type"
+    },
+    {
+        "features": {
+            "label": "Arbeitszeitmodell",
+            "name": "work_type_field",
+            "automationId": "lever-work-type",
+            "placeholder": "Vollzeit / Teilzeit",
+            "parentContext": "Bewerbungsdetails",
+            "siblingContext": null
+        },
+        "label": "work_type"
+    },
+    {
+        "features": {
+            "label": "Shift Preference",
+            "name": "shift_select",
+            "automationId": "gh-shift",
+            "placeholder": "Morning, Evening, Night",
+            "parentContext": "Availability",
+            "siblingContext": null
+        },
+        "label": "shift_preference"
+    },
+    {
+        "features": {
+            "label": "Preferencia de turno",
+            "name": "wd-ShiftPref",
+            "automationId": "qa-shift",
+            "placeholder": null,
+            "parentContext": "Disponibilidad",
+            "siblingContext": null
+        },
+        "label": "shift_preference"
+    },
+    {
+        "features": {
+            "label": "Schichtpräferenz",
+            "name": "shift_field",
+            "automationId": "lever-shift",
+            "placeholder": null,
+            "parentContext": "Arbeitszeit",
+            "siblingContext": null
+        },
+        "label": "shift_preference"
+    },
+    {
+        "features": {
+            "label": "Willingness to Travel (%)",
+            "name": "travel_percent",
+            "automationId": "gh-travel",
+            "placeholder": "0-100",
+            "parentContext": "Work Preferences",
+            "siblingContext": null
+        },
+        "label": "travel_percentage"
+    },
+    {
+        "features": {
+            "label": "Disponibilidad para viajar",
+            "name": "wd-TravelPerc",
+            "automationId": "qa-travel",
+            "placeholder": "%",
+            "parentContext": "Requisitos del puesto",
+            "siblingContext": null
+        },
+        "label": "travel_percentage"
+    },
+    {
+        "features": {
+            "label": "Reisebereitschaft",
+            "name": "travel_input",
+            "automationId": "lever-travel",
+            "placeholder": "z.B. 25%",
+            "parentContext": "Präferenzen",
+            "siblingContext": null
+        },
+        "label": "travel_percentage"
+    },
+    {
+        "features": {
+            "label": "Remote Preference",
+            "name": "remote_opt",
+            "automationId": "gh-remote",
+            "placeholder": "Remote, Hybrid, On-site",
+            "parentContext": "Work Style",
+            "siblingContext": null
+        },
+        "label": "remote_preference"
+    },
+    {
+        "features": {
+            "label": "Preferencia de trabajo remoto",
+            "name": "wd-RemotePref",
+            "automationId": "qa-remote",
+            "placeholder": null,
+            "parentContext": "Ubicación de trabajo",
+            "siblingContext": null
+        },
+        "label": "remote_preference"
+    },
+    {
+        "features": {
+            "label": "Home Office Anteil",
+            "name": "remote_field",
+            "automationId": "lever-remote",
+            "placeholder": null,
+            "parentContext": "Arbeitsmodell",
+            "siblingContext": null
+        },
+        "label": "remote_preference"
+    },
+    {
+        "features": {
+            "label": "Job Type Preference",
+            "name": "job_type_pref",
+            "automationId": "gh-job-type-pref",
+            "placeholder": "Permanent / Contract",
+            "parentContext": "Career Preferences",
+            "siblingContext": null
+        },
+        "label": "job_type_preference"
+    },
+    {
+        "features": {
+            "label": "Tipo de contrato deseado",
+            "name": "wd-JobTypePref",
+            "automationId": "qa-job-type",
+            "placeholder": null,
+            "parentContext": "Búsqueda",
+            "siblingContext": null
+        },
+        "label": "job_type_preference"
+    },
+    {
+        "features": {
+            "label": "Anstellungsart",
+            "name": "job_pref_input",
+            "automationId": "lever-job-type",
+            "placeholder": null,
+            "parentContext": "Bewerbung",
+            "siblingContext": null
+        },
+        "label": "job_type_preference"
+    },
+    {
+        "features": {
+            "label": "Work Style",
+            "name": "work_style_text",
+            "automationId": "gh-work-style",
+            "placeholder": "Collaborative, Independent...",
+            "parentContext": "Culture Fit",
+            "siblingContext": "How do you work best?"
+        },
+        "label": "work_style"
+    },
+    {
+        "features": {
+            "label": "Estilo de trabajo",
+            "name": "wd-WorkStyle",
+            "automationId": "qa-work-style",
+            "placeholder": null,
+            "parentContext": "Personalidad",
+            "siblingContext": null
+        },
+        "label": "work_style"
+    },
+    {
+        "features": {
+            "label": "Arbeitsweise",
+            "name": "work_style_field",
+            "automationId": "lever-work-style",
+            "placeholder": null,
+            "parentContext": "Profil",
+            "siblingContext": null
+        },
+        "label": "work_style"
+    },
+    {
+        "features": {
+            "label": "Communication Style",
+            "name": "comm_style_input",
+            "automationId": "gh-comm-style",
+            "placeholder": "Direct, Written, Verbal...",
+            "parentContext": "Interpersonal Skills",
+            "siblingContext": null
+        },
+        "label": "communication_style"
+    },
+    {
+        "features": {
+            "label": "Estilo de comunicación",
+            "name": "wd-CommStyle",
+            "automationId": "qa-comm",
+            "placeholder": null,
+            "parentContext": "Habilidades Blandas",
+            "siblingContext": null
+        },
+        "label": "communication_style"
+    },
+    {
+        "features": {
+            "label": "Kommunikationstyp",
+            "name": "comm_field",
+            "automationId": "lever-comm",
+            "placeholder": null,
+            "parentContext": "Teamarbeit",
+            "siblingContext": null
+        },
+        "label": "communication_style"
+    },
+    {
+        "features": {
+            "label": "Career Goals",
+            "name": "career_goals_text",
+            "automationId": "gh-career-goals",
+            "placeholder": "Where do you see yourself in 5 years?",
+            "parentContext": "Future Aspirations",
+            "siblingContext": null
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "Objetivos profesionales",
+            "name": "wd-CareerGoals",
+            "automationId": "qa-goals",
+            "placeholder": null,
+            "parentContext": "Plan de carrera",
+            "siblingContext": null
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "Berufliche Ziele",
+            "name": "goals_input",
+            "automationId": "lever-goals",
+            "placeholder": null,
+            "parentContext": "Motivation",
+            "siblingContext": null
+        },
+        "label": "career_goals"
+    },
+    {
+        "features": {
+            "label": "Desired Role",
+            "name": "desired_role_input",
+            "automationId": "gh-desired-role",
+            "placeholder": "e.g. Architect",
+            "parentContext": "Career Interests",
+            "siblingContext": null
+        },
+        "label": "desired_role"
+    },
+    {
+        "features": {
+            "label": "Rol deseado",
+            "name": "wd-DesiredRole",
+            "automationId": "qa-role-pref",
+            "placeholder": null,
+            "parentContext": "Preferencias",
+            "siblingContext": null
+        },
+        "label": "desired_role"
+    },
+    {
+        "features": {
+            "label": "Wunschposition",
+            "name": "lever-desired-role",
+            "automationId": "input-desired-role",
+            "placeholder": null,
+            "parentContext": "Zukunft",
+            "siblingContext": null
+        },
+        "label": "desired_role"
+    },
+    {
+        "features": {
+            "label": "Interest Areas",
+            "name": "interests_input",
+            "automationId": "gh-interests",
+            "placeholder": "AI, Cloud, Security...",
+            "parentContext": "Professional Interests",
+            "siblingContext": null
+        },
+        "label": "interest_areas"
+    },
+    {
+        "features": {
+            "label": "Áreas de interés",
+            "name": "wd-Interests",
+            "automationId": "qa-interests",
+            "placeholder": null,
+            "parentContext": "Perfil Profesional",
+            "siblingContext": null
+        },
+        "label": "interest_areas"
+    },
+    {
+        "features": {
+            "label": "Interessengebiete",
+            "name": "interest_field",
+            "automationId": "lever-interests",
+            "placeholder": null,
+            "parentContext": "Über mich",
+            "siblingContext": null
+        },
+        "label": "interest_areas"
+    },
+    {
+        "features": {
+            "label": "Are you authorized to work in [Country]? *",
+            "name": "work_auth_opt",
+            "automationId": "gh-work-auth",
+            "placeholder": "Yes / No",
+            "parentContext": "Legal & Compliance",
+            "siblingContext": "We will verify documentation"
+        },
+        "label": "work_auth"
+    },
+    {
+        "features": {
+            "label": "¿Está autorizado para trabajar?",
+            "name": "wd-WorkAuth",
+            "automationId": "qa-auth",
+            "placeholder": null,
+            "parentContext": "Requisitos Legales",
+            "siblingContext": null
+        },
+        "label": "work_auth"
+    },
+    {
+        "features": {
+            "label": "Arbeitserlaubnis vorhanden?",
+            "name": "auth_field",
+            "automationId": "lever-auth",
+            "placeholder": null,
+            "parentContext": "Rechtliches",
+            "siblingContext": null
+        },
+        "label": "work_auth"
+    },
+    {
+        "features": {
+            "label": "Will you now or in the future require sponsorship? *",
+            "name": "sponsorship_opt",
+            "automationId": "gh-sponsorship",
+            "placeholder": "Yes / No",
+            "parentContext": "Work Authorization",
+            "siblingContext": "e.g. H1-B visa"
+        },
+        "label": "sponsorship"
+    },
+    {
+        "features": {
+            "label": "¿Requerirá patrocinio de visa?",
+            "name": "wd-Sponsorship",
+            "automationId": "qa-sponsor",
+            "placeholder": null,
+            "parentContext": "Estatus Legal",
+            "siblingContext": null
+        },
+        "label": "sponsorship"
+    },
+    {
+        "features": {
+            "label": "Visums-Sponsoring benötigt?",
+            "name": "sponsor_field",
+            "automationId": "lever-sponsor",
+            "placeholder": null,
+            "parentContext": "Formalitäten",
+            "siblingContext": null
+        },
+        "label": "sponsorship"
+    },
+    {
+        "features": {
+            "label": "Visa Status",
+            "name": "visa_type",
+            "automationId": "gh-visa",
+            "placeholder": "Citizen, Green Card, H1-B...",
+            "parentContext": "Work Authorization",
+            "siblingContext": null
+        },
+        "label": "visa_status"
+    },
+    {
+        "features": {
+            "label": "Estatus de visa",
+            "name": "wd-VisaStatus",
+            "automationId": "qa-visa",
+            "placeholder": null,
+            "parentContext": "Documentación",
+            "siblingContext": null
+        },
+        "label": "visa_status"
+    },
+    {
+        "features": {
+            "label": "Aufenthaltstitel",
+            "name": "visa_field",
+            "automationId": "lever-visa",
+            "placeholder": null,
+            "parentContext": "Rechtliche Infos",
+            "siblingContext": null
+        },
+        "label": "visa_status"
+    },
+    {
+        "features": {
+            "label": "Citizenship",
+            "name": "citizen_input",
+            "automationId": "gh-citizenship",
+            "placeholder": "Select Country",
+            "parentContext": "Personal Info",
+            "siblingContext": null
+        },
+        "label": "citizenship"
+    },
+    {
+        "features": {
+            "label": "Ciudadanía",
+            "name": "wd-Citizenship",
+            "automationId": "qa-citizen",
+            "placeholder": null,
+            "parentContext": "Identificación",
+            "siblingContext": null
+        },
+        "label": "citizenship"
+    },
+    {
+        "features": {
+            "label": "Staatsangehörigkeit",
+            "name": "citizen_field",
+            "automationId": "lever-citizenship",
+            "placeholder": null,
+            "parentContext": "Daten zur Person",
+            "siblingContext": null
+        },
+        "label": "citizenship"
+    },
+    {
+        "features": {
+            "label": "Security Clearance",
+            "name": "clearance_select",
+            "automationId": "gh-clearance",
+            "placeholder": "None, Secret, Top Secret...",
+            "parentContext": "Compliance",
+            "siblingContext": "Required for government contracts"
+        },
+        "label": "clearance"
+    },
+    {
+        "features": {
+            "label": "Habilitación de seguridad",
+            "name": "wd-Clearance",
+            "automationId": "qa-clearance",
+            "placeholder": null,
+            "parentContext": "Seguridad",
+            "siblingContext": null
+        },
+        "label": "clearance"
+    },
+    {
+        "features": {
+            "label": "Sicherheitsüberprüfung",
+            "name": "clearance_field",
+            "automationId": "lever-clearance",
+            "placeholder": null,
+            "parentContext": "Hintergrund",
+            "siblingContext": null
+        },
+        "label": "clearance"
+    },
+    {
+        "features": {
+            "label": "Is your clearance active?",
+            "name": "clearance_active_chk",
+            "automationId": "gh-clearance-active",
+            "placeholder": null,
+            "parentContext": "Security Details",
+            "siblingContext": null
+        },
+        "label": "clearance_active"
+    },
+    {
+        "features": {
+            "label": "¿Habilitación activa?",
+            "name": "wd-ClearanceActive",
+            "automationId": "qa-clear-act",
+            "placeholder": null,
+            "parentContext": "Validación",
+            "siblingContext": null
+        },
+        "label": "clearance_active"
+    },
+    {
+        "features": {
+            "label": "Aktuelle Freigabe?",
+            "name": "active_clearance",
+            "automationId": "lever-clearance-active",
+            "placeholder": null,
+            "parentContext": "Sicherheit",
+            "siblingContext": null
+        },
+        "label": "clearance_active"
+    },
+    {
+        "features": {
+            "label": "Are you 18 years or older? *",
+            "name": "legal_age_opt",
+            "automationId": "gh-age",
+            "placeholder": "Yes / No",
+            "parentContext": "Legal Info",
+            "siblingContext": null
+        },
+        "label": "legal_age"
+    },
+    {
+        "features": {
+            "label": "¿Es mayor de edad?",
+            "name": "wd-LegalAge",
+            "automationId": "qa-age",
+            "placeholder": null,
+            "parentContext": "Requisitos",
+            "siblingContext": null
+        },
+        "label": "legal_age"
+    },
+    {
+        "features": {
+            "label": "Mindestalter erreicht?",
+            "name": "age_check",
+            "automationId": "lever-age",
+            "placeholder": "Ja / Nein",
+            "parentContext": "Bewerbungsvoraussetzungen",
+            "siblingContext": null
+        },
+        "label": "legal_age"
+    },
+    {
+        "features": {
+            "label": "Tax ID / SSN",
+            "name": "tax_id_input",
+            "automationId": "gh-tax-id",
+            "placeholder": "Last 4 digits only",
+            "parentContext": "Identification",
+            "siblingContext": "For payroll setup"
+        },
+        "label": "tax_id"
+    },
+    {
+        "features": {
+            "label": "Número de identificación fiscal",
+            "name": "wd-TaxID",
+            "automationId": "qa-tax",
+            "placeholder": null,
+            "parentContext": "Legal",
+            "siblingContext": null
+        },
+        "label": "tax_id"
+    },
+    {
+        "features": {
+            "label": "Steuernummer",
+            "name": "tax_field",
+            "automationId": "lever-tax",
+            "placeholder": null,
+            "parentContext": "Steuerliche Angaben",
+            "siblingContext": null
+        },
+        "label": "tax_id"
+    },
+    {
+        "features": {
+            "label": "Date of Birth",
+            "name": "dob_input",
+            "automationId": "gh-dob",
+            "placeholder": "MM/DD/YYYY",
+            "parentContext": "Personal Information",
+            "siblingContext": null
+        },
+        "label": "date_of_birth"
+    },
+    {
+        "features": {
+            "label": "Fecha de nacimiento",
+            "name": "wd-DOB",
+            "automationId": "qa-dob",
+            "placeholder": null,
+            "parentContext": "Identidad",
+            "siblingContext": null
+        },
+        "label": "date_of_birth"
+    },
+    {
+        "features": {
+            "label": "Geburtsdatum",
+            "name": "dob_field",
+            "automationId": "lever-dob",
+            "placeholder": "TT.MM.JJJJ",
+            "parentContext": "Persönliche Daten",
+            "siblingContext": null
+        },
+        "label": "date_of_birth"
+    },
+    {
+        "features": {
+            "label": "Consent to background check? *",
+            "name": "bg_check_opt",
+            "automationId": "gh-bg-check",
+            "placeholder": "Select...",
+            "parentContext": "Compliance",
+            "siblingContext": "Required for this role"
+        },
+        "label": "background_check"
+    },
+    {
+        "features": {
+            "label": "¿Autoriza verificación de antecedentes?",
+            "name": "wd-BGCheck",
+            "automationId": "qa-bg-check",
+            "placeholder": null,
+            "parentContext": "Seguridad",
+            "siblingContext": null
+        },
+        "label": "background_check"
+    },
+    {
+        "features": {
+            "label": "Hintergrundüberprüfung zugestimmt?",
+            "name": "bg_field",
+            "automationId": "lever-bg",
+            "placeholder": null,
+            "parentContext": "Rechtliches",
+            "siblingContext": null
+        },
+        "label": "background_check"
+    },
+    {
+        "features": {
+            "label": "Do you have a criminal record? *",
+            "name": "criminal_opt",
+            "automationId": "gh-criminal",
+            "placeholder": "Yes / No",
+            "parentContext": "Background Information",
+            "siblingContext": "Disclosure is mandatory"
+        },
+        "label": "criminal_record"
+    },
+    {
+        "features": {
+            "label": "¿Posee antecedentes penales?",
+            "name": "wd-CriminalRecord",
+            "automationId": "qa-criminal",
+            "placeholder": null,
+            "parentContext": "Legal",
+            "siblingContext": null
+        },
+        "label": "criminal_record"
+    },
+    {
+        "features": {
+            "label": "Vorstrafen vorhanden?",
+            "name": "criminal_field",
+            "automationId": "lever-criminal",
+            "placeholder": null,
+            "parentContext": "Erklärung",
+            "siblingContext": null
+        },
+        "label": "criminal_record"
+    },
+    {
+        "features": {
+            "label": "Are you willing to take a drug test?",
+            "name": "drug_test_opt",
+            "automationId": "gh-drug-test",
+            "placeholder": "Select Status",
+            "parentContext": "Onboarding Requisites",
+            "siblingContext": "Condition of employment"
+        },
+        "label": "drug_test"
+    },
+    {
+        "features": {
+            "label": "¿Acepta prueba de detección de drogas?",
+            "name": "wd-DrugTest",
+            "automationId": "qa-drug",
+            "placeholder": null,
+            "parentContext": "Salud y Seguridad",
+            "siblingContext": null
+        },
+        "label": "drug_test"
+    },
+    {
+        "features": {
+            "label": "Drogentest zugestimmt?",
+            "name": "drug_field",
+            "automationId": "lever-drug",
+            "placeholder": null,
+            "parentContext": "Bedingungen",
+            "siblingContext": null
+        },
+        "label": "drug_test"
+    },
+    {
+        "features": {
+            "label": "Military Service",
+            "name": "military_opt",
+            "automationId": "gh-military",
+            "placeholder": "Yes / No",
+            "parentContext": "Experience",
+            "siblingContext": null
+        },
+        "label": "military_service"
+    },
+    {
+        "features": {
+            "label": "Servicio militar",
+            "name": "wd-MilitaryService",
+            "automationId": "qa-military",
+            "placeholder": null,
+            "parentContext": "Antecedentes",
+            "siblingContext": null
+        },
+        "label": "military_service"
+    },
+    {
+        "features": {
+            "label": "Wehrdienst",
+            "name": "military_field",
+            "automationId": "lever-military",
+            "placeholder": null,
+            "parentContext": "Werdegang",
+            "siblingContext": null
+        },
+        "label": "military_service"
+    },
+    {
+        "features": {
+            "label": "Service Dates",
+            "name": "service_dates_input",
+            "automationId": "gh-service-dates",
+            "placeholder": "From - To",
+            "parentContext": "Military Experience",
+            "siblingContext": null
+        },
+        "label": "service_dates"
+    },
+    {
+        "features": {
+            "label": "Fechas de servicio",
+            "name": "wd-ServiceDates",
+            "automationId": "qa-service-dates",
+            "placeholder": null,
+            "parentContext": "Historial Militar",
+            "siblingContext": null
+        },
+        "label": "service_dates"
+    },
+    {
+        "features": {
+            "label": "Dienstzeitraum",
+            "name": "service_field",
+            "automationId": "lever-service-dates",
+            "placeholder": null,
+            "parentContext": "Militärdienst",
+            "siblingContext": null
+        },
+        "label": "service_dates"
+    },
+    {
+        "features": {
+            "label": "Discharge Status",
+            "name": "discharge_select",
+            "automationId": "gh-discharge",
+            "placeholder": "Honorable, etc.",
+            "parentContext": "Military Detail",
+            "siblingContext": null
+        },
+        "label": "discharge_status"
+    },
+    {
+        "features": {
+            "label": "Estatus de baja",
+            "name": "wd-Discharge",
+            "automationId": "qa-discharge",
+            "placeholder": null,
+            "parentContext": "Servicio",
+            "siblingContext": null
+        },
+        "label": "discharge_status"
+    },
+    {
+        "features": {
+            "label": "Art der Entlassung",
+            "name": "discharge_field",
+            "automationId": "lever-discharge",
+            "placeholder": null,
+            "parentContext": "Militär",
+            "siblingContext": null
+        },
+        "label": "discharge_status"
+    },
+    {
+        "features": {
+            "label": "Are you a current Federal Employee?",
+            "name": "fed_emp_opt",
+            "automationId": "gh-fed-emp",
+            "placeholder": "Yes / No",
+            "parentContext": "Employment History",
+            "siblingContext": null
+        },
+        "label": "federal_employee"
+    },
+    {
+        "features": {
+            "label": "Empleado federal actual",
+            "name": "wd-FedEmp",
+            "automationId": "qa-fed-emp",
+            "placeholder": null,
+            "parentContext": "Gobierno",
+            "siblingContext": null
+        },
+        "label": "federal_employee"
+    },
+    {
+        "features": {
+            "label": "Bundesbediensteter?",
+            "name": "fed_emp_field",
+            "automationId": "lever-fed-emp",
+            "placeholder": null,
+            "parentContext": "Status",
+            "siblingContext": null
+        },
+        "label": "federal_employee"
+    },
+    {
+        "features": {
+            "label": "Federal Grade (GS Level)",
+            "name": "gs_level_select",
+            "automationId": "gh-gs-level",
+            "placeholder": "GS-1 to GS-15",
+            "parentContext": "Government Experience",
+            "siblingContext": null
+        },
+        "label": "federal_grade"
+    },
+    {
+        "features": {
+            "label": "Grado federal",
+            "name": "wd-FedGrade",
+            "automationId": "qa-fed-grade",
+            "placeholder": null,
+            "parentContext": "Categoría",
+            "siblingContext": null
+        },
+        "label": "federal_grade"
+    },
+    {
+        "features": {
+            "label": "Besoldungsgruppe",
+            "name": "fed_grade_field",
+            "automationId": "lever-fed-grade",
+            "placeholder": null,
+            "parentContext": "Einstufung",
+            "siblingContext": null
+        },
+        "label": "federal_grade"
+    },
+    {
+        "features": {
+            "label": "Schedule A Eligibility",
+            "name": "schedule_a_opt",
+            "automationId": "gh-schedule-a",
+            "placeholder": "Yes / No",
+            "parentContext": "Federal Qualifications",
+            "siblingContext": null
+        },
+        "label": "schedule_a"
+    },
+    {
+        "features": {
+            "label": "Elegibilidad Schedule A",
+            "name": "wd-ScheduleA",
+            "automationId": "qa-sch-a",
+            "placeholder": null,
+            "parentContext": "Discapacidad / Preferencia",
+            "siblingContext": null
+        },
+        "label": "schedule_a"
+    },
+    {
+        "features": {
+            "label": "Schedule A Berechtigung",
+            "name": "sch_a_field",
+            "automationId": "lever-sch-a",
+            "placeholder": null,
+            "parentContext": "Status",
+            "siblingContext": null
+        },
+        "label": "schedule_a"
+    },
+    {
+        "features": {
+            "label": "Publications",
+            "name": "pubs_textarea",
+            "automationId": "gh-pubs",
+            "placeholder": "List your published work",
+            "parentContext": "Academic & Research",
+            "siblingContext": null
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "Publicaciones",
+            "name": "wd-Publications",
+            "automationId": "qa-pubs",
+            "placeholder": null,
+            "parentContext": "Logros",
+            "siblingContext": null
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "Veröffentlichungen",
+            "name": "pubs_field",
+            "automationId": "lever-pubs",
+            "placeholder": null,
+            "parentContext": "Forschung",
+            "siblingContext": null
+        },
+        "label": "publications"
+    },
+    {
+        "features": {
+            "label": "Patents",
+            "name": "patents_textarea",
+            "automationId": "gh-patents",
+            "placeholder": "Patent number, title...",
+            "parentContext": "Academic & Research",
+            "siblingContext": null
+        },
+        "label": "patents"
+    },
+    {
+        "features": {
+            "label": "Patentes",
+            "name": "wd-Patents",
+            "automationId": "qa-patents",
+            "placeholder": null,
+            "parentContext": "Propiedad Intelectual",
+            "siblingContext": null
+        },
+        "label": "patents"
+    },
+    {
+        "features": {
+            "label": "Patente",
+            "name": "patents_field",
+            "automationId": "lever-patents",
+            "placeholder": null,
+            "parentContext": "Erfindungen",
+            "siblingContext": null
+        },
+        "label": "patents"
+    },
+    {
+        "features": {
+            "label": "Research Interests",
+            "name": "research_interests_input",
+            "automationId": "gh-research",
+            "placeholder": "Topics you are passionate about",
+            "parentContext": "Academic Profile",
+            "siblingContext": null
+        },
+        "label": "research_interests"
+    },
+    {
+        "features": {
+            "label": "Intereses de investigación",
+            "name": "wd-ResearchInt",
+            "automationId": "qa-research-int",
+            "placeholder": null,
+            "parentContext": "Academia",
+            "siblingContext": null
+        },
+        "label": "research_interests"
+    },
+    {
+        "features": {
+            "label": "Forschungsschwerpunkte",
+            "name": "research_field",
+            "automationId": "lever-research",
+            "placeholder": null,
+            "parentContext": "Wissenschaft",
+            "siblingContext": null
+        },
+        "label": "research_interests"
+    },
+    {
+        "features": {
+            "label": "Thesis Title",
+            "name": "thesis_title_input",
+            "automationId": "gh-thesis",
+            "placeholder": "Title of your dissertation",
+            "parentContext": "Education Detail",
+            "siblingContext": null
+        },
+        "label": "thesis_title"
+    },
+    {
+        "features": {
+            "label": "Título de la tesis",
+            "name": "wd-Thesis",
+            "automationId": "qa-thesis",
+            "placeholder": null,
+            "parentContext": "Grado académico",
+            "siblingContext": null
+        },
+        "label": "thesis_title"
+    },
+    {
+        "features": {
+            "label": "Thema der Abschlussarbeit",
+            "name": "thesis_field",
+            "automationId": "lever-thesis",
+            "placeholder": null,
+            "parentContext": "Studienabschluss",
+            "siblingContext": null
+        },
+        "label": "thesis_title"
+    },
+    {
+        "features": {
+            "label": "Advisor Name",
+            "name": "advisor_input",
+            "automationId": "gh-advisor",
+            "placeholder": "Full Name",
+            "parentContext": "Academic Background",
+            "siblingContext": "Faculty advisor"
+        },
+        "label": "advisor_name"
+    },
+    {
+        "features": {
+            "label": "Nombre del asesor / tutor",
+            "name": "wd-Advisor",
+            "automationId": "qa-advisor",
+            "placeholder": null,
+            "parentContext": "Educación Superior",
+            "siblingContext": null
+        },
+        "label": "advisor_name"
+    },
+    {
+        "features": {
+            "label": "Betreuer",
+            "name": "advisor_field",
+            "automationId": "lever-advisor",
+            "placeholder": null,
+            "parentContext": "Promotion / Studium",
+            "siblingContext": null
+        },
+        "label": "advisor_name"
+    },
+    {
+        "features": {
+            "label": "Referral Source",
+            "name": "referral_source_select",
+            "automationId": "gh-referral-source",
+            "placeholder": "LinkedIn, Job Board, Employee...",
+            "parentContext": "How did you hear about us?",
+            "siblingContext": null
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Fuente de referencia",
+            "name": "wd-ReferralSource",
+            "automationId": "qa-ref-source",
+            "placeholder": null,
+            "parentContext": "Solicitud",
+            "siblingContext": null
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Wie sind Sie auf uns aufmerksam geworden?",
+            "name": "source_field",
+            "automationId": "lever-source",
+            "placeholder": null,
+            "parentContext": "Bewerbung",
+            "siblingContext": null
+        },
+        "label": "referral_source"
+    },
+    {
+        "features": {
+            "label": "Referrer Name",
+            "name": "referrer_name_input",
+            "automationId": "gh-referrer",
+            "placeholder": "Who referred you?",
+            "parentContext": "Referral Details",
+            "siblingContext": null
+        },
+        "label": "referrer_name"
+    },
+    {
+        "features": {
+            "label": "Nombre de quien refiere",
+            "name": "wd-ReferrerName",
+            "automationId": "qa-referrer",
+            "placeholder": null,
+            "parentContext": "Referencia interna",
+            "siblingContext": null
+        },
+        "label": "referrer_name"
+    },
+    {
+        "features": {
+            "label": "Empfohlen von (Name)",
+            "name": "referrer_field",
+            "automationId": "lever-referrer",
+            "placeholder": null,
+            "parentContext": "Mitarbeiterwerbung",
+            "siblingContext": null
+        },
+        "label": "referrer_name"
+    },
+    {
+        "features": {
+            "label": "Referrer Email",
+            "name": "referrer_email_input",
+            "automationId": "gh-referrer-email",
+            "placeholder": "colleague@company.com",
+            "parentContext": "Referral Details",
+            "siblingContext": null
+        },
+        "label": "referrer_email"
+    },
+    {
+        "features": {
+            "label": "Correo de quien refiere",
+            "name": "wd-ReferrerEmail",
+            "automationId": "qa-referrer-email",
+            "placeholder": null,
+            "parentContext": "Referencia interna",
+            "siblingContext": null
+        },
+        "label": "referrer_email"
+    },
+    {
+        "features": {
+            "label": "Empfohlen von (E-Mail)",
+            "name": "referrer_email_field",
+            "automationId": "lever-referrer-email",
+            "placeholder": null,
+            "parentContext": "Mitarbeiterwerbung",
+            "siblingContext": null
+        },
+        "label": "referrer_email"
+    },
+    {
+        "features": {
+            "label": "Employee ID",
+            "name": "emp_id_input",
+            "automationId": "gh-emp-id",
+            "placeholder": "For internal candidates",
+            "parentContext": "Internal Application",
+            "siblingContext": null
+        },
+        "label": "employee_id"
+    },
+    {
+        "features": {
+            "label": "ID de empleado",
+            "name": "wd-EmployeeID",
+            "automationId": "qa-emp-id",
+            "placeholder": null,
+            "parentContext": "Perfil Interno",
+            "siblingContext": null
+        },
+        "label": "employee_id"
+    },
+    {
+        "features": {
+            "label": "Personalnummer",
+            "name": "emp_num_field",
+            "automationId": "lever-emp-id",
+            "placeholder": null,
+            "parentContext": "Mitarbeiter-Portal",
+            "siblingContext": null
+        },
+        "label": "employee_id"
+    },
+    {
+        "features": {
+            "label": "Job ID",
+            "name": "job_id_hidden",
+            "automationId": "gh-job-id",
+            "placeholder": null,
+            "parentContext": "Metadata",
+            "siblingContext": null
+        },
+        "label": "job_id"
+    },
+    {
+        "features": {
+            "label": "ID de la vacante",
+            "name": "wd-JobID",
+            "automationId": "qa-job-id",
+            "placeholder": null,
+            "parentContext": "Posición",
+            "siblingContext": null
+        },
+        "label": "job_id"
+    },
+    {
+        "features": {
+            "label": "Stellen-ID",
+            "name": "job_ref_num",
+            "automationId": "lever-job-id",
+            "placeholder": null,
+            "parentContext": "Ausschreibung",
+            "siblingContext": null
+        },
+        "label": "job_id"
+    },
+    {
+        "features": {
+            "label": "Requisition ID",
+            "name": "req_id_input",
+            "automationId": "gh-req-id",
+            "placeholder": "REQ-1234",
+            "parentContext": "Job Details",
+            "siblingContext": null
+        },
+        "label": "requisition_id"
+    },
+    {
+        "features": {
+            "label": "ID de requisición",
+            "name": "wd-ReqID",
+            "automationId": "qa-req-id",
+            "placeholder": null,
+            "parentContext": "Sistema",
+            "siblingContext": null
+        },
+        "label": "requisition_id"
+    },
+    {
+        "features": {
+            "label": "Anforderungsnummer",
+            "name": "req_num_field",
+            "automationId": "lever-req-id",
+            "placeholder": null,
+            "parentContext": "Recruiting",
+            "siblingContext": null
+        },
+        "label": "requisition_id"
+    },
+    {
+        "features": {
+            "label": "Application Date",
+            "name": "app_date_hidden",
+            "automationId": "gh-app-date",
+            "placeholder": null,
+            "parentContext": "Metadata",
+            "siblingContext": null
+        },
+        "label": "application_date"
+    },
+    {
+        "features": {
+            "label": "Fecha de solicitud",
+            "name": "wd-AppDate",
+            "automationId": "qa-app-date",
+            "placeholder": null,
+            "parentContext": "Historial",
+            "siblingContext": null
+        },
+        "label": "application_date"
+    },
+    {
+        "features": {
+            "label": "Bewerbungsdatum",
+            "name": "app_timestamp",
+            "automationId": "lever-app-date",
+            "placeholder": null,
+            "parentContext": "System-Info",
+            "siblingContext": null
+        },
+        "label": "application_date"
+    },
+    {
+        "features": {
+            "label": "Resume File",
+            "name": "resume_upload",
+            "automationId": "gh-resume",
+            "placeholder": "Upload PDF or DOCX",
+            "parentContext": "Attachments",
+            "siblingContext": "Required"
+        },
+        "label": "resume_filename"
+    },
+    {
+        "features": {
+            "label": "Currículum",
+            "name": "wd-ResumeFile",
+            "automationId": "qa-resume-up",
+            "placeholder": null,
+            "parentContext": "Documentos",
+            "siblingContext": null
+        },
+        "label": "resume_filename"
+    },
+    {
+        "features": {
+            "label": "Lebenslauf hochladen",
+            "name": "resume_field",
+            "automationId": "lever-resume",
+            "placeholder": "Datei auswählen",
+            "parentContext": "Unterlagen",
+            "siblingContext": null
+        },
+        "label": "resume_filename"
+    },
+    {
+        "features": {
+            "label": "Cover Letter",
+            "name": "cover_letter_upload",
+            "automationId": "gh-cover-letter",
+            "placeholder": "Optional",
+            "parentContext": "Attachments",
+            "siblingContext": null
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Carta de presentación",
+            "name": "wd-CoverLetter",
+            "automationId": "qa-cl-up",
+            "placeholder": null,
+            "parentContext": "Documentos",
+            "siblingContext": null
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Anschreiben",
+            "name": "cl_field",
+            "automationId": "lever-cl",
+            "placeholder": "Text oder Datei",
+            "parentContext": "Bewerbung",
+            "siblingContext": null
+        },
+        "label": "cover_letter"
+    },
+    {
+        "features": {
+            "label": "Additional Information",
+            "name": "additional_info_textarea",
+            "automationId": "gh-additional-info",
+            "placeholder": "Anything else we should know?",
+            "parentContext": "Final Details",
+            "siblingContext": null
+        },
+        "label": "additional_info"
+    },
+    {
+        "features": {
+            "label": "Información adicional",
+            "name": "wd-AdditionalInfo",
+            "automationId": "qa-add-info",
+            "placeholder": null,
+            "parentContext": "Resumen",
+            "siblingContext": null
+        },
+        "label": "additional_info"
+    },
+    {
+        "features": {
+            "label": "Sonstige Anmerkungen",
+            "name": "add_info_field",
+            "automationId": "lever-add-info",
+            "placeholder": null,
+            "parentContext": "Bewerbung",
+            "siblingContext": null
+        },
+        "label": "additional_info"
+    },
+    {
+        "features": {
+            "label": "Notes",
+            "name": "notes_input",
+            "automationId": "gh-notes",
+            "placeholder": null,
+            "parentContext": "Admin only",
+            "siblingContext": null
+        },
+        "label": "notes"
+    },
+    {
+        "features": {
+            "label": "Notas",
+            "name": "wd-Notes",
+            "automationId": "qa-notes",
+            "placeholder": null,
+            "parentContext": "Perfil",
+            "siblingContext": null
+        },
+        "label": "notes"
+    },
+    {
+        "features": {
+            "label": "Notizen",
+            "name": "internal_notes",
+            "automationId": "lever-notes",
+            "placeholder": null,
+            "parentContext": "Intern",
+            "siblingContext": null
+        },
+        "label": "notes"
+    },
+    {
+        "features": {
+            "label": "Introduction Note",
+            "name": "intro_note_text",
+            "automationId": "gh-intro",
+            "placeholder": "A brief message to the recruiter",
+            "parentContext": "Application Summary",
+            "siblingContext": null
+        },
+        "label": "intro_note"
+    },
+    {
+        "features": {
+            "label": "Nota de introducción",
+            "name": "wd-IntroNote",
+            "automationId": "qa-intro",
+            "placeholder": null,
+            "parentContext": "Bewerbung",
+            "siblingContext": null
+        },
+        "label": "intro_note"
+    },
+    {
+        "features": {
+            "label": "Einleitungstext",
+            "name": "intro_field",
+            "automationId": "lever-intro",
+            "placeholder": null,
+            "parentContext": "Profil",
+            "siblingContext": null
+        },
+        "label": "intro_note"
+    },
+    {
+        "features": {
+            "label": "Custom Question 1",
+            "name": "custom_q1",
+            "automationId": "gh-custom-q",
+            "placeholder": "Your answer...",
+            "parentContext": "Questions",
+            "siblingContext": null
+        },
+        "label": "custom_question"
+    },
+    {
+        "features": {
+            "label": "Pregunta personalizada",
+            "name": "wd-CustomQ",
+            "automationId": "qa-custom",
+            "placeholder": null,
+            "parentContext": "Solicitud",
+            "siblingContext": null
+        },
+        "label": "custom_question"
+    },
+    {
+        "features": {
+            "label": "Individuelle Frage",
+            "name": "cust_field",
+            "automationId": "lever-custom",
+            "placeholder": null,
+            "parentContext": "Zusatzfragen",
+            "siblingContext": null
+        },
+        "label": "custom_question"
+    },
+    {
+        "features": {
+            "label": "Generic Question",
+            "name": "generic_q",
+            "automationId": "gh-gen-q",
+            "placeholder": null,
+            "parentContext": "Questionnaire",
+            "siblingContext": null
+        },
+        "label": "generic_question"
+    },
+    {
+        "features": {
+            "label": "Pregunta general",
+            "name": "wd-GenericQ",
+            "automationId": "qa-gen-q",
+            "placeholder": null,
+            "parentContext": "Encuesta",
+            "siblingContext": null
+        },
+        "label": "generic_question"
+    },
+    {
+        "features": {
+            "label": "Allgemeine Frage",
+            "name": "gen_q_field",
+            "automationId": "lever-gen-q",
+            "placeholder": null,
+            "parentContext": "Bewerbung",
+            "siblingContext": null
+        },
+        "label": "generic_question"
+    },
+    {
+        "features": {
+            "label": "I agree to the Terms & Conditions *",
+            "name": "agreement_chk",
+            "automationId": "gh-agreement",
+            "placeholder": null,
+            "parentContext": "Legal",
+            "siblingContext": "Must check to proceed"
+        },
+        "label": "agreement"
+    },
+    {
+        "features": {
+            "label": "Acepto los términos",
+            "name": "wd-Agreement",
+            "automationId": "qa-agree",
+            "placeholder": null,
+            "parentContext": "Cumplimiento",
+            "siblingContext": null
+        },
+        "label": "agreement"
+    },
+    {
+        "features": {
+            "label": "Datenschutzerklärung akzeptiert",
+            "name": "privacy_chk",
+            "automationId": "lever-privacy",
+            "placeholder": null,
+            "parentContext": "Rechtliches",
+            "siblingContext": null
+        },
+        "label": "agreement"
+    }
+]

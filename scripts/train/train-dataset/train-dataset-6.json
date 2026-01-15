@@ -1,0 +1,2862 @@
+[
+    {
+        "features": {
+            "label": "First Name *",
+            "name": "firstName",
+            "automationId": "data-qa-first-name",
+            "placeholder": "Enter your first name",
+            "parentContext": "Personal Information",
+            "siblingContext": "Required field"
+        },
+        "label": "first_name"
+    },
+    {
+        "features": {
+            "label": "Vorname",
+            "name": "wd-Input-firstName-1234",
+            "automationId": "data-automation-id-fname",
+            "placeholder": null,
+            "parentContext": "Kandidateninformationen",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "first_name"
+    },
+    {
+        "features": {
+            "label": "Prénom:",
+            "name": "ember492_fname",
+            "automationId": null,
+            "placeholder": "Votre prénom",
+            "parentContext": "Informations personnelles",
+            "siblingContext": "Ce champ est obligatoire"
+        },
+        "label": "first_name"
+    },
+    {
+        "features": {
+            "label": "Middle Name",
+            "name": "middleName",
+            "automationId": "test-middle-name",
+            "placeholder": "Optional",
+            "parentContext": "Basic Details",
+            "siblingContext": "Leave blank if not applicable"
+        },
+        "label": "middle_name"
+    },
+    {
+        "features": {
+            "label": "Segundo Nombre",
+            "name": "input_29_middle",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Datos Personales",
+            "siblingContext": "Opcional"
+        },
+        "label": "middle_name"
+    },
+    {
+        "features": {
+            "label": "Middle Initial",
+            "name": "ctl00_Body_middleInitial",
+            "automationId": "data-test-middle",
+            "placeholder": "M",
+            "parentContext": "Name Information",
+            "siblingContext": null
+        },
+        "label": "middle_name"
+    },
+    {
+        "features": {
+            "label": "Last Name *",
+            "name": "lastName",
+            "automationId": "data-qa-last-name",
+            "placeholder": "Enter your last name",
+            "parentContext": "Personal Information",
+            "siblingContext": "Required"
+        },
+        "label": "last_name"
+    },
+    {
+        "features": {
+            "label": "Nachname:",
+            "name": "wd-Candidate-LastName",
+            "automationId": "data-automation-surname",
+            "placeholder": null,
+            "parentContext": "Persönliche Daten",
+            "siblingContext": "Erforderlich"
+        },
+        "label": "last_name"
+    },
+    {
+        "features": {
+            "label": "Apellido",
+            "name": "react-select-2-lastname",
+            "automationId": null,
+            "placeholder": "Ingrese su apellido",
+            "parentContext": "Información del Candidato",
+            "siblingContext": "Campo obligatorio"
+        },
+        "label": "last_name"
+    },
+    {
+        "features": {
+            "label": "Full Name *",
+            "name": "fullName",
+            "automationId": "data-qa-full-name",
+            "placeholder": "First Middle Last",
+            "parentContext": "Contact Details",
+            "siblingContext": "As shown on legal documents"
+        },
+        "label": "full_name"
+    },
+    {
+        "features": {
+            "label": "Name",
+            "name": "ember847_name",
+            "automationId": "test-full-name",
+            "placeholder": "John Doe",
+            "parentContext": "Account Setup",
+            "siblingContext": "Full legal name"
+        },
+        "label": "full_name"
+    },
+    {
+        "features": {
+            "label": "Nom complet",
+            "name": "input_full_name_123",
+            "automationId": null,
+            "placeholder": "Prénom et nom",
+            "parentContext": "Profil",
+            "siblingContext": "Requis"
+        },
+        "label": "full_name"
+    },
+    {
+        "features": {
+            "label": "Preferred Name",
+            "name": "preferredName",
+            "automationId": "data-automation-preferred",
+            "placeholder": "What should we call you?",
+            "parentContext": "Personal Preferences",
+            "siblingContext": "Optional - how you'd like to be addressed"
+        },
+        "label": "preferred_name"
+    },
+    {
+        "features": {
+            "label": "Nickname",
+            "name": "wd-Input-nickname-567",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "About You",
+            "siblingContext": "Optional"
+        },
+        "label": "preferred_name"
+    },
+    {
+        "features": {
+            "label": "Goes By",
+            "name": "goesBy",
+            "automationId": "test-nickname",
+            "placeholder": "e.g., Mike instead of Michael",
+            "parentContext": "Personal Information",
+            "siblingContext": null
+        },
+        "label": "preferred_name"
+    },
+    {
+        "features": {
+            "label": "Professional Headline *",
+            "name": "headline",
+            "automationId": "data-qa-headline",
+            "placeholder": "e.g., Senior Software Engineer",
+            "parentContext": "Profile",
+            "siblingContext": "Visible to recruiters"
+        },
+        "label": "headline"
+    },
+    {
+        "features": {
+            "label": "Title",
+            "name": "ember923_title",
+            "automationId": "data-test-prof-title",
+            "placeholder": "Your professional title",
+            "parentContext": "Professional Summary",
+            "siblingContext": "Max 100 characters"
+        },
+        "label": "headline"
+    },
+    {
+        "features": {
+            "label": "Titre professionnel",
+            "name": "input_headline_89",
+            "automationId": null,
+            "placeholder": "Ex: Développeur Full Stack",
+            "parentContext": "En-tête",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "headline"
+    },
+    {
+        "features": {
+            "label": "About You",
+            "name": "summary",
+            "automationId": "data-qa-summary",
+            "placeholder": "Tell us about your background and experience...",
+            "parentContext": "Profile",
+            "siblingContext": "500 characters max"
+        },
+        "label": "summary"
+    },
+    {
+        "features": {
+            "label": "Professional Summary *",
+            "name": "wd-TextArea-summary",
+            "automationId": "data-automation-bio",
+            "placeholder": null,
+            "parentContext": "Career Overview",
+            "siblingContext": "Describe your professional journey"
+        },
+        "label": "summary"
+    },
+    {
+        "features": {
+            "label": "Bio",
+            "name": "candidateBio",
+            "automationId": "test-bio-field",
+            "placeholder": "Share your story...",
+            "parentContext": "Introduction",
+            "siblingContext": "This will be visible on your profile"
+        },
+        "label": "summary"
+    },
+    {
+        "features": {
+            "label": "Upload Photo",
+            "name": "profilePhoto",
+            "automationId": "data-qa-photo-upload",
+            "placeholder": null,
+            "parentContext": "Profile Picture",
+            "siblingContext": "JPG or PNG, max 5MB"
+        },
+        "label": "profile_photo"
+    },
+    {
+        "features": {
+            "label": "Photo de profil",
+            "name": "ember334_photo",
+            "automationId": "data-test-avatar",
+            "placeholder": null,
+            "parentContext": "Votre profil",
+            "siblingContext": "Facultatif"
+        },
+        "label": "profile_photo"
+    },
+    {
+        "features": {
+            "label": "Profile Image",
+            "name": "wd-FileUpload-photo-99",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Personal Details",
+            "siblingContext": "Recommended: 400x400px"
+        },
+        "label": "profile_photo"
+    },
+    {
+        "features": {
+            "label": "Email Address *",
+            "name": "email",
+            "automationId": "data-qa-email",
+            "placeholder": "you@example.com",
+            "parentContext": "Contact Information",
+            "siblingContext": "We'll send updates here"
+        },
+        "label": "email"
+    },
+    {
+        "features": {
+            "label": "E-Mail-Adresse:",
+            "name": "wd-Input-email-primary",
+            "automationId": "data-automation-email",
+            "placeholder": "ihre@email.de",
+            "parentContext": "Kontaktdaten",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "email"
+    },
+    {
+        "features": {
+            "label": "Correo electrónico *",
+            "name": "input_email_001",
+            "automationId": null,
+            "placeholder": "ejemplo@correo.com",
+            "parentContext": "Datos de Contacto",
+            "siblingContext": "Campo obligatorio"
+        },
+        "label": "email"
+    },
+    {
+        "features": {
+            "label": "Alternate Email",
+            "name": "emailSecondary",
+            "automationId": "data-qa-email-alt",
+            "placeholder": "Optional backup email",
+            "parentContext": "Additional Contact",
+            "siblingContext": "Optional"
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Secondary Email Address",
+            "name": "ember556_email2",
+            "automationId": "test-secondary-email",
+            "placeholder": null,
+            "parentContext": "Contact Details",
+            "siblingContext": "For backup communication"
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Autre email",
+            "name": "ctl00_Body_altEmail",
+            "automationId": null,
+            "placeholder": "votre.autre@email.fr",
+            "parentContext": "Coordonnées",
+            "siblingContext": "Facultatif"
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Phone Number *",
+            "name": "phone",
+            "automationId": "data-qa-phone",
+            "placeholder": "(555) 123-4567",
+            "parentContext": "Contact Information",
+            "siblingContext": "Include country code if outside US"
+        },
+        "label": "phone"
+    },
+    {
+        "features": {
+            "label": "Telefonnummer",
+            "name": "wd-Input-phone-main",
+            "automationId": "data-automation-phone",
+            "placeholder": "+49 123 456789",
+            "parentContext": "Kontakt",
+            "siblingContext": "Erforderlich"
+        },
+        "label": "phone"
+    },
+    {
+        "features": {
+            "label": "Teléfono:",
+            "name": "react-phone-input-2",
+            "automationId": null,
+            "placeholder": "555-1234",
+            "parentContext": "Información de Contacto",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "phone"
+    },
+    {
+        "features": {
+            "label": "Mobile Number *",
+            "name": "phoneMobile",
+            "automationId": "data-qa-mobile",
+            "placeholder": "Your cell phone",
+            "parentContext": "Contact Details",
+            "siblingContext": "Preferred contact method"
+        },
+        "label": "phone_mobile"
+    },
+    {
+        "features": {
+            "label": "Cell Phone",
+            "name": "ember778_mobile",
+            "automationId": "test-cell-phone",
+            "placeholder": null,
+            "parentContext": "Phone Numbers",
+            "siblingContext": "Required for SMS updates"
+        },
+        "label": "phone_mobile"
+    },
+    {
+        "features": {
+            "label": "Numéro de portable",
+            "name": "input_mobile_56",
+            "automationId": null,
+            "placeholder": "06 12 34 56 78",
+            "parentContext": "Contact",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "phone_mobile"
+    },
+    {
+        "features": {
+            "label": "Home Phone",
+            "name": "phoneHome",
+            "automationId": "data-qa-home-phone",
+            "placeholder": null,
+            "parentContext": "Additional Contact",
+            "siblingContext": "Optional"
+        },
+        "label": "phone_home"
+    },
+    {
+        "features": {
+            "label": "Landline",
+            "name": "wd-Input-phone-home-88",
+            "automationId": "data-automation-landline",
+            "placeholder": "(555) 000-0000",
+            "parentContext": "Phone Numbers",
+            "siblingContext": "Leave blank if not applicable"
+        },
+        "label": "phone_home"
+    },
+    {
+        "features": {
+            "label": "Festnetz",
+            "name": "ctl00_phoneHome",
+            "automationId": null,
+            "placeholder": "030 12345678",
+            "parentContext": "Telefonnummern",
+            "siblingContext": "Optional"
+        },
+        "label": "phone_home"
+    },
+    {
+        "features": {
+            "label": "LinkedIn Profile *",
+            "name": "linkedinUrl",
+            "automationId": "data-qa-linkedin",
+            "placeholder": "https://linkedin.com/in/yourprofile",
+            "parentContext": "Social Profiles",
+            "siblingContext": "Required for application"
+        },
+        "label": "linkedin_url"
+    },
+    {
+        "features": {
+            "label": "LinkedIn URL",
+            "name": "ember991_linkedin",
+            "automationId": "test-linkedin-link",
+            "placeholder": "linkedin.com/in/...",
+            "parentContext": "Professional Links",
+            "siblingContext": "Must be public profile"
+        },
+        "label": "linkedin_url"
+    },
+    {
+        "features": {
+            "label": "Profil LinkedIn",
+            "name": "input_linkedin_url",
+            "automationId": null,
+            "placeholder": "www.linkedin.com/in/votreprofil",
+            "parentContext": "Réseaux sociaux",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "linkedin_url"
+    },
+    {
+        "features": {
+            "label": "GitHub Username",
+            "name": "githubUrl",
+            "automationId": "data-qa-github",
+            "placeholder": "github.com/yourusername",
+            "parentContext": "Developer Profiles",
+            "siblingContext": "Optional but recommended"
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "GitHub Profile",
+            "name": "wd-Input-github-123",
+            "automationId": "data-automation-github",
+            "placeholder": "https://github.com/...",
+            "parentContext": "Technical Links",
+            "siblingContext": "Share your code portfolio"
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "GitHub",
+            "name": "github_link",
+            "automationId": null,
+            "placeholder": "Your GitHub URL",
+            "parentContext": "Online Presence",
+            "siblingContext": null
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "Portfolio Website",
+            "name": "portfolioUrl",
+            "automationId": "data-qa-portfolio",
+            "placeholder": "https://yourportfolio.com",
+            "parentContext": "Work Samples",
+            "siblingContext": "Showcase your best work"
+        },
+        "label": "portfolio_url"
+    },
+    {
+        "features": {
+            "label": "Portfolio Link",
+            "name": "ember445_portfolio",
+            "automationId": "test-portfolio",
+            "placeholder": "www.yourwork.com",
+            "parentContext": "Creative Links",
+            "siblingContext": "Optional"
+        },
+        "label": "portfolio_url"
+    },
+    {
+        "features": {
+            "label": "Site web personnel",
+            "name": "input_portfolio_98",
+            "automationId": null,
+            "placeholder": "https://...",
+            "parentContext": "Liens professionnels",
+            "siblingContext": "Facultatif"
+        },
+        "label": "portfolio_url"
+    },
+    {
+        "features": {
+            "label": "Personal Website",
+            "name": "websiteUrl",
+            "automationId": "data-qa-website",
+            "placeholder": "https://www.example.com",
+            "parentContext": "Online Presence",
+            "siblingContext": "Optional"
+        },
+        "label": "website_url"
+    },
+    {
+        "features": {
+            "label": "Website",
+            "name": "wd-Input-website-url",
+            "automationId": "data-automation-web",
+            "placeholder": "Your website URL",
+            "parentContext": "Additional Links",
+            "siblingContext": null
+        },
+        "label": "website_url"
+    },
+    {
+        "features": {
+            "label": "Web",
+            "name": "ctl00_website",
+            "automationId": null,
+            "placeholder": "http://...",
+            "parentContext": "Links",
+            "siblingContext": "Personal or professional site"
+        },
+        "label": "website_url"
+    },
+    {
+        "features": {
+            "label": "Twitter Handle",
+            "name": "twitterUrl",
+            "automationId": "data-qa-twitter",
+            "placeholder": "@yourusername",
+            "parentContext": "Social Media",
+            "siblingContext": "Optional"
+        },
+        "label": "twitter_url"
+    },
+    {
+        "features": {
+            "label": "Twitter Profile",
+            "name": "ember667_twitter",
+            "automationId": "test-twitter-link",
+            "placeholder": "twitter.com/...",
+            "parentContext": "Social Links",
+            "siblingContext": null
+        },
+        "label": "twitter_url"
+    },
+    {
+        "features": {
+            "label": "Twitter / X",
+            "name": "input_twitter_url",
+            "automationId": null,
+            "placeholder": "https://x.com/yourhandle",
+            "parentContext": "Réseaux sociaux",
+            "siblingContext": "Facultatif"
+        },
+        "label": "twitter_url"
+    },
+    {
+        "features": {
+            "label": "Facebook Profile",
+            "name": "facebookUrl",
+            "automationId": "data-qa-facebook",
+            "placeholder": "facebook.com/yourprofile",
+            "parentContext": "Social Media Profiles",
+            "siblingContext": "Optional"
+        },
+        "label": "facebook_url"
+    },
+    {
+        "features": {
+            "label": "Facebook",
+            "name": "wd-Input-fb-url",
+            "automationId": "data-automation-facebook",
+            "placeholder": "https://facebook.com/...",
+            "parentContext": "Social Networks",
+            "siblingContext": null
+        },
+        "label": "facebook_url"
+    },
+    {
+        "features": {
+            "label": "Facebook URL",
+            "name": "fb_profile",
+            "automationId": null,
+            "placeholder": "Your Facebook link",
+            "parentContext": "Online Profiles",
+            "siblingContext": "Optional"
+        },
+        "label": "facebook_url"
+    },
+    {
+        "features": {
+            "label": "Instagram Handle",
+            "name": "instagramUrl",
+            "automationId": "data-qa-instagram",
+            "placeholder": "@username",
+            "parentContext": "Social Media",
+            "siblingContext": "For creative roles"
+        },
+        "label": "instagram_url"
+    },
+    {
+        "features": {
+            "label": "Instagram",
+            "name": "ember889_ig",
+            "automationId": "test-ig-link",
+            "placeholder": "instagram.com/...",
+            "parentContext": "Social Profiles",
+            "siblingContext": "Optional"
+        },
+        "label": "instagram_url"
+    },
+    {
+        "features": {
+            "label": "Instagram URL",
+            "name": "input_insta",
+            "automationId": null,
+            "placeholder": "https://instagram.com/yourprofile",
+            "parentContext": "Réseaux",
+            "siblingContext": null
+        },
+        "label": "instagram_url"
+    },
+    {
+        "features": {
+            "label": "Google Scholar Profile",
+            "name": "googleScholarUrl",
+            "automationId": "data-qa-scholar",
+            "placeholder": "scholar.google.com/citations?user=...",
+            "parentContext": "Academic Profiles",
+            "siblingContext": "For research positions"
+        },
+        "label": "google_scholar_url"
+    },
+    {
+        "features": {
+            "label": "Google Scholar",
+            "name": "wd-Input-scholar-url",
+            "automationId": "data-automation-scholar",
+            "placeholder": "Your Scholar profile",
+            "parentContext": "Research Links",
+            "siblingContext": "Include if applicable"
+        },
+        "label": "google_scholar_url"
+    },
+    {
+        "features": {
+            "label": "Scholar URL",
+            "name": "scholar_profile",
+            "automationId": null,
+            "placeholder": "https://scholar.google.com/...",
+            "parentContext": "Academic Information",
+            "siblingContext": "Optional"
+        },
+        "label": "google_scholar_url"
+    },
+    {
+        "features": {
+            "label": "Other Link",
+            "name": "otherUrl",
+            "automationId": "data-qa-other-url",
+            "placeholder": "https://...",
+            "parentContext": "Additional Information",
+            "siblingContext": "Any other relevant link"
+        },
+        "label": "other_url"
+    },
+    {
+        "features": {
+            "label": "Additional URL",
+            "name": "ember234_other",
+            "automationId": "test-other-link",
+            "placeholder": "Other relevant link",
+            "parentContext": "Other",
+            "siblingContext": "Optional"
+        },
+        "label": "other_url"
+    },
+    {
+        "features": {
+            "label": "Autre lien",
+            "name": "input_other_url_77",
+            "automationId": null,
+            "placeholder": "URL supplémentaire",
+            "parentContext": "Liens",
+            "siblingContext": "Facultatif"
+        },
+        "label": "other_url"
+    },
+    {
+        "features": {
+            "label": "Street Address *",
+            "name": "addressLine1",
+            "automationId": "data-qa-address-1",
+            "placeholder": "123 Main Street",
+            "parentContext": "Mailing Address",
+            "siblingContext": "Required"
+        },
+        "label": "address_line_1"
+    },
+    {
+        "features": {
+            "label": "Address Line 1:",
+            "name": "wd-Input-addr1-456",
+            "automationId": "data-automation-address1",
+            "placeholder": "Street and number",
+            "parentContext": "Address",
+            "siblingContext": "Do not include PO Box"
+        },
+        "label": "address_line_1"
+    },
+    {
+        "features": {
+            "label": "Adresse",
+            "name": "input_addr_line1",
+            "automationId": null,
+            "placeholder": "Numéro et rue",
+            "parentContext": "Adresse postale",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "address_line_1"
+    },
+    {
+        "features": {
+            "label": "Address Line 2",
+            "name": "addressLine2",
+            "automationId": "data-qa-address-2",
+            "placeholder": "Apt, Suite, Building (optional)",
+            "parentContext": "Mailing Address",
+            "siblingContext": "Optional"
+        },
+        "label": "address_line_2"
+    },
+    {
+        "features": {
+            "label": "Apartment/Unit",
+            "name": "ember112_addr2",
+            "automationId": "test-address-line-2",
+            "placeholder": "Unit #",
+            "parentContext": "Address Details",
+            "siblingContext": null
+        },
+        "label": "address_line_2"
+    },
+    {
+        "features": {
+            "label": "Complément d'adresse",
+            "name": "ctl00_addr2",
+            "automationId": null,
+            "placeholder": "Bâtiment, étage, etc.",
+            "parentContext": "Adresse",
+            "siblingContext": "Facultatif"
+        },
+        "label": "address_line_2"
+    },
+    {
+        "features": {
+            "label": "City *",
+            "name": "city",
+            "automationId": "data-qa-city",
+            "placeholder": "Enter city",
+            "parentContext": "Location",
+            "siblingContext": "Required"
+        },
+        "label": "city"
+    },
+    {
+        "features": {
+            "label": "Stadt",
+            "name": "wd-Input-city-789",
+            "automationId": "data-automation-city",
+            "placeholder": "Berlin",
+            "parentContext": "Adresse",
+            "siblingContext": "Erforderlich"
+        },
+        "label": "city"
+    },
+    {
+        "features": {
+            "label": "Ville:",
+            "name": "input_city_field",
+            "automationId": null,
+            "placeholder": "Paris",
+            "parentContext": "Localisation",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "city"
+    },
+    {
+        "features": {
+            "label": "State / Province *",
+            "name": "state",
+            "automationId": "data-qa-state",
+            "placeholder": "Select state",
+            "parentContext": "Address Information",
+            "siblingContext": "Required"
+        },
+        "label": "state"
+    },
+    {
+        "features": {
+            "label": "State",
+            "name": "ember554_state",
+            "automationId": "test-state-field",
+            "placeholder": "CA",
+            "parentContext": "Location Details",
+            "siblingContext": "Two-letter code"
+        },
+        "label": "state"
+    },
+    {
+        "features": {
+            "label": "Bundesland",
+            "name": "wd-Select-state-33",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Adressinformationen",
+            "siblingContext": "Wählen Sie aus"
+        },
+        "label": "state"
+    },
+    {
+        "features": {
+            "label": "ZIP Code *",
+            "name": "zipCode",
+            "automationId": "data-qa-zip",
+            "placeholder": "12345",
+            "parentContext": "Address",
+            "siblingContext": "5-digit code"
+        },
+        "label": "zip_code"
+    },
+    {
+        "features": {
+            "label": "Postal Code",
+            "name": "postalCode",
+            "automationId": "data-automation-postal",
+            "placeholder": "Enter postal code",
+            "parentContext": "Mailing Address",
+            "siblingContext": "Required"
+        },
+        "label": "zip_code"
+    },
+    {
+        "features": {
+            "label": "Code postal:",
+            "name": "input_zip_99",
+            "automationId": null,
+            "placeholder": "75001",
+            "parentContext": "Adresse",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "zip_code"
+    },
+    {
+        "features": {
+            "label": "Country *",
+            "name": "country",
+            "automationId": "data-qa-country",
+            "placeholder": "Select country",
+            "parentContext": "Location",
+            "siblingContext": "Required"
+        },
+        "label": "country"
+    },
+    {
+        "features": {
+            "label": "Land",
+            "name": "wd-Select-country-11",
+            "automationId": "data-automation-country",
+            "placeholder": null,
+            "parentContext": "Standort",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "country"
+    },
+    {
+        "features": {
+            "label": "Pays",
+            "name": "ember887_country",
+            "automationId": null,
+            "placeholder": "Sélectionnez",
+            "parentContext": "Localisation",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "country"
+    },
+    {
+        "features": {
+            "label": "Current Location *",
+            "name": "currentLocation",
+            "automationId": "data-qa-current-loc",
+            "placeholder": "City, State/Country",
+            "parentContext": "Location Information",
+            "siblingContext": "Where are you based?"
+        },
+        "label": "current_location"
+    },
+    {
+        "features": {
+            "label": "Where are you located?",
+            "name": "location_current",
+            "automationId": "test-current-location",
+            "placeholder": "San Francisco, CA",
+            "parentContext": "About You",
+            "siblingContext": "Required"
+        },
+        "label": "current_location"
+    },
+    {
+        "features": {
+            "label": "Standort",
+            "name": "wd-Input-location-22",
+            "automationId": null,
+            "placeholder": "München, Deutschland",
+            "parentContext": "Persönliche Informationen",
+            "siblingContext": "Erforderlich"
+        },
+        "label": "current_location"
+    },
+    {
+        "features": {
+            "label": "Time Zone",
+            "name": "timezone",
+            "automationId": "data-qa-timezone",
+            "placeholder": "Select timezone",
+            "parentContext": "Scheduling Preferences",
+            "siblingContext": "For interview coordination"
+        },
+        "label": "timezone"
+    },
+    {
+        "features": {
+            "label": "Your Timezone",
+            "name": "ember332_tz",
+            "automationId": "data-automation-tz",
+            "placeholder": "GMT-8",
+            "parentContext": "Contact Preferences",
+            "siblingContext": "Optional"
+        },
+        "label": "timezone"
+    },
+    {
+        "features": {
+            "label": "Fuseau horaire",
+            "name": "input_timezone_55",
+            "automationId": null,
+            "placeholder": "Europe/Paris",
+            "parentContext": "Préférences",
+            "siblingContext": "Facultatif"
+        },
+        "label": "timezone"
+    },
+    {
+        "features": {
+            "label": "Open to Relocation?",
+            "name": "relocation",
+            "automationId": "data-qa-relocation",
+            "placeholder": null,
+            "parentContext": "Work Preferences",
+            "siblingContext": "Select Yes or No"
+        },
+        "label": "relocation"
+    },
+    {
+        "features": {
+            "label": "Willing to Relocate",
+            "name": "wd-Checkbox-relocation",
+            "automationId": "test-relocation-willing",
+            "placeholder": null,
+            "parentContext": "Job Preferences",
+            "siblingContext": "Check if yes"
+        },
+        "label": "relocation"
+    },
+    {
+        "features": {
+            "label": "Disponible pour déménager",
+            "name": "relocation_willing",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Préférences de travail",
+            "siblingContext": "Oui/Non"
+        },
+        "label": "relocation"
+    },
+    {
+        "features": {
+            "label": "Preferred Work Location",
+            "name": "preferredLocation",
+            "automationId": "data-qa-pref-location",
+            "placeholder": "City or Region",
+            "parentContext": "Job Preferences",
+            "siblingContext": "Where would you like to work?"
+        },
+        "label": "preferred_location"
+    },
+    {
+        "features": {
+            "label": "Target Location",
+            "name": "ember776_target_loc",
+            "automationId": "data-automation-target-location",
+            "placeholder": "Enter desired location",
+            "parentContext": "Work Preferences",
+            "siblingContext": "Optional"
+        },
+        "label": "preferred_location"
+    },
+    {
+        "features": {
+            "label": "Localisation souhaitée",
+            "name": "input_preferred_location",
+            "automationId": null,
+            "placeholder": "Ville ou région",
+            "parentContext": "Préférences",
+            "siblingContext": "Facultatif"
+        },
+        "label": "preferred_location"
+    },
+    {
+        "features": {
+            "label": "Job Title *",
+            "name": "jobTitle",
+            "automationId": "data-qa-job-title",
+            "placeholder": "Software Engineer",
+            "parentContext": "Current Position",
+            "siblingContext": "Your current or most recent role"
+        },
+        "label": "job_title"
+    },
+    {
+        "features": {
+            "label": "Position Title",
+            "name": "wd-Input-position-title-88",
+            "automationId": "data-automation-job-title",
+            "placeholder": "e.g., Product Manager",
+            "parentContext": "Work Experience",
+            "siblingContext": "Required"
+        },
+        "label": "job_title"
+    },
+    {
+        "features": {
+            "label": "Titre du poste",
+            "name": "input_job_title_44",
+            "automationId": null,
+            "placeholder": "Ex: Ingénieur logiciel",
+            "parentContext": "Expérience professionnelle",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "job_title"
+    },
+    {
+        "features": {
+            "label": "Current Title *",
+            "name": "currentTitle",
+            "automationId": "data-qa-current-title",
+            "placeholder": "Your current position",
+            "parentContext": "Employment",
+            "siblingContext": "If unemployed, enter 'Seeking Opportunities'"
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Current Role",
+            "name": "ember445_current_role",
+            "automationId": "test-current-title",
+            "placeholder": "What do you do now?",
+            "parentContext": "Professional Information",
+            "siblingContext": "Required"
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Poste actuel",
+            "name": "ctl00_currentTitle",
+            "automationId": null,
+            "placeholder": "Votre titre actuel",
+            "parentContext": "Informations professionnelles",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Company Name *",
+            "name": "employerName",
+            "automationId": "data-qa-employer",
+            "placeholder": "Where do you work?",
+            "parentContext": "Work Experience",
+            "siblingContext": "Current or most recent employer"
+        },
+        "label": "employer_name"
+    },
+    {
+        "features": {
+            "label": "Employer",
+            "name": "wd-Input-employer-name-99",
+            "automationId": "data-automation-company",
+            "placeholder": "Company name",
+            "parentContext": "Employment History",
+            "siblingContext": "Required"
+        },
+        "label": "employer_name"
+    },
+    {
+        "features": {
+            "label": "Entreprise",
+            "name": "input_employer_33",
+            "automationId": null,
+            "placeholder": "Nom de l'entreprise",
+            "parentContext": "Expérience",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "employer_name"
+    },
+    {
+        "features": {
+            "label": "Current Company *",
+            "name": "currentCompany",
+            "automationId": "data-qa-current-company",
+            "placeholder": "Your current employer",
+            "parentContext": "Professional Details",
+            "siblingContext": "If not employed, enter 'N/A'"
+        },
+        "label": "current_company"
+    },
+    {
+        "features": {
+            "label": "Current Employer",
+            "name": "ember998_current_co",
+            "automationId": "test-current-company",
+            "placeholder": "Company name",
+            "parentContext": "Employment",
+            "siblingContext": "Required"
+        },
+        "label": "current_company"
+    },
+    {
+        "features": {
+            "label": "Entreprise actuelle",
+            "name": "current_company_field",
+            "automationId": null,
+            "placeholder": "Où travaillez-vous?",
+            "parentContext": "Emploi actuel",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "current_company"
+    },
+    {
+        "features": {
+            "label": "Start Date *",
+            "name": "jobStartDate",
+            "automationId": "data-qa-job-start",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Employment Dates",
+            "siblingContext": "When did you start this role?"
+        },
+        "label": "job_start_date"
+    },
+    {
+        "features": {
+            "label": "From:",
+            "name": "wd-Date-start-job-55",
+            "automationId": "data-automation-start-date",
+            "placeholder": "MM/DD/YYYY",
+            "parentContext": "Work Experience",
+            "siblingContext": "Required"
+        },
+        "label": "job_start_date"
+    },
+    {
+        "features": {
+            "label": "Date de début",
+            "name": "input_job_start_88",
+            "automationId": null,
+            "placeholder": "01/2020",
+            "parentContext": "Dates d'emploi",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "job_start_date"
+    },
+    {
+        "features": {
+            "label": "End Date",
+            "name": "jobEndDate",
+            "automationId": "data-qa-job-end",
+            "placeholder": "MM/YYYY or 'Present'",
+            "parentContext": "Employment Dates",
+            "siblingContext": "Leave blank if current"
+        },
+        "label": "job_end_date"
+    },
+    {
+        "features": {
+            "label": "To:",
+            "name": "ember223_job_end",
+            "automationId": "test-end-date-job",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Work Experience",
+            "siblingContext": "Optional if current position"
+        },
+        "label": "job_end_date"
+    },
+    {
+        "features": {
+            "label": "Date de fin",
+            "name": "ctl00_jobEndDate",
+            "automationId": null,
+            "placeholder": "MM/AAAA",
+            "parentContext": "Expérience professionnelle",
+            "siblingContext": "Laissez vide si actuel"
+        },
+        "label": "job_end_date"
+    },
+    {
+        "features": {
+            "label": "I currently work here",
+            "name": "jobCurrent",
+            "automationId": "data-qa-job-current",
+            "placeholder": null,
+            "parentContext": "Employment Status",
+            "siblingContext": "Check if this is your current position"
+        },
+        "label": "job_current"
+    },
+    {
+        "features": {
+            "label": "Current Position",
+            "name": "wd-Checkbox-current-job",
+            "automationId": "data-automation-current-job",
+            "placeholder": null,
+            "parentContext": "Work Experience",
+            "siblingContext": "Check if currently employed here"
+        },
+        "label": "job_current"
+    },
+    {
+        "features": {
+            "label": "Poste actuel",
+            "name": "is_current_job",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Expérience",
+            "siblingContext": "Cochez si c'est votre emploi actuel"
+        },
+        "label": "job_current"
+    },
+    {
+        "features": {
+            "label": "Job Description",
+            "name": "jobDescription",
+            "automationId": "data-qa-job-desc",
+            "placeholder": "Describe your responsibilities and achievements...",
+            "parentContext": "Work Experience",
+            "siblingContext": "Be specific about your impact"
+        },
+        "label": "job_description"
+    },
+    {
+        "features": {
+            "label": "Responsibilities",
+            "name": "ember556_job_desc",
+            "automationId": "test-job-description",
+            "placeholder": "What did you do in this role?",
+            "parentContext": "Position Details",
+            "siblingContext": "Include key achievements"
+        },
+        "label": "job_description"
+    },
+    {
+        "features": {
+            "label": "Description du poste",
+            "name": "input_job_description_77",
+            "automationId": null,
+            "placeholder": "Décrivez vos responsabilités...",
+            "parentContext": "Expérience professionnelle",
+            "siblingContext": "Max 500 caractères"
+        },
+        "label": "job_description"
+    },
+    {
+        "features": {
+            "label": "Job Location",
+            "name": "jobLocation",
+            "automationId": "data-qa-job-location",
+            "placeholder": "City, State/Country",
+            "parentContext": "Work Experience",
+            "siblingContext": "Where was this position based?"
+        },
+        "label": "job_location"
+    },
+    {
+        "features": {
+            "label": "Location",
+            "name": "wd-Input-job-loc-44",
+            "automationId": "data-automation-job-location",
+            "placeholder": "Remote, New York, etc.",
+            "parentContext": "Position Details",
+            "siblingContext": "Required"
+        },
+        "label": "job_location"
+    },
+    {
+        "features": {
+            "label": "Localisation du poste",
+            "name": "job_location_field",
+            "automationId": null,
+            "placeholder": "Ville, Pays",
+            "parentContext": "Expérience",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "job_location"
+    },
+    {
+        "features": {
+            "label": "Years of Experience *",
+            "name": "yearsExperience",
+            "automationId": "data-qa-years-exp",
+            "placeholder": "e.g., 5",
+            "parentContext": "Professional Background",
+            "siblingContext": "Total years in your field"
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Total Experience",
+            "name": "ember778_years_exp",
+            "automationId": "test-years-experience",
+            "placeholder": "Number of years",
+            "parentContext": "Experience Summary",
+            "siblingContext": "Required"
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Années d'expérience",
+            "name": "input_years_exp_99",
+            "automationId": null,
+            "placeholder": "Ex: 3",
+            "parentContext": "Expérience professionnelle",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "years_experience"
+    },
+    {
+        "features": {
+            "label": "Industry *",
+            "name": "industry",
+            "automationId": "data-qa-industry",
+            "placeholder": "Select industry",
+            "parentContext": "Professional Information",
+            "siblingContext": "Your primary industry"
+        },
+        "label": "industry"
+    },
+    {
+        "features": {
+            "label": "Industry Sector",
+            "name": "wd-Select-industry-22",
+            "automationId": "data-automation-industry",
+            "placeholder": null,
+            "parentContext": "Background",
+            "siblingContext": "Required"
+        },
+        "label": "industry"
+    },
+    {
+        "features": {
+            "label": "Secteur d'activité",
+            "name": "industry_select",
+            "automationId": null,
+            "placeholder": "Sélectionnez",
+            "parentContext": "Informations professionnelles",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "industry"
+    },
+    {
+        "features": {
+            "label": "Department",
+            "name": "department",
+            "automationId": "data-qa-department",
+            "placeholder": "e.g., Engineering, Marketing",
+            "parentContext": "Current Role",
+            "siblingContext": "Which department do you work in?"
+        },
+        "label": "department"
+    },
+    {
+        "features": {
+            "label": "Functional Area",
+            "name": "ember334_dept",
+            "automationId": "test-department",
+            "placeholder": "Your department",
+            "parentContext": "Employment Details",
+            "siblingContext": "Optional"
+        },
+        "label": "department"
+    },
+    {
+        "features": {
+            "label": "Département",
+            "name": "input_department_55",
+            "automationId": null,
+            "placeholder": "Ex: IT, RH",
+            "parentContext": "Poste actuel",
+            "siblingContext": "Facultatif"
+        },
+        "label": "department"
+    },
+    {
+        "features": {
+            "label": "University / College Name *",
+            "name": "institutionName",
+            "automationId": "data-qa-institution",
+            "placeholder": "Name of institution",
+            "parentContext": "Education",
+            "siblingContext": "Required"
+        },
+        "label": "institution_name"
+    },
+    {
+        "features": {
+            "label": "School Name",
+            "name": "wd-Input-school-name-66",
+            "automationId": "data-automation-school",
+            "placeholder": "Where did you study?",
+            "parentContext": "Educational Background",
+            "siblingContext": "Required"
+        },
+        "label": "institution_name"
+    },
+    {
+        "features": {
+            "label": "Nom de l'établissement",
+            "name": "input_institution_88",
+            "automationId": null,
+            "placeholder": "Université...",
+            "parentContext": "Formation",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "institution_name"
+    },
+    {
+        "features": {
+            "label": "School Name *",
+            "name": "schoolName",
+            "automationId": "data-qa-school",
+            "placeholder": "Name of school",
+            "parentContext": "Education",
+            "siblingContext": "Include high school or university"
+        },
+        "label": "school_name"
+    },
+    {
+        "features": {
+            "label": "Educational Institution",
+            "name": "ember991_school",
+            "automationId": "test-school-name",
+            "placeholder": "School name",
+            "parentContext": "Academic History",
+            "siblingContext": "Required"
+        },
+        "label": "school_name"
+    },
+    {
+        "features": {
+            "label": "École",
+            "name": "school_name_field",
+            "automationId": null,
+            "placeholder": "Nom de l'école",
+            "parentContext": "Éducation",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "school_name"
+    },
+    {
+        "features": {
+            "label": "Degree Type *",
+            "name": "degreeType",
+            "automationId": "data-qa-degree-type",
+            "placeholder": "Select degree",
+            "parentContext": "Education",
+            "siblingContext": "Bachelor's, Master's, PhD, etc."
+        },
+        "label": "degree_type"
+    },
+    {
+        "features": {
+            "label": "Degree",
+            "name": "wd-Select-degree-33",
+            "automationId": "data-automation-degree",
+            "placeholder": null,
+            "parentContext": "Educational Background",
+            "siblingContext": "Required"
+        },
+        "label": "degree_type"
+    },
+    {
+        "features": {
+            "label": "Type de diplôme",
+            "name": "degree_type_select",
+            "automationId": null,
+            "placeholder": "Licence, Master, Doctorat",
+            "parentContext": "Formation",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "degree_type"
+    },
+    {
+        "features": {
+            "label": "Field of Study *",
+            "name": "fieldOfStudy",
+            "automationId": "data-qa-field-of-study",
+            "placeholder": "e.g., Computer Science",
+            "parentContext": "Education",
+            "siblingContext": "Your major or concentration"
+        },
+        "label": "field_of_study"
+    },
+    {
+        "features": {
+            "label": "Major",
+            "name": "ember445_major",
+            "automationId": "test-field-of-study",
+            "placeholder": "What did you study?",
+            "parentContext": "Academic Details",
+            "siblingContext": "Required"
+        },
+        "label": "field_of_study"
+    },
+    {
+        "features": {
+            "label": "Domaine d'études",
+            "name": "input_field_study_77",
+            "automationId": null,
+            "placeholder": "Ex: Informatique",
+            "parentContext": "Éducation",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "field_of_study"
+    },
+    {
+        "features": {
+            "label": "Major *",
+            "name": "major",
+            "automationId": "data-qa-major",
+            "placeholder": "Your primary field",
+            "parentContext": "Degree Information",
+            "siblingContext": "Required"
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Primary Major",
+            "name": "wd-Input-major-99",
+            "automationId": "data-automation-major",
+            "placeholder": "e.g., Biology",
+            "parentContext": "Education",
+            "siblingContext": "Required"
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Matière principale",
+            "name": "major_field",
+            "automationId": null,
+            "placeholder": "Votre spécialité",
+            "parentContext": "Études",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "major"
+    },
+    {
+        "features": {
+            "label": "Minor",
+            "name": "minor",
+            "automationId": "data-qa-minor",
+            "placeholder": "Secondary field (optional)",
+            "parentContext": "Degree Information",
+            "siblingContext": "If applicable"
+        },
+        "label": "minor"
+    },
+    {
+        "features": {
+            "label": "Secondary Major",
+            "name": "ember667_minor",
+            "automationId": "test-minor-field",
+            "placeholder": "Minor field",
+            "parentContext": "Academic Details",
+            "siblingContext": "Optional"
+        },
+        "label": "minor"
+    },
+    {
+        "features": {
+            "label": "Mineure",
+            "name": "input_minor_44",
+            "automationId": null,
+            "placeholder": "Matière secondaire",
+            "parentContext": "Formation",
+            "siblingContext": "Facultatif"
+        },
+        "label": "minor"
+    },
+    {
+        "features": {
+            "label": "GPA",
+            "name": "gpa",
+            "automationId": "data-qa-gpa",
+            "placeholder": "e.g., 3.8",
+            "parentContext": "Academic Performance",
+            "siblingContext": "Optional - on a 4.0 scale"
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Grade Point Average",
+            "name": "wd-Input-gpa-22",
+            "automationId": "data-automation-gpa",
+            "placeholder": "0.0 - 4.0",
+            "parentContext": "Education",
+            "siblingContext": "If available"
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Moyenne générale",
+            "name": "gpa_field",
+            "automationId": null,
+            "placeholder": "Ex: 3.5",
+            "parentContext": "Résultats académiques",
+            "siblingContext": "Facultatif"
+        },
+        "label": "gpa"
+    },
+    {
+        "features": {
+            "label": "Graduation Date *",
+            "name": "graduationDate",
+            "automationId": "data-qa-grad-date",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Education",
+            "siblingContext": "When did you graduate?"
+        },
+        "label": "graduation_date"
+    },
+    {
+        "features": {
+            "label": "Date of Graduation",
+            "name": "ember889_grad_date",
+            "automationId": "test-graduation-date",
+            "placeholder": "Month/Year",
+            "parentContext": "Degree Completion",
+            "siblingContext": "Required"
+        },
+        "label": "graduation_date"
+    },
+    {
+        "features": {
+            "label": "Date d'obtention du diplôme",
+            "name": "input_grad_date_55",
+            "automationId": null,
+            "placeholder": "MM/AAAA",
+            "parentContext": "Formation",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "graduation_date"
+    },
+    {
+        "features": {
+            "label": "Start Date",
+            "name": "educationStartDate",
+            "automationId": "data-qa-edu-start",
+            "placeholder": "MM/YYYY",
+            "parentContext": "Education Dates",
+            "siblingContext": "When did you begin?"
+        },
+        "label": "education_start_date"
+    },
+    {
+        "features": {
+            "label": "From:",
+            "name": "wd-Date-edu-start-88",
+            "automationId": "data-automation-edu-start",
+            "placeholder": "Start date",
+            "parentContext": "Academic Timeline",
+            "siblingContext": "Required"
+        },
+        "label": "education_start_date"
+    },
+    {
+        "features": {
+            "label": "Date de début",
+            "name": "education_start_field",
+            "automationId": null,
+            "placeholder": "09/2015",
+            "parentContext": "Période d'études",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "education_start_date"
+    },
+    {
+        "features": {
+            "label": "End Date",
+            "name": "educationEndDate",
+            "automationId": "data-qa-edu-end",
+            "placeholder": "MM/YYYY or 'Expected'",
+            "parentContext": "Education Dates",
+            "siblingContext": "Leave blank if current"
+        },
+        "label": "education_end_date"
+    },
+    {
+        "features": {
+            "label": "To:",
+            "name": "ember112_edu_end",
+            "automationId": "test-edu-end-date",
+            "placeholder": "End date",
+            "parentContext": "Academic Timeline",
+            "siblingContext": "Optional if still enrolled"
+        },
+        "label": "education_end_date"
+    },
+    {
+        "features": {
+            "label": "Date de fin",
+            "name": "ctl00_eduEndDate",
+            "automationId": null,
+            "placeholder": "MM/AAAA",
+            "parentContext": "Période d'études",
+            "siblingContext": "Laissez vide si en cours"
+        },
+        "label": "education_end_date"
+    },
+    {
+        "features": {
+            "label": "I currently study here",
+            "name": "educationCurrent",
+            "automationId": "data-qa-edu-current",
+            "placeholder": null,
+            "parentContext": "Education Status",
+            "siblingContext": "Check if currently enrolled"
+        },
+        "label": "education_current"
+    },
+    {
+        "features": {
+            "label": "Currently Enrolled",
+            "name": "wd-Checkbox-current-edu",
+            "automationId": "data-automation-current-edu",
+            "placeholder": null,
+            "parentContext": "Academic Status",
+            "siblingContext": "Check if still studying"
+        },
+        "label": "education_current"
+    },
+    {
+        "features": {
+            "label": "Études en cours",
+            "name": "is_current_education",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Formation",
+            "siblingContext": "Cochez si vous étudiez actuellement"
+        },
+        "label": "education_current"
+    },
+    {
+        "features": {
+            "label": "Honors & Awards",
+            "name": "honors",
+            "automationId": "data-qa-honors",
+            "placeholder": "Dean's List, Cum Laude, etc.",
+            "parentContext": "Academic Achievements",
+            "siblingContext": "Optional"
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Academic Honors",
+            "name": "ember334_honors",
+            "automationId": "test-honors-field",
+            "placeholder": "List any honors received",
+            "parentContext": "Education",
+            "siblingContext": "If applicable"
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Distinctions",
+            "name": "input_honors_66",
+            "automationId": null,
+            "placeholder": "Mention honorable, etc.",
+            "parentContext": "Réalisations académiques",
+            "siblingContext": "Facultatif"
+        },
+        "label": "honors"
+    },
+    {
+        "features": {
+            "label": "Highest Level of Education *",
+            "name": "educationLevel",
+            "automationId": "data-qa-edu-level",
+            "placeholder": "Select level",
+            "parentContext": "Educational Background",
+            "siblingContext": "Required"
+        },
+        "label": "education_level"
+    },
+    {
+        "features": {
+            "label": "Education Level",
+            "name": "wd-Select-edu-level-77",
+            "automationId": "data-automation-edu-level",
+            "placeholder": null,
+            "parentContext": "Background",
+            "siblingContext": "Highest degree obtained"
+        },
+        "label": "education_level"
+    },
+    {
+        "features": {
+            "label": "Niveau d'études",
+            "name": "education_level_select",
+            "automationId": null,
+            "placeholder": "Sélectionnez",
+            "parentContext": "Formation",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "education_level"
+    },
+    {
+        "features": {
+            "label": "Skills *",
+            "name": "skills",
+            "automationId": "data-qa-skills",
+            "placeholder": "e.g., Python, Project Management",
+            "parentContext": "Qualifications",
+            "siblingContext": "Separate with commas"
+        },
+        "label": "skills"
+    },
+    {
+        "features": {
+            "label": "Key Skills",
+            "name": "ember556_skills",
+            "automationId": "test-skills-input",
+            "placeholder": "List your top skills",
+            "parentContext": "Competencies",
+            "siblingContext": "Add up to 10"
+        },
+        "label": "skills"
+    },
+    {
+        "features": {
+            "label": "Compétences",
+            "name": "input_skills_99",
+            "automationId": null,
+            "placeholder": "Ex: Java, Communication",
+            "parentContext": "Qualifications",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "skills"
+    },
+    {
+        "features": {
+            "label": "Technical Skills *",
+            "name": "technicalSkills",
+            "automationId": "data-qa-tech-skills",
+            "placeholder": "Programming languages, tools, etc.",
+            "parentContext": "Technical Competencies",
+            "siblingContext": "Required for technical roles"
+        },
+        "label": "technical_skills"
+    },
+    {
+        "features": {
+            "label": "Tech Stack",
+            "name": "wd-Input-tech-skills-44",
+            "automationId": "data-automation-tech-skills",
+            "placeholder": "Technologies you know",
+            "parentContext": "Skills",
+            "siblingContext": "Comma-separated"
+        },
+        "label": "technical_skills"
+    },
+    {
+        "features": {
+            "label": "Compétences techniques",
+            "name": "technical_skills_field",
+            "automationId": null,
+            "placeholder": "Langages, outils, etc.",
+            "parentContext": "Compétences",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "technical_skills"
+    },
+    {
+        "features": {
+            "label": "Certifications",
+            "name": "certifications",
+            "automationId": "data-qa-certifications",
+            "placeholder": "e.g., AWS Certified, PMP",
+            "parentContext": "Professional Credentials",
+            "siblingContext": "Include certification name and year"
+        },
+        "label": "certifications"
+    },
+    {
+        "features": {
+            "label": "Professional Certifications",
+            "name": "ember778_certs",
+            "automationId": "test-certifications",
+            "placeholder": "List certifications",
+            "parentContext": "Credentials",
+            "siblingContext": "Optional"
+        },
+        "label": "certifications"
+    },
+    {
+        "features": {
+            "label": "Certifications professionnelles",
+            "name": "input_certifications_22",
+            "automationId": null,
+            "placeholder": "Nom et année",
+            "parentContext": "Qualifications",
+            "siblingContext": "Facultatif"
+        },
+        "label": "certifications"
+    },
+    {
+        "features": {
+            "label": "Licenses",
+            "name": "licenses",
+            "automationId": "data-qa-licenses",
+            "placeholder": "Professional licenses held",
+            "parentContext": "Credentials",
+            "siblingContext": "If applicable"
+        },
+        "label": "licenses"
+    },
+    {
+        "features": {
+            "label": "Professional Licenses",
+            "name": "wd-Input-licenses-55",
+            "automationId": "data-automation-licenses",
+            "placeholder": "License number and type",
+            "parentContext": "Qualifications",
+            "siblingContext": "Optional"
+        },
+        "label": "licenses"
+    },
+    {
+        "features": {
+            "label": "Licences",
+            "name": "licenses_field",
+            "automationId": null,
+            "placeholder": "Licences professionnelles",
+            "parentContext": "Accréditations",
+            "siblingContext": "Si applicable"
+        },
+        "label": "licenses"
+    },
+    {
+        "features": {
+            "label": "Languages *",
+            "name": "languages",
+            "automationId": "data-qa-languages",
+            "placeholder": "e.g., English, Spanish",
+            "parentContext": "Language Skills",
+            "siblingContext": "List all languages you speak"
+        },
+        "label": "languages"
+    },
+    {
+        "features": {
+            "label": "Language Skills",
+            "name": "ember991_languages",
+            "automationId": "test-languages-input",
+            "placeholder": "Languages you know",
+            "parentContext": "Additional Skills",
+            "siblingContext": "Required"
+        },
+        "label": "languages"
+    },
+    {
+        "features": {
+            "label": "Langues",
+            "name": "input_languages_88",
+            "automationId": null,
+            "placeholder": "Ex: Français, Anglais",
+            "parentContext": "Compétences linguistiques",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "languages"
+    },
+    {
+        "features": {
+            "label": "Proficiency Level",
+            "name": "languageProficiency",
+            "automationId": "data-qa-lang-proficiency",
+            "placeholder": "Native, Fluent, Intermediate, Basic",
+            "parentContext": "Language Skills",
+            "siblingContext": "Select your level"
+        },
+        "label": "language_proficiency"
+    },
+    {
+        "features": {
+            "label": "Language Proficiency",
+            "name": "wd-Select-lang-prof-33",
+            "automationId": "data-automation-proficiency",
+            "placeholder": null,
+            "parentContext": "Languages",
+            "siblingContext": "How well do you speak it?"
+        },
+        "label": "language_proficiency"
+    },
+    {
+        "features": {
+            "label": "Niveau de maîtrise",
+            "name": "lang_proficiency_select",
+            "automationId": null,
+            "placeholder": "Courant, Intermédiaire",
+            "parentContext": "Langues",
+            "siblingContext": "Sélectionnez"
+        },
+        "label": "language_proficiency"
+    },
+    {
+        "features": {
+            "label": "Years of Experience with Skill",
+            "name": "yearsSkill",
+            "automationId": "data-qa-years-skill",
+            "placeholder": "e.g., 3",
+            "parentContext": "Skill Details",
+            "siblingContext": "How long have you used this?"
+        },
+        "label": "years_skill"
+    },
+    {
+        "features": {
+            "label": "Experience (Years)",
+            "name": "ember445_years_skill",
+            "automationId": "test-skill-years",
+            "placeholder": "Number of years",
+            "parentContext": "Skills",
+            "siblingContext": "Optional"
+        },
+        "label": "years_skill"
+    },
+    {
+        "features": {
+            "label": "Années d'expérience",
+            "name": "input_skill_years_66",
+            "automationId": null,
+            "placeholder": "Ex: 2",
+            "parentContext": "Compétences",
+            "siblingContext": "Facultatif"
+        },
+        "label": "years_skill"
+    },
+    {
+        "features": {
+            "label": "Skill Level",
+            "name": "skillLevel",
+            "automationId": "data-qa-skill-level",
+            "placeholder": "Beginner, Intermediate, Expert",
+            "parentContext": "Skill Proficiency",
+            "siblingContext": "Rate your expertise"
+        },
+        "label": "skill_level"
+    },
+    {
+        "features": {
+            "label": "Proficiency",
+            "name": "wd-Select-skill-level-77",
+            "automationId": "data-automation-skill-level",
+            "placeholder": null,
+            "parentContext": "Skills Assessment",
+            "siblingContext": "Self-assessment"
+        },
+        "label": "skill_level"
+    },
+    {
+        "features": {
+            "label": "Niveau de compétence",
+            "name": "skill_level_select",
+            "automationId": null,
+            "placeholder": "Débutant, Avancé, Expert",
+            "parentContext": "Compétences",
+            "siblingContext": "Auto-évaluation"
+        },
+        "label": "skill_level"
+    },
+    {
+        "features": {
+            "label": "Reference Name",
+            "name": "referenceName",
+            "automationId": "data-qa-ref-name",
+            "placeholder": "Full name",
+            "parentContext": "Professional References",
+            "siblingContext": "Provide at least 2 references"
+        },
+        "label": "reference_name"
+    },
+    {
+        "features": {
+            "label": "Reference Full Name",
+            "name": "ember667_ref_name",
+            "automationId": "test-reference-name",
+            "placeholder": "First and Last Name",
+            "parentContext": "References",
+            "siblingContext": "Required"
+        },
+        "label": "reference_name"
+    },
+    {
+        "features": {
+            "label": "Nom de la référence",
+            "name": "input_ref_name_99",
+            "automationId": null,
+            "placeholder": "Nom complet",
+            "parentContext": "Références professionnelles",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "reference_name"
+    },
+    {
+        "features": {
+            "label": "Reference Email",
+            "name": "referenceEmail",
+            "automationId": "data-qa-ref-email",
+            "placeholder": "reference@example.com",
+            "parentContext": "Professional References",
+            "siblingContext": "Must be professional email"
+        },
+        "label": "reference_email"
+    },
+    {
+        "features": {
+            "label": "Reference Contact Email",
+            "name": "wd-Input-ref-email-44",
+            "automationId": "data-automation-ref-email",
+            "placeholder": "Email address",
+            "parentContext": "References",
+            "siblingContext": "Required"
+        },
+        "label": "reference_email"
+    },
+    {
+        "features": {
+            "label": "Email de référence",
+            "name": "reference_email_field",
+            "automationId": null,
+            "placeholder": "email@exemple.com",
+            "parentContext": "Références",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "reference_email"
+    },
+    {
+        "features": {
+            "label": "Reference Phone",
+            "name": "referencePhone",
+            "automationId": "data-qa-ref-phone",
+            "placeholder": "(555) 123-4567",
+            "parentContext": "Professional References",
+            "siblingContext": "Optional"
+        },
+        "label": "reference_phone"
+    },
+    {
+        "features": {
+            "label": "Reference Contact Number",
+            "name": "ember889_ref_phone",
+            "automationId": "test-ref-phone",
+            "placeholder": "Phone number",
+            "parentContext": "References",
+            "siblingContext": "Preferred contact"
+        },
+        "label": "reference_phone"
+    },
+    {
+        "features": {
+            "label": "Téléphone de référence",
+            "name": "input_ref_phone_22",
+            "automationId": null,
+            "placeholder": "Numéro",
+            "parentContext": "Références",
+            "siblingContext": "Facultatif"
+        },
+        "label": "reference_phone"
+    },
+    {
+        "features": {
+            "label": "Relationship to Reference",
+            "name": "referenceRelationship",
+            "automationId": "data-qa-ref-relationship",
+            "placeholder": "e.g., Former Manager, Colleague",
+            "parentContext": "Professional References",
+            "siblingContext": "How do you know them?"
+        },
+        "label": "reference_relationship"
+    },
+    {
+        "features": {
+            "label": "Reference Relationship",
+            "name": "wd-Input-ref-rel-55",
+            "automationId": "data-automation-ref-relationship",
+            "placeholder": "Your relationship",
+            "parentContext": "References",
+            "siblingContext": "Required"
+        },
+        "label": "reference_relationship"
+    },
+    {
+        "features": {
+            "label": "Relation",
+            "name": "reference_relationship_field",
+            "automationId": null,
+            "placeholder": "Ex: Ancien superviseur",
+            "parentContext": "Références",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "reference_relationship"
+    },
+    {
+        "features": {
+            "label": "Gender",
+            "name": "gender",
+            "automationId": "data-qa-gender",
+            "placeholder": "Select",
+            "parentContext": "Demographic Information",
+            "siblingContext": "Optional - for diversity tracking"
+        },
+        "label": "gender"
+    },
+    {
+        "features": {
+            "label": "Gender",
+            "name": "ember112_gender",
+            "automationId": "test-gender-select",
+            "placeholder": null,
+            "parentContext": "EEO Information",
+            "siblingContext": "Voluntary"
+        },
+        "label": "gender"
+    },
+    {
+        "features": {
+            "label": "Genre",
+            "name": "wd-Select-gender-88",
+            "automationId": null,
+            "placeholder": "Sélectionnez",
+            "parentContext": "Informations démographiques",
+            "siblingContext": "Facultatif"
+        },
+        "label": "gender"
+    },
+    {
+        "features": {
+            "label": "Gender Identity",
+            "name": "genderIdentity",
+            "automationId": "data-qa-gender-identity",
+            "placeholder": "Select or specify",
+            "parentContext": "Personal Information",
+            "siblingContext": "Self-identification - optional"
+        },
+        "label": "gender_identity"
+    },
+    {
+        "features": {
+            "label": "How do you identify?",
+            "name": "gender_identity_field",
+            "automationId": "data-automation-gender-id",
+            "placeholder": "Your gender identity",
+            "parentContext": "Diversity Information",
+            "siblingContext": "Voluntary"
+        },
+        "label": "gender_identity"
+    },
+    {
+        "features": {
+            "label": "Identité de genre",
+            "name": "input_gender_identity_33",
+            "automationId": null,
+            "placeholder": "Comment vous identifiez-vous?",
+            "parentContext": "Informations personnelles",
+            "siblingContext": "Facultatif"
+        },
+        "label": "gender_identity"
+    },
+    {
+        "features": {
+            "label": "Pronouns",
+            "name": "pronouns",
+            "automationId": "data-qa-pronouns",
+            "placeholder": "e.g., she/her, he/him, they/them",
+            "parentContext": "Personal Preferences",
+            "siblingContext": "Optional"
+        },
+        "label": "pronouns"
+    },
+    {
+        "features": {
+            "label": "Preferred Pronouns",
+            "name": "ember334_pronouns",
+            "automationId": "test-pronouns",
+            "placeholder": "Your pronouns",
+            "parentContext": "About You",
+            "siblingContext": "How should we refer to you?"
+        },
+        "label": "pronouns"
+    },
+    {
+        "features": {
+            "label": "Pronoms",
+            "name": "input_pronouns_66",
+            "automationId": null,
+            "placeholder": "il/lui, elle/elle, iel",
+            "parentContext": "Préférences",
+            "siblingContext": "Facultatif"
+        },
+        "label": "pronouns"
+    },
+    {
+        "features": {
+            "label": "Race",
+            "name": "race",
+            "automationId": "data-qa-race",
+            "placeholder": "Select",
+            "parentContext": "EEO Information",
+            "siblingContext": "Voluntary - for compliance purposes"
+        },
+        "label": "race"
+    },
+    {
+        "features": {
+            "label": "Race / Ethnicity",
+            "name": "wd-Select-race-77",
+            "automationId": "data-automation-race",
+            "placeholder": null,
+            "parentContext": "Demographic Data",
+            "siblingContext": "Optional"
+        },
+        "label": "race"
+    },
+    {
+        "features": {
+            "label": "Race",
+            "name": "race_select",
+            "automationId": null,
+            "placeholder": "Sélectionnez",
+            "parentContext": "Données démographiques",
+            "siblingContext": "Volontaire"
+        },
+        "label": "race"
+    },
+    {
+        "features": {
+            "label": "Ethnicity",
+            "name": "ethnicity",
+            "automationId": "data-qa-ethnicity",
+            "placeholder": "Select",
+            "parentContext": "EEO Information",
+            "siblingContext": "Voluntary disclosure"
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Ethnic Background",
+            "name": "ember556_ethnicity",
+            "automationId": "test-ethnicity",
+            "placeholder": null,
+            "parentContext": "Diversity Data",
+            "siblingContext": "Optional"
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Origine ethnique",
+            "name": "input_ethnicity_99",
+            "automationId": null,
+            "placeholder": "Sélectionnez",
+            "parentContext": "Informations démographiques",
+            "siblingContext": "Facultatif"
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Veteran Status",
+            "name": "veteran",
+            "automationId": "data-qa-veteran",
+            "placeholder": "Select",
+            "parentContext": "Protected Veteran Information",
+            "siblingContext": "Voluntary - protected information"
+        },
+        "label": "veteran"
+    },
+    {
+        "features": {
+            "label": "Are you a veteran?",
+            "name": "wd-Radio-veteran-44",
+            "automationId": "data-automation-veteran",
+            "placeholder": null,
+            "parentContext": "EEO Disclosure",
+            "siblingContext": "Optional"
+        },
+        "label": "veteran"
+    },
+    {
+        "features": {
+            "label": "Statut d'ancien combattant",
+            "name": "veteran_status",
+            "automationId": null,
+            "placeholder": "Oui/Non",
+            "parentContext": "Informations protégées",
+            "siblingContext": "Facultatif"
+        },
+        "label": "veteran"
+    },
+    {
+        "features": {
+            "label": "Disability Status",
+            "name": "disability",
+            "automationId": "data-qa-disability",
+            "placeholder": "Select",
+            "parentContext": "Disability Information",
+            "siblingContext": "Voluntary - for accommodation purposes"
+        },
+        "label": "disability"
+    },
+    {
+        "features": {
+            "label": "Do you have a disability?",
+            "name": "ember778_disability",
+            "automationId": "test-disability-status",
+            "placeholder": null,
+            "parentContext": "EEO Information",
+            "siblingContext": "Optional disclosure"
+        },
+        "label": "disability"
+    },
+    {
+        "features": {
+            "label": "Statut de handicap",
+            "name": "input_disability_22",
+            "automationId": null,
+            "placeholder": "Sélectionnez",
+            "parentContext": "Informations",
+            "siblingContext": "Volontaire"
+        },
+        "label": "disability"
+    },
+    {
+        "features": {
+            "label": "Marital Status",
+            "name": "maritalStatus",
+            "automationId": "data-qa-marital",
+            "placeholder": "Select status",
+            "parentContext": "Personal Information",
+            "siblingContext": "Optional"
+        },
+        "label": "marital_status"
+    },
+    {
+        "features": {
+            "label": "Marital Status",
+            "name": "wd-Select-marital-55",
+            "automationId": "data-automation-marital",
+            "placeholder": null,
+            "parentContext": "Background Information",
+            "siblingContext": "If applicable"
+        },
+        "label": "marital_status"
+    },
+    {
+        "features": {
+            "label": "État civil",
+            "name": "marital_status_select",
+            "automationId": null,
+            "placeholder": "Sélectionnez",
+            "parentContext": "Informations personnelles",
+            "siblingContext": "Facultatif"
+        },
+        "label": "marital_status"
+    },
+    {
+        "features": {
+            "label": "Current Salary",
+            "name": "salaryCurrent",
+            "automationId": "data-qa-current-salary",
+            "placeholder": "Annual amount",
+            "parentContext": "Compensation",
+            "siblingContext": "Optional - for benchmarking"
+        },
+        "label": "salary_current"
+    },
+    {
+        "features": {
+            "label": "Current Annual Salary",
+            "name": "ember991_salary_current",
+            "automationId": "test-current-salary",
+            "placeholder": "$",
+            "parentContext": "Compensation History",
+            "siblingContext": "Optional"
+        },
+        "label": "salary_current"
+    },
+    {
+        "features": {
+            "label": "Salaire actuel",
+            "name": "input_current_salary_88",
+            "automationId": null,
+            "placeholder": "Montant annuel",
+            "parentContext": "Rémunération",
+            "siblingContext": "Facultatif"
+        },
+        "label": "salary_current"
+    },
+    {
+        "features": {
+            "label": "Expected Salary *",
+            "name": "salaryExpected",
+            "automationId": "data-qa-expected-salary",
+            "placeholder": "Your salary expectation",
+            "parentContext": "Compensation Requirements",
+            "siblingContext": "Annual base salary"
+        },
+        "label": "salary_expected"
+    },
+    {
+        "features": {
+            "label": "Salary Expectations",
+            "name": "wd-Input-salary-exp-33",
+            "automationId": "data-automation-salary-expected",
+            "placeholder": "$",
+            "parentContext": "Compensation",
+            "siblingContext": "Required"
+        },
+        "label": "salary_expected"
+    },
+    {
+        "features": {
+            "label": "Salaire souhaité",
+            "name": "salary_expected_field",
+            "automationId": null,
+            "placeholder": "Montant annuel",
+            "parentContext": "Attentes",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "salary_expected"
+    },
+    {
+        "features": {
+            "label": "Minimum Salary Requirement",
+            "name": "salaryMinimum",
+            "automationId": "data-qa-min-salary",
+            "placeholder": "Lowest acceptable salary",
+            "parentContext": "Compensation",
+            "siblingContext": "Annual minimum"
+        },
+        "label": "salary_minimum"
+    },
+    {
+        "features": {
+            "label": "Minimum Acceptable Salary",
+            "name": "ember445_salary_min",
+            "automationId": "test-salary-minimum",
+            "placeholder": "$",
+            "parentContext": "Compensation Requirements",
+            "siblingContext": "Your floor"
+        },
+        "label": "salary_minimum"
+    },
+    {
+        "features": {
+            "label": "Salaire minimum",
+            "name": "input_salary_min_66",
+            "automationId": null,
+            "placeholder": "Montant minimal",
+            "parentContext": "Rémunération",
+            "siblingContext": "Facultatif"
+        },
+        "label": "salary_minimum"
+    },
+    {
+        "features": {
+            "label": "Currency",
+            "name": "salaryCurrency",
+            "automationId": "data-qa-currency",
+            "placeholder": "USD, EUR, GBP, etc.",
+            "parentContext": "Compensation",
+            "siblingContext": "Select currency"
+        },
+        "label": "salary_currency"
+    },
+    {
+        "features": {
+            "label": "Salary Currency",
+            "name": "wd-Select-currency-77",
+            "automationId": "data-automation-currency",
+            "placeholder": null,
+            "parentContext": "Compensation Details",
+            "siblingContext": "Required"
+        },
+        "label": "salary_currency"
+    },
+    {
+        "features": {
+            "label": "Devise",
+            "name": "currency_select",
+            "automationId": null,
+            "placeholder": "EUR, USD, GBP",
+            "parentContext": "Rémunération",
+            "siblingContext": "Sélectionnez"
+        },
+        "label": "salary_currency"
+    },
+    {
+        "features": {
+            "label": "Bonus Expectations",
+            "name": "bonusExpected",
+            "automationId": "data-qa-bonus",
+            "placeholder": "Annual bonus target",
+            "parentContext": "Total Compensation",
+            "siblingContext": "Optional"
+        },
+        "label": "bonus_expected"
+    },
+    {
+        "features": {
+            "label": "Expected Annual Bonus",
+            "name": "ember667_bonus",
+            "automationId": "test-bonus-expected",
+            "placeholder": "$",
+            "parentContext": "Compensation Package",
+            "siblingContext": "If applicable"
+        },
+        "label": "bonus_expected"
+    },
+    {
+        "features": {
+            "label": "Prime attendue",
+            "name": "input_bonus_99",
+            "automationId": null,
+            "placeholder": "Montant annuel",
+            "parentContext": "Rémunération totale",
+            "siblingContext": "Facultatif"
+        },
+        "label": "bonus_expected"
+    },
+    {
+        "features": {
+            "label": "Equity Expectations",
+            "name": "equityExpected",
+            "automationId": "data-qa-equity",
+            "placeholder": "Stock options, RSUs, etc.",
+            "parentContext": "Total Compensation",
+            "siblingContext": "Optional"
+        },
+        "label": "equity_expected"
+    },
+    {
+        "features": {
+            "label": "Expected Equity",
+            "name": "wd-Input-equity-44",
+            "automationId": "data-automation-equity",
+            "placeholder": "Value or percentage",
+            "parentContext": "Compensation Package",
+            "siblingContext": "If desired"
+        },
+        "label": "equity_expected"
+    },
+    {
+        "features": {
+            "label": "Actions attendues",
+            "name": "equity_expected_field",
+            "automationId": null,
+            "placeholder": "Valeur ou %",
+            "parentContext": "Package de rémunération",
+            "siblingContext": "Facultatif"
+        },
+        "label": "equity_expected"
+    },
+    {
+        "features": {
+            "label": "Start Date *",
+            "name": "startDate",
+            "automationId": "data-qa-start-date",
+            "placeholder": "MM/DD/YYYY",
+            "parentContext": "Availability",
+            "siblingContext": "When can you begin?"
+        },
+        "label": "start_date"
+    },
+    {
+        "features": {
+            "label": "Earliest Start Date",
+            "name": "ember889_start_date",
+            "automationId": "test-start-date",
+            "placeholder": "Select date",
+            "parentContext": "Availability",
+            "siblingContext": "Required"
+        },
+        "label": "start_date"
+    },
+    {
+        "features": {
+            "label": "Date de début souhaitée",
+            "name": "input_start_date_22",
+            "automationId": null,
+            "placeholder": "JJ/MM/AAAA",
+            "parentContext": "Disponibilité",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "start_date"
+    },
+    {
+        "features": {
+            "label": "Availability *",
+            "name": "availability",
+            "automationId": "data-qa-availability",
+            "placeholder": "Immediate, 2 weeks, 1 month, etc.",
+            "parentContext": "Work Preferences",
+            "siblingContext": "When can you start?"
+        },
+        "label": "availability"
+    },
+    {
+        "features": {
+            "label": "When are you available?",
+            "name": "wd-Input-availability-55",
+            "automationId": "data-automation-availability",
+            "placeholder": "Your availability",
+            "parentContext": "Scheduling",
+            "siblingContext": "Required"
+        },
+        "label": "availability"
+    },
+    {
+        "features": {
+            "label": "Disponibilité",
+            "name": "availability_field",
+            "automationId": null,
+            "placeholder": "Immédiate, 2 semaines",
+            "parentContext": "Préférences",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "availability"
+    },
+    {
+        "features": {
+            "label": "Notice Period",
+            "name": "noticePeriod",
+            "automationId": "data-qa-notice",
+            "placeholder": "e.g., 2 weeks, 1 month",
+            "parentContext": "Current Employment",
+            "siblingContext": "How much notice do you need to give?"
+        },
+        "label": "notice_period"
+    },
+    {
+        "features": {
+            "label": "Notice Period Required",
+            "name": "ember112_notice",
+            "automationId": "test-notice-period",
+            "placeholder": "Notice required",
+            "parentContext": "Availability",
+            "siblingContext": "Optional"
+        },
+        "label": "notice_period"
+    },
+    {
+        "features": {
+            "label": "Préavis",
+            "name": "input_notice_88",
+            "automationId": null,
+            "placeholder": "Durée du préavis",
+            "parentContext": "Emploi actuel",
+            "siblingContext": "Facultatif"
+        },
+        "label": "notice_period"
+    },
+    {
+        "features": {
+            "label": "Work Type *",
+            "name": "workType",
+            "automationId": "data-qa-work-type",
+            "placeholder": "Select",
+            "parentContext": "Work Preferences",
+            "siblingContext": "Full-time, Part-time, Contract"
+        },
+        "label": "work_type"
+    },
+    {
+        "features": {
+            "label": "Employment Type",
+            "name": "wd-Select-work-type-33",
+            "automationId": "data-automation-work-type",
+            "placeholder": null,
+            "parentContext": "Job Preferences",
+            "siblingContext": "Required"
+        },
+        "label": "work_type"
+    }
+]
