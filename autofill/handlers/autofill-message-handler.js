@@ -95,4 +95,6 @@ class FormHandler {
     }
 }
 
+// Global export for backward compatibility
+window.FormHandler = FormHandler;
 FormHandler;

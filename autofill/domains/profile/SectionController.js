@@ -24,7 +24,7 @@ class SectionController extends window.Handler {
 
         for (const [sectionKey, sectionFields] of Object.entries(sections)) {
             const { type, index } = this.parseSectionKey(sectionKey);
-            // console.log(`📜 [HistoryHandler] Processing Transactional Section: ${type} #${index} (${sectionFields.length} fields)`);
+            // console.log(`📜 [SectionController] Processing Transactional Section: ${type} #${index} (${sectionFields.length} fields)`);
 
             // 2. Fetch Source Entity (Transactional Unit)
             // Fallback to Resume Data
@@ -32,7 +32,7 @@ class SectionController extends window.Handler {
             let source = 'resume_data';
 
             if (!entity) {
-                console.warn(`⚠️ [HistoryHandler] No data found for ${type} #${index}. Skipping section.`);
+                // console.log(`ℹ️ [SectionController] No data found for ${type} #${index}. Skipping section.`);
                 // Return empty trace? OR let AI handle it?
                 // Plan says: Cache -> User -> AI.
                 // If we return nothing here, FieldRouter (Tier 3) will send to AI.
