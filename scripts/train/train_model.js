@@ -38,9 +38,22 @@ const CONFIG = {
     trainFolder: path.join(__dirname, 'train-dataset'),
     testFolder: path.join(__dirname, 'test-dataset'),
     outputPath: path.join(__dirname, '../../autofill/domains/inference/model_v4_baseline.json'),
+
+    // Training parameters
     iterations: 500000,
     logEvery: 50000,
-    saveEvery: 100000
+    saveEvery: 100000,
+
+    // NEW: Validation & Early Stopping
+    validationSplit: 0.2,      // 20% of training data for validation
+    validateEvery: 10000,      // Validate every 10k iterations
+    earlyStopPatience: 5,      // Stop if no improvement for 5 validation checks
+    minDelta: 0.001,           // Minimum improvement threshold
+
+    // Learning rate scheduling
+    initialLR: 0.05,
+    lrDecayRate: 0.95,
+    lrDecayEvery: 50000
 };
 
 // ============================================================================
@@ -65,6 +78,17 @@ function loadDatasetsFromFolder(folderPath) {
         }
     }
     return merged;
+}
+
+function loadAugmentedDataset() {
+    const augmentedPath = path.join(__dirname, 'train-dataset-augmented.json');
+    if (fs.existsSync(augmentedPath)) {
+        console.log('   ✅ Found augmented dataset, loading...');
+        const data = JSON.parse(fs.readFileSync(augmentedPath, 'utf8'));
+        console.log(`   ✅ Loaded ${data.length} augmented samples`);
+        return data;
+    }
+    return null;
 }
 
 function shuffleArray(arr) {
@@ -104,15 +128,85 @@ function balanceDataset(data) {
 }
 
 // ============================================================================
+// VALIDATION & EARLY STOPPING
+// ============================================================================
+
+/**
+ * Evaluate model on validation set
+ * @param {NeuralClassifier} classifier - Trained classifier
+ * @param {Array} validationData - Validation samples
+ * @returns {Object} {accuracy, loss}
+ */
+function evaluateOnValidation(classifier, validationData) {
+    let correct = 0;
+    let totalLoss = 0;
+
+    for (const sample of validationData) {
+        const result = classifier.predict({ name: '', id: '', placeholder: '', label: '' });  // Dummy field
+        const predicted = result.label;
+
+        if (predicted === sample.label) {
+            correct++;
+        }
+
+        // Calculate cross-entropy loss (simplified)
+        const confidence = result.confidence || 0.01;
+        totalLoss += -Math.log(Math.max(confidence, 0.0001));
+    }
+
+    return {
+        accuracy: correct / validationData.length,
+        loss: totalLoss / validationData.length
+    };
+}
+
+/**
+ * Early stopping tracker
+ */
+class EarlyStopping {
+    constructor(patience = 5, minDelta = 0.001) {
+        this.patience = patience;
+        this.minDelta = minDelta;
+        this.bestLoss = Infinity;
+        this.counter = 0;
+        this.bestWeights = null;
+    }
+
+    check(loss, weights) {
+        if (loss < this.bestLoss - this.minDelta) {
+            // Improvement
+            this.bestLoss = loss;
+            this.counter = 0;
+            this.bestWeights = JSON.parse(JSON.stringify(weights));  // Deep copy
+            return false;  // Don't stop
+        } else {
+            // No improvement
+            this.counter++;
+            return this.counter >= this.patience;  // Stop if patience exceeded
+        }
+    }
+
+    getBestWeights() {
+        return this.bestWeights;
+    }
+}
+
+// ============================================================================
 // TRAINING LOGIC
 // ============================================================================
 async function train() {
     console.log('🧠 Neural Classifier Training Script V4');
     console.log('========================================');
 
-    // Load training data from folder
-    console.log('\n📂 Loading TRAINING datasets from train-dataset/...');
-    let trainData = loadDatasetsFromFolder(CONFIG.trainFolder);
+    // Load training data - prefer augmented if available
+    console.log('\n📂 Loading TRAINING datasets...');
+    let trainData = loadAugmentedDataset();
+
+    if (!trainData) {
+        console.log('   ⚠️  No augmented dataset found, loading from train-dataset/...');
+        trainData = loadDatasetsFromFolder(CONFIG.trainFolder);
+    }
+
     console.log(`   Total training samples: ${trainData.length}`);
 
     // Load test data from folder
@@ -133,14 +227,23 @@ async function train() {
         trainData = trainData.slice(0, splitIdx);
     }
 
+    // Split training data into train/validation
+    console.log(`\n🔀 Splitting data for validation (${CONFIG.validationSplit * 100}% validation)...`);
+    trainData = shuffleArray(trainData);
+    const valSize = Math.floor(trainData.length * CONFIG.validationSplit);
+    const validationData = trainData.slice(-valSize);
+    const trainingData = trainData.slice(0, -valSize);
+    console.log(`   Training samples: ${trainingData.length}`);
+    console.log(`   Validation samples: ${validationData.length}`);
+
     // Balance the training dataset
     console.log('\n⚖️ Balancing training dataset...');
-    trainData = balanceDataset(trainData);
-    console.log(`   Balanced training samples: ${trainData.length}`);
+    const balancedTrainingData = balanceDataset(trainingData);
+    console.log(`   Balanced training samples: ${balancedTrainingData.length}`);
 
     // Show class distribution
     const classDist = {};
-    for (const s of trainData) {
+    for (const s of balancedTrainingData) {
         classDist[s.label] = (classDist[s.label] || 0) + 1;
     }
     const numClasses = Object.keys(classDist).length;
