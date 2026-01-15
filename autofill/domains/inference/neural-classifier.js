@@ -229,7 +229,7 @@ class NeuralClassifier {
      * @returns {Object}
      */
     _getFallbackFieldTypes() {
-        // Comprehensive 135-class list matching FieldTypes.js v4.0
+        // 129-class list matching FieldTypes.js v5.0
         const ORDERED_CLASSES = [
             'unknown',
             // Identity (1-8)
@@ -238,18 +238,18 @@ class NeuralClassifier {
             // Contact (9-13)
             'email', 'email_secondary', 'phone', 'phone_mobile', 'phone_home',
             // Online Presence (14-22)
-            'linkedin', 'github', 'portfolio', 'website', 'twitter_url',
-            'facebook_url', 'instagram_url', 'google_scholar', 'other_url',
+            'linkedin_url', 'github_url', 'portfolio_url', 'website_url', 'twitter_url',
+            'facebook_url', 'instagram_url', 'google_scholar_url', 'other_url',
             // Location (23-32)
-            'address', 'address_line_2', 'city', 'state', 'zip_code', 'country',
+            'address_line_1', 'address_line_2', 'city', 'state', 'zip_code', 'country',
             'current_location', 'timezone', 'relocation', 'preferred_location',
             // Work Experience (33-44)
             'job_title', 'current_title', 'employer_name', 'current_company',
-            'job_start_date', 'job_end_date', 'job_current', 'work_description',
+            'job_start_date', 'job_end_date', 'job_current', 'job_description',
             'job_location', 'years_experience', 'industry', 'department',
             // Education (45-57)
             'institution_name', 'school_name', 'degree_type', 'field_of_study',
-            'major', 'minor', 'gpa_score', 'graduation_date',
+            'major', 'minor', 'gpa', 'graduation_date',
             'education_start_date', 'education_end_date', 'education_current',
             'honors', 'education_level',
             // Skills (58-65)
@@ -300,7 +300,7 @@ class NeuralClassifier {
      * @returns {number}
      */
     _getOutputSize() {
-        return this._fieldTypes?.ORDERED_CLASSES?.length || 135;
+        return this._fieldTypes?.ORDERED_CLASSES?.length || 129;
     }
 
     /**

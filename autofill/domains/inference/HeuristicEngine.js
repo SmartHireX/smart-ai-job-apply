@@ -104,7 +104,7 @@ class HeuristicEngine {
         },
 
         // ======================== SOCIAL & PORTFOLIO ========================
-        linkedin: {
+        linkedin_url: {
             patterns: [
                 /\blinkedin\b/i,
                 /\blinked[\-_\s]?in\b/i,
@@ -115,7 +115,7 @@ class HeuristicEngine {
             category: 'social'
         },
 
-        github: {
+        github_url: {
             patterns: [
                 /\bgithub\b/i,
                 /\bgit[\-_\s]?hub\b/i,
@@ -126,7 +126,7 @@ class HeuristicEngine {
             category: 'social'
         },
 
-        portfolio: {
+        portfolio_url: {
             patterns: [
                 /\bportfolio\b/i,
                 /\bportfolio[_\-\s]?(url|link|site|website)\b/i,
@@ -138,7 +138,7 @@ class HeuristicEngine {
             category: 'social'
         },
 
-        website: {
+        website_url: {
             patterns: [
                 /\b(website|web[_\-\s]?site|homepage)\b/i,
                 /\b(personal[_\-\s]?website|personal[_\-\s]?url)\b/i,
@@ -161,7 +161,7 @@ class HeuristicEngine {
         },
 
         // ======================== LOCATION ========================
-        address: {
+        address_line_1: {
             patterns: [
                 /\b(address|street[_\-\s]?address|mailing[_\-\s]?address)\b/i,
                 /\b(home[_\-\s]?address|residential[_\-\s]?address)\b/i,
@@ -267,7 +267,7 @@ class HeuristicEngine {
             contextFilter: (text) => !/education|school|degree|graduat|universit|college/i.test(text)
         },
 
-        work_description: {
+        job_description: {
             patterns: [
                 /\b(job[_\-\s]?description|responsibilities|duties)\b/i,
                 /\b(role[_\-\s]?description|work[_\-\s]?description)\b/i,
@@ -323,7 +323,7 @@ class HeuristicEngine {
             category: 'education'
         },
 
-        gpa_score: {
+        gpa: {
             patterns: [
                 /\b(gpa|cgpa|grade[_\-\s]?point[_\-\s]?average)\b/i,
                 /\b(grade|grades|academic[_\-\s]?score)\b/i,
