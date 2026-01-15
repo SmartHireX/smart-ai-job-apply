@@ -1,0 +1,14 @@
+{
+    "version": 4,
+    "metadata": {
+        "trainingExamples": 0,
+        "description": "Placeholder baseline weights for NeuralClassifier v5.0",
+        "generatedAt": "2026-01-15T14:35:00Z"
+    },
+    "W1": [],
+    "b1": [],
+    "W2": [],
+    "b2": [],
+    "W3": [],
+    "b3": []
+}

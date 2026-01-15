@@ -17,13 +17,16 @@ class FormHandler {
      * @returns {boolean} True if async response
      */
     static handle(message, sender, sendResponse) {
+        // Safe access to message types
+        const TYPES = window.NovaConstants ? window.NovaConstants.MESSAGE_TYPES : (window.MESSAGE_TYPES || {});
+
         // Handle DETECT_FORMS
-        if (message.type === MESSAGE_TYPES.DETECT_FORMS) {
+        if (message.type === TYPES.DETECT_FORMS) {
             return this.handleDetectForms(message, sender, sendResponse);
         }
 
         // Handle START_LOCAL_PROCESSING
-        if (message.type === MESSAGE_TYPES.START_LOCAL_PROCESSING) {
+        if (message.type === TYPES.START_LOCAL_PROCESSING) {
             return this.handleStartProcessing(message, sender, sendResponse);
         }
 

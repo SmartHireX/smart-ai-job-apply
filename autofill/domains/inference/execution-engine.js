@@ -240,6 +240,11 @@ class ExecutionEngine {
         // Standard Value Setting
         // Usage of Native Setter allows bypassing React's "controlled component" logic
         if (tagName === 'input' && this.nativeValueSetter) {
+            // Safety check for file inputs - they are read-only
+            if (type === 'file') {
+                console.warn(`[ExecutionEngine] Skipping value set for file input: ${element.id || element.name}`);
+                return;
+            }
             console.log(`⚙️ [SetValue] type="${type}", tagName="${tagName}", value="${value}"`);
             this.nativeValueSetter.call(element, value);
         } else if (tagName === 'textarea' && this.nativeTextAreaSetter) {

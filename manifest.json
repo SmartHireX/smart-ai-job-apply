@@ -98,6 +98,7 @@
                 "autofill/workflows/ai-fill-workflow.js",
                 "autofill/domains/inference/execution-engine.js",
                 "autofill/core/form-processor.js",
+                "autofill/domains/inference/model_v4_baseline.json",
                 "chatbot/handlers/context-handler.js",
                 "autofill/handlers/autofill-message-handler.js",
                 "autofill/handlers/undo-handler.js",

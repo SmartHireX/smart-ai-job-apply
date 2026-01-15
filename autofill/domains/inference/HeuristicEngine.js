@@ -818,6 +818,7 @@ class HeuristicEngine {
 
 if (typeof window !== 'undefined') {
     window.HeuristicEngine = HeuristicEngine;
+    console.log('[Dependencies] HeuristicEngine V2.0 loaded into window');
 }
 
 if (typeof module !== 'undefined' && module.exports) {

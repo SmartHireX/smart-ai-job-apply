@@ -53,6 +53,9 @@ const CONTENT_SCRIPTS = [
 
     // Inference Support
     'autofill/domains/inference/feature-extractor.js',
+    'autofill/domains/inference/FieldTypes.js',
+    'autofill/domains/inference/HeuristicEngine.js',
+    'autofill/domains/inference/OptimizedMathKernel.js',
     'autofill/domains/inference/neural-classifier.js',
     'autofill/domains/inference/execution-engine.js',
 

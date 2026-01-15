@@ -202,6 +202,7 @@ class NeuralClassifier {
             this._fieldTypes = window.FieldTypes;
             this._log('Using FieldTypes module');
         } else {
+            console.warn('[NeuralClassifier] window.FieldTypes not found. Using fallback.');
             // This is normal on first load - fallback is fully functional
             this._fieldTypes = this._getFallbackFieldTypes();
             this._log('Using built-in field types');
@@ -211,6 +212,8 @@ class NeuralClassifier {
         if (typeof window !== 'undefined' && window.HeuristicEngine) {
             this._heuristicEngine = new window.HeuristicEngine({ debug: this._debug });
             this._log('Using HeuristicEngine module');
+        } else {
+            console.warn('[NeuralClassifier] window.HeuristicEngine not found. Heuristics will be disabled.');
         }
 
         // Optimized Math Kernel (for TypedArray operations)
@@ -290,7 +293,8 @@ class NeuralClassifier {
         return {
             ORDERED_CLASSES,
             getFieldTypeIndex: (type) => ORDERED_CLASSES.indexOf(type),
-            getFieldTypeFromIndex: (idx) => ORDERED_CLASSES[idx] || 'unknown'
+            getFieldTypeFromIndex: (idx) => ORDERED_CLASSES[idx] || 'unknown',
+            getCategoryForField: (type) => 'misc' // Safety fallback
         };
     }
 
@@ -321,12 +325,14 @@ class NeuralClassifier {
     // PUBLIC API - PREDICTION
     // ========================================================================
 
+
+
     /**
      * Predict the field type for a given form field
-     * Uses hybrid approach: Heuristics first, then Neural Network
+     * Uses hybrid approach: Parallel Heuristic and Neural inference with Arbitration
      * 
      * @param {Object} field - Form field object with attributes
-     * @returns {Object} Prediction result { label, confidence, source, features }
+     * @returns {Object} Prediction result { label, confidence, source, features, group_type }
      */
     predict(field) {
         const startTime = performance.now();
@@ -334,46 +340,120 @@ class NeuralClassifier {
         // 1. Extract features
         const inputVector = this._featureExtractor?.extract(field) || new Array(NeuralClassifier.INPUT_SIZE).fill(0);
 
-        // 2. Try heuristic classification first (fast path)
+        // 2. Run both models in parallel (conceptually)
+        // Heuristic Inference
         const heuristicResult = this._runHeuristics(field);
-        if (heuristicResult) {
-            this._recordMetrics(startTime, 'heuristic');
-            return {
-                label: heuristicResult.label,
-                confidence: heuristicResult.confidence,
-                source: 'heuristic_hybrid',
-                features: inputVector.length
-            };
+
+        // Neural Inference
+        let neuralResult = null;
+        if (this._W1 && this._W2) {
+            neuralResult = this._runNeuralInference(inputVector);
+        } else {
+            neuralResult = { label: 'unknown', confidence: 0, source: 'no_weights' };
         }
 
-        // 3. Fall back to neural network inference
-        if (!this._W1 || !this._W2) {
-            this._recordMetrics(startTime, 'none');
-            return { label: 'unknown', confidence: 0, source: 'no_weights', features: inputVector.length };
-        }
+        // 3. Arbitrate for final decision
+        const finalResult = this._arbitrate(heuristicResult, neuralResult);
 
+        // 4. Enrich with Group Type (Category)
+        const groupType = this._fieldTypes?.getCategoryForField(finalResult.label) || 'misc';
+
+        // 5. Record metrics
+        this._recordMetrics(startTime, finalResult.source);
+
+        return {
+            ...finalResult,
+            group_type: groupType,
+            features: inputVector.length
+        };
+    }
+
+    /**
+     * private helper for neural inference
+     */
+    _runNeuralInference(inputVector) {
         const { logits } = this._forward(inputVector);
         const probs = this._softmax(logits);
 
-        // 4. Decode prediction
         const maxProb = Math.max(...probs);
         const classIndex = probs.indexOf(maxProb);
 
         let label = this._fieldTypes.getFieldTypeFromIndex(classIndex);
 
-        // Apply confidence threshold
+        // Confidence threshold check
         if (maxProb < NeuralClassifier.CONFIDENCE_THRESHOLD) {
-            label = 'generic_question';  // Fallback to LLM
+            label = 'generic_question';
         }
-
-        this._recordMetrics(startTime, 'neural');
 
         return {
             label,
             confidence: maxProb,
-            source: 'neural_network',
-            features: inputVector.length
+            source: 'neural_network'
         };
+    }
+
+    /**
+     * Arbitrate between Heuristic and Neural results
+     * Tiered Trust System
+     * @private
+     */
+    _arbitrate(hResult, nResult) {
+        const hLabel = hResult?.label || 'unknown';
+        const hConf = hResult?.confidence || 0;
+        const nLabel = nResult?.label || 'unknown';
+        const nConf = nResult?.confidence || 0;
+
+        // Tier 1: Unanimous Agreement (Boost Confidence)
+        if (hLabel !== 'unknown' && hLabel === nLabel) {
+            return {
+                label: hLabel,
+                confidence: 0.99, // Boosted!
+                source: 'ensemble_unanimous'
+            };
+        }
+
+        // Tier 2: Strong Rule (Heuristic wins if it's a "Hard Pattern" like Regex)
+        // Heuristic engine typically returns 0.9+ for regex matches
+        if (hLabel !== 'unknown' && hConf >= 0.95) {
+            return {
+                label: hLabel,
+                confidence: hConf,
+                source: 'ensemble_heuristic_strong'
+            };
+        }
+
+        // Tier 3: Strong Neural Context
+        // If Heuristic is weak/uncertain (< 0.8) and Neural is very confident (> 0.85)
+        // This covers cases where regex fails but context (label/placeholder) is clear
+        if (nLabel !== 'unknown' && nConf > 0.85 && hConf < 0.8) {
+            return {
+                label: nLabel,
+                confidence: nConf,
+                source: 'ensemble_neural_strong'
+            };
+        }
+
+        // Tier 4: Weighted Vote (Disagreement area)
+        if (hLabel !== 'unknown' && nLabel !== 'unknown') {
+            // Calculate weighted scores
+            // Heuristic is slightly more trusted for specific fields (weight 0.6)
+            // Neural is generalist (weight 0.4)
+            const hScore = hConf * 0.6;
+            const nScore = nConf * 0.4;
+
+            if (hScore > nScore) {
+                return { label: hLabel, confidence: hConf, source: 'ensemble_heuristic_weighted' };
+            } else {
+                return { label: nLabel, confidence: nConf, source: 'ensemble_neural_weighted' };
+            }
+        }
+
+        // Edge Case: Only one found something
+        if (hLabel !== 'unknown') return { label: hLabel, confidence: hConf, source: 'heuristic_fallback' };
+        if (nLabel !== 'unknown') return { label: nLabel, confidence: nConf, source: 'neural_fallback' };
+
+        // Tier 5: Ambiguity
+        return { label: 'unknown', confidence: 0, source: 'ensemble_ambiguous' };
     }
 
     /**
@@ -824,7 +904,10 @@ class NeuralClassifier {
 
             const data = await response.json();
 
-            if (data.version === 4 && data.W1 && data.W2 && data.W3) {
+            if (data.version === 4 &&
+                data.W1 && data.W1.length > 0 &&
+                data.W2 && data.W2.length > 0 &&
+                data.W3 && data.W3.length > 0) {
                 this._W1 = data.W1;
                 this._b1 = data.b1;
                 this._W2 = data.W2;
@@ -834,6 +917,8 @@ class NeuralClassifier {
                 this._totalSamples = 0;
                 this._log(`Loaded baseline weights (trained on ${data.metadata?.trainingExamples || 'N/A'} examples)`);
                 return true;
+            } else {
+                this._log('Baseline weights empty or invalid version, skipping.');
             }
         } catch (e) {
             console.error('[NeuralClassifier] Failed to load baseline weights:', e);
