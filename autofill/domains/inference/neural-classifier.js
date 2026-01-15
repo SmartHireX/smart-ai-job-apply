@@ -64,7 +64,7 @@ class NeuralClassifier {
     static CONFIDENCE_THRESHOLD = 0.25;
 
     /** @type {string} Storage key for persisted weights */
-    static STORAGE_KEY = 'neural_weights_v3';
+    static STORAGE_KEY = 'neural_weights_v4';
 
     /** @type {boolean} Use optimized TypedArray math kernel */
     static USE_OPTIMIZED_KERNEL = true;
@@ -229,21 +229,68 @@ class NeuralClassifier {
      * @returns {Object}
      */
     _getFallbackFieldTypes() {
+        // Comprehensive 135-class list matching FieldTypes.js v4.0
+        const ORDERED_CLASSES = [
+            'unknown',
+            // Identity (1-8)
+            'first_name', 'middle_name', 'last_name', 'full_name', 'preferred_name',
+            'headline', 'summary', 'profile_photo',
+            // Contact (9-13)
+            'email', 'email_secondary', 'phone', 'phone_mobile', 'phone_home',
+            // Online Presence (14-22)
+            'linkedin', 'github', 'portfolio', 'website', 'twitter_url',
+            'facebook_url', 'instagram_url', 'google_scholar', 'other_url',
+            // Location (23-32)
+            'address', 'address_line_2', 'city', 'state', 'zip_code', 'country',
+            'current_location', 'timezone', 'relocation', 'preferred_location',
+            // Work Experience (33-44)
+            'job_title', 'current_title', 'employer_name', 'current_company',
+            'job_start_date', 'job_end_date', 'job_current', 'work_description',
+            'job_location', 'years_experience', 'industry', 'department',
+            // Education (45-57)
+            'institution_name', 'school_name', 'degree_type', 'field_of_study',
+            'major', 'minor', 'gpa_score', 'graduation_date',
+            'education_start_date', 'education_end_date', 'education_current',
+            'honors', 'education_level',
+            // Skills (58-65)
+            'skills', 'technical_skills', 'certifications', 'licenses',
+            'languages', 'language_proficiency', 'years_skill', 'skill_level',
+            // References (66-69)
+            'reference_name', 'reference_email', 'reference_phone', 'reference_relationship',
+            // Demographics (70-77)
+            'gender', 'gender_identity', 'pronouns', 'race', 'ethnicity',
+            'veteran', 'disability', 'marital_status',
+            // Compensation (78-83)
+            'salary_current', 'salary_expected', 'salary_minimum', 'salary_currency',
+            'bonus_expected', 'equity_expected',
+            // Availability (84-89)
+            'start_date', 'availability', 'notice_period', 'work_type',
+            'shift_preference', 'travel_percentage',
+            // Preferences (90-96)
+            'remote_preference', 'job_type_preference', 'work_style',
+            'communication_style', 'career_goals', 'desired_role', 'interest_areas',
+            // Legal (97-108)
+            'work_auth', 'sponsorship', 'visa_status', 'citizenship',
+            'clearance', 'clearance_active', 'legal_age', 'tax_id',
+            'date_of_birth', 'background_check', 'criminal_record', 'drug_test',
+            // Federal/Military (109-114)
+            'military_service', 'service_dates', 'discharge_status',
+            'federal_employee', 'federal_grade', 'schedule_a',
+            // Academic (115-119)
+            'publications', 'patents', 'research_interests',
+            'thesis_title', 'advisor_name',
+            // Application Context (120-127)
+            'referral_source', 'referrer_name', 'referrer_email', 'employee_id',
+            'job_id', 'requisition_id', 'application_date', 'resume_filename',
+            // Supplemental (128-134)
+            'cover_letter', 'additional_info', 'notes', 'intro_note',
+            'custom_question', 'generic_question', 'agreement'
+        ];
+
         return {
-            ORDERED_CLASSES: [
-                'unknown',
-                'first_name', 'last_name', 'full_name', 'email', 'phone',
-                'linkedin', 'github', 'portfolio', 'website', 'twitter_url',
-                'address', 'city', 'state', 'zip_code', 'country',
-                'job_title', 'employer_name', 'job_start_date', 'job_end_date', 'work_description', 'job_location',
-                'institution_name', 'degree_type', 'field_of_study', 'gpa_score', 'education_start_date', 'education_end_date',
-                'gender', 'race', 'veteran', 'disability', 'marital_status',
-                'salary_current', 'salary_expected',
-                'work_auth', 'sponsorship', 'citizenship', 'clearance', 'legal_age', 'tax_id', 'criminal_record', 'notice_period',
-                'referral_source', 'cover_letter', 'generic_question'
-            ],
-            getFieldTypeIndex: (type) => this._fieldTypes.ORDERED_CLASSES.indexOf(type),
-            getFieldTypeFromIndex: (idx) => this._fieldTypes.ORDERED_CLASSES[idx] || 'unknown'
+            ORDERED_CLASSES,
+            getFieldTypeIndex: (type) => ORDERED_CLASSES.indexOf(type),
+            getFieldTypeFromIndex: (idx) => ORDERED_CLASSES[idx] || 'unknown'
         };
     }
 
@@ -253,7 +300,7 @@ class NeuralClassifier {
      * @returns {number}
      */
     _getOutputSize() {
-        return this._fieldTypes?.ORDERED_CLASSES?.length || 46;
+        return this._fieldTypes?.ORDERED_CLASSES?.length || 135;
     }
 
     /**
@@ -736,8 +783,8 @@ class NeuralClassifier {
             const result = await chrome.storage.local.get(NeuralClassifier.STORAGE_KEY);
             const data = result[NeuralClassifier.STORAGE_KEY];
 
-            // Version 3: 3-layer architecture
-            if (data && data.version === 3 && data.W1 && data.W2 && data.W3) {
+            // Version 4: 3-layer architecture with 107 output classes
+            if (data && data.version === 4 && data.W1 && data.W2 && data.W3) {
                 this._W1 = data.W1;
                 this._b1 = data.b1;
                 this._W2 = data.W2;
@@ -745,13 +792,13 @@ class NeuralClassifier {
                 this._W3 = data.W3;
                 this._b3 = data.b3;
                 this._totalSamples = data.totalSamples || 0;
-                this._log(`Loaded v3 weights (${this._totalSamples} samples)`);
+                this._log(`Loaded v4 weights (${this._totalSamples} samples, ${data.W3[0]?.length || 107} classes)`);
                 return true;
             }
 
-            // Version 1 or 2: Old architecture, reinitialize
-            if (data?.version === 1 || data?.version === 2) {
-                this._log(`Found v${data.version} weights, reinitializing to v3 (3-layer)`);
+            // Version 1, 2, or 3: Old architecture, reinitialize for 107 classes
+            if (data?.version === 1 || data?.version === 2 || data?.version === 3) {
+                this._log(`Found v${data.version} weights, reinitializing to v4 (107 classes)`);
                 return false;
             }
         } catch (e) {
@@ -767,17 +814,17 @@ class NeuralClassifier {
      */
     async _loadBaselineWeights() {
         try {
-            const baselineUrl = chrome.runtime.getURL('autofill/domains/inference/model_v3_baseline.json');
+            const baselineUrl = chrome.runtime.getURL('autofill/domains/inference/model_v4_baseline.json');
             const response = await fetch(baselineUrl);
 
             if (!response.ok) {
-                this._log('Baseline weights not found');
+                this._log('Baseline weights not found, using random initialization');
                 return false;
             }
 
             const data = await response.json();
 
-            if (data.version === 3 && data.W1 && data.W2 && data.W3) {
+            if (data.version === 4 && data.W1 && data.W2 && data.W3) {
                 this._W1 = data.W1;
                 this._b1 = data.b1;
                 this._W2 = data.W2;
@@ -809,7 +856,7 @@ class NeuralClassifier {
                 W3: this._W3,
                 b3: this._b3,
                 totalSamples: this._totalSamples,
-                version: 3,
+                version: 4,
                 timestamp: Date.now()
             };
             await chrome.storage.local.set({ [NeuralClassifier.STORAGE_KEY]: payload });
