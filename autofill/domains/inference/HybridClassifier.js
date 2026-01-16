@@ -1,53 +1,34 @@
 /**
- * HybridClassifier
+ * Hybrid Classifier
  * 
- * Enterprise-grade ensemble classifier that orchestrates multiple classification strategies.
- * Combines HeuristicEngine (pattern-based) and NeuralClassifier (ML-based) for optimal accuracy.
+ * Orchestrates multiple classification engines (Heuristic + Neural)
+ * and arbitrates their results using a confidence-based voting system.
  * 
  * Architecture:
- *   HeuristicEngine (Fast, High Precision) → 
- *   NeuralClassifier (Context-Aware) → 
- *   Ensemble Arbitration (5-Tier Decision System)
+ * 1. Feature Extraction (shared)
+ * 2. Parallel Classification (Heuristic + Neural)
+ * 3. Arbitration Logic (5-tier system)
+ * 4. Result Enrichment (validation, formatting)
  * 
- * Features:
- *   - 5-tier arbitration strategy for conflict resolution
- *   - Confidence-based routing (heuristic for obvious, neural for ambiguous)
- *   - Unanimous agreement boost (99% confidence when both agree)
- *   - Weighted voting for disagreements
- *   - Performance metrics and source tracking
- *   - Lazy-loading of dependencies
- * 
- * @module HybridClassifier
- * @version 1.0.0
- * @author SmartHireX AI Team
+ * @version 2.0.0
  */
+
+// NeuralClassifier and HeuristicEngine are loaded globally in browser
+// const NeuralClassifier = require('./neural-classifier.js');
+// const HeuristicEngine = require('./HeuristicEngine.js');
 
 class HybridClassifier {
 
-    // ========================================================================
-    // STATIC CONFIGURATION
-    // ========================================================================
-
-    /** @type {string} Current version */
-    static VERSION = '1.0.0';
-
-    /** @type {boolean} Enable debug logging */
+    static VERSION = '2.0.0';
     static DEBUG = false;
 
-    // Arbitration thresholds
-    static HEURISTIC_STRONG_THRESHOLD = 0.95;  // Trust heuristic above this
-    static NEURAL_STRONG_THRESHOLD = 0.85;     // Trust neural if heuristic weak
-    static HEURISTIC_WEAK_THRESHOLD = 0.80;    // Heuristic considered weak below this
-    static UNANIMOUS_CONFIDENCE = 0.99;         // Boost when both agree
+    // Arbitration Thresholds (Default values, overridden dynamically)
+    static HEURISTIC_STRONG_THRESHOLD = 0.85;
+    static NEURAL_STRONG_THRESHOLD = 0.80;
+    static HEURISTIC_WEAK_THRESHOLD = 0.50;
 
-    // Weighted voting ratios (when disagreeing)
-    // Weighted voting ratios (when disagreeing)
-    static HEURISTIC_WEIGHT = 0.4;  // Heuristic weight lower due to lower base accuracy (78%)
-    static NEURAL_WEIGHT = 0.6;     // Neural weight higher due to improved V7 accuracy (86%)
-
-    // ========================================================================
-    // CONSTRUCTOR
-    // ========================================================================
+    // Confidence for unanimous agreement
+    static UNANIMOUS_CONFIDENCE = 0.99;
 
     /**
      * Initialize the HybridClassifier
@@ -78,10 +59,6 @@ class HybridClassifier {
 
         this._log('HybridClassifier initialized');
     }
-
-    // ========================================================================
-    // PUBLIC API - CLASSIFICATION
-    // ========================================================================
 
     /**
      * Classify a form field using hybrid ensemble approach
@@ -124,52 +101,6 @@ class HybridClassifier {
     }
 
     /**
-     * Classify multiple fields in batch
-     * @param {Array<Object>} fields - Array of form field objects
-     * @returns {Promise<Array<Object>>} Array of classification results
-     */
-    async classifyBatch(fields) {
-        return Promise.all(fields.map(field => this.classify(field)));
-    }
-
-    // ========================================================================
-    // PRIVATE METHODS - FEATURE EXTRACTION
-    // ========================================================================
-
-    /**
-     * Extract features from field
-     * @private
-     */
-    async _extractFeatures(field) {
-        const extractor = this._getFeatureExtractor();
-        if (!extractor) {
-            this._log('Warning: FeatureExtractor not available, using minimal features');
-            return this._buildMinimalFeatures(field);
-        }
-
-        return extractor.extract(field);
-    }
-
-    /**
-     * Build minimal feature set when FeatureExtractor unavailable
-     * @private
-     */
-    _buildMinimalFeatures(field) {
-        // Basic features from field attributes
-        return {
-            name: field.name || '',
-            id: field.id || '',
-            placeholder: field.placeholder || '',
-            label: field.label || '',
-            type: field.type || 'text'
-        };
-    }
-
-    // ========================================================================
-    // PRIVATE METHODS - CLASSIFIER EXECUTION
-    // ========================================================================
-
-    /**
      * Run heuristic classification
      * @private
      */
@@ -187,7 +118,7 @@ class HybridClassifier {
             });
 
             return {
-                label: result?.type || 'unknown',
+                label: result?.label || result?.type || 'unknown', // Correctly read label property
                 confidence: result?.confidence || 0,
                 source: 'heuristic',
                 details: result
@@ -224,10 +155,6 @@ class HybridClassifier {
             return { label: 'unknown', confidence: 0, source: 'neural_error' };
         }
     }
-
-    // ========================================================================
-    // PRIVATE METHODS - ARBITRATION (5-TIER SYSTEM)
-    // ========================================================================
 
     /**
      * Arbitrate between Heuristic and Neural results using 5-tier decision system
@@ -366,246 +293,121 @@ class HybridClassifier {
     }
 
     /**
-     * Get dynamic arbitration thresholds based on field category
-     * @private
-     */
-    _getDynamicThresholds(category) {
-        // Defaults
-        let heuristicThreshold = HybridClassifier.HEURISTIC_STRONG_THRESHOLD; // 0.95
-        let neuralThreshold = HybridClassifier.NEURAL_STRONG_THRESHOLD;       // 0.85
-        let heuristicWeight = HybridClassifier.HEURISTIC_WEIGHT;              // 0.4
-        let neuralWeight = HybridClassifier.NEURAL_WEIGHT;                    // 0.6
-
-        switch (category) {
-            // PATTERN-HEAVY FIELDS: Trust Heuristics More
-            case 'contact':
-            case 'identity':
-            case 'online_presence':
-            case 'location':
-                heuristicThreshold = 0.85; // Lower h-bar (Regex is reliable)
-                neuralThreshold = 0.90;    // Raise n-bar (Neural struggles with exact strings)
-                heuristicWeight = 0.7;     // Bias voting to heuristic
-                neuralWeight = 0.3;
-                break;
-
-            // CONTEXT-HEAVY FIELDS: Trust Neural More
-            case 'work_experience':
-            case 'education':
-            case 'skills':
-            case 'availability':
-                heuristicThreshold = 0.98; // Raise h-bar (Hard to regex job descriptions)
-                neuralThreshold = 0.75;    // Lower n-bar (Neural excels at context)
-                heuristicWeight = 0.4;     // Bias voting to neural
-                neuralWeight = 0.6;
-                break;
-
-            default:
-                // Keep defaults for misc/unknown
-                break;
-        }
-
-        return { heuristicThreshold, neuralThreshold, heuristicWeight, neuralWeight };
-    }
-
-    // ========================================================================
-    // PRIVATE METHODS - RESULT ENRICHMENT
-    // ========================================================================
-
-    /**
-     * Enrich final result with additional metadata
-     * @private
-     */
-    _enrichResult(result, field) {
-        // Add group/category information
-        const groupType = this._getGroupType(result.label);
-
-        return {
-            ...result,
-            group_type: groupType,
-            field_name: field.name || field.id || 'unknown',
-            timestamp: Date.now()
-        };
-    }
-
-    /**
-     * Get field group/category
-     * @private
+     * Determine category for dynamic thresholding
      */
     _getGroupType(label) {
-        // This should ideally come from FieldTypes
-        // For now, return a default
-        if (typeof FieldTypes !== 'undefined' && FieldTypes.getCategoryForField) {
-            return FieldTypes.getCategoryForField(label) || 'misc';
+        if (!label || label === 'unknown') return 'general';
+
+        // Categorization Logic
+        if (['first_name', 'last_name', 'email', 'phone', 'address_line', 'city', 'state', 'zip_code', 'country'].includes(label)) {
+            return 'contact'; // Heuristic is king here
         }
-        return 'misc';
+
+        if (['company_name', 'job_title', 'industry', 'years_experience', 'skills', 'job_description'].includes(label)) {
+            return 'job'; // Neural is better here (context needed)
+        }
+
+        if (['institution_name', 'degree', 'major', 'gpa', 'graduation_date'].includes(label)) {
+            return 'education'; // Mixed
+        }
+
+        return 'general';
     }
 
-    // ========================================================================
-    // PRIVATE METHODS - DEPENDENCY MANAGEMENT
-    // ========================================================================
+    /**
+     * Get dynamic thresholds based on category
+     */
+    _getDynamicThresholds(category) {
+        // DEFAULT: Trust Heuristic more (Legacy behavior)
+        let config = {
+            heuristicThreshold: HybridClassifier.HEURISTIC_STRONG_THRESHOLD,
+            neuralThreshold: HybridClassifier.NEURAL_STRONG_THRESHOLD,
+            heuristicWeight: 0.6,
+            neuralWeight: 0.4
+        };
+
+        // ADJUSTMENT 1: Contact Info (Heuristic is nearly perfect)
+        if (category === 'contact') {
+            config.heuristicThreshold = 0.80; // Easier for heuristic to win
+            config.neuralThreshold = 0.95;    // Harder for neural to override
+            config.heuristicWeight = 0.8;
+            config.neuralWeight = 0.2;
+        }
+        // ADJUSTMENT 2: Job Info (Neural understands "Software Engineer" better than regex)
+        else if (category === 'job') {
+            config.heuristicThreshold = 0.90; // Harder for heuristic
+            config.neuralThreshold = 0.70;    // Neural can win more easily
+            config.heuristicWeight = 0.3;
+            config.neuralWeight = 0.7;
+        }
+
+        return config;
+    }
 
     /**
-     * Lazy-load HeuristicEngine
+     * Extract features (lazy load extractor)
      * @private
      */
-    _getHeuristicEngine() {
-        if (this._heuristicEngine) {
-            return this._heuristicEngine;
-        }
-
-        // Try to load from global scope (browser)
-        if (typeof HeuristicEngine !== 'undefined') {
-            this._heuristicEngine = new HeuristicEngine();
-            this._log('HeuristicEngine lazy-loaded from global scope');
-            return this._heuristicEngine;
-        }
-
-        // Try to require (Node.js)
-        try {
-            const HeuristicEngineClass = require('./HeuristicEngine.js');
-            this._heuristicEngine = new HeuristicEngineClass();
-            this._log('HeuristicEngine lazy-loaded via require');
-            return this._heuristicEngine;
-        } catch (e) {
-            this._log('Warning: HeuristicEngine not available');
-            return null;
-        }
+    async _extractFeatures(field) {
+        const extractor = this._getFeatureExtractor();
+        if (!extractor) return [];
+        return extractor.extract(field);
     }
 
-    /**
-     * Lazy-load NeuralClassifier
-     * @private
-     */
-    _getNeuralClassifier() {
-        if (this._neuralClassifier) {
-            return this._neuralClassifier;
-        }
-
-        // Try to load from global scope (browser)
-        if (typeof NeuralClassifier !== 'undefined') {
-            this._neuralClassifier = new NeuralClassifier();
-            this._log('NeuralClassifier lazy-loaded from global scope');
-            return this._neuralClassifier;
-        }
-
-        // Try to require (Node.js)
-        try {
-            const NeuralClassifierClass = require('./neural-classifier.js');
-            this._neuralClassifier = new NeuralClassifierClass();
-            this._log('NeuralClassifier lazy-loaded via require');
-            return this._neuralClassifier;
-        } catch (e) {
-            this._log('Warning: NeuralClassifier not available');
-            return null;
-        }
-    }
-
-    /**
-     * Lazy-load FeatureExtractor
-     * @private
-     */
-    _getFeatureExtractor() {
-        if (this._featureExtractor) {
-            return this._featureExtractor;
-        }
-
-        // Try to load from global scope
-        if (typeof FeatureExtractor !== 'undefined') {
-            this._featureExtractor = new FeatureExtractor();
-            this._log('FeatureExtractor lazy-loaded from global scope');
-            return this._featureExtractor;
-        }
-
-        // Try to require
-        try {
-            const FeatureExtractorClass = require('./feature-extractor.js');
-            this._featureExtractor = new FeatureExtractorClass();
-            this._log('FeatureExtractor lazy-loaded via require');
-            return this._featureExtractor;
-        } catch (e) {
-            this._log('Warning: FeatureExtractor not available');
-            return null;
-        }
-    }
-
-    // ========================================================================
-    // PRIVATE METHODS - METRICS & LOGGING
-    // ========================================================================
-
-    /**
-     * Record performance metrics
-     * @private
-     */
-    _recordMetrics(startTime, result) {
-        const latency = performance.now() - startTime;
-        this._metrics.totalClassifications++;
-
-        // Update rolling average latency
-        const n = this._metrics.totalClassifications;
-        this._metrics.averageLatency =
-            (this._metrics.averageLatency * (n - 1) + latency) / n;
-
-        this._log(`Classification complete: ${result.label} (${result.source}) in ${latency.toFixed(2)}ms`);
-    }
-
-    /**
-     * Get performance metrics
-     * @returns {Object} Performance statistics
-     */
-    getMetrics() {
-        const total = this._metrics.totalClassifications || 1; // Prevent division by zero
-
+    _enrichResult(result, field) {
         return {
-            ...this._metrics,
-            heuristicWinRate: (this._metrics.heuristicWins / total * 100).toFixed(2) + '%',
-            neuralWinRate: (this._metrics.neuralWins / total * 100).toFixed(2) + '%',
-            unanimousRate: (this._metrics.unanimousAgreements / total * 100).toFixed(2) + '%',
-            weightedVoteRate: (this._metrics.weightedVotes / total * 100).toFixed(2) + '%'
+            ...result,
+            fieldId: field.id || field.name,
+            timestamp: new Date().toISOString()
         };
     }
 
-    /**
-     * Reset metrics
-     */
-    resetMetrics() {
-        this._metrics = {
-            totalClassifications: 0,
-            heuristicWins: 0,
-            neuralWins: 0,
-            unanimousAgreements: 0,
-            weightedVotes: 0,
-            averageLatency: 0
-        };
+    _recordMetrics(startTime, result) {
+        const duration = performance.now() - startTime;
+        this._metrics.totalClassifications++;
+        this._metrics.averageLatency =
+            (this._metrics.averageLatency * (this._metrics.totalClassifications - 1) + duration) / this._metrics.totalClassifications;
     }
 
-    /**
-     * Debug logging
-     * @private
-     */
-    _log(message) {
-        if (this._debug) {
-            console.log(`[HybridClassifier] ${message}`);
+    _getFeatureExtractor() {
+        if (this._featureExtractor) return this._featureExtractor;
+        if (typeof window !== 'undefined' && window.FeatureExtractor) {
+            this._featureExtractor = new window.FeatureExtractor();
+            return this._featureExtractor;
         }
+        return null;
     }
 
-    /**
-     * Error logging
-     * @private
-     */
-    _logError(message, error) {
-        console.error(`[HybridClassifier] ${message}:`, error);
+    _getHeuristicEngine() {
+        if (this._heuristicEngine) return this._heuristicEngine;
+        if (typeof window !== 'undefined' && window.HeuristicEngine) {
+            this._heuristicEngine = new window.HeuristicEngine();
+            return this._heuristicEngine;
+        }
+        return null;
+    }
+
+    _getNeuralClassifier() {
+        if (this._neuralClassifier) return this._neuralClassifier;
+        if (typeof window !== 'undefined' && window.NeuralClassifier) {
+            this._neuralClassifier = new window.NeuralClassifier();
+            return this._neuralClassifier;
+        }
+        return null;
+    }
+
+    _log(msg) {
+        if (this._debug) console.log(`[HybridClassifier] ${msg}`);
+    }
+
+    _logError(msg, err) {
+        console.error(`[HybridClassifier] ${msg}:`, err);
     }
 }
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-if (typeof window !== 'undefined') {
-    window.HybridClassifier = HybridClassifier;
-    console.log('[Dependencies] HybridClassifier V1.0 loaded into window');
-}
-
+// Export for both Node.js and Browser
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = HybridClassifier;
+} else if (typeof window !== 'undefined') {
+    window.HybridClassifier = HybridClassifier;
 }

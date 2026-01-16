@@ -139,7 +139,7 @@ class PipelineOrchestrator {
         // Track unique headers to detect new sections (e.g. Job 1 -> Job 2)
         const seenHeaders = { work: false, education: false };
 
-        return fields.map(async field => {
+        return Promise.all(fields.map(async field => {
             // Hybrid Classification (Heuristic + Neural with 5-tier arbitration)
             if (!field.ml_prediction && this.classifier) {
                 field.ml_prediction = await this.classifier.classify(field);
@@ -181,7 +181,7 @@ class PipelineOrchestrator {
                 console.warn('⚠️ IndexingService missing during enrichment');
             }
             return field;
-        });
+        }));
     }
 
     // ==========================================

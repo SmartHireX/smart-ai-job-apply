@@ -21,12 +21,12 @@ class FormHandler {
         const TYPES = window.NovaConstants ? window.NovaConstants.MESSAGE_TYPES : (window.MESSAGE_TYPES || {});
 
         // Handle DETECT_FORMS
-        if (message.type === TYPES.DETECT_FORMS) {
+        if (message.type === TYPES.DETECT_FORMS || message.type === 'DETECT_FORMS') {
             return this.handleDetectForms(message, sender, sendResponse);
         }
 
         // Handle START_LOCAL_PROCESSING
-        if (message.type === TYPES.START_LOCAL_PROCESSING) {
+        if (message.type === TYPES.START_LOCAL_PROCESSING || message.type === 'START_LOCAL_PROCESSING') {
             return this.handleStartProcessing(message, sender, sendResponse);
         }
 

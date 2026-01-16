@@ -24,6 +24,7 @@ const CONTENT_SCRIPTS = [
     'autofill/domains/heuristics/RuleEngine.js',
     'autofill/domains/profile/EntityStore.js',
     'autofill/services/indexing/field-indexing-service.js',
+    'autofill/domains/model/FieldRoutingPatterns.js',
     'autofill/core/PipelineOrchestrator.js',
 
     // Extraction Services
@@ -57,6 +58,7 @@ const CONTENT_SCRIPTS = [
     'autofill/domains/inference/HeuristicEngine.js',
     'autofill/domains/inference/OptimizedMathKernel.js',
     'autofill/domains/inference/neural-classifier.js',
+    'autofill/domains/inference/HybridClassifier.js',
     'autofill/domains/inference/execution-engine.js',
 
     // Infrastructure

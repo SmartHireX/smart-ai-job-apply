@@ -619,6 +619,19 @@ class NeuralClassifier {
     _transpose(matrix) {
         return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
     }
+
+    /**
+     * Initialization for Lifecycle compatibility
+     */
+    async init() {
+        console.log('[NeuralClassifier] Init called (compatibility mode)');
+        return true;
+    }
 }
 
-module.exports = NeuralClassifier;
+// Export for both Node.js and Browser
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = NeuralClassifier;
+} else if (typeof window !== 'undefined') {
+    window.NeuralClassifier = NeuralClassifier;
+}

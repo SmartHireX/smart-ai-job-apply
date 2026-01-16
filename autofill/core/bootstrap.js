@@ -28,6 +28,7 @@ const SCRIPT_QUEUE = [
     'autofill/domains/profile/EntityStore.js',
 
     'autofill/services/indexing/field-indexing-service.js',
+    'autofill/domains/model/FieldRoutingPatterns.js', // Logic for field grouping
     'autofill/core/PipelineOrchestrator.js',
     'autofill/services/extraction/section-detector.js',
     'autofill/services/extraction/sibling-cluster.js',
@@ -58,7 +59,9 @@ const SCRIPT_QUEUE = [
     'autofill/domains/inference/FieldTypes.js',
     'autofill/domains/inference/HeuristicEngine.js',
     'autofill/domains/inference/OptimizedMathKernel.js',
+    'autofill/domains/inference/OptimizedMathKernel.js',
     'autofill/domains/inference/neural-classifier.js',
+    'autofill/domains/inference/HybridClassifier.js',
     'common/infrastructure/config.js',
     'common/infrastructure/lifecycle.js',
 
