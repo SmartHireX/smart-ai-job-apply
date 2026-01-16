@@ -9,8 +9,8 @@
 
 class PipelineOrchestrator {
     constructor() {
-        this.neuralClassifier = window.NeuralClassifier ? new window.NeuralClassifier() : null;
-        if (this.neuralClassifier) this.neuralClassifier.init();
+        // Use HybridClassifier for ensemble classification (Heuristic + Neural)
+        this.classifier = window.HybridClassifier ? new window.HybridClassifier({ debug: false }) : null;
 
         // Pipeline Stages
         this.pipeline = {
@@ -139,10 +139,10 @@ class PipelineOrchestrator {
         // Track unique headers to detect new sections (e.g. Job 1 -> Job 2)
         const seenHeaders = { work: false, education: false };
 
-        return fields.map(field => {
-            // Neural Classification
-            if (!field.ml_prediction && this.neuralClassifier) {
-                field.ml_prediction = this.neuralClassifier.predict(field);
+        return fields.map(async field => {
+            // Hybrid Classification (Heuristic + Neural with 5-tier arbitration)
+            if (!field.ml_prediction && this.classifier) {
+                field.ml_prediction = await this.classifier.classify(field);
             }
 
             // DOM Indexing
