@@ -40,9 +40,9 @@ const CONFIG = {
     outputPath: path.join(__dirname, '../../autofill/domains/inference/model_v4_baseline.json'),
 
     // Training parameters
-    iterations: 500000,
-    logEvery: 50000,
-    saveEvery: 100000,
+    iterations: 10000, // Reduced for quick verification
+    logEvery: 1000,
+    saveEvery: 5000,
 
     // NEW: Validation & Early Stopping
     validationSplit: 0.2,      // 20% of training data for validation
@@ -256,8 +256,12 @@ async function train() {
 
     // Initialize classifier
     console.log('\n🔧 Initializing NeuralClassifier...');
-    const classifier = new NeuralClassifier({ debug: false });
-    await classifier.init();
+    const classifier = new NeuralClassifier({
+        debug: true,
+        featureExtractor: new FeatureExtractor(),
+        fieldTypes: FieldTypes
+    });
+    // await classifier.init(); // Terminated
     console.log('   Classifier ready.');
 
     // Training loop
@@ -307,7 +311,7 @@ async function train() {
 
     const confusionMatrix = {};
     for (const sample of testData) {
-        const prediction = classifier.predict(sample.features);
+        const prediction = await classifier.predict(sample.features);
         const pred = prediction.label;
         const actual = sample.label;
 

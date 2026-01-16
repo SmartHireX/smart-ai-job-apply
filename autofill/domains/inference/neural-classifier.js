@@ -82,15 +82,81 @@ class NeuralClassifier {
     // CONSTRUCTOR
     // ========================================================================
 
+    /**
+     * Initialize Neural Classifier
+     * @param {Object} config - Configuration options
+     */
+    constructor(config = {}) {
+        this._debug = config.debug || NeuralClassifier.DEBUG;
+        this._isTraining = false;
+        this._totalSamples = 0;
 
+        // Initialize dependencies (support both window and node)
+        if (config.featureExtractor) {
+            this._featureExtractor = config.featureExtractor;
+        } else if (typeof FeatureExtractor !== 'undefined') {
+            this._featureExtractor = new FeatureExtractor();
+        } else if (typeof window !== 'undefined' && window.FeatureExtractor) {
+            this._featureExtractor = new window.FeatureExtractor();
+        }
+
+        if (config.fieldTypes) {
+            this._fieldTypes = config.fieldTypes;
+        } else if (typeof FieldTypes !== 'undefined') {
+            this._fieldTypes = FieldTypes;
+        } else if (typeof window !== 'undefined' && window.FieldTypes) {
+            this._fieldTypes = window.FieldTypes;
+        }
+
+        // Initialize empty weights (will be loaded or randomized)
+        this._W1 = null;
+        this._b1 = null;
+        this._W2 = null;
+        this._b2 = null;
+        this._W3 = null;  // Hidden2 -> Hidden3
+        this._b3 = null;
+        this._W4 = null;  // Hidden3 -> Output
+        this._b4 = null;
+
+        // Initialize random weights by default (88 classes)
+        this._initializeRandomWeights();
+    }
 
     // ========================================================================
     // PUBLIC API - PREDICTION
     // ========================================================================
 
+    /**
+     * Predict label for a field
+     * @param {Object|Array} input - Field object or features array
+     * @returns {Promise<Object>} Prediction result { label, confidence }
+     */
+    async predict(input) {
+        if (!this._W1) return { label: 'unknown', confidence: 0 };
 
+        // Support both field object and features array
+        const features = Array.isArray(input) ? input : (this._featureExtractor?.extract(input) || []);
 
+        // Forward pass
+        const { logits } = this._forward(features);
+        const probs = this._softmax(logits);
 
+        // Find max probability
+        let maxProb = -1;
+        let maxIndex = -1;
+        for (let i = 0; i < probs.length; i++) {
+            if (probs[i] > maxProb) {
+                maxProb = probs[i];
+                maxIndex = i;
+            }
+        }
+
+        const label = this._fieldTypes.getFieldTypeFromIndex(maxIndex);
+        return {
+            label: label || 'unknown',
+            confidence: maxProb
+        };
+    }
 
     // ========================================================================
     // PUBLIC API - TRAINING
@@ -105,15 +171,24 @@ class NeuralClassifier {
      * @returns {Promise<void>}
      */
     async train(field, correctLabel) {
+        // console.log('[TRAIN] Training on:', correctLabel);
         if (!this._W1 || !this._W2 || !this._W3 || !this._W4 || !this._b1 || !this._b2 || !this._b3 || !this._b4) {
+            console.log('[TRAIN] Cannot train: weights not initialized');
             this._log('Cannot train: weights not initialized');
             return;
         }
 
         const targetIndex = this._fieldTypes.getFieldTypeIndex(correctLabel);
         if (targetIndex === -1) {
+            console.log(`[TRAIN] Unknown label: ${correctLabel}`);
             this._log(`Unknown label: ${correctLabel}`);
             return;
+        }
+
+        // Debug inputs
+        const inputs = Array.isArray(field) ? field : (this._featureExtractor?.extract(field) || []);
+        if (inputs.length === 0) {
+            console.log('[TRAIN] Inputs empty!');
         }
 
         // Enable training mode (activates dropout)
@@ -121,7 +196,7 @@ class NeuralClassifier {
 
         // Forward pass with dropout
         // Support both field object and features array
-        const inputs = Array.isArray(field) ? field : (this._featureExtractor?.extract(field) || []);
+        // Input validation handled above (lines 151-154)
         const { logits, hidden1, hidden2, hidden3, z1, z2, z3 } = this._forward(inputs);  // NEW: added hidden3, z3
         const probs = this._softmax(logits);
 
@@ -148,7 +223,7 @@ class NeuralClassifier {
      * @private
      */
     _backpropagate(inputs, hidden1, hidden2, hidden3, z1, z2, z3, probs, targetIndex, learningRate) {
-        const outputSize = this._getOutputSize();
+        const outputSize = this._fieldTypes?.getClassCount?.() || 88;  // 88 classes verified
         const hidden1Size = NeuralClassifier.HIDDEN1_SIZE;
         const hidden2Size = NeuralClassifier.HIDDEN2_SIZE;
         const hidden3Size = NeuralClassifier.HIDDEN3_SIZE;  // NEW
@@ -259,7 +334,7 @@ class NeuralClassifier {
         const hidden1Size = NeuralClassifier.HIDDEN1_SIZE;
         const hidden2Size = NeuralClassifier.HIDDEN2_SIZE;
         const hidden3Size = NeuralClassifier.HIDDEN3_SIZE;  // NEW
-        const outputSize = this._getOutputSize();
+        const outputSize = this._fieldTypes?.getClassCount?.() || 88;  // 88 classes verified
 
         // Validate input size
         const expectedInputSize = NeuralClassifier.INPUT_SIZE;
@@ -407,7 +482,7 @@ class NeuralClassifier {
 
         const inputSize = NeuralClassifier.INPUT_SIZE;
         const hiddenSize = NeuralClassifier.HIDDEN_SIZE;
-        const outputSize = this._getOutputSize();
+        const outputSize = this._fieldTypes?.getClassCount?.() || 88;  // 88 classes verified
 
         try {
             // Flatten and convert to Float32Array
@@ -468,7 +543,7 @@ class NeuralClassifier {
         const hidden1Size = NeuralClassifier.HIDDEN1_SIZE;
         const hidden2Size = NeuralClassifier.HIDDEN2_SIZE;
         const hidden3Size = NeuralClassifier.HIDDEN3_SIZE || 128;  // Fallback to 128
-        const outputSize = this._getOutputSize();
+        const outputSize = this._fieldTypes?.getClassCount?.() || 88;  // 88 classes verified
 
         // W1: Input → Hidden1 (He initialization for ReLU)
         this._W1 = [];
