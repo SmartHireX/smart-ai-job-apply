@@ -56,9 +56,7 @@ class HeuristicEngine {
 
         // Date synonyms
         'start_date': 'start_date',  // Generic start date → availability
-        'available_start_date': 'start_date',
-
-        // Contact synonyms
+                // Contact synonyms
         'mobile': 'phone',
         'cellphone': 'phone',
         'telephone': 'phone'
@@ -525,7 +523,7 @@ class HeuristicEngine {
             category: 'legal'
         },
 
-        notice_period: {
+        notice_period_in_days: {
             patterns: [
                 /\b(notice[_\-\s]?period|notice[_\-\s]?required)\b/i,
                 /\b(how[_\-\s]?soon[_\-\s]?can[_\-\s]?you[_\-\s]?start|availability)\b/i,
@@ -821,25 +819,6 @@ class HeuristicEngine {
         },
 
         // ==================== BATCH 7: PREFERENCES & AVAILABILITY ====================
-        start_date: {
-            patterns: [
-                /\b(start[_\-\s]?date|available[_\-\s]?to[_\-\s]?start|availability[_\-\s]?date)\b/i,
-                /\b(when[_\-\s]?can[_\-\s]?you[_\-\s]?start|earliest[_\-\s]?start)\b/i,
-                /\b(join[_\-\s]?date|commencement[_\-\s]?date)\b/i
-            ],
-            confidence: 0.94,
-            category: 'preferences'
-        }, remote_preference: {
-            patterns: [
-                /\b(remote[_\-\s]?preference|work[_\-\s]?preference)\b/i,
-                /\b(remote|hybrid|on[_\-\s]?site|office[_\-\s]?based)\b/i,
-                /\b(work[_\-\s]?from[_\-\s]?home|wfh|telecommute)\b/i,
-                /\b(prefer[_\-\s]?to[_\-\s]?work[_\-\s]?(remote|office))\b/i
-            ],
-            confidence: 0.95,
-            category: 'preferences'
-        },
-
         shift_preference: {
             patterns: [
                 /\b(shift[_\-\s]?preference|shift[_\-\s]?availability)\b/i,

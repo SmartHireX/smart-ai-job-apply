@@ -1486,39 +1486,6 @@
     },
     {
         "features": {
-            "label": "Earliest Start Date",
-            "name": "start_avail",
-            "automationId": "date-avail",
-            "placeholder": "Date",
-            "parentContext": "Availability",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Möglicher Starttermin",
-            "name": "starttermin",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Verfügbarkeit",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Available From",
-            "name": "avail_date",
-            "automationId": "wd-Start-Date",
-            "placeholder": null,
-            "parentContext": "Job Application",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
             "label": "Notice Period",
             "name": "notice",
             "automationId": "notice-input",
@@ -1526,7 +1493,7 @@
             "parentContext": "Availability",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -1537,7 +1504,7 @@
             "parentContext": "Aktuelle Anstellung",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -1548,7 +1515,7 @@
             "parentContext": "Logistics",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2484,17 +2451,6 @@
             "siblingContext": null
         },
         "label": "salary_expected"
-    },
-    {
-        "features": {
-            "label": "When can you start?",
-            "name": "start_avail_text",
-            "automationId": "availability-text",
-            "placeholder": null,
-            "parentContext": "Logistics",
-            "siblingContext": null
-        },
-        "label": "start_date"
     },
     {
         "features": {

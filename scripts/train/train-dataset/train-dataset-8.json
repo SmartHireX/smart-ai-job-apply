@@ -1816,39 +1816,6 @@
     },
     {
         "features": {
-            "label": "Available Start Date",
-            "name": "start_date_input",
-            "automationId": "gh-start-date-avail",
-            "placeholder": "MM/YYYY",
-            "parentContext": "Availability",
-            "siblingContext": "When can you start?"
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Fecha de incorporación",
-            "name": "wd-StartDateAvail",
-            "automationId": "qa-start-date",
-            "placeholder": "DD/MM/AAAA",
-            "parentContext": "Disponibilidad",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Earliest Start Date",
-            "name": "earliest_start",
-            "automationId": "lever-start-date",
-            "placeholder": "Soonest possible",
-            "parentContext": "Application Detail",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
             "label": "Notice Period",
             "name": "notice_period_input",
             "automationId": "gh-notice",
@@ -1856,7 +1823,7 @@
             "parentContext": "Availability",
             "siblingContext": "Required by current employer?"
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -1867,7 +1834,7 @@
             "parentContext": "Contrato actual",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -1878,7 +1845,7 @@
             "parentContext": "Bewerberprofil",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {

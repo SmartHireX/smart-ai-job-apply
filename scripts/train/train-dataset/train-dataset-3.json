@@ -2597,61 +2597,6 @@
     },
     {
         "features": {
-            "label": "Start",
-            "name": "strt",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Avail",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Begin",
-            "name": "bgn_dt",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Details",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Join",
-            "name": "jn",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Available",
-            "name": "avl",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Date",
-            "name": "dt",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
             "label": "Notice",
             "name": "ntc",
             "automationId": null,
@@ -2659,7 +2604,7 @@
             "parentContext": "Avail",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2670,7 +2615,7 @@
             "parentContext": "Details",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2681,7 +2626,7 @@
             "parentContext": "Info",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2692,7 +2637,7 @@
             "parentContext": "Profile",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2703,7 +2648,7 @@
             "parentContext": "General",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {

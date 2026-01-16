@@ -2597,61 +2597,6 @@
     },
     {
         "features": {
-            "label": "Available From",
-            "name": "avail_fr",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Job",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Start",
-            "name": "st_dt",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "App",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Joining Date",
-            "name": "join_d",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Offer",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Can start on",
-            "name": "can_st",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Quest",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Date",
-            "name": "d_av",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Avail",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
             "label": "Notice Period",
             "name": "not_per",
             "automationId": null,
@@ -2659,7 +2604,7 @@
             "parentContext": "Job",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2670,7 +2615,7 @@
             "parentContext": "App",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2681,7 +2626,7 @@
             "parentContext": "Exit",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2692,7 +2637,7 @@
             "parentContext": "Quest",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2703,7 +2648,7 @@
             "parentContext": "Gen",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {

@@ -2597,61 +2597,6 @@
     },
     {
         "features": {
-            "label": "Fecha de Inicio",
-            "name": "f_inicio_disp",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Disponibilidad",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Starttermin",
-            "name": "starttermin",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Verfügbarkeit",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Date de début",
-            "name": "date_deb_disp",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Disponibilité",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Available From",
-            "name": "avail_date",
-            "automationId": "start_picker",
-            "placeholder": null,
-            "parentContext": "Schedule",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Join Date",
-            "name": "join_dt",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Hiring",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
             "label": "Preaviso",
             "name": "preaviso",
             "automationId": null,
@@ -2659,7 +2604,7 @@
             "parentContext": "Disponibilidad",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2670,7 +2615,7 @@
             "parentContext": "Verfügbarkeit",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2681,7 +2626,7 @@
             "parentContext": "Disponibilité",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2692,7 +2637,7 @@
             "parentContext": "Start",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -2703,7 +2648,7 @@
             "parentContext": "General",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {

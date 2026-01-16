@@ -120,8 +120,7 @@
         // =========================================================================
         // AVAILABILITY
         // =========================================================================
-        START_DATE: 'start_date',
-        NOTICE_PERIOD: 'notice_period',
+        NOTICE_PERIOD_IN_DAYS: 'notice_period_in_days',
         WORK_TYPE: 'work_type',
         SHIFT_PREFERENCE: 'shift_preference',
 
@@ -274,8 +273,7 @@
 
 
         // Availability
-        [FIELD_TYPES.START_DATE]: FIELD_CATEGORIES.AVAILABILITY,
-        [FIELD_TYPES.NOTICE_PERIOD]: FIELD_CATEGORIES.AVAILABILITY,
+        [FIELD_TYPES.NOTICE_PERIOD_IN_DAYS]: FIELD_CATEGORIES.AVAILABILITY,
         [FIELD_TYPES.WORK_TYPE]: FIELD_CATEGORIES.AVAILABILITY,
         [FIELD_TYPES.SHIFT_PREFERENCE]: FIELD_CATEGORIES.AVAILABILITY,
 
@@ -319,7 +317,7 @@
 
     // ============================================================================
     // ORDERED CLASS LIST (Neural Network Output Layer)
-    // Total: 89 classes (reduced from 135)
+    // Total: 88 classes (reduced from 89)
     // ============================================================================
 
     const ORDERED_CLASSES = Object.freeze([
@@ -398,11 +396,10 @@
         'salary_current',       // 54
         'salary_expected',      // 55
 
-        // Availability (56-59)
-        'start_date',           // 56
-        'notice_period',        // 57
-        'work_type',            // 58
-        'shift_preference',     // 59
+        // Availability (56-58)
+        'notice_period_in_days', // 56
+        'work_type',            // 57
+        'shift_preference',     // 58
 
         // Preferences (60-63)
         'remote_preference',    // 60

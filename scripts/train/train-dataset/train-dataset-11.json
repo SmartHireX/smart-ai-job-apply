@@ -866,7 +866,7 @@
             "parentContext": "Availability",
             "siblingContext": "Required"
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -877,7 +877,7 @@
             "parentContext": "Transition",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -888,7 +888,7 @@
             "parentContext": "Verfügbarkeit",
             "siblingContext": "Pflichtfeld"
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -899,7 +899,7 @@
             "parentContext": "Disponibilidad",
             "siblingContext": "Obligatorio"
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -910,7 +910,7 @@
             "parentContext": "Disponibilité",
             "siblingContext": "Obligatoire"
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -921,7 +921,7 @@
             "parentContext": "Timeline",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {

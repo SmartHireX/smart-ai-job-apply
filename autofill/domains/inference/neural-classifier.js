@@ -244,7 +244,7 @@ class NeuralClassifier {
      * @returns {Object}
      */
     _getFallbackFieldTypes() {
-        // 89-class list matching FieldTypes.js v5.0 (cleaned)
+        // 88-class list matching FieldTypes.js v5.0 (cleaned)
         const ORDERED_CLASSES = [
             'unknown',
             // Identity (1-6)

@@ -1603,7 +1603,7 @@
             "parentContext": "Availability",
             "siblingContext": "Required"
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -1614,7 +1614,7 @@
             "parentContext": "Transition",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -1625,7 +1625,7 @@
             "parentContext": "Verfügbarkeit",
             "siblingContext": "Pflichtfeld"
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -1659,39 +1659,6 @@
             "siblingContext": "Pflichtfeld"
         },
         "label": "remote_preference"
-    },
-    {
-        "features": {
-            "label": "Availability Date *",
-            "name": "availabilityDate",
-            "automationId": "avail-input",
-            "placeholder": "When can you start?",
-            "parentContext": "Timeline",
-            "siblingContext": "Required"
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Join Date",
-            "name": "joinDate",
-            "automationId": "qa-start",
-            "placeholder": "Start date",
-            "parentContext": "Onboarding",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Verfügbar ab",
-            "name": "verfuegbarAb",
-            "automationId": "input-avail",
-            "placeholder": "TT.MM.JJJJ",
-            "parentContext": "Zeitplan",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "start_date"
     },
     {
         "features": {

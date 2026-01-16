@@ -1783,39 +1783,6 @@
     },
     {
         "features": {
-            "label": "Start Date *",
-            "name": "startDate",
-            "automationId": "data-qa-start-date",
-            "placeholder": "MM/DD/YYYY",
-            "parentContext": "Availability",
-            "siblingContext": "When can you begin?"
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Earliest Start Date",
-            "name": "ember889_start_date",
-            "automationId": "test-start-date",
-            "placeholder": "Select date",
-            "parentContext": "Availability",
-            "siblingContext": "Required"
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Date de début souhaitée",
-            "name": "input_start_date_22",
-            "automationId": null,
-            "placeholder": "JJ/MM/AAAA",
-            "parentContext": "Disponibilité",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
             "label": "Notice Period",
             "name": "noticePeriod",
             "automationId": "data-qa-notice",
@@ -1823,7 +1790,7 @@
             "parentContext": "Current Employment",
             "siblingContext": "How much notice do you need to give?"
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -1834,7 +1801,7 @@
             "parentContext": "Availability",
             "siblingContext": "Optional"
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -1845,7 +1812,7 @@
             "parentContext": "Emploi actuel",
             "siblingContext": "Facultatif"
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {

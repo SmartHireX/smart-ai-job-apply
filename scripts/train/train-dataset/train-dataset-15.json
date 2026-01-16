@@ -3356,39 +3356,6 @@
     },
     {
         "features": {
-            "label": "Date available to start",
-            "name": "start_avail",
-            "automationId": "start-date-input",
-            "placeholder": "MM/DD/YYYY",
-            "parentContext": "Availability",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Earliest Start Date",
-            "name": "avail_date",
-            "automationId": "question_start",
-            "placeholder": null,
-            "parentContext": "Additional Info",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
-            "label": "Verfügbarkeit",
-            "name": "start_ab",
-            "automationId": "wd-Start-Date-Avail",
-            "placeholder": null,
-            "parentContext": "Allgemein",
-            "siblingContext": null
-        },
-        "label": "start_date"
-    },
-    {
-        "features": {
             "label": "Notice Period",
             "name": "notice",
             "automationId": "notice-input",
@@ -3396,7 +3363,7 @@
             "parentContext": "Availability",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -3407,7 +3374,7 @@
             "parentContext": "Verfügbarkeit",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {
@@ -3418,7 +3385,7 @@
             "parentContext": "General Questions",
             "siblingContext": null
         },
-        "label": "notice_period"
+        "label": "notice_period_in_days"
     },
     {
         "features": {

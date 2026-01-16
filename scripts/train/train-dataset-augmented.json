@@ -1603,7 +1603,7 @@
       "parentContext": "Availability",
       "siblingContext": "Required"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -1614,7 +1614,7 @@
       "parentContext": "Transition",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -1625,7 +1625,7 @@
       "parentContext": "Verfügbarkeit",
       "siblingContext": "Pflichtfeld"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -1659,39 +1659,6 @@
       "siblingContext": "Pflichtfeld"
     },
     "label": "remote_preference"
-  },
-  {
-    "features": {
-      "label": "Availability Date *",
-      "name": "availabilityDate",
-      "automationId": "avail-input",
-      "placeholder": "When can you start?",
-      "parentContext": "Timeline",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Join Date",
-      "name": "joinDate",
-      "automationId": "qa-start",
-      "placeholder": "Start date",
-      "parentContext": "Onboarding",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Verfügbar ab",
-      "name": "verfuegbarAb",
-      "automationId": "input-avail",
-      "placeholder": "TT.MM.JJJJ",
-      "parentContext": "Zeitplan",
-      "siblingContext": "Pflichtfeld"
-    },
-    "label": "start_date"
   },
   {
     "features": {
@@ -3994,72 +3961,6 @@
   },
   {
     "features": {
-      "label": "Start Date *",
-      "name": "startDate",
-      "automationId": "start-date-input",
-      "placeholder": "MM/YYYY",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Available Start Date",
-      "name": "availableDate",
-      "automationId": "qa-start-date",
-      "placeholder": "Earliest date",
-      "parentContext": "Preferences",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Frühester Starttermin *",
-      "name": "wd-StartDate",
-      "automationId": "input-start",
-      "placeholder": "TT.MM.JJJJ",
-      "parentContext": "Verfügbarkeit",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Fecha de inicio *",
-      "name": "fechaInicio_es",
-      "automationId": "lever-start",
-      "placeholder": "DD/MM/AAAA",
-      "parentContext": "Disponibilidad",
-      "siblingContext": "Obligatorio"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Date de début souhaitée *",
-      "name": "dateDebut_fr",
-      "automationId": "gh-start",
-      "placeholder": "JJ/MM/AAAA",
-      "parentContext": "Disponibilité",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "When can you start?",
-      "name": "whenStart",
-      "automationId": "input-when",
-      "placeholder": "Date",
-      "parentContext": "Timeline",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Site Search",
       "name": "search",
       "automationId": "search-input",
@@ -5035,7 +4936,7 @@
       "parentContext": "Availability",
       "siblingContext": "Required"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -5046,7 +4947,7 @@
       "parentContext": "Transition",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -5057,7 +4958,7 @@
       "parentContext": "Verfügbarkeit",
       "siblingContext": "Pflichtfeld"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -5068,7 +4969,7 @@
       "parentContext": "Disponibilidad",
       "siblingContext": "Obligatorio"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -5079,7 +4980,7 @@
       "parentContext": "Disponibilité",
       "siblingContext": "Obligatoire"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -5090,7 +4991,7 @@
       "parentContext": "Timeline",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -5817,72 +5718,6 @@
       "siblingContext": null
     },
     "label": "current_salary"
-  },
-  {
-    "features": {
-      "label": "Availability Date *",
-      "name": "availabilityDate",
-      "automationId": "avail-date-input",
-      "placeholder": "When can you start?",
-      "parentContext": "Timeline",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Start Date",
-      "name": "startDate",
-      "automationId": "qa-start",
-      "placeholder": "Earliest start date",
-      "parentContext": "Scheduling",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Verfügbar ab *",
-      "name": "wd-AvailDate",
-      "automationId": "input-verfuegbar",
-      "placeholder": "TT.MM.JJJJ",
-      "parentContext": "Zeitplan",
-      "siblingContext": "Pflichtfeld"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Fecha de inicio *",
-      "name": "fechaInicio_es",
-      "automationId": "lever-start",
-      "placeholder": "¿Cuándo puede empezar?",
-      "parentContext": "Cronograma",
-      "siblingContext": "Obligatorio"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Date de début *",
-      "name": "dateDebut_fr",
-      "automationId": "gh-start",
-      "placeholder": "Quand pouvez-vous commencer?",
-      "parentContext": "Calendrier",
-      "siblingContext": "Obligatoire"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "When can you join?",
-      "name": "joinDate",
-      "automationId": "input-join",
-      "placeholder": "Date",
-      "parentContext": "Onboarding",
-      "siblingContext": null
-    },
-    "label": "start_date"
   },
   {
     "features": {
@@ -10803,39 +10638,6 @@
   },
   {
     "features": {
-      "label": "Earliest Start Date",
-      "name": "start_avail",
-      "automationId": "date-avail",
-      "placeholder": "Date",
-      "parentContext": "Availability",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Möglicher Starttermin",
-      "name": "starttermin",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Verfügbarkeit",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Available From",
-      "name": "avail_date",
-      "automationId": "wd-Start-Date",
-      "placeholder": null,
-      "parentContext": "Job Application",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "notice",
       "automationId": "notice-input",
@@ -10843,7 +10645,7 @@
       "parentContext": "Availability",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -10854,7 +10656,7 @@
       "parentContext": "Aktuelle Anstellung",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -10865,7 +10667,7 @@
       "parentContext": "Logistics",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -11801,17 +11603,6 @@
       "siblingContext": null
     },
     "label": "salary_expected"
-  },
-  {
-    "features": {
-      "label": "When can you start?",
-      "name": "start_avail_text",
-      "automationId": "availability-text",
-      "placeholder": null,
-      "parentContext": "Logistics",
-      "siblingContext": null
-    },
-    "label": "start_date"
   },
   {
     "features": {
@@ -15533,39 +15324,6 @@
   },
   {
     "features": {
-      "label": "Date available to start",
-      "name": "start_avail",
-      "automationId": "start-date-input",
-      "placeholder": "MM/DD/YYYY",
-      "parentContext": "Availability",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest Start Date",
-      "name": "avail_date",
-      "automationId": "question_start",
-      "placeholder": null,
-      "parentContext": "Additional Info",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Verfügbarkeit",
-      "name": "start_ab",
-      "automationId": "wd-Start-Date-Avail",
-      "placeholder": null,
-      "parentContext": "Allgemein",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "notice",
       "automationId": "notice-input",
@@ -15573,7 +15331,7 @@
       "parentContext": "Availability",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -15584,7 +15342,7 @@
       "parentContext": "Verfügbarkeit",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -15595,7 +15353,7 @@
       "parentContext": "General Questions",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -18965,61 +18723,6 @@
   },
   {
     "features": {
-      "label": "Available From",
-      "name": "avail_fr",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Job",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Start",
-      "name": "st_dt",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "App",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Joining Date",
-      "name": "join_d",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Offer",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Can start on",
-      "name": "can_st",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Quest",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Date",
-      "name": "d_av",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Avail",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "not_per",
       "automationId": null,
@@ -19027,7 +18730,7 @@
       "parentContext": "Job",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -19038,7 +18741,7 @@
       "parentContext": "App",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -19049,7 +18752,7 @@
       "parentContext": "Exit",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -19060,7 +18763,7 @@
       "parentContext": "Quest",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -19071,7 +18774,7 @@
       "parentContext": "Gen",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -23013,61 +22716,6 @@
   },
   {
     "features": {
-      "label": "Start",
-      "name": "strt",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Avail",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Begin",
-      "name": "bgn_dt",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Details",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Join",
-      "name": "jn",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Info",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Available",
-      "name": "avl",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Profile",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Date",
-      "name": "dt",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "General",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice",
       "name": "ntc",
       "automationId": null,
@@ -23075,7 +22723,7 @@
       "parentContext": "Avail",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -23086,7 +22734,7 @@
       "parentContext": "Details",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -23097,7 +22745,7 @@
       "parentContext": "Info",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -23108,7 +22756,7 @@
       "parentContext": "Profile",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -23119,7 +22767,7 @@
       "parentContext": "General",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -26214,61 +25862,6 @@
   },
   {
     "features": {
-      "label": "Fecha de Inicio",
-      "name": "f_inicio_disp",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Disponibilidad",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Starttermin",
-      "name": "starttermin",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Verfügbarkeit",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Date de début",
-      "name": "date_deb_disp",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Disponibilité",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Available From",
-      "name": "avail_date",
-      "automationId": "start_picker",
-      "placeholder": null,
-      "parentContext": "Schedule",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Join Date",
-      "name": "join_dt",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Hiring",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Preaviso",
       "name": "preaviso",
       "automationId": null,
@@ -26276,7 +25869,7 @@
       "parentContext": "Disponibilidad",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -26287,7 +25880,7 @@
       "parentContext": "Verfügbarkeit",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -26298,7 +25891,7 @@
       "parentContext": "Disponibilité",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -26309,7 +25902,7 @@
       "parentContext": "Start",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -26320,7 +25913,7 @@
       "parentContext": "General",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -31351,39 +30944,6 @@
   },
   {
     "features": {
-      "label": "Start Date *",
-      "name": "startDate",
-      "automationId": "data-qa-start-date",
-      "placeholder": "MM/DD/YYYY",
-      "parentContext": "Availability",
-      "siblingContext": "When can you begin?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest Start Date",
-      "name": "ember889_start_date",
-      "automationId": "test-start-date",
-      "placeholder": "Select date",
-      "parentContext": "Availability",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Date de début souhaitée",
-      "name": "input_start_date_22",
-      "automationId": null,
-      "placeholder": "JJ/MM/AAAA",
-      "parentContext": "Disponibilité",
-      "siblingContext": "Obligatoire"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "noticePeriod",
       "automationId": "data-qa-notice",
@@ -31391,7 +30951,7 @@
       "parentContext": "Current Employment",
       "siblingContext": "How much notice do you need to give?"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -31402,7 +30962,7 @@
       "parentContext": "Availability",
       "siblingContext": "Optional"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -31413,7 +30973,7 @@
       "parentContext": "Emploi actuel",
       "siblingContext": "Facultatif"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -33221,39 +32781,6 @@
   },
   {
     "features": {
-      "label": "Start Date *",
-      "name": "startDate",
-      "automationId": "data-qa-start-date",
-      "placeholder": "MM/DD/YYYY",
-      "parentContext": "Availability",
-      "siblingContext": "When can you begin?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest Start Date",
-      "name": "ember889_start_date",
-      "automationId": "test-start-date",
-      "placeholder": "Select date",
-      "parentContext": "Availability",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Date de début souhaitée",
-      "name": "input_start_date_22",
-      "automationId": null,
-      "placeholder": "JJ/MM/AAAA",
-      "parentContext": "Disponibilité",
-      "siblingContext": "Obligatoire"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "noticePeriod",
       "automationId": "data-qa-notice",
@@ -33261,7 +32788,7 @@
       "parentContext": "Current Employment",
       "siblingContext": "How much notice do you need to give?"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -33272,7 +32799,7 @@
       "parentContext": "Availability",
       "siblingContext": "Optional"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -33283,7 +32810,7 @@
       "parentContext": "Emploi actuel",
       "siblingContext": "Facultatif"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -35124,39 +34651,6 @@
   },
   {
     "features": {
-      "label": "Available Start Date",
-      "name": "start_date_input",
-      "automationId": "gh-start-date-avail",
-      "placeholder": "MM/YYYY",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Fecha de incorporación",
-      "name": "wd-StartDateAvail",
-      "automationId": "qa-start-date",
-      "placeholder": "DD/MM/AAAA",
-      "parentContext": "Disponibilidad",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest Start Date",
-      "name": "earliest_start",
-      "automationId": "lever-start-date",
-      "placeholder": "Soonest possible",
-      "parentContext": "Application Detail",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "notice_period_input",
       "automationId": "gh-notice",
@@ -35164,7 +34658,7 @@
       "parentContext": "Availability",
       "siblingContext": "Required by current employer?"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -35175,7 +34669,7 @@
       "parentContext": "Contrato actual",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -35186,7 +34680,7 @@
       "parentContext": "Bewerberprofil",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -37896,39 +37390,6 @@
   },
   {
     "features": {
-      "label": "Available Start Date",
-      "name": "start_date_input",
-      "automationId": "gh-start-date-avail",
-      "placeholder": "MM/YYYY",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Fecha de incorporación",
-      "name": "wd-StartDateAvailable",
-      "automationId": "input-start-date",
-      "placeholder": "DD/MM/AAAA",
-      "parentContext": "Disponibilidad",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest Start Date",
-      "name": "lever-start-date",
-      "automationId": "qa-earliest-start",
-      "placeholder": "Soonest possible",
-      "parentContext": "Application Detail",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "notice_period_field",
       "automationId": "gh-notice-period",
@@ -37936,7 +37397,7 @@
       "parentContext": "Availability",
       "siblingContext": "Required by current employer?"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -37947,7 +37408,7 @@
       "parentContext": "Contrato actual",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -37958,7 +37419,7 @@
       "parentContext": "Bewerberprofil",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -41401,7 +40862,7 @@
       "parentContext": "Availability",
       "siblingContext": "Required"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -41412,7 +40873,7 @@
       "parentContext": "Transition",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -41423,7 +40884,7 @@
       "parentContext": "Verfügbarkeit",
       "siblingContext": "Pflichtfeld"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -41457,61 +40918,6 @@
       "siblingContext": "Pflichtfeld"
     },
     "label": "remote_preference"
-  },
-  {
-    "features": {
-      "label": "Availability Date *",
-      "name": "availabilityDate",
-      "automationId": "avail-input",
-      "placeholder": "When can you start?...",
-      "parentContext": "Timeline",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "start date Date *",
-      "name": "availabilityDate",
-      "automationId": "avail-input",
-      "placeholder": "When can you start?",
-      "parentContext": "Timeline",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "start date Date *",
-      "name": "availabilityDate",
-      "automationId": "avail-input",
-      "placeholder": "When can you start?...",
-      "parentContext": "Timeline",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Join Date",
-      "name": "joinDate",
-      "automationId": "qa-start",
-      "placeholder": "Start date...",
-      "parentContext": "Onboarding",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Verfügbar ab",
-      "name": "verfuegbarAb",
-      "automationId": "input-avail",
-      "placeholder": "TT.MM.JJJJ...",
-      "parentContext": "Zeitplan",
-      "siblingContext": "Pflichtfeld"
-    },
-    "label": "start_date"
   },
   {
     "features": {
@@ -45145,116 +44551,6 @@
   },
   {
     "features": {
-      "label": "Start Date *",
-      "name": "startDate",
-      "automationId": "start-date-input",
-      "placeholder": "MM/YYYY...",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "from *",
-      "name": "startDate",
-      "automationId": "start-date-input",
-      "placeholder": "MM/YYYY",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "from *",
-      "name": "startDate",
-      "automationId": "start-date-input",
-      "placeholder": "MM/YYYY...",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Available Start Date",
-      "name": "availableDate",
-      "automationId": "qa-start-date",
-      "placeholder": "Earliest date...",
-      "parentContext": "Preferences",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Available from",
-      "name": "availableDate",
-      "automationId": "qa-start-date",
-      "placeholder": "Earliest date",
-      "parentContext": "Preferences",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Available from",
-      "name": "availableDate",
-      "automationId": "qa-start-date",
-      "placeholder": "Earliest date...",
-      "parentContext": "Preferences",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Frühester Starttermin *",
-      "name": "wd-StartDate",
-      "automationId": "input-start",
-      "placeholder": "TT.MM.JJJJ...",
-      "parentContext": "Verfügbarkeit",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Fecha de inicio *",
-      "name": "fechaInicio_es",
-      "automationId": "lever-start",
-      "placeholder": "DD/MM/AAAA...",
-      "parentContext": "Disponibilidad",
-      "siblingContext": "Obligatorio"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Date de début souhaitée *",
-      "name": "dateDebut_fr",
-      "automationId": "gh-start",
-      "placeholder": "JJ/MM/AAAA...",
-      "parentContext": "Disponibilité",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "When can you start?",
-      "name": "whenStart",
-      "automationId": "input-when",
-      "placeholder": "Date...",
-      "parentContext": "Timeline",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Site Search",
       "name": "search",
       "automationId": "search-input",
@@ -46538,7 +45834,7 @@
       "parentContext": "Availability",
       "siblingContext": "Required"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -46549,7 +45845,7 @@
       "parentContext": "Transition",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -46560,7 +45856,7 @@
       "parentContext": "Verfügbarkeit",
       "siblingContext": "Pflichtfeld"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -46571,7 +45867,7 @@
       "parentContext": "Disponibilidad",
       "siblingContext": "Obligatorio"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -46582,7 +45878,7 @@
       "parentContext": "Disponibilité",
       "siblingContext": "Obligatoire"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -46593,7 +45889,7 @@
       "parentContext": "Timeline",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -46604,7 +45900,7 @@
       "parentContext": "Timeline",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -46615,7 +45911,7 @@
       "parentContext": "Timeline",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -47529,116 +46825,6 @@
       "siblingContext": null
     },
     "label": "current_salary"
-  },
-  {
-    "features": {
-      "label": "Availability Date *",
-      "name": "availabilityDate",
-      "automationId": "avail-date-input",
-      "placeholder": "When can you start?...",
-      "parentContext": "Timeline",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "start date Date *",
-      "name": "availabilityDate",
-      "automationId": "avail-date-input",
-      "placeholder": "When can you start?",
-      "parentContext": "Timeline",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "start date Date *",
-      "name": "availabilityDate",
-      "automationId": "avail-date-input",
-      "placeholder": "When can you start?...",
-      "parentContext": "Timeline",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Start Date",
-      "name": "startDate",
-      "automationId": "qa-start",
-      "placeholder": "Earliest start date...",
-      "parentContext": "Scheduling",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "from",
-      "name": "startDate",
-      "automationId": "qa-start",
-      "placeholder": "Earliest start date",
-      "parentContext": "Scheduling",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "from",
-      "name": "startDate",
-      "automationId": "qa-start",
-      "placeholder": "Earliest start date...",
-      "parentContext": "Scheduling",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Verfügbar ab *",
-      "name": "wd-AvailDate",
-      "automationId": "input-verfuegbar",
-      "placeholder": "TT.MM.JJJJ...",
-      "parentContext": "Zeitplan",
-      "siblingContext": "Pflichtfeld"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Fecha de inicio *",
-      "name": "fechaInicio_es",
-      "automationId": "lever-start",
-      "placeholder": "¿Cuándo puede empezar?...",
-      "parentContext": "Cronograma",
-      "siblingContext": "Obligatorio"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Date de début *",
-      "name": "dateDebut_fr",
-      "automationId": "gh-start",
-      "placeholder": "Quand pouvez-vous commencer?...",
-      "parentContext": "Calendrier",
-      "siblingContext": "Obligatoire"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "When can you join?",
-      "name": "joinDate",
-      "automationId": "input-join",
-      "placeholder": "Date...",
-      "parentContext": "Onboarding",
-      "siblingContext": null
-    },
-    "label": "start_date"
   },
   {
     "features": {
@@ -52196,39 +51382,6 @@
   },
   {
     "features": {
-      "label": "Earliest Start Date",
-      "name": "start_avail",
-      "automationId": "date-avail",
-      "placeholder": "Date...",
-      "parentContext": "Availability",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest from",
-      "name": "start_avail",
-      "automationId": "date-avail",
-      "placeholder": "Date",
-      "parentContext": "Availability",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest from",
-      "name": "start_avail",
-      "automationId": "date-avail",
-      "placeholder": "Date...",
-      "parentContext": "Availability",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "notice",
       "automationId": "notice-input",
@@ -52236,7 +51389,7 @@
       "parentContext": "Availability",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -52247,7 +51400,7 @@
       "parentContext": "Logistics",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -52258,7 +51411,7 @@
       "parentContext": "Logistics",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -52269,7 +51422,7 @@
       "parentContext": "Logistics",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -55320,28 +54473,6 @@
   },
   {
     "features": {
-      "label": "Date available to start",
-      "name": "start_avail",
-      "automationId": "start-date-input",
-      "placeholder": "MM/DD/YYYY...",
-      "parentContext": "Availability",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest from",
-      "name": "avail_date",
-      "automationId": "question_start",
-      "placeholder": null,
-      "parentContext": "Additional Info",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "notice",
       "automationId": "notice-input",
@@ -55349,7 +54480,7 @@
       "parentContext": "Availability",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -57824,7 +56955,7 @@
       "parentContext": "Exit",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -57835,7 +56966,7 @@
       "parentContext": "Gen",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -60233,7 +59364,7 @@
       "parentContext": "Start",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -60244,7 +59375,7 @@
       "parentContext": "General",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -60255,7 +59386,7 @@
       "parentContext": "General",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -60266,7 +59397,7 @@
       "parentContext": "General",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -63823,83 +62954,6 @@
   },
   {
     "features": {
-      "label": "Start Date *",
-      "name": "startDate",
-      "automationId": "data-qa-start-date",
-      "placeholder": "MM/DD/YYYY...",
-      "parentContext": "Availability",
-      "siblingContext": "When can you begin?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "from *",
-      "name": "startDate",
-      "automationId": "data-qa-start-date",
-      "placeholder": "MM/DD/YYYY",
-      "parentContext": "Availability",
-      "siblingContext": "When can you begin?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "from *",
-      "name": "startDate",
-      "automationId": "data-qa-start-date",
-      "placeholder": "MM/DD/YYYY...",
-      "parentContext": "Availability",
-      "siblingContext": "When can you begin?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest Start Date",
-      "name": "ember889_start_date",
-      "automationId": "test-start-date",
-      "placeholder": "Select date...",
-      "parentContext": "Availability",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest from",
-      "name": "ember889_start_date",
-      "automationId": "test-start-date",
-      "placeholder": "Select date",
-      "parentContext": "Availability",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest from",
-      "name": "ember889_start_date",
-      "automationId": "test-start-date",
-      "placeholder": "Select date...",
-      "parentContext": "Availability",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Date de début souhaitée",
-      "name": "input_start_date_22",
-      "automationId": null,
-      "placeholder": "JJ/MM/AAAA...",
-      "parentContext": "Disponibilité",
-      "siblingContext": "Obligatoire"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "noticePeriod",
       "automationId": "data-qa-notice",
@@ -63907,7 +62961,7 @@
       "parentContext": "Current Employment",
       "siblingContext": "How much notice do you need to give?"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -63918,7 +62972,7 @@
       "parentContext": "Availability",
       "siblingContext": "Optional"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -63929,7 +62983,7 @@
       "parentContext": "Availability",
       "siblingContext": "Optional"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -63940,7 +62994,7 @@
       "parentContext": "Availability",
       "siblingContext": "Optional"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -63951,7 +63005,7 @@
       "parentContext": "Emploi actuel",
       "siblingContext": "Facultatif"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -66573,83 +65627,6 @@
   },
   {
     "features": {
-      "label": "Start Date *",
-      "name": "startDate",
-      "automationId": "data-qa-start-date",
-      "placeholder": "MM/DD/YYYY...",
-      "parentContext": "Availability",
-      "siblingContext": "When can you begin?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "from *",
-      "name": "startDate",
-      "automationId": "data-qa-start-date",
-      "placeholder": "MM/DD/YYYY",
-      "parentContext": "Availability",
-      "siblingContext": "When can you begin?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "from *",
-      "name": "startDate",
-      "automationId": "data-qa-start-date",
-      "placeholder": "MM/DD/YYYY...",
-      "parentContext": "Availability",
-      "siblingContext": "When can you begin?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest Start Date",
-      "name": "ember889_start_date",
-      "automationId": "test-start-date",
-      "placeholder": "Select date...",
-      "parentContext": "Availability",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest from",
-      "name": "ember889_start_date",
-      "automationId": "test-start-date",
-      "placeholder": "Select date",
-      "parentContext": "Availability",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest from",
-      "name": "ember889_start_date",
-      "automationId": "test-start-date",
-      "placeholder": "Select date...",
-      "parentContext": "Availability",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Date de début souhaitée",
-      "name": "input_start_date_22",
-      "automationId": null,
-      "placeholder": "JJ/MM/AAAA...",
-      "parentContext": "Disponibilité",
-      "siblingContext": "Obligatoire"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "noticePeriod",
       "automationId": "data-qa-notice",
@@ -66657,7 +65634,7 @@
       "parentContext": "Current Employment",
       "siblingContext": "How much notice do you need to give?"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -66668,7 +65645,7 @@
       "parentContext": "Availability",
       "siblingContext": "Optional"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -66679,7 +65656,7 @@
       "parentContext": "Availability",
       "siblingContext": "Optional"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -66690,7 +65667,7 @@
       "parentContext": "Availability",
       "siblingContext": "Optional"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -66701,7 +65678,7 @@
       "parentContext": "Emploi actuel",
       "siblingContext": "Facultatif"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -68630,83 +67607,6 @@
   },
   {
     "features": {
-      "label": "Available Start Date",
-      "name": "start_date_input",
-      "automationId": "gh-start-date-avail",
-      "placeholder": "MM/YYYY...",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Available from",
-      "name": "start_date_input",
-      "automationId": "gh-start-date-avail",
-      "placeholder": "MM/YYYY",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Available from",
-      "name": "start_date_input",
-      "automationId": "gh-start-date-avail",
-      "placeholder": "MM/YYYY...",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Fecha de incorporación",
-      "name": "wd-StartDateAvail",
-      "automationId": "qa-start-date",
-      "placeholder": "DD/MM/AAAA...",
-      "parentContext": "Disponibilidad",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest Start Date",
-      "name": "earliest_start",
-      "automationId": "lever-start-date",
-      "placeholder": "Soonest possible...",
-      "parentContext": "Application Detail",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest from",
-      "name": "earliest_start",
-      "automationId": "lever-start-date",
-      "placeholder": "Soonest possible",
-      "parentContext": "Application Detail",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest from",
-      "name": "earliest_start",
-      "automationId": "lever-start-date",
-      "placeholder": "Soonest possible...",
-      "parentContext": "Application Detail",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "notice_period_input",
       "automationId": "gh-notice",
@@ -68714,7 +67614,7 @@
       "parentContext": "Availability",
       "siblingContext": "Required by current employer?"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -68725,7 +67625,7 @@
       "parentContext": "Bewerberprofil",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -71347,83 +70247,6 @@
   },
   {
     "features": {
-      "label": "Available Start Date",
-      "name": "start_date_input",
-      "automationId": "gh-start-date-avail",
-      "placeholder": "MM/YYYY...",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Available from",
-      "name": "start_date_input",
-      "automationId": "gh-start-date-avail",
-      "placeholder": "MM/YYYY",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Available from",
-      "name": "start_date_input",
-      "automationId": "gh-start-date-avail",
-      "placeholder": "MM/YYYY...",
-      "parentContext": "Availability",
-      "siblingContext": "When can you start?"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Fecha de incorporación",
-      "name": "wd-StartDateAvailable",
-      "automationId": "input-start-date",
-      "placeholder": "DD/MM/AAAA...",
-      "parentContext": "Disponibilidad",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest Start Date",
-      "name": "lever-start-date",
-      "automationId": "qa-earliest-start",
-      "placeholder": "Soonest possible...",
-      "parentContext": "Application Detail",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest from",
-      "name": "lever-start-date",
-      "automationId": "qa-earliest-start",
-      "placeholder": "Soonest possible",
-      "parentContext": "Application Detail",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Earliest from",
-      "name": "lever-start-date",
-      "automationId": "qa-earliest-start",
-      "placeholder": "Soonest possible...",
-      "parentContext": "Application Detail",
-      "siblingContext": null
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
       "label": "Notice Period",
       "name": "notice_period_field",
       "automationId": "gh-notice-period",
@@ -71431,7 +70254,7 @@
       "parentContext": "Availability",
       "siblingContext": "Required by current employer?"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -71442,7 +70265,7 @@
       "parentContext": "Bewerberprofil",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -72784,7 +71607,7 @@
       "parentContext": "Transition",
       "siblingContext": "Required"
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -72795,7 +71618,7 @@
       "parentContext": "Availability",
       "siblingContext": null
     },
-    "label": "notice_period"
+    "label": "notice_period_in_days"
   },
   {
     "features": {
@@ -72818,28 +71641,6 @@
       "siblingContext": null
     },
     "label": "remote_preference"
-  },
-  {
-    "features": {
-      "label": "Availability Date *",
-      "name": "availabilityDate",
-      "automationId": "avail-input",
-      "placeholder": "When can you start?",
-      "parentContext": "Onboarding",
-      "siblingContext": "Required"
-    },
-    "label": "start_date"
-  },
-  {
-    "features": {
-      "label": "Availability Date *",
-      "name": "availabilityDate",
-      "automationId": "avail-input",
-      "placeholder": "When can you start?",
-      "parentContext": "Timeline",
-      "siblingContext": null
-    },
-    "label": "start_date"
   },
   {
     "features": {
