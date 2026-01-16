@@ -1,2752 +1,2752 @@
 [
-    {
-        "features": {
-            "label": "Preferred Name",
-            "name": "pref_name",
-            "automationId": "preferred_name",
-            "placeholder": "Nickname",
-            "parentContext": "Personal Info",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Nickname",
-            "name": "nickname",
-            "automationId": "nick_name",
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Chosen Name",
-            "name": "chosen_name",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Identity",
-            "siblingContext": "If different from legal"
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Display Name",
-            "name": "display_name",
-            "automationId": "disp_name",
-            "placeholder": null,
-            "parentContext": "Account",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Known As",
-            "name": "known_as",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Preferred First Name",
-            "name": "pref_first",
-            "automationId": "wd-PreferredName",
-            "placeholder": null,
-            "parentContext": "My Details",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Called Name",
-            "name": "called_name",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Bio",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Name to use",
-            "name": "name_use",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Communication",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Nombre Preferido",
-            "name": "nom_pref",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Perfil",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Rufname",
-            "name": "rufname",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Daten",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Nom d'usage",
-            "name": "nom_usage",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profil",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Preferred",
-            "name": "pref",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Name",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Alias",
-            "name": "alias",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Security",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Screen Name",
-            "name": "screen_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Forum",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "User Name",
-            "name": "u_name_disp",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Settings",
-            "siblingContext": "Publicly visible"
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Short Name",
-            "name": "short_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "HR",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Familiar Name",
-            "name": "fam_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "What should we call you?",
-            "name": "call_me",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Intro",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Pref Name",
-            "name": "p_name",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "App",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Label",
-            "name": "name_label",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Badge",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Tag Name",
-            "name": "tag_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Conference",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Nick",
-            "name": "nk",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Chat",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Preferred Name",
-            "name": "candidate_pref",
-            "automationId": "gh_pref_name",
-            "placeholder": null,
-            "parentContext": "Application",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Nickname",
-            "name": "nick_n",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Team",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Public Name",
-            "name": "pub_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Privacy",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Alternative Name",
-            "name": "alt_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Identity",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Goes By",
-            "name": "goes_by",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Profile Name",
-            "name": "prof_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Dashboard",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Friendly Name",
-            "name": "friend_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Email Settings",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Preferred",
-            "name": "pr_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Personal",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Display",
-            "name": "disp",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "System",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Handle",
-            "name": "handle",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Social",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Call Name",
-            "name": "c_name",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Employee",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Preferred Name",
-            "name": "input_pref",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Register",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Nickname",
-            "name": "n_name",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "User",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Name on Badge",
-            "name": "badge_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Event",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Preferred Name",
-            "name": "pf_name",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "AKA",
-            "name": "aka_field",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Security Check",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Preferred Name",
-            "name": "pref_n_2",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Form",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Display Name",
-            "name": "dn_field",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Settings",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Nickname",
-            "name": "nn",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Chosen",
-            "name": "chos",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "ID",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Preferred",
-            "name": "p_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "App",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Name",
-            "name": "nm_pref",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Preferred",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Also Known As",
-            "name": "also_known",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Background",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Preferred Name",
-            "name": "prfn",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Nickname",
-            "name": "nick_txt",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Preferred Name",
-            "name": "pref_nm_txt",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Bio",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Display",
-            "name": "d_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Known",
-            "name": "knwn",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "middle_name",
-            "automationId": "legal_middle",
-            "placeholder": null,
-            "parentContext": "Personal Info",
-            "siblingContext": "Optional"
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "M.I.",
-            "name": "mi",
-            "automationId": null,
-            "placeholder": "A",
-            "parentContext": "Name",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Initial",
-            "name": "middle_init",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Identity",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Second Name",
-            "name": "sec_name",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle",
-            "name": "mname",
-            "automationId": "wd-MiddleName",
-            "placeholder": null,
-            "parentContext": "My Details",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Father's Name",
-            "name": "father_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Family",
-            "siblingContext": "Used as Middle"
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Segundo Nombre",
-            "name": "segundo_nom",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Información",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Zweiter Vorname",
-            "name": "zweiter_vn",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Name",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "mn",
-            "automationId": "gh_middle_name",
-            "placeholder": null,
-            "parentContext": "Application",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Initial",
-            "name": "init",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name(s)",
-            "name": "mid_names",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Legal",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "M. Name",
-            "name": "m_name",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle",
-            "name": "mid",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Bio",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "input_mi",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Register",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Additional Name",
-            "name": "add_name",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Identity",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Patronymic",
-            "name": "patron",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Regional",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "m_n",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Form",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "M.I.",
-            "name": "minit",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Details",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle",
-            "name": "mdl",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "App",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "mid_n",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "User",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Initials",
-            "name": "inits",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Name",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "cust_mi",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Checkout",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle",
-            "name": "billing_mi",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Payment",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "ship_mn",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Shipping",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "M.I.",
-            "name": "mi_txt",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Guest",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "mn_txt",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Second",
-            "name": "scnd",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Name",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle",
-            "name": "midd",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "M. Name",
-            "name": "m_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "midd_nm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Account",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "M.I.",
-            "name": "mi_val",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Bio",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle",
-            "name": "mid_val",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Identity",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "mid_field",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Legal",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Initial",
-            "name": "int_field",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Personal",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "mn_field",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "M.I.",
-            "name": "mi_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Form",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle",
-            "name": "m_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "App",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "mid_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Second Name",
-            "name": "sec_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Name",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "m_name_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "M.I.",
-            "name": "mi_input_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle",
-            "name": "mid_input_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Details",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "mn_input_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Identity",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Initial",
-            "name": "init_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Bio",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "mid_nm_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Legal",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "M.I.",
-            "name": "mi_nm_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Personal",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle",
-            "name": "m_nm_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "mn_nm_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Form",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Second Name",
-            "name": "sec_nm_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "App",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "mid_txt_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Profile Photo",
-            "name": "avatar",
-            "automationId": "photo_upload",
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": "Upload"
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Photo",
-            "name": "photo",
-            "automationId": "user_pic",
-            "placeholder": null,
-            "parentContext": "Account",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Avatar",
-            "name": "user_avatar",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Settings",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Image",
-            "name": "image_file",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Bio",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Upload Picture",
-            "name": "pic_upload",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Identity",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Headshot",
-            "name": "headshot",
-            "automationId": "wd-Photo",
-            "placeholder": null,
-            "parentContext": "My Info",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Picture",
-            "name": "picture",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Foto",
-            "name": "foto",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Perfil",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Bild",
-            "name": "bild",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profil",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Photo de profil",
-            "name": "photo_profil",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Compte",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Logo",
-            "name": "logo",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Company Profile",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Change Photo",
-            "name": "chg_photo",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Header",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Profile Image",
-            "name": "prof_img",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Edit",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Upload",
-            "name": "upload_btn",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Avatar",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Selfie",
-            "name": "selfie",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Verification",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Photo",
-            "name": "p_file",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Badge",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Avatar",
-            "name": "av_file",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Forum",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Picture",
-            "name": "pic_file",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Card",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "User Photo",
-            "name": "u_photo",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Admin",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Profile Pic",
-            "name": "prof_pic",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Social",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Image",
-            "name": "img_upl",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Personal",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Photo",
-            "name": "ph_upl",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Directory",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Avatar",
-            "name": "ava_upl",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Chat",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Picture",
-            "name": "pict_upl",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "ID",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Upload Photo",
-            "name": "up_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Register",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Select Image",
-            "name": "sel_img",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Photo",
-            "name": "photo_in",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "App",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Avatar",
-            "name": "avatar_in",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Picture",
-            "name": "picture_in",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Settings",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Image",
-            "name": "image_in",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Profile Photo",
-            "name": "p_photo",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Account",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Photo",
-            "name": "f_photo",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Bio",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Avatar",
-            "name": "f_avatar",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Header",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Picture",
-            "name": "f_picture",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Details",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Image",
-            "name": "f_image",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Form",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Upload",
-            "name": "f_upload",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Photo",
-            "name": "photo_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Identity",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Avatar",
-            "name": "avatar_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Social",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Picture",
-            "name": "picture_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Image",
-            "name": "image_f",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Personal",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Profile Photo",
-            "name": "prof_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "User",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Photo",
-            "name": "ph_img",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Badge",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Avatar",
-            "name": "av_img",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "System",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Picture",
-            "name": "pic_img",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Admin",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Image",
-            "name": "im_img",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Public",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Upload",
-            "name": "up_img",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Edit",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Photo",
-            "name": "phot_o",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "View",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Avatar",
-            "name": "avat_r",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Dash",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Picture",
-            "name": "pict_r",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Main",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Image",
-            "name": "imag_e",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Page",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Alternate Email",
-            "name": "alt_email",
-            "automationId": "email_secondary",
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Backup Email",
-            "name": "backup_email",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Security",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Personal Email",
-            "name": "pers_email",
-            "automationId": null,
-            "placeholder": "If different from work",
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Secondary Email",
-            "name": "sec_email",
-            "automationId": "wd-SecondaryEmail",
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": "Optional"
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Recovery Email",
-            "name": "rec_email",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Account",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Other Email",
-            "name": "oth_email",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Email 2",
-            "name": "email_2",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Details",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Correo Alternativo",
-            "name": "alt_correo",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contacto",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Zweit-Email",
-            "name": "zweit_email",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Kontakt",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Email de secours",
-            "name": "secours_email",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Sécurité",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Private Email",
-            "name": "priv_email",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Emergency",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Work Email",
-            "name": "work_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": "If primary is personal"
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "CC Email",
-            "name": "cc_email",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Notifications",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Additional Email",
-            "name": "add_email",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Forwarding Email",
-            "name": "fwd_email",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Settings",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Alt. Email",
-            "name": "alt_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Bio",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Secondary",
-            "name": "sec_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Backup",
-            "name": "bak_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Security",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Recovery",
-            "name": "rec_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Login",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Personal",
-            "name": "per_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Details",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Other",
-            "name": "oth_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Email (Alt)",
-            "name": "em_alt",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Email (Sec)",
-            "name": "em_sec",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Email (Pers)",
-            "name": "em_per",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Alternate",
-            "name": "altern",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Email",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Second Email",
-            "name": "snd_email",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Form",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Alt Email Address",
-            "name": "alt_addy",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "App",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Backup Address",
-            "name": "back_addy",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "System",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Recovery Address",
-            "name": "rec_addy",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "User",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Other Address",
-            "name": "oth_addy",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Admin",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Personal Address",
-            "name": "per_addy",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Staff",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Alt Mail",
-            "name": "alt_ml",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Global",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Sec Mail",
-            "name": "sec_ml",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Local",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Back Mail",
-            "name": "bak_ml",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Remote",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Rec Mail",
-            "name": "rec_ml",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Office",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Oth Mail",
-            "name": "oth_ml",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Home",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Alt",
-            "name": "a_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Sec",
-            "name": "s_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Details",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Back",
-            "name": "b_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Rec",
-            "name": "r_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Pers",
-            "name": "p_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Secondary Email",
-            "name": "em_2",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Bio",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Alternative",
-            "name": "alter",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Comm",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Non-Work Email",
-            "name": "non_work",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "HR",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Home Email",
-            "name": "home_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Personal",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Extra Email",
-            "name": "xtra_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Add",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Spare Email",
-            "name": "spr_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Misc",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Emerg Email",
-            "name": "emg_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Emergency",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Copy Email",
-            "name": "cpy_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Form",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Another Email",
-            "name": "ano_em",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Home Phone",
-            "name": "home_phone",
-            "automationId": "phone_home",
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": "Landline"
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Landline",
-            "name": "landline",
-            "automationId": "land_phone",
-            "placeholder": null,
-            "parentContext": "Details",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Residence",
-            "name": "residence_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Address",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Evening Phone",
-            "name": "eve_phone",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Availability",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Fijo",
-            "name": "fijo",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contacto",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Festnetz",
-            "name": "festnetz",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Kontakt",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Domicile",
-            "name": "domicile",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Coordonnées",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Home",
-            "name": "hm_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "House Phone",
-            "name": "hse_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Home No",
-            "name": "hm_no",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Land Line",
-            "name": "land_ln",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Home Tel",
-            "name": "hm_tel",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Details",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Residence Phone",
-            "name": "res_p",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Bio",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Private Phone",
-            "name": "priv_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Emergency",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "After Hours",
-            "name": "aft_hrs",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Call",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Home Number",
-            "name": "home_n",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Form",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Landline No",
-            "name": "land_n",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "App",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Res No",
-            "name": "res_n",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Evening No",
-            "name": "eve_n",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Home",
-            "name": "h_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Personal",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Land",
-            "name": "l_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Work",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Res",
-            "name": "r_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Eve",
-            "name": "e_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "House",
-            "name": "house",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Phone",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Fixed Line",
-            "name": "fixed",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Telecom",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Home Telephone",
-            "name": "hm_tele",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "System",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Land Telephone",
-            "name": "ld_tele",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "User",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Res Telephone",
-            "name": "rs_tele",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Admin",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Eve Telephone",
-            "name": "ev_tele",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Staff",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Home Contact",
-            "name": "hm_ct",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Details",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Land Contact",
-            "name": "ld_ct",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Res Contact",
-            "name": "rs_ct",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Eve Contact",
-            "name": "ev_ct",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "General",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Home",
-            "name": "hm_1",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Numbers",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Land",
-            "name": "ld_1",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Digits",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Res",
-            "name": "rs_1",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Dial",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Eve",
-            "name": "ev_1",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Reach",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Primary (Home)",
-            "name": "pri_hm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Secondary (Home)",
-            "name": "sec_hm",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Bio",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Perm Phone",
-            "name": "perm_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Address",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Local Phone",
-            "name": "loc_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Location",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Flat Phone",
-            "name": "flat_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Unit",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Apt Phone",
-            "name": "apt_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Residence",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Villa Phone",
-            "name": "vil_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Property",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Cabin Phone",
-            "name": "cab_ph",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Vacation",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Home Line",
-            "name": "h_line",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Connect",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Main Line",
-            "name": "m_line",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Home",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Alt Line",
-            "name": "a_line",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Land",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Back Line",
-            "name": "b_line",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Res",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Night Line",
-            "name": "n_line",
-            "automationId": null,
-            "placeholder": null,
-            "parentContext": "Eve",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    }
+  {
+    "features": {
+      "label": "Preferred Name",
+      "name": "pref_name",
+      "automationId": "preferred_name",
+      "placeholder": "Nickname",
+      "parentContext": "Personal Info",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Nickname",
+      "name": "nickname",
+      "automationId": "nick_name",
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Chosen Name",
+      "name": "chosen_name",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Identity",
+      "siblingContext": "If different from legal"
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Display Name",
+      "name": "display_name",
+      "automationId": "disp_name",
+      "placeholder": null,
+      "parentContext": "Account",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Known As",
+      "name": "known_as",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Preferred First Name",
+      "name": "pref_first",
+      "automationId": "wd-PreferredName",
+      "placeholder": null,
+      "parentContext": "My Details",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Called Name",
+      "name": "called_name",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Bio",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Name to use",
+      "name": "name_use",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Communication",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Nombre Preferido",
+      "name": "nom_pref",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Perfil",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Rufname",
+      "name": "rufname",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Daten",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Nom d'usage",
+      "name": "nom_usage",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profil",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Preferred",
+      "name": "pref",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Name",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Alias",
+      "name": "alias",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Security",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Screen Name",
+      "name": "screen_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Forum",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "User Name",
+      "name": "u_name_disp",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Settings",
+      "siblingContext": "Publicly visible"
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Short Name",
+      "name": "short_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "HR",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Familiar Name",
+      "name": "fam_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "What should we call you?",
+      "name": "call_me",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Intro",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Pref Name",
+      "name": "p_name",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "App",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Label",
+      "name": "name_label",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Badge",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Tag Name",
+      "name": "tag_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Conference",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Nick",
+      "name": "nk",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Chat",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Preferred Name",
+      "name": "candidate_pref",
+      "automationId": "gh_pref_name",
+      "placeholder": null,
+      "parentContext": "Application",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Nickname",
+      "name": "nick_n",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Team",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Public Name",
+      "name": "pub_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Privacy",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Alternative Name",
+      "name": "alt_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Identity",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Goes By",
+      "name": "goes_by",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Profile Name",
+      "name": "prof_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Dashboard",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Friendly Name",
+      "name": "friend_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Email Settings",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Preferred",
+      "name": "pr_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Personal",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Display",
+      "name": "disp",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "System",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Handle",
+      "name": "handle",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Social",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Call Name",
+      "name": "c_name",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Employee",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Preferred Name",
+      "name": "input_pref",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Register",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Nickname",
+      "name": "n_name",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "User",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Name on Badge",
+      "name": "badge_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Event",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Preferred Name",
+      "name": "pf_name",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "AKA",
+      "name": "aka_field",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Security Check",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Preferred Name",
+      "name": "pref_n_2",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Form",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Display Name",
+      "name": "dn_field",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Settings",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Nickname",
+      "name": "nn",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Chosen",
+      "name": "chos",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "ID",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Preferred",
+      "name": "p_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "App",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Name",
+      "name": "nm_pref",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Preferred",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Also Known As",
+      "name": "also_known",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Background",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Preferred Name",
+      "name": "prfn",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Nickname",
+      "name": "nick_txt",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Preferred Name",
+      "name": "pref_nm_txt",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Bio",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Display",
+      "name": "d_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Known",
+      "name": "knwn",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "middle_name",
+      "automationId": "legal_middle",
+      "placeholder": null,
+      "parentContext": "Personal Info",
+      "siblingContext": "Optional"
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "M.I.",
+      "name": "mi",
+      "automationId": null,
+      "placeholder": "A",
+      "parentContext": "Name",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Initial",
+      "name": "middle_init",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Identity",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Second Name",
+      "name": "sec_name",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle",
+      "name": "mname",
+      "automationId": "wd-MiddleName",
+      "placeholder": null,
+      "parentContext": "My Details",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Father's Name",
+      "name": "father_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Family",
+      "siblingContext": "Used as Middle"
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Segundo Nombre",
+      "name": "segundo_nom",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Información",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Zweiter Vorname",
+      "name": "zweiter_vn",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Name",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "mn",
+      "automationId": "gh_middle_name",
+      "placeholder": null,
+      "parentContext": "Application",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Initial",
+      "name": "init",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name(s)",
+      "name": "mid_names",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Legal",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "M. Name",
+      "name": "m_name",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle",
+      "name": "mid",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Bio",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "input_mi",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Register",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Additional Name",
+      "name": "add_name",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Identity",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Patronymic",
+      "name": "patron",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Regional",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "m_n",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Form",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "M.I.",
+      "name": "minit",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Details",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle",
+      "name": "mdl",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "App",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "mid_n",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "User",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Initials",
+      "name": "inits",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Name",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "cust_mi",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Checkout",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle",
+      "name": "billing_mi",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Payment",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "ship_mn",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Shipping",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "M.I.",
+      "name": "mi_txt",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Guest",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "mn_txt",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Second",
+      "name": "scnd",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Name",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle",
+      "name": "midd",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "M. Name",
+      "name": "m_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "midd_nm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Account",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "M.I.",
+      "name": "mi_val",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Bio",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle",
+      "name": "mid_val",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Identity",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "mid_field",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Legal",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Initial",
+      "name": "int_field",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Personal",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "mn_field",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "M.I.",
+      "name": "mi_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Form",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle",
+      "name": "m_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "App",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "mid_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Second Name",
+      "name": "sec_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Name",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "m_name_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "M.I.",
+      "name": "mi_input_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle",
+      "name": "mid_input_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Details",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "mn_input_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Identity",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Initial",
+      "name": "init_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Bio",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "mid_nm_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Legal",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "M.I.",
+      "name": "mi_nm_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Personal",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle",
+      "name": "m_nm_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "mn_nm_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Form",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Second Name",
+      "name": "sec_nm_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "App",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "mid_txt_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Profile Photo",
+      "name": "avatar",
+      "automationId": "photo_upload",
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": "Upload"
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Photo",
+      "name": "photo",
+      "automationId": "user_pic",
+      "placeholder": null,
+      "parentContext": "Account",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Avatar",
+      "name": "user_avatar",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Settings",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Image",
+      "name": "image_file",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Bio",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Upload Picture",
+      "name": "pic_upload",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Identity",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Headshot",
+      "name": "headshot",
+      "automationId": "wd-Photo",
+      "placeholder": null,
+      "parentContext": "My Info",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Picture",
+      "name": "picture",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Foto",
+      "name": "foto",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Perfil",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Bild",
+      "name": "bild",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profil",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Photo de profil",
+      "name": "photo_profil",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Compte",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Logo",
+      "name": "logo",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Company Profile",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Change Photo",
+      "name": "chg_photo",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Header",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Profile Image",
+      "name": "prof_img",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Edit",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Upload",
+      "name": "upload_btn",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Avatar",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Selfie",
+      "name": "selfie",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Verification",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Photo",
+      "name": "p_file",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Badge",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Avatar",
+      "name": "av_file",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Forum",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Picture",
+      "name": "pic_file",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Card",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "User Photo",
+      "name": "u_photo",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Admin",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Profile Pic",
+      "name": "prof_pic",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Social",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Image",
+      "name": "img_upl",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Personal",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Photo",
+      "name": "ph_upl",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Directory",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Avatar",
+      "name": "ava_upl",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Chat",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Picture",
+      "name": "pict_upl",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "ID",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Upload Photo",
+      "name": "up_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Register",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Select Image",
+      "name": "sel_img",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Photo",
+      "name": "photo_in",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "App",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Avatar",
+      "name": "avatar_in",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Picture",
+      "name": "picture_in",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Settings",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Image",
+      "name": "image_in",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Profile Photo",
+      "name": "p_photo",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Account",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Photo",
+      "name": "f_photo",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Bio",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Avatar",
+      "name": "f_avatar",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Header",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Picture",
+      "name": "f_picture",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Details",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Image",
+      "name": "f_image",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Form",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Upload",
+      "name": "f_upload",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Photo",
+      "name": "photo_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Identity",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Avatar",
+      "name": "avatar_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Social",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Picture",
+      "name": "picture_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Image",
+      "name": "image_f",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Personal",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Profile Photo",
+      "name": "prof_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "User",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Photo",
+      "name": "ph_img",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Badge",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Avatar",
+      "name": "av_img",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "System",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Picture",
+      "name": "pic_img",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Admin",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Image",
+      "name": "im_img",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Public",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Upload",
+      "name": "up_img",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Edit",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Photo",
+      "name": "phot_o",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "View",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Avatar",
+      "name": "avat_r",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Dash",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Picture",
+      "name": "pict_r",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Main",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Image",
+      "name": "imag_e",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Page",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Alternate Email",
+      "name": "alt_email",
+      "automationId": "email_secondary",
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Backup Email",
+      "name": "backup_email",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Security",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Personal Email",
+      "name": "pers_email",
+      "automationId": null,
+      "placeholder": "If different from work",
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Secondary Email",
+      "name": "sec_email",
+      "automationId": "wd-SecondaryEmail",
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": "Optional"
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Recovery Email",
+      "name": "rec_email",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Account",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Other Email",
+      "name": "oth_email",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Email 2",
+      "name": "email_2",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Details",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Correo Alternativo",
+      "name": "alt_correo",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contacto",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Zweit-Email",
+      "name": "zweit_email",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Kontakt",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Email de secours",
+      "name": "secours_email",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Sécurité",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Private Email",
+      "name": "priv_email",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Emergency",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Work Email",
+      "name": "work_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": "If primary is personal"
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "CC Email",
+      "name": "cc_email",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Notifications",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Additional Email",
+      "name": "add_email",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Forwarding Email",
+      "name": "fwd_email",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Settings",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Alt. Email",
+      "name": "alt_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Bio",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Secondary",
+      "name": "sec_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Backup",
+      "name": "bak_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Security",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Recovery",
+      "name": "rec_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Login",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Personal",
+      "name": "per_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Details",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Other",
+      "name": "oth_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Email (Alt)",
+      "name": "em_alt",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Email (Sec)",
+      "name": "em_sec",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Email (Pers)",
+      "name": "em_per",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Alternate",
+      "name": "altern",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Email",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Second Email",
+      "name": "snd_email",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Form",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Alt Email Address",
+      "name": "alt_addy",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "App",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Backup Address",
+      "name": "back_addy",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "System",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Recovery Address",
+      "name": "rec_addy",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "User",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Other Address",
+      "name": "oth_addy",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Admin",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Personal Address",
+      "name": "per_addy",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Staff",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Alt Mail",
+      "name": "alt_ml",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Global",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Sec Mail",
+      "name": "sec_ml",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Local",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Back Mail",
+      "name": "bak_ml",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Remote",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Rec Mail",
+      "name": "rec_ml",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Office",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Oth Mail",
+      "name": "oth_ml",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Home",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Alt",
+      "name": "a_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Sec",
+      "name": "s_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Details",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Back",
+      "name": "b_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Rec",
+      "name": "r_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Pers",
+      "name": "p_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Secondary Email",
+      "name": "em_2",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Bio",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Alternative",
+      "name": "alter",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Comm",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Non-Work Email",
+      "name": "non_work",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "HR",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Home Email",
+      "name": "home_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Personal",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Extra Email",
+      "name": "xtra_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Add",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Spare Email",
+      "name": "spr_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Misc",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Emerg Email",
+      "name": "emg_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Emergency",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Copy Email",
+      "name": "cpy_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Form",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Another Email",
+      "name": "ano_em",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Home Phone",
+      "name": "home_phone",
+      "automationId": "phone_home",
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": "Landline"
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Landline",
+      "name": "landline",
+      "automationId": "land_phone",
+      "placeholder": null,
+      "parentContext": "Details",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Residence",
+      "name": "residence_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Address",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Evening Phone",
+      "name": "eve_phone",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Availability",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Fijo",
+      "name": "fijo",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contacto",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Festnetz",
+      "name": "festnetz",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Kontakt",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Domicile",
+      "name": "domicile",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Coordonnées",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Home",
+      "name": "hm_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "House Phone",
+      "name": "hse_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Home No",
+      "name": "hm_no",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Land Line",
+      "name": "land_ln",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Home Tel",
+      "name": "hm_tel",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Details",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Residence Phone",
+      "name": "res_p",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Bio",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Private Phone",
+      "name": "priv_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Emergency",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "After Hours",
+      "name": "aft_hrs",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Call",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Home Number",
+      "name": "home_n",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Form",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Landline No",
+      "name": "land_n",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "App",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Res No",
+      "name": "res_n",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Evening No",
+      "name": "eve_n",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Home",
+      "name": "h_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Personal",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Land",
+      "name": "l_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Work",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Res",
+      "name": "r_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Eve",
+      "name": "e_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "House",
+      "name": "house",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Phone",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Fixed Line",
+      "name": "fixed",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Telecom",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Home Telephone",
+      "name": "hm_tele",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "System",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Land Telephone",
+      "name": "ld_tele",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "User",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Res Telephone",
+      "name": "rs_tele",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Admin",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Eve Telephone",
+      "name": "ev_tele",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Staff",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Home Contact",
+      "name": "hm_ct",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Details",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Land Contact",
+      "name": "ld_ct",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Res Contact",
+      "name": "rs_ct",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Eve Contact",
+      "name": "ev_ct",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "General",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Home",
+      "name": "hm_1",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Numbers",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Land",
+      "name": "ld_1",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Digits",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Res",
+      "name": "rs_1",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Dial",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Eve",
+      "name": "ev_1",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Reach",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Primary (Home)",
+      "name": "pri_hm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Secondary (Home)",
+      "name": "sec_hm",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Bio",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Perm Phone",
+      "name": "perm_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Address",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Local Phone",
+      "name": "loc_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Location",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Flat Phone",
+      "name": "flat_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Unit",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Apt Phone",
+      "name": "apt_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Residence",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Villa Phone",
+      "name": "vil_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Property",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Cabin Phone",
+      "name": "cab_ph",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Vacation",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Home Line",
+      "name": "h_line",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Connect",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Main Line",
+      "name": "m_line",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Home",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Alt Line",
+      "name": "a_line",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Land",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Back Line",
+      "name": "b_line",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Res",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Night Line",
+      "name": "n_line",
+      "automationId": null,
+      "placeholder": null,
+      "parentContext": "Eve",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  }
 ]

@@ -1,796 +1,624 @@
 /**
- * NeuralClassifier
+ * Neural Classifier V7 (Enterprise Edition)
  * 
- * Enterprise-grade TinyML inference engine for form field classification.
- * A lightweight 2-layer neural network running in pure JavaScript with zero dependencies.
- * 
- * Architecture:
- *   Input (59 features) → Hidden (20, Leaky ReLU) → Output (46 classes, Softmax)
- * 
- * Features:
- *   - Zero external dependencies
- *   - Sub-millisecond inference time
- *   - Online learning with adaptive learning rate
- *   - L2 regularization for generalization
- *   - Pure neural network inference (no dependencies)
- *   - Persistent weight storage via Chrome Storage API
- * 
- * @module NeuralClassifier
- * @version 2.0.0
- * @author SmartHireX AI Team
+ * A robust feed-forward neural network for field classification.
+ * Key features:
+ * - Adam Optimizer (Adaptive Moment Estimation)
+ * - Batch Normalization
+ * - He Initialization
+ * - Learning Rate Scheduling
+ * - Gradient Clipping
+ * - Dropout for Regularization
+ * - Numerically Stable Softmax
  */
 
 class NeuralClassifier {
+    // Hyperparameters
+    static INPUT_SIZE = 95;      // Matches FeatureExtractorV3
+    static HIDDEN1_SIZE = 256;   // Expanded first layer
+    static HIDDEN2_SIZE = 128;   // Refined second layer
+    static OUTPUT_SIZE = 88;     // Number of classes
 
-    // ========================================================================
-    // STATIC CONFIGURATION
-    // ========================================================================
+    static LEARNING_RATE = 0.001;// Initial learning rate
+    static MOMENTUM = 0.9;
+    static BETA1 = 0.9;          // Adam beta1
+    static BETA2 = 0.999;        // Adam beta2
+    static EPSILON = 1e-8;       // Adam epsilon
+    static L2_LAMBDA = 0.0001;   // L2 Regularization strength
+    static DROPOUT_RATE = 0.3;   // Dropout probability
+    static BN_MOMENTUM = 0.9;    // Batch Norm momentum
+    static BN_EPSILON = 1e-5;    // Batch Norm epsilon
+    static GRADIENT_CLIP_NORM = 1.0; // Gradient clipping threshold
 
-    /** @type {string} Current version for weight compatibility */
-    static VERSION = '5.0.0';  // V5: 3-layer architecture [512,256,128]
-
-    /** @type {number} Model architecture version for storage */
-    static MODEL_VERSION = 5;
-
-    /** @type {boolean} Enable debug logging */
-    static DEBUG = false;
-
-    // ========================================================================
-    // NETWORK ARCHITECTURE CONSTANTS
-    // ========================================================================
-
-    /** @type {number} Number of input features from FeatureExtractor */
-    static INPUT_SIZE = 84;  // 79 base + 5 semantic similarity
-
-    /** @type {number} Number of neurons in first hidden layer */
-    static HIDDEN1_SIZE = 512;  // Increased from 128 for better capacity
-
-    /** @type {number} Number of neurons in second hidden layer */
-    static HIDDEN2_SIZE = 256;  // Increased from 64
-
-    /** @type {number} Number of neurons in third hidden layer (NEW) */
-    static HIDDEN3_SIZE = 128;  // NEW: Additional layer for deeper learning
-
-    /** @type {number} Dropout probability (0 = disabled, 0.25 = recommended) */
-    static DROPOUT_RATE = 0.25;
-
-    /** @type {number} Leaky ReLU negative slope */
-    static LEAKY_RELU_ALPHA = 0.01;
-
-    /** @type {number} L2 regularization strength */
-    static L2_LAMBDA = 0.01;
-
-    /** @type {number} Base learning rate for SGD */
-    static BASE_LEARNING_RATE = 0.05;
-
-    /** @type {number} Confidence threshold for LLM fallback */
-    static CONFIDENCE_THRESHOLD = 0.25;
-
-    /** @type {string} Storage key for persisted weights */
-    static STORAGE_KEY = 'neural_weights_v4';
-
-    /** @type {boolean} Use optimized TypedArray math kernel */
-    static USE_OPTIMIZED_KERNEL = true;
-
-    /** @type {boolean} Use Int8 quantized weights for inference */
-    static USE_QUANTIZATION = false;
-
-    /** @type {number} Pruning threshold for weights */
-    static PRUNE_THRESHOLD = 0.01;
-
-    // ========================================================================
-    // CONSTRUCTOR
-    // ========================================================================
-
-    /**
-     * Initialize Neural Classifier
-     * @param {Object} config - Configuration options
-     */
     constructor(config = {}) {
-        this._debug = config.debug || NeuralClassifier.DEBUG;
-        this._isTraining = false;
-        this._totalSamples = 0;
+        this._featureExtractor = config.featureExtractor;
+        this._fieldTypes = config.fieldTypes;
 
-        // Initialize dependencies (support both window and node)
-        if (config.featureExtractor) {
-            this._featureExtractor = config.featureExtractor;
-        } else if (typeof FeatureExtractor !== 'undefined') {
-            this._featureExtractor = new FeatureExtractor();
-        } else if (typeof window !== 'undefined' && window.FeatureExtractor) {
-            this._featureExtractor = new window.FeatureExtractor();
-        }
+        // Model Parameters
+        // Layer 1
+        this.W1 = null;
+        this.b1 = null;
+        this.gamma1 = null; // BatchNorm scale
+        this.beta1 = null;  // BatchNorm shift
+        this.runningMean1 = null; // BatchNorm running mean
+        this.runningVar1 = null;  // BatchNorm running variance
 
-        if (config.fieldTypes) {
-            this._fieldTypes = config.fieldTypes;
-        } else if (typeof FieldTypes !== 'undefined') {
-            this._fieldTypes = FieldTypes;
-        } else if (typeof window !== 'undefined' && window.FieldTypes) {
-            this._fieldTypes = window.FieldTypes;
-        }
+        // Layer 2
+        this.W2 = null;
+        this.b2 = null;
+        this.gamma2 = null;
+        this.beta2 = null;
+        this.runningMean2 = null;
+        this.runningVar2 = null;
 
-        // Initialize empty weights (will be loaded or randomized)
-        this._W1 = null;
-        this._b1 = null;
-        this._W2 = null;
-        this._b2 = null;
-        this._W3 = null;  // Hidden2 -> Hidden3
-        this._b3 = null;
-        this._W4 = null;  // Hidden3 -> Output
-        this._b4 = null;
+        // Output Layer
+        this.W3 = null;
+        this.b3 = null;
 
-        // Initialize random weights by default (88 classes)
+        // Optimization State (Adam)
+        this.m = {}; // First moment
+        this.v = {}; // Second moment
+        this.t = 0;  // Time step
+
         this._initializeRandomWeights();
     }
 
-    // ========================================================================
-    // PUBLIC API - PREDICTION
-    // ========================================================================
+    _initializeRandomWeights() {
+        const inputSize = NeuralClassifier.INPUT_SIZE;
+        const hidden1Size = NeuralClassifier.HIDDEN1_SIZE;
+        const hidden2Size = NeuralClassifier.HIDDEN2_SIZE;
+        const outputSize = this._fieldTypes?.ORDERED_CLASSES?.length || NeuralClassifier.OUTPUT_SIZE;
 
-    /**
-     * Predict label for a field
-     * @param {Object|Array} input - Field object or features array
-     * @returns {Promise<Object>} Prediction result { label, confidence }
-     */
-    async predict(input) {
-        if (!this._W1) return { label: 'unknown', confidence: 0 };
-
-        // Support both field object and features array
-        const features = Array.isArray(input) ? input : (this._featureExtractor?.extract(input) || []);
-
-        // Forward pass
-        const { logits } = this._forward(features);
-        const probs = this._softmax(logits);
-
-        // Find max probability
-        let maxProb = -1;
-        let maxIndex = -1;
-        for (let i = 0; i < probs.length; i++) {
-            if (probs[i] > maxProb) {
-                maxProb = probs[i];
-                maxIndex = i;
-            }
-        }
-
-        const label = this._fieldTypes.getFieldTypeFromIndex(maxIndex);
-        return {
-            label: label || 'unknown',
-            confidence: maxProb
+        // Helper: Gaussian random with Box-Muller transform
+        const gaussianRandom = (mean = 0, stddev = 1) => {
+            const u = 1 - Math.random();
+            const v = Math.random();
+            const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+            return z * stddev + mean;
         };
+
+        // He Initialization (for LeakyReLU)
+        // stddev = sqrt(2 / (1 + alpha^2) / fan_in)
+        // For standard ReLU/LeakyReLU, often simplified to sqrt(2 / fan_in)
+        const heInit = (fanIn, fanOut) => {
+            const stddev = Math.sqrt(2.0 / fanIn);
+            const matrix = [];
+            for (let i = 0; i < fanOut; i++) {
+                const row = [];
+                for (let j = 0; j < fanIn; j++) {
+                    row.push(gaussianRandom(0, stddev));
+                }
+                matrix.push(row);
+            }
+            return matrix;
+        };
+
+        // Initialize weights
+        this.W1 = heInit(inputSize, hidden1Size);
+        this.b1 = new Array(hidden1Size).fill(0.01); // Small positive bias
+
+        this.W2 = heInit(hidden1Size, hidden2Size);
+        this.b2 = new Array(hidden2Size).fill(0.01);
+
+        this.W3 = heInit(hidden2Size, outputSize); // Xavier might be better for final Softmax, but He is fine
+        this.b3 = new Array(outputSize).fill(0.0);
+
+        // Batch Norm Parameters (Initialize to 1 and 0)
+        this.gamma1 = new Array(hidden1Size).fill(1.0);
+        this.beta1 = new Array(hidden1Size).fill(0.0);
+        this.runningMean1 = new Array(hidden1Size).fill(0.0);
+        this.runningVar1 = new Array(hidden1Size).fill(1.0);
+
+        this.gamma2 = new Array(hidden2Size).fill(1.0);
+        this.beta2 = new Array(hidden2Size).fill(0.0);
+        this.runningMean2 = new Array(hidden2Size).fill(0.0);
+        this.runningVar2 = new Array(hidden2Size).fill(1.0);
+
+        // Initialize Adam state
+        this._initAdamState();
+
+        console.log(`🧠 NeuralClassifier initialized with architecture: ${inputSize} -> ${hidden1Size} -> ${hidden2Size} -> ${outputSize}`);
     }
 
-    // ========================================================================
-    // PUBLIC API - TRAINING
-    // ========================================================================
+    _initAdamState() {
+        const shapeLike = (tensor) => {
+            if (Array.isArray(tensor[0])) { // Matrix
+                return tensor.map(row => new Array(row.length).fill(0));
+            } else { // Vector
+                return new Array(tensor.length).fill(0);
+            }
+        };
 
-    /**
-     * Train the model on a single labeled example (online learning)
-     * Uses Stochastic Gradient Descent with L2 regularization
-     * 
-     * @param {Object} field - Form field object
-     * @param {string} correctLabel - Ground truth label
-     * @returns {Promise<void>}
-     */
-    async train(field, correctLabel) {
-        // console.log('[TRAIN] Training on:', correctLabel);
-        if (!this._W1 || !this._W2 || !this._W3 || !this._W4 || !this._b1 || !this._b2 || !this._b3 || !this._b4) {
-            console.log('[TRAIN] Cannot train: weights not initialized');
-            this._log('Cannot train: weights not initialized');
-            return;
-        }
+        this.m = {
+            W1: shapeLike(this.W1), b1: shapeLike(this.b1),
+            W2: shapeLike(this.W2), b2: shapeLike(this.b2),
+            W3: shapeLike(this.W3), b3: shapeLike(this.b3),
+            gamma1: shapeLike(this.gamma1), beta1: shapeLike(this.beta1),
+            gamma2: shapeLike(this.gamma2), beta2: shapeLike(this.beta2)
+        };
 
-        const targetIndex = this._fieldTypes.getFieldTypeIndex(correctLabel);
-        if (targetIndex === -1) {
-            console.log(`[TRAIN] Unknown label: ${correctLabel}`);
-            this._log(`Unknown label: ${correctLabel}`);
-            return;
-        }
+        this.v = {
+            W1: shapeLike(this.W1), b1: shapeLike(this.b1),
+            W2: shapeLike(this.W2), b2: shapeLike(this.b2),
+            W3: shapeLike(this.W3), b3: shapeLike(this.b3),
+            gamma1: shapeLike(this.gamma1), beta1: shapeLike(this.beta1),
+            gamma2: shapeLike(this.gamma2), beta2: shapeLike(this.beta2)
+        };
 
-        // Debug inputs
-        const inputs = Array.isArray(field) ? field : (this._featureExtractor?.extract(field) || []);
-        if (inputs.length === 0) {
-            console.log('[TRAIN] Inputs empty!');
-        }
-
-        // Enable training mode (activates dropout)
-        this._isTraining = true;
-
-        // Forward pass with dropout
-        // Support both field object and features array
-        // Input validation handled above (lines 151-154)
-        const { logits, hidden1, hidden2, hidden3, z1, z2, z3 } = this._forward(inputs);  // NEW: added hidden3, z3
-        const probs = this._softmax(logits);
-
-        // Disable training mode
-        this._isTraining = false;
-
-        // Adaptive learning rate (decays with experience)
-        const learningRate = NeuralClassifier.BASE_LEARNING_RATE * Math.exp(-0.0001 * this._totalSamples);
-        this._totalSamples++;
-
-        // Backpropagation through 4 layers (3 hidden + output)
-        this._backpropagate(inputs, hidden1, hidden2, hidden3, z1, z2, z3, probs, targetIndex, learningRate);
-
-        // Auto-save periodically
-        if (this._totalSamples % 10 === 0) {
-            await this._saveWeights();
-        }
-
-        this._log(`Trained on "${correctLabel}" (LR: ${learningRate.toFixed(4)}, Samples: ${this._totalSamples})`);
+        this.t = 0;
     }
 
-    /**
-     * Perform backpropagation through 4-layer network (3 hidden + output)
-     * @private
-     */
-    _backpropagate(inputs, hidden1, hidden2, hidden3, z1, z2, z3, probs, targetIndex, learningRate) {
-        const outputSize = this._fieldTypes?.getClassCount?.() || 88;  // 88 classes verified
-        const hidden1Size = NeuralClassifier.HIDDEN1_SIZE;
-        const hidden2Size = NeuralClassifier.HIDDEN2_SIZE;
-        const hidden3Size = NeuralClassifier.HIDDEN3_SIZE;  // NEW
-        const lambda = NeuralClassifier.L2_LAMBDA;
+    train(samples, options = {}) {
+        const epochs = options.epochs || 50;
+        const learningRate = options.learningRate || NeuralClassifier.LEARNING_RATE;
+        const batchSize = options.batchSize || 32;
+        const validationData = options.validationData || [];
 
-        // ============ Output Layer Gradients ============
-        const dLogits = new Array(outputSize);
-        for (let c = 0; c < outputSize; c++) {
-            const target = (c === targetIndex) ? 1 : 0;
-            dLogits[c] = probs[c] - target;
-        }
+        let currentLR = learningRate;
 
-        // Update W4 and b4 (Hidden3 → Output) **RENAMED FROM W3**
-        for (let h = 0; h < hidden3Size; h++) {
-            for (let c = 0; c < outputSize; c++) {
-                const gradient = dLogits[c] * hidden3[h] + lambda * this._W4[h][c];
-                this._W4[h][c] -= learningRate * gradient;
+        console.log(`🚀 Starting training for ${epochs} epochs with ${samples.length} samples...`);
+
+        for (let epoch = 0; epoch < epochs; epoch++) {
+            // LR Schedule: Linear Warmup (5 epochs) -> Cosine Annealing
+            if (epoch < 5) {
+                currentLR = learningRate * (epoch + 1) / 5;
+            } else {
+                currentLR = learningRate * 0.5 * (1 + Math.cos(Math.PI * (epoch - 5) / (epochs - 5)));
+            }
+
+            // Shuffle data
+            const shuffled = [...samples].sort(() => Math.random() - 0.5);
+            let totalLoss = 0;
+            let correct = 0;
+
+            // Mini-batch training
+            for (let i = 0; i < shuffled.length; i += batchSize) {
+                const batch = shuffled.slice(i, i + batchSize);
+                const result = this._trainBatch(batch, currentLR);
+                totalLoss += result.loss * batch.length;
+                correct += result.correct;
+            }
+
+            // Logging
+            if ((epoch + 1) % 5 === 0 || epoch === 0) {
+                const avgLoss = totalLoss / samples.length;
+                const accuracy = (correct / samples.length) * 100;
+                let valMsg = '';
+
+                if (validationData.length > 0) {
+                    const valMetrics = this.evaluate(validationData);
+                    valMsg = ` | Val Loss: ${valMetrics.loss.toFixed(4)} | Val Acc: ${valMetrics.accuracy.toFixed(2)}%`;
+                }
+
+                console.log(`Epoch ${epoch + 1}/${epochs} | Loss: ${avgLoss.toFixed(4)} | Acc: ${accuracy.toFixed(2)}% | LR: ${currentLR.toFixed(6)}${valMsg}`);
             }
         }
-        for (let c = 0; c < outputSize; c++) {
-            this._b4[c] -= learningRate * dLogits[c];
+    }
+
+    _trainBatch(batch, learningRate) {
+        // Accumulate gradients for the batch
+        this.t++; // Increment time step for Adam
+        let batchLoss = 0;
+        let batchCorrect = 0;
+
+        // Gradient accumulators
+        const dW1_agg = this.W1.map(r => new Array(r.length).fill(0));
+        const db1_agg = new Array(this.b1.length).fill(0);
+        const dGamma1_agg = new Array(this.gamma1.length).fill(0);
+        const dBeta1_agg = new Array(this.beta1.length).fill(0);
+
+        const dW2_agg = this.W2.map(r => new Array(r.length).fill(0));
+        const db2_agg = new Array(this.b2.length).fill(0);
+        const dGamma2_agg = new Array(this.gamma2.length).fill(0);
+        const dBeta2_agg = new Array(this.beta2.length).fill(0);
+
+        const dW3_agg = this.W3.map(r => new Array(r.length).fill(0));
+        const db3_agg = new Array(this.b3.length).fill(0);
+
+        for (const sample of batch) {
+            const features = sample.features;
+            const label = sample.label;
+            const targetIndex = this._fieldTypes?.getFieldTypeIndex?.(label) ?? 0;
+
+            // Forward pass
+            const forward = this._forward(features, true); // training=true
+
+            // Loss & Accuracy
+            const loss = -Math.log(forward.probs[targetIndex] + 1e-15);
+            batchLoss += loss;
+
+            const predictedIndex = forward.probs.indexOf(Math.max(...forward.probs));
+            if (predictedIndex === targetIndex) batchCorrect++;
+
+            // Backpropagation
+            const grads = this._backpropagate(features, targetIndex, forward);
+
+            // Accumulate gradients
+            this._accumulateGradients(dW1_agg, grads.dW1);
+            this._accumulateGradients(db1_agg, grads.db1);
+            this._accumulateGradients(dGamma1_agg, grads.dGamma1);
+            this._accumulateGradients(dBeta1_agg, grads.dBeta1);
+
+            this._accumulateGradients(dW2_agg, grads.dW2);
+            this._accumulateGradients(db2_agg, grads.db2);
+            this._accumulateGradients(dGamma2_agg, grads.dGamma2);
+            this._accumulateGradients(dBeta2_agg, grads.dBeta2);
+
+            this._accumulateGradients(dW3_agg, grads.dW3);
+            this._accumulateGradients(db3_agg, grads.db3);
         }
 
-        // ============ Hidden3 Layer Gradients **NEW** ============
-        const dHidden3 = new Array(hidden3Size).fill(0);
-        for (let h = 0; h < hidden3Size; h++) {
-            for (let c = 0; c < outputSize; c++) {
-                dHidden3[h] += dLogits[c] * this._W4[h][c];
-            }
-            dHidden3[h] *= this._leakyReLUDerivative(z3[h]);
-        }
+        // Apply gradients (Adam Optimizer)
+        const batchScale = 1.0 / batch.length;
 
-        // Update W3 and b3 (Hidden2 → Hidden3)
-        for (let h2 = 0; h2 < hidden2Size; h2++) {
-            for (let h3 = 0; h3 < hidden3Size; h3++) {
-                const gradient = dHidden3[h3] * hidden2[h2] + lambda * this._W3[h2][h3];
-                this._W3[h2][h3] -= learningRate * gradient;
-            }
-        }
-        for (let h = 0; h < hidden3Size; h++) {
-            this._b3[h] -= learningRate * dHidden3[h];
-        }
+        this._adamUpdate('W1', this.W1, dW1_agg, learningRate, batchScale);
+        this._adamUpdate('b1', this.b1, db1_agg, learningRate, batchScale);
 
-        // ============ Hidden2 Layer Gradients ============
-        const dHidden2 = new Array(hidden2Size).fill(0);
-        for (let h = 0; h < hidden2Size; h++) {
-            for (let h3 = 0; h3 < hidden3Size; h3++) {
-                dHidden2[h] += dHidden3[h3] * this._W3[h][h3];
-            }
-            dHidden2[h] *= this._leakyReLUDerivative(z2[h]);
-        }
+        this._adamUpdate('W2', this.W2, dW2_agg, learningRate, batchScale);
+        this._adamUpdate('b2', this.b2, db2_agg, learningRate, batchScale);
 
-        // Update W2 and b2 (Hidden1 → Hidden2)
-        for (let h1 = 0; h1 < hidden1Size; h1++) {
-            for (let h2 = 0; h2 < hidden2Size; h2++) {
-                const gradient = dHidden2[h2] * hidden1[h1] + lambda * this._W2[h1][h2];
-                this._W2[h1][h2] -= learningRate * gradient;
-            }
-        }
-        for (let h = 0; h < hidden2Size; h++) {
-            this._b2[h] -= learningRate * dHidden2[h];
-        }
+        this._adamUpdate('W3', this.W3, dW3_agg, learningRate, batchScale);
+        this._adamUpdate('b3', this.b3, db3_agg, learningRate, batchScale);
 
-        // ============ Hidden1 Layer Gradients ============
-        const dHidden1 = new Array(hidden1Size).fill(0);
-        for (let h1 = 0; h1 < hidden1Size; h1++) {
-            for (let h2 = 0; h2 < hidden2Size; h2++) {
-                dHidden1[h1] += dHidden2[h2] * this._W2[h1][h2];
-            }
-            dHidden1[h1] *= this._leakyReLUDerivative(z1[h1]);
-        }
+        this._adamUpdate('gamma1', this.gamma1, dGamma1_agg, learningRate, batchScale);
+        this._adamUpdate('beta1', this.beta1, dBeta1_agg, learningRate, batchScale);
 
-        // Update W1 and b1 (Input → Hidden1)
-        for (let i = 0; i < inputs.length; i++) {
-            for (let h = 0; h < hidden1Size; h++) {
-                if (inputs[i] !== 0) {  // Sparse optimization
-                    const gradient = dHidden1[h] * inputs[i] + lambda * this._W1[i][h];
-                    this._W1[i][h] -= learningRate * gradient;
+        this._adamUpdate('gamma2', this.gamma2, dGamma2_agg, learningRate, batchScale);
+        this._adamUpdate('beta2', this.beta2, dBeta2_agg, learningRate, batchScale);
+
+        return { loss: batchLoss / batch.length, correct: batchCorrect };
+    }
+
+    _accumulateGradients(accumulator, newGrads) {
+        if (Array.isArray(accumulator[0])) { // Matrix
+            for (let i = 0; i < accumulator.length; i++) {
+                for (let j = 0; j < accumulator[i].length; j++) {
+                    accumulator[i][j] += newGrads[i][j];
                 }
             }
-        }
-        for (let h = 0; h < hidden1Size; h++) {
-            this._b1[h] -= learningRate * dHidden1[h];
+        } else { // Vector
+            for (let i = 0; i < accumulator.length; i++) {
+                accumulator[i] += newGrads[i];
+            }
         }
     }
 
-    // ========================================================================
-    // NEURAL NETWORK OPERATIONS
-    // ========================================================================
+    _adamUpdate(paramName, param, grads, learningRate, scale) {
+        const beta1 = NeuralClassifier.BETA1;
+        const beta2 = NeuralClassifier.BETA2;
+        const epsilon = NeuralClassifier.EPSILON;
+        const l2Lambda = NeuralClassifier.L2_LAMBDA;
 
-    /**
-     * Forward pass through the network (3-layer with dropout)
-     * Architecture: Input(59) → Hidden1(32) → Hidden2(16) → Output
-     * @private
-     * @param {number[]} inputs - Input feature vector
-     * @returns {Object} { logits, hidden1, hidden2, z1, z2 }
-     */
-    _forward(inputs) {
-        // Standard forward pass (optimized version disabled for 3-layer)
-        return this._forwardStandard(inputs);
-    }
+        const m = this.m[paramName];
+        const v = this.v[paramName];
 
-    /**
-     * Standard 3-layer forward pass with dropout
-     * @private
-     */
-    _forwardStandard(inputs) {
-        const hidden1Size = NeuralClassifier.HIDDEN1_SIZE;
-        const hidden2Size = NeuralClassifier.HIDDEN2_SIZE;
-        const hidden3Size = NeuralClassifier.HIDDEN3_SIZE;  // NEW
-        const outputSize = this._fieldTypes?.getClassCount?.() || 88;  // 88 classes verified
+        // Gradient clipping helper
+        const clip = (val) => Math.max(-NeuralClassifier.GRADIENT_CLIP_NORM, Math.min(NeuralClassifier.GRADIENT_CLIP_NORM, val));
 
-        // Validate input size
-        const expectedInputSize = NeuralClassifier.INPUT_SIZE;
-        if (inputs.length !== expectedInputSize) {
-            console.error(`[ERROR] Input size mismatch: got ${inputs.length}, expected ${expectedInputSize}`);
-            console.error(`[ERROR] First few inputs:`, inputs.slice(0, 10));
-            throw new Error(`Input size mismatch: ${inputs.length} != ${expectedInputSize}`);
-        }
+        const updateElement = (p, g, m_val, v_val, i, j = null) => {
+            // Apply L2 regularization to gradient
+            const g_reg = scale * g + l2Lambda * p;
+            const g_clipped = clip(g_reg);
 
-        // ============ Layer 1: Input → Hidden1 (Leaky ReLU + Dropout) ============
-        const z1 = new Array(hidden1Size).fill(0);
-        for (let h = 0; h < hidden1Size; h++) {
-            z1[h] = this._b1[h];
-            for (let i = 0; i < expectedInputSize; i++) {  // Use expectedInputSize instead of inputs.length
-                z1[h] += inputs[i] * this._W1[i][h];
-            }
-        }
-        let hidden1 = z1.map(z => this._leakyReLU(z));
+            // Update moments
+            const m_new = beta1 * m_val + (1 - beta1) * g_clipped;
+            const v_new = beta2 * v_val + (1 - beta2) * (g_clipped * g_clipped);
 
-        // Apply dropout to hidden1 (only during training)
-        if (this._isTraining && NeuralClassifier.DROPOUT_RATE > 0) {
-            hidden1 = this._applyDropout(hidden1, NeuralClassifier.DROPOUT_RATE);
-        }
+            // Bias correction
+            const m_hat = m_new / (1 - Math.pow(beta1, this.t));
+            const v_hat = v_new / (1 - Math.pow(beta2, this.t));
 
-        // ============ Layer 2: Hidden1 → Hidden2 (Leaky ReLU + Dropout) ============
-        const z2 = new Array(hidden2Size).fill(0);
-        for (let h = 0; h < hidden2Size; h++) {
-            z2[h] = this._b2[h];
-            for (let i = 0; i < hidden1Size; i++) {
-                z2[h] += hidden1[i] * this._W2[i][h];
-            }
-        }
-        let hidden2 = z2.map(z => this._leakyReLU(z));
+            // Update parameter
+            const p_new = p - learningRate * m_hat / (Math.sqrt(v_hat) + epsilon);
 
-        // Apply dropout to hidden2 (only during training)
-        if (this._isTraining && NeuralClassifier.DROPOUT_RATE > 0) {
-            hidden2 = this._applyDropout(hidden2, NeuralClassifier.DROPOUT_RATE);
-        }
+            return { p: p_new, m: m_new, v: v_new };
+        };
 
-        // ============ Layer 3: Hidden2 → Hidden3 (Leaky ReLU + Dropout) **NEW** ============
-        const z3 = new Array(hidden3Size).fill(0);
-        for (let h = 0; h < hidden3Size; h++) {
-            z3[h] = this._b3[h];
-            for (let i = 0; i < hidden2Size; i++) {
-                z3[h] += hidden2[i] * this._W3[i][h];
-            }
-        }
-        let hidden3 = z3.map(z => this._leakyReLU(z));
-
-        // Apply dropout to hidden3 (only during training)
-        if (this._isTraining && NeuralClassifier.DROPOUT_RATE > 0) {
-            hidden3 = this._applyDropout(hidden3, NeuralClassifier.DROPOUT_RATE);
-        }
-
-        // ============ Layer 4: Hidden3 → Output (Logits) **RENAMED** ============
-        const logits = new Array(outputSize).fill(0);
-        for (let c = 0; c < outputSize; c++) {
-            logits[c] = this._b4[c];
-            for (let h = 0; h < hidden3Size; h++) {
-                logits[c] += hidden3[h] * this._W4[h][c];
-            }
-        }
-
-        return { logits, hidden1, hidden2, hidden3, z1, z2, z3 };
-    }
-
-    /**
-     * Apply dropout to a layer
-     * During training: randomly zero out neurons with probability p
-     * During inference: scale activations by (1-p) for consistency
-     * @private
-     * @param {number[]} activations - Layer activations
-     * @param {number} dropoutRate - Probability of dropping (0-1)
-     * @returns {number[]} Modified activations
-     */
-    _applyDropout(activations, dropoutRate) {
-        if (this._isTraining) {
-            // Training: randomly drop neurons, scale survivors
-            const scale = 1.0 / (1.0 - dropoutRate);  // Inverted dropout
-            return activations.map(a => {
-                if (Math.random() < dropoutRate) {
-                    return 0;  // Dropped
+        if (Array.isArray(param[0])) { // Matrix
+            for (let i = 0; i < param.length; i++) {
+                for (let j = 0; j < param[i].length; j++) {
+                    const res = updateElement(param[i][j], grads[i][j], m[i][j], v[i][j], i, j);
+                    param[i][j] = res.p;
+                    m[i][j] = res.m;
+                    v[i][j] = res.v;
                 }
-                return a * scale;  // Scale to maintain expected value
+            }
+        } else { // Vector
+            for (let i = 0; i < param.length; i++) {
+                const res = updateElement(param[i], grads[i], m[i], v[i], i);
+                param[i] = res.p;
+                m[i] = res.m;
+                v[i] = res.v;
+            }
+        }
+    }
+
+    _forward(features, training = false) {
+        // Layer 1: Dense -> BN -> LeakyReLU -> Dropout
+        const z1 = this._dense(features, this.W1, this.b1);
+        const z1_bn = this._batchNorm(z1, this.gamma1, this.beta1, this.runningMean1, this.runningVar1, training);
+        const a1 = this._leakyRelu(z1_bn);
+        const a1_drop = training ? this._dropout(a1) : a1;
+
+        // Layer 2: Dense -> BN -> LeakyReLU -> Dropout
+        const z2 = this._dense(a1_drop, this.W2, this.b2);
+        const z2_bn = this._batchNorm(z2, this.gamma2, this.beta2, this.runningMean2, this.runningVar2, training);
+        const a2 = this._leakyRelu(z2_bn);
+        const a2_drop = training ? this._dropout(a2) : a2;
+
+        // Output Layer: Dense -> Softmax
+        const z3 = this._dense(a2_drop, this.W3, this.b3);
+        const probs = this._softmax(z3);
+
+        return { features, z1, z1_bn, a1, a1_drop, z2, z2_bn, a2, a2_drop, z3, probs };
+    }
+
+    _dense(input, weights, bias) {
+        // Robustness: handle undefined/null weights gracefully if concurrent loading
+        if (!weights || !bias) return new Array(bias?.length || 0).fill(0);
+
+        return bias.map((b, i) => {
+            let sum = b;
+            // Robustness: ensure row exists
+            const wRow = weights[i];
+            if (!wRow) return b;
+
+            for (let j = 0; j < input.length; j++) {
+                sum += input[j] * wRow[j];
+            }
+            return sum;
+        });
+    }
+
+    _batchNorm(activations, gamma, beta, runningMean, runningVar, training = false) {
+        const epsilon = NeuralClassifier.BN_EPSILON;
+        const momentum = NeuralClassifier.BN_MOMENTUM;
+
+        // For single-sample processing, we normalize per-neuron using running stats
+        // activations[i] = pre-activation for neuron i
+
+        if (training) {
+            // During training: update running stats with current activations
+            return activations.map((x, i) => {
+                // Update running mean/var for each neuron
+                runningMean[i] = momentum * runningMean[i] + (1 - momentum) * x;
+                runningVar[i] = momentum * runningVar[i] + (1 - momentum) * 1.0;  // Var of single sample = 1
+
+                // Normalize using running stats (same as inference for stability)
+                const normalized = (x - runningMean[i]) / Math.sqrt(runningVar[i] + epsilon);
+                return gamma[i] * normalized + beta[i];
             });
         } else {
-            // Inference: no dropout needed (already scaled during training)
-            return activations;
+            // Inference: use running statistics
+            return activations.map((x, i) => {
+                const mean = runningMean[i] || 0;
+                const variance = runningVar[i] || 1;
+                const normalized = (x - mean) / Math.sqrt(variance + epsilon);
+                return gamma[i] * normalized + beta[i];
+            });
         }
     }
 
-    /**
-     * Leaky ReLU activation
-     * @private
-     * @param {number} x - Input value
-     * @returns {number}
-     */
-    _leakyReLU(x) {
-        return x > 0 ? x : NeuralClassifier.LEAKY_RELU_ALPHA * x;
+    _leakyRelu(input, alpha = 0.01) {
+        return input.map(x => x > 0 ? x : alpha * x);
     }
 
-    /**
-     * Leaky ReLU derivative
-     * @private
-     * @param {number} x - Pre-activation value
-     * @returns {number}
-     */
-    _leakyReLUDerivative(x) {
-        return x > 0 ? 1 : NeuralClassifier.LEAKY_RELU_ALPHA;
+    _dropout(input) {
+        return input.map(x => Math.random() < NeuralClassifier.DROPOUT_RATE ? 0 : x / (1 - NeuralClassifier.DROPOUT_RATE));
     }
 
-    /**
-     * Softmax activation
-     * @private
-     * @param {number[]} logits - Raw network outputs
-     * @returns {number[]} Probability distribution
-     */
     _softmax(logits) {
-        // Use optimized kernel if available
-        if (this._useOptimized && this._mathKernel) {
-            const logitArray = logits instanceof Float32Array
-                ? logits
-                : new Float32Array(logits);
-            return Array.from(this._mathKernel.softmax(logitArray));
-        }
-
-        // Standard softmax
-        const maxLogit = Math.max(...logits);  // Numerical stability
+        const maxLogit = Math.max(...logits); // Numerical stability
         const exps = logits.map(l => Math.exp(l - maxLogit));
         const sumExps = exps.reduce((a, b) => a + b, 0);
         return exps.map(e => e / sumExps);
     }
 
-    // ========================================================================
-    // WEIGHT OPTIMIZATION
-    // ========================================================================
+    _backpropagate(input, targetIndex, forward) {
+        // Output Layer Gradients (Softmax + CrossEntropy derivative is probs - target)
+        const dZ3 = forward.probs.map((p, i) => i === targetIndex ? p - 1 : p);
 
-    /**
-     * Optimize weights for fast inference
-     * Converts 2D arrays to flattened TypedArrays
-     * @private
-     */
-    _optimizeWeightsForInference() {
-        if (!this._W1 || !this._mathKernel) return;
+        const dW3 = dZ3.map((d, i) => forward.a2_drop.map(x => d * x));
+        const db3 = [...dZ3];
 
-        const inputSize = NeuralClassifier.INPUT_SIZE;
-        const hiddenSize = NeuralClassifier.HIDDEN_SIZE;
-        const outputSize = this._fieldTypes?.getClassCount?.() || 88;  // 88 classes verified
-
-        try {
-            // Flatten and convert to Float32Array
-            this._W1_opt = this._mathKernel.flatten2D(this._W1);
-            this._b1_opt = this._mathKernel.toFloat32(this._b1);
-            this._W2_opt = this._mathKernel.flatten2D(this._W2);
-            this._b2_opt = this._mathKernel.toFloat32(this._b2);
-
-            // Optional: Prune small weights
-            if (NeuralClassifier.PRUNE_THRESHOLD > 0) {
-                const pruneResult1 = this._mathKernel.pruneWeights(this._W1_opt, NeuralClassifier.PRUNE_THRESHOLD);
-                const pruneResult2 = this._mathKernel.pruneWeights(this._W2_opt, NeuralClassifier.PRUNE_THRESHOLD);
-
-                this._W1_opt = pruneResult1.pruned;
-                this._W2_opt = pruneResult2.pruned;
-                this._metrics.sparsity = (pruneResult1.sparsity + pruneResult2.sparsity) / 2;
+        // Layer 2 Gradients
+        // dL/dA2 = W3^T * dZ3
+        let dA2 = new Array(forward.a2.length).fill(0);
+        for (let j = 0; j < this.W3[0].length; j++) { // output size
+            for (let i = 0; i < this.W3.length; i++) { // hidden2 size
+                dA2[i] += this.W3[i][j] * dZ3[j];
             }
-
-            // Optional: Quantize for memory efficiency
-            if (NeuralClassifier.USE_QUANTIZATION) {
-                this._W1_quant = this._mathKernel.quantizeWeights(this._W1_opt);
-                this._W2_quant = this._mathKernel.quantizeWeights(this._W2_opt);
-
-                // Calculate memory reduction (Float32 -> Int8 = 75% reduction)
-                const originalSize = (inputSize * hiddenSize + hiddenSize * outputSize) * 4;
-                const quantizedSize = (inputSize * hiddenSize + hiddenSize * outputSize) * 1;
-                this._metrics.memoryReduction = ((originalSize - quantizedSize) / originalSize) * 100;
-            }
-
-            this._log(`Weights optimized: Sparsity=${(this._metrics.sparsity * 100).toFixed(1)}%, Memory=-${this._metrics.memoryReduction.toFixed(1)}%`);
-        } catch (e) {
-            console.error('[NeuralClassifier] Weight optimization failed:', e);
-            this._useOptimized = false;
         }
+
+        // Dropout mask approximation
+        const dA2_drop = dA2.map((g, i) => forward.a2_drop[i] === 0 ? 0 : g / (1 - NeuralClassifier.DROPOUT_RATE));
+
+        // LeakyReLU derivative
+        const dZ2_bn = dA2_drop.map((g, i) => g * (forward.z2_bn[i] > 0 ? 1 : 0.01));
+
+        // BatchNorm Layer 2 Gradients
+        const epsilon = NeuralClassifier.BN_EPSILON;
+        const dZ2 = dZ2_bn.map((g, i) => g * this.gamma2[i] / Math.sqrt(this.runningVar2[i] + epsilon));
+        const dGamma2 = dZ2_bn.map((g, i) => g * (forward.z2[i] - this.runningMean2[i]) / Math.sqrt(this.runningVar2[i] + epsilon));
+        const dBeta2 = [...dZ2_bn];
+
+        // Weights/Bias 2 Gradients
+        const dW2 = dZ2.map((d, i) => forward.a1_drop.map(x => d * x));
+        const db2 = [...dZ2];
+
+        // Layer 1 Gradients
+        let dA1 = new Array(forward.a1.length).fill(0);
+        for (let j = 0; j < this.W2[0].length; j++) {
+            for (let i = 0; i < this.W2.length; i++) {
+                dA1[i] += this.W2[i][j] * dZ2[j];
+            }
+        }
+
+        const dA1_drop = dA1.map((g, i) => forward.a1_drop[i] === 0 ? 0 : g / (1 - NeuralClassifier.DROPOUT_RATE));
+        const dZ1_bn = dA1_drop.map((g, i) => g * (forward.z1_bn[i] > 0 ? 1 : 0.01));
+
+        // BatchNorm Layer 1
+        const dZ1 = dZ1_bn.map((g, i) => g * this.gamma1[i] / Math.sqrt(this.runningVar1[i] + epsilon));
+        const dGamma1 = dZ1_bn.map((g, i) => g * (forward.z1[i] - this.runningMean1[i]) / Math.sqrt(this.runningVar1[i] + epsilon));
+        const dBeta1 = [...dZ1_bn];
+
+        const dW1 = dZ1.map((d, i) => input.map(x => d * x));
+        const db1 = [...dZ1];
+
+        return { dW1, db1, dGamma1, dBeta1, dW2, db2, dGamma2, dBeta2, dW3, db3 };
     }
 
-    /**
-     * Re-optimize weights after training
-     * Call this after train() to update optimized weights
-     */
-    refreshOptimizedWeights() {
-        if (this._useOptimized && this._mathKernel) {
-            this._optimizeWeightsForInference();
+    predict(inputData) {
+        if (!this.W1) {
+            console.warn('⚠️ NeuralClassifier not initialized (no weights). Returning null.');
+            return null;
         }
-    }
 
-    // ========================================================================
-    // WEIGHT MANAGEMENT
-    // ========================================================================
-
-    /**
-     * Initialize with random weights (He initialization for all layers)
-     * Architecture: 59 → 32 → 16 → OUTPUT
-     * @private
-     */
-    _initializeRandomWeights() {
-        const inputSize = NeuralClassifier.INPUT_SIZE;
-        const hidden1Size = NeuralClassifier.HIDDEN1_SIZE;
-        const hidden2Size = NeuralClassifier.HIDDEN2_SIZE;
-        const hidden3Size = NeuralClassifier.HIDDEN3_SIZE || 128;  // Fallback to 128
-        const outputSize = this._fieldTypes?.getClassCount?.() || 88;  // 88 classes verified
-
-        // W1: Input → Hidden1 (He initialization for ReLU)
-        this._W1 = [];
-        const heScale1 = Math.sqrt(2.0 / inputSize);
-        for (let i = 0; i < inputSize; i++) {
-            this._W1[i] = [];
-            for (let h = 0; h < hidden1Size; h++) {
-                this._W1[i][h] = (Math.random() - 0.5) * 2 * heScale1;
-            }
+        // Optimization: Handle pre-extracted features from HybridClassifier
+        let features;
+        if (Array.isArray(inputData)) {
+            features = inputData;
+        } else {
+            features = this._featureExtractor.extract(inputData);
         }
-        this._b1 = new Array(hidden1Size).fill(0);
 
-        // W2: Hidden1 → Hidden2 (He initialization for ReLU)
-        this._W2 = [];
-        const heScale2 = Math.sqrt(2.0 / hidden1Size);
-        for (let h1 = 0; h1 < hidden1Size; h1++) {
-            this._W2[h1] = [];
-            for (let h2 = 0; h2 < hidden2Size; h2++) {
-                this._W2[h1][h2] = (Math.random() - 0.5) * 2 * heScale2;
-            }
+        if (!features) return null;
+
+        const forward = this._forward(features, false); // training=false
+
+        // Find top prediction
+        const maxProb = Math.max(...forward.probs);
+        const predictedIndex = forward.probs.indexOf(maxProb);
+        const predictedClass = this._fieldTypes?.getFieldTypeFromIndex?.(predictedIndex) || `class_${predictedIndex}`;
+
+        // Build probability map for top 5
+        const indexedProbs = forward.probs.map((p, i) => ({ index: i, prob: p }));
+        indexedProbs.sort((a, b) => b.prob - a.prob);
+
+        const top5 = {};
+        for (let i = 0; i < Math.min(5, indexedProbs.length); i++) {
+            const className = this._fieldTypes?.getFieldTypeFromIndex?.(indexedProbs[i].index) || `class_${indexedProbs[i].index}`;
+            top5[className] = indexedProbs[i].prob;
         }
-        this._b2 = new Array(hidden2Size).fill(0);
 
-        // W3: Hidden2 → Hidden3 (He initialization for ReLU) **NEW LAYER**
-        this._W3 = [];
-        const heScale3 = Math.sqrt(2.0 / hidden2Size);
-        for (let h2 = 0; h2 < hidden2Size; h2++) {
-            this._W3[h2] = [];
-            for (let h3 = 0; h3 < hidden3Size; h3++) {
-                this._W3[h2][h3] = (Math.random() - 0.5) * 2 * heScale3;
-            }
-        }
-        this._b3 = new Array(hidden3Size).fill(0);
-
-        // W4: Hidden3 → Output (Xavier initialization for Softmax) **RENAMED FROM W3**
-        this._W4 = [];
-        const xavierScale = Math.sqrt(1.0 / hidden3Size);
-        for (let h3 = 0; h3 < hidden3Size; h3++) {
-            this._W4[h3] = [];
-            for (let c = 0; c < outputSize; c++) {
-                this._W4[h3][c] = (Math.random() - 0.5) * 2 * xavierScale;
-            }
-        }
-        this._b4 = new Array(outputSize).fill(0);
-
-        console.log('[DEBUG] Weights initialized:');
-        console.log(`  W1: ${this._W1?.length || 0} x ${this._W1?.[0]?.length || 0}`);
-        console.log(`  W2: ${this._W2?.length || 0} x ${this._W2?.[0]?.length || 0}`);
-        console.log(`  W3: ${this._W3?.length || 0} x ${this._W3?.[0]?.length || 0}`);
-        console.log(`  W4: ${this._W4?.length || 0} x ${this._W4?.[0]?.length || 0}`);
-
-        this._log(`Weights initialized: ${inputSize} → ${hidden1Size} → ${hidden2Size} → ${hidden3Size} → ${outputSize}`);
-    }
-
-    /**
-     * Load weights from Chrome storage
-     * @private
-     * @returns {Promise<boolean>}
-     */
-    async _loadWeights() {
-        try {
-            const result = await chrome.storage.local.get(NeuralClassifier.STORAGE_KEY);
-            const data = result[NeuralClassifier.STORAGE_KEY];
-
-            // Version 4: 3-layer architecture with 107 output classes
-            if (data && data.version === 4 && data.W1 && data.W2 && data.W3) {
-                this._W1 = data.W1;
-                this._b1 = data.b1;
-                this._W2 = data.W2;
-                this._b2 = data.b2;
-                this._W3 = data.W3;
-                this._b3 = data.b3;
-                this._totalSamples = data.totalSamples || 0;
-                this._log(`Loaded v4 weights (${this._totalSamples} samples, ${data.W3[0]?.length || 107} classes)`);
-                return true;
-            }
-
-            // Version 1, 2, or 3: Old architecture, reinitialize for 107 classes
-            if (data?.version === 1 || data?.version === 2 || data?.version === 3) {
-                this._log(`Found v${data.version} weights, reinitializing to v4 (107 classes)`);
-                return false;
-            }
-        } catch (e) {
-            console.error('[NeuralClassifier] Failed to load weights:', e);
-        }
-        return false;
-    }
-
-    /**
-     * Load baseline weights bundled with extension
-     * @private
-     * @returns {Promise<boolean>}
-     */
-    async _loadBaselineWeights() {
-        try {
-            const baselineUrl = chrome.runtime.getURL('autofill/domains/inference/model_v4_baseline.json');
-            const response = await fetch(baselineUrl);
-
-            if (!response.ok) {
-                this._log('Baseline weights not found, using random initialization');
-                return false;
-            }
-
-            const data = await response.json();
-
-            if (data.version === 4 &&
-                data.W1 && data.W1.length > 0 &&
-                data.W2 && data.W2.length > 0 &&
-                data.W3 && data.W3.length > 0) {
-                this._W1 = data.W1;
-                this._b1 = data.b1;
-                this._W2 = data.W2;
-                this._b2 = data.b2;
-                this._W3 = data.W3;
-                this._b3 = data.b3;
-                this._totalSamples = 0;
-                this._log(`Loaded baseline weights (trained on ${data.metadata?.trainingExamples || 'N/A'} examples)`);
-                return true;
-            } else {
-                this._log('Baseline weights empty or invalid version, skipping.');
-            }
-        } catch (e) {
-            console.error('[NeuralClassifier] Failed to load baseline weights:', e);
-        }
-        return false;
-    }
-
-    /**
-     * Export current weights for persistence (used by training scripts)
-     * @returns {Object} Weight object
-     */
-    exportWeights() {
         return {
-            version: 4,
-            W1: this._W1,
-            b1: this._b1,
-            W2: this._W2,
-            b2: this._b2,
-            W3: this._W3,
-            b3: this._b3,
-            totalSamples: this._totalSamples,
-            timestamp: Date.now()
+            label: predictedClass, // Standardized for HybridClassifier
+            class: predictedClass, // Backward compatibility
+            confidence: maxProb,
+            probabilities: top5
         };
     }
 
-    /**
-     * Save weights to Chrome storage
-     * @private
-     * @returns {Promise<void>}
-     */
-    async _saveWeights() {
-        try {
-            const payload = {
-                W1: this._W1,
-                b1: this._b1,
-                W2: this._W2,
-                b2: this._b2,
-                W3: this._W3,
-                b3: this._b3,
-                totalSamples: this._totalSamples,
-                version: 4,
-                timestamp: Date.now()
-            };
-            await chrome.storage.local.set({ [NeuralClassifier.STORAGE_KEY]: payload });
-        } catch (e) {
-            console.error('[NeuralClassifier] Failed to save weights:', e);
-        }
-    }
+    evaluate(data) {
+        let correct = 0;
+        let totalLoss = 0;
 
-    // ========================================================================
-    // METRICS & UTILITIES
-    // ========================================================================
+        for (const sample of data) {
+            const features = sample.features;
+            const label = sample.label;
+            const targetIndex = this._fieldTypes?.getFieldTypeIndex?.(label) ?? 0;
 
-    /**
-     * Record performance metrics
-     * @private
-     * @param {number} startTime - Performance.now() start time
-     * @param {string} source - Classification source (heuristic/neural/none)
-     */
-    _recordMetrics(startTime, source) {
-        const elapsed = performance.now() - startTime;
+            const forward = this._forward(features, false);
 
-        this._metrics.totalPredictions++;
-        this._metrics.lastInferenceTime = elapsed;
+            // Cross-entropy loss
+            totalLoss += -Math.log(forward.probs[targetIndex] + 1e-15);
 
-        if (source === 'heuristic') {
-            this._metrics.heuristicMatches++;
-        } else if (source === 'neural') {
-            this._metrics.neuralMatches++;
+            // Accuracy
+            const predictedIndex = forward.probs.indexOf(Math.max(...forward.probs));
+            if (predictedIndex === targetIndex) correct++;
         }
 
-        // Running average
-        const n = this._metrics.totalPredictions;
-        this._metrics.averageInferenceTime += (elapsed - this._metrics.averageInferenceTime) / n;
-    }
-
-    /**
-     * Get performance metrics
-     * @returns {Object}
-     */
-    getMetrics() {
         return {
-            ...this._metrics,
-            totalSamples: this._totalSamples,
-            isInitialized: this._isInitialized
+            accuracy: (correct / data.length) * 100,
+            loss: totalLoss / data.length
         };
     }
 
-    /**
-     * Get the list of supported field types
-     * @returns {string[]}
-     */
-    getClasses() {
-        return this._fieldTypes?.ORDERED_CLASSES || [];
+    serialize() {
+        return JSON.stringify({
+            weights: {
+                W1: this.W1, b1: this.b1,
+                gamma1: this.gamma1, beta1: this.beta1,
+                runningMean1: this.runningMean1, runningVar1: this.runningVar1,
+
+                W2: this.W2, b2: this.b2,
+                gamma2: this.gamma2, beta2: this.beta2,
+                runningMean2: this.runningMean2, runningVar2: this.runningVar2,
+
+                W3: this.W3, b3: this.b3
+            }
+        });
     }
 
-    /**
-     * Reset training state and weights
-     * @returns {Promise<void>}
-     */
-    async reset() {
-        this._initializeRandomWeights();
-        this._totalSamples = 0;
-        await chrome.storage.local.remove(NeuralClassifier.STORAGE_KEY);
-        this._log('Reset to random weights');
-    }
+    loadWeights(json) {
+        try {
+            const data = typeof json === 'string' ? JSON.parse(json) : json;
+            // Handle both wrapped { weights: ... } and unwrapped { W1: ... } formats
+            const w = data.weights || data;
 
-    /**
-     * Debug logging helper
-     * @private
-     * @param {...any} args - Log arguments
-     */
-    _log(...args) {
-        if (this._debug) {
-            console.log('[NeuralClassifier]', ...args);
+            if (w.W1) this.W1 = w.W1;
+            if (w.b1) this.b1 = w.b1;
+
+            if (w.gamma1) this.gamma1 = w.gamma1;
+            if (w.beta1) this.beta1 = w.beta1;
+            if (w.beta1_bn && !this.beta1) this.beta1 = w.beta1_bn; // Handle beta mismatch
+
+            if (w.runningMean1) this.runningMean1 = w.runningMean1;
+            if (w.runningVar1) this.runningVar1 = w.runningVar1;
+
+            if (w.W2) this.W2 = w.W2;
+            if (w.b2) this.b2 = w.b2;
+
+            if (w.gamma2) this.gamma2 = w.gamma2;
+            if (w.beta2) this.beta2 = w.beta2;
+            if (w.beta2_bn && !this.beta2) this.beta2 = w.beta2_bn; // Handle beta mismatch
+
+            if (w.runningMean2) this.runningMean2 = w.runningMean2;
+            if (w.runningVar2) this.runningVar2 = w.runningVar2;
+
+            if (w.W3) this.W3 = w.W3;
+            if (w.b3) this.b3 = w.b3;
+
+            // Transpose weights if they are in [Input][Output] format (from training export)
+            // W1 Expected: [256][95], Loaded might be [95][256]
+            if (this.W1 && this.W1.length === NeuralClassifier.INPUT_SIZE && this.W1[0].length === NeuralClassifier.HIDDEN1_SIZE) {
+                console.log('🔄 Transposing W1 to match inference expectation...');
+                this.W1 = this._transpose(this.W1);
+            }
+
+            // W2 Expected: [128][256], Loaded might be [256][128]
+            if (this.W2 && this.W2.length === NeuralClassifier.HIDDEN1_SIZE && this.W2[0].length === NeuralClassifier.HIDDEN2_SIZE) {
+                console.log('🔄 Transposing W2 to match inference expectation...');
+                this.W2 = this._transpose(this.W2);
+            }
+
+            // W3 Expected: [88][128], Loaded might be [128][88]
+            const outputSize = this.b3 ? this.b3.length : NeuralClassifier.OUTPUT_SIZE;
+            if (this.W3 && this.W3.length === NeuralClassifier.HIDDEN2_SIZE && this.W3[0].length === outputSize) {
+                console.log('🔄 Transposing W3 to match inference expectation...');
+                this.W3 = this._transpose(this.W3);
+            }
+
+            // Simple validation
+            if (!this.W1 || !this.W2 || !this.W3) {
+                console.warn('⚠️ Partial weights loaded - check model format: ', Object.keys(w).slice(0, 5));
+                return false;
+            }
+
+            console.log('✅ NeuralClassifier weights loaded successfully');
+            console.log(`   W1: ${this.W1.length}x${this.W1[0]?.length}, b1: ${this.b1.length}`);
+            console.log(`   W2: ${this.W2.length}x${this.W2[0]?.length}, b2: ${this.b2.length}`);
+            console.log(`   W3: ${this.W3.length}x${this.W3[0]?.length}, b3: ${this.b3.length}`);
+            return true;
+        } catch (e) {
+            console.error('❌ Failed to load weights:', e);
+            return false;
         }
     }
+
+    _transpose(matrix) {
+        return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
+    }
 }
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-if (typeof window !== 'undefined') {
-    window.NeuralClassifier = NeuralClassifier;
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = NeuralClassifier;
-}
+module.exports = NeuralClassifier;

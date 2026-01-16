@@ -1,1652 +1,1652 @@
 [
-    {
-        "features": {
-            "label": "First Name",
-            "name": "firstName",
-            "automationId": "first-name-input",
-            "placeholder": "John",
-            "parentContext": "Personal Information",
-            "siblingContext": "Required"
-        },
-        "label": "first_name"
-    },
-    {
-        "features": {
-            "label": "Your First Name *",
-            "name": "applicant_fname",
-            "automationId": "qa-fname",
-            "placeholder": "Enter first name",
-            "parentContext": "Contact Details",
-            "siblingContext": null
-        },
-        "label": "first_name"
-    },
-    {
-        "features": {
-            "label": "Nombre",
-            "name": "nombre_input",
-            "automationId": "lever-first",
-            "placeholder": "Tu nombre",
-            "parentContext": "Datos Personales",
-            "siblingContext": "Campo obligatorio"
-        },
-        "label": "first_name"
-    },
-    {
-        "features": {
-            "label": "Vorname *",
-            "name": "wd-FirstName",
-            "automationId": "input-vorname",
-            "placeholder": "Max",
-            "parentContext": "Bewerbung",
-            "siblingContext": null
-        },
-        "label": "first_name"
-    },
-    {
-        "features": {
-            "label": "Given Name",
-            "name": "givenName",
-            "automationId": "gh-given-name",
-            "placeholder": null,
-            "parentContext": "Legal Name",
-            "siblingContext": "As on passport"
-        },
-        "label": "first_name"
-    },
-    {
-        "features": {
-            "label": "Prénom *",
-            "name": "prenom_field",
-            "automationId": "qa-prenom",
-            "placeholder": "Jean",
-            "parentContext": "Identité",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "first_name"
-    },
-    {
-        "features": {
-            "label": "First",
-            "name": "name_first",
-            "automationId": "input-first",
-            "placeholder": null,
-            "parentContext": "Name",
-            "siblingContext": null
-        },
-        "label": "first_name"
-    },
-    {
-        "features": {
-            "label": "Legal First Name",
-            "name": "legal_first",
-            "automationId": "legal-fname",
-            "placeholder": "Legal name",
-            "parentContext": "Verification",
-            "siblingContext": "Must match ID"
-        },
-        "label": "first_name"
-    },
-    {
-        "features": {
-            "label": "Last Name",
-            "name": "lastName",
-            "automationId": "last-name-input",
-            "placeholder": "Smith",
-            "parentContext": "Personal Information",
-            "siblingContext": "Required"
-        },
-        "label": "last_name"
-    },
-    {
-        "features": {
-            "label": "Your Last Name *",
-            "name": "applicant_lname",
-            "automationId": "qa-lname",
-            "placeholder": "Enter last name",
-            "parentContext": "Contact Details",
-            "siblingContext": null
-        },
-        "label": "last_name"
-    },
-    {
-        "features": {
-            "label": "Apellido",
-            "name": "apellido_input",
-            "automationId": "lever-last",
-            "placeholder": "Tu apellido",
-            "parentContext": "Datos Personales",
-            "siblingContext": "Campo obligatorio"
-        },
-        "label": "last_name"
-    },
-    {
-        "features": {
-            "label": "Nachname *",
-            "name": "wd-LastName",
-            "automationId": "input-nachname",
-            "placeholder": "Müller",
-            "parentContext": "Bewerbung",
-            "siblingContext": null
-        },
-        "label": "last_name"
-    },
-    {
-        "features": {
-            "label": "Family Name",
-            "name": "familyName",
-            "automationId": "gh-family-name",
-            "placeholder": null,
-            "parentContext": "Legal Name",
-            "siblingContext": "Surname"
-        },
-        "label": "last_name"
-    },
-    {
-        "features": {
-            "label": "Nom de famille *",
-            "name": "nom_field",
-            "automationId": "qa-nom",
-            "placeholder": "Dupont",
-            "parentContext": "Identité",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "last_name"
-    },
-    {
-        "features": {
-            "label": "Surname",
-            "name": "surname",
-            "automationId": "input-surname",
-            "placeholder": null,
-            "parentContext": "Name",
-            "siblingContext": null
-        },
-        "label": "last_name"
-    },
-    {
-        "features": {
-            "label": "Last",
-            "name": "name_last",
-            "automationId": "lever-last-name",
-            "placeholder": "Family name",
-            "parentContext": "Name",
-            "siblingContext": null
-        },
-        "label": "last_name"
-    },
-    {
-        "features": {
-            "label": "Email Address *",
-            "name": "email",
-            "automationId": "email-input",
-            "placeholder": "you@example.com",
-            "parentContext": "Contact",
-            "siblingContext": "Primary email"
-        },
-        "label": "email"
-    },
-    {
-        "features": {
-            "label": "Email",
-            "name": "email_address",
-            "automationId": "qa-email",
-            "placeholder": "Enter email",
-            "parentContext": "Contact Details",
-            "siblingContext": "Required"
-        },
-        "label": "email"
-    },
-    {
-        "features": {
-            "label": "E-Mail *",
-            "name": "wd-Email",
-            "automationId": "input-email",
-            "placeholder": "name@firma.de",
-            "parentContext": "Kontakt",
-            "siblingContext": null
-        },
-        "label": "email"
-    },
-    {
-        "features": {
-            "label": "Correo electrónico *",
-            "name": "correo",
-            "automationId": "lever-email",
-            "placeholder": "correo@ejemplo.com",
-            "parentContext": "Contacto",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "email"
-    },
-    {
-        "features": {
-            "label": "Adresse e-mail *",
-            "name": "email_fr",
-            "automationId": "gh-email",
-            "placeholder": "email@example.fr",
-            "parentContext": "Coordonnées",
-            "siblingContext": null
-        },
-        "label": "email"
-    },
-    {
-        "features": {
-            "label": "Work Email",
-            "name": "workEmail",
-            "automationId": "input-work-email",
-            "placeholder": "work@company.com",
-            "parentContext": "Professional Contact",
-            "siblingContext": "Preferred"
-        },
-        "label": "email"
-    },
-    {
-        "features": {
-            "label": "Personal Email",
-            "name": "personalEmail",
-            "automationId": "qa-personal-email",
-            "placeholder": null,
-            "parentContext": "Contact Info",
-            "siblingContext": null
-        },
-        "label": "email"
-    },
-    {
-        "features": {
-            "label": "Your Email",
-            "name": "user_email",
-            "automationId": "lever-user-email",
-            "placeholder": "Enter your email",
-            "parentContext": "Account",
-            "siblingContext": "For login"
-        },
-        "label": "email"
-    },
-    {
-        "features": {
-            "label": "Phone Number *",
-            "name": "phone",
-            "automationId": "phone-input",
-            "placeholder": "+1 555-0100",
-            "parentContext": "Contact",
-            "siblingContext": "Include country code"
-        },
-        "label": "phone"
-    },
-    {
-        "features": {
-            "label": "Phone",
-            "name": "phone_number",
-            "automationId": "qa-phone",
-            "placeholder": "555-555-5555",
-            "parentContext": "Contact Details",
-            "siblingContext": "Required"
-        },
-        "label": "phone"
-    },
-    {
-        "features": {
-            "label": "Telefon *",
-            "name": "wd-Phone",
-            "automationId": "input-telefon",
-            "placeholder": "+49 123 456789",
-            "parentContext": "Kontakt",
-            "siblingContext": null
-        },
-        "label": "phone"
-    },
-    {
-        "features": {
-            "label": "Teléfono *",
-            "name": "telefono",
-            "automationId": "lever-phone",
-            "placeholder": "+34 600 000 000",
-            "parentContext": "Contacto",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "phone"
-    },
-    {
-        "features": {
-            "label": "Numéro de téléphone *",
-            "name": "telephone_fr",
-            "automationId": "gh-phone",
-            "placeholder": "+33 1 23 45 67 89",
-            "parentContext": "Coordonnées",
-            "siblingContext": null
-        },
-        "label": "phone"
-    },
-    {
-        "features": {
-            "label": "Contact Number",
-            "name": "contactNumber",
-            "automationId": "input-contact",
-            "placeholder": "Your phone",
-            "parentContext": "Contact Info",
-            "siblingContext": "Mobile or landline"
-        },
-        "label": "phone"
-    },
-    {
-        "features": {
-            "label": "Primary Phone",
-            "name": "primaryPhone",
-            "automationId": "qa-primary-phone",
-            "placeholder": null,
-            "parentContext": "Contact",
-            "siblingContext": "Best number"
-        },
-        "label": "phone"
-    },
-    {
-        "features": {
-            "label": "Phone (with country code)",
-            "name": "intl_phone",
-            "automationId": "lever-intl-phone",
-            "placeholder": "+1...",
-            "parentContext": "Communication",
-            "siblingContext": null
-        },
-        "label": "phone"
-    },
-    {
-        "features": {
-            "label": "Home Phone",
-            "name": "homePhone",
-            "automationId": "home-phone-input",
-            "placeholder": "Landline",
-            "parentContext": "Contact",
-            "siblingContext": "Optional"
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Landline",
-            "name": "landline",
-            "automationId": "qa-landline",
-            "placeholder": "Home number",
-            "parentContext": "Contact Details",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Festnetz",
-            "name": "wd-Landline",
-            "automationId": "input-festnetz",
-            "placeholder": "030 12345678",
-            "parentContext": "Kontakt",
-            "siblingContext": "Optional"
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Teléfono fijo",
-            "name": "fijo",
-            "automationId": "lever-landline",
-            "placeholder": "91 000 00 00",
-            "parentContext": "Contacto",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Téléphone fixe",
-            "name": "fixe_fr",
-            "automationId": "gh-home-phone",
-            "placeholder": "01 23 45 67 89",
-            "parentContext": "Coordonnées",
-            "siblingContext": null
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "Home Number",
-            "name": "homeNumber",
-            "automationId": "input-home-num",
-            "placeholder": null,
-            "parentContext": "Contact Info",
-            "siblingContext": "Alternative"
-        },
-        "label": "phone_home"
-    },
-    {
-        "features": {
-            "label": "LinkedIn Profile",
-            "name": "linkedin",
-            "automationId": "linkedin-input",
-            "placeholder": "https://linkedin.com/in/...",
-            "parentContext": "Social",
-            "siblingContext": "Recommended"
-        },
-        "label": "linkedin_url"
-    },
-    {
-        "features": {
-            "label": "LinkedIn URL *",
-            "name": "linkedinUrl",
-            "automationId": "qa-linkedin",
-            "placeholder": "Your LinkedIn profile",
-            "parentContext": "Professional Links",
-            "siblingContext": "Required"
-        },
-        "label": "linkedin_url"
-    },
-    {
-        "features": {
-            "label": "LinkedIn-Profil",
-            "name": "wd-LinkedIn",
-            "automationId": "input-linkedin",
-            "placeholder": "https://linkedin.com/in/...",
-            "parentContext": "Soziale Medien",
-            "siblingContext": null
-        },
-        "label": "linkedin_url"
-    },
-    {
-        "features": {
-            "label": "Perfil de LinkedIn",
-            "name": "linkedin_es",
-            "automationId": "lever-linkedin",
-            "placeholder": "URL de LinkedIn",
-            "parentContext": "Redes",
-            "siblingContext": null
-        },
-        "label": "linkedin_url"
-    },
-    {
-        "features": {
-            "label": "Profil LinkedIn",
-            "name": "linkedin_fr",
-            "automationId": "gh-linkedin",
-            "placeholder": "https://linkedin.com/in/...",
-            "parentContext": "Réseaux sociaux",
-            "siblingContext": null
-        },
-        "label": "linkedin_url"
-    },
-    {
-        "features": {
-            "label": "LinkedIn",
-            "name": "linkedin_link",
-            "automationId": "input-li-url",
-            "placeholder": "linkedin.com/in/username",
-            "parentContext": "Links",
-            "siblingContext": "Public profile"
-        },
-        "label": "linkedin_url"
-    },
-    {
-        "features": {
-            "label": "GitHub Profile",
-            "name": "github",
-            "automationId": "github-input",
-            "placeholder": "https://github.com/...",
-            "parentContext": "Developer Links",
-            "siblingContext": "For technical roles"
-        },
-        "label": "github_url"
-    },
-    {
-        "features": {
-            "label": "GitHub URL",
-            "name": "githubUrl",
-            "automationId": "qa-github",
-            "placeholder": "Your GitHub profile",
-            "parentContext": "Technical Profile",
-            "siblingContext": null
-        },
-        "label": "github_url"
-    },
-    {
-        "features": {
-            "label": "GitHub-Profil",
-            "name": "wd-GitHub",
-            "automationId": "input-github",
-            "placeholder": "https://github.com/...",
-            "parentContext": "Links",
-            "siblingContext": null
-        },
-        "label": "github_url"
-    },
-    {
-        "features": {
-            "label": "Cuenta GitHub",
-            "name": "github_es",
-            "automationId": "lever-github",
-            "placeholder": "URL de GitHub",
-            "parentContext": "Enlaces",
-            "siblingContext": null
-        },
-        "label": "github_url"
-    },
-    {
-        "features": {
-            "label": "Profil GitHub",
-            "name": "github_fr",
-            "automationId": "gh-github",
-            "placeholder": "https://github.com/...",
-            "parentContext": "Développeur",
-            "siblingContext": null
-        },
-        "label": "github_url"
-    },
-    {
-        "features": {
-            "label": "GitHub",
-            "name": "github_link",
-            "automationId": "input-gh-url",
-            "placeholder": "github.com/username",
-            "parentContext": "Code",
-            "siblingContext": "Show your work"
-        },
-        "label": "github_url"
-    },
-    {
-        "features": {
-            "label": "Portfolio URL",
-            "name": "portfolio",
-            "automationId": "portfolio-input",
-            "placeholder": "https://yourportfolio.com",
-            "parentContext": "Work Samples",
-            "siblingContext": "Showcase projects"
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "Portfolio",
-            "name": "portfolioUrl",
-            "automationId": "qa-portfolio",
-            "placeholder": "Your portfolio site",
-            "parentContext": "Links",
-            "siblingContext": null
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "Portfolio-Link",
-            "name": "wd-Portfolio",
-            "automationId": "input-portfolio",
-            "placeholder": "https://...",
-            "parentContext": "Arbeitsproben",
-            "siblingContext": null
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "Portafolio",
-            "name": "portafolio_es",
-            "automationId": "lever-portfolio",
-            "placeholder": "URL de portafolio",
-            "parentContext": "Proyectos",
-            "siblingContext": null
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "Portfolio",
-            "name": "portfolio_fr",
-            "automationId": "gh-portfolio",
-            "placeholder": "https://...",
-            "parentContext": "Travaux",
-            "siblingContext": null
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "Personal Portfolio",
-            "name": "personal_portfolio",
-            "automationId": "input-folio",
-            "placeholder": "Link to work",
-            "parentContext": "Creative",
-            "siblingContext": null
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "City *",
-            "name": "city",
-            "automationId": "city-input",
-            "placeholder": "San Francisco",
-            "parentContext": "Address",
-            "siblingContext": "Required"
-        },
-        "label": "city"
-    },
-    {
-        "features": {
-            "label": "City",
-            "name": "cityField",
-            "automationId": "qa-city",
-            "placeholder": "Your city",
-            "parentContext": "Location",
-            "siblingContext": null
-        },
-        "label": "city"
-    },
-    {
-        "features": {
-            "label": "Stadt *",
-            "name": "wd-City",
-            "automationId": "input-stadt",
-            "placeholder": "Berlin",
-            "parentContext": "Anschrift",
-            "siblingContext": null
-        },
-        "label": "city"
-    },
-    {
-        "features": {
-            "label": "Ciudad *",
-            "name": "ciudad",
-            "automationId": "lever-city",
-            "placeholder": "Madrid",
-            "parentContext": "Ubicación",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "city"
-    },
-    {
-        "features": {
-            "label": "Ville *",
-            "name": "ville_fr",
-            "automationId": "gh-city",
-            "placeholder": "Paris",
-            "parentContext": "Adresse",
-            "siblingContext": null
-        },
-        "label": "city"
-    },
-    {
-        "features": {
-            "label": "Town",
-            "name": "town",
-            "automationId": "input-town",
-            "placeholder": "Town/City",
-            "parentContext": "Mailing",
-            "siblingContext": null
-        },
-        "label": "city"
-    },
-    {
-        "features": {
-            "label": "State *",
-            "name": "state",
-            "automationId": "state-input",
-            "placeholder": "California",
-            "parentContext": "Address",
-            "siblingContext": "Required"
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "State / Province",
-            "name": "stateProvince",
-            "automationId": "qa-state",
-            "placeholder": "Select state",
-            "parentContext": "Location",
-            "siblingContext": null
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "Bundesland",
-            "name": "wd-State",
-            "automationId": "input-bundesland",
-            "placeholder": "z.B. Bayern",
-            "parentContext": "Anschrift",
-            "siblingContext": null
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "Provincia",
-            "name": "provincia",
-            "automationId": "lever-state",
-            "placeholder": "Barcelona",
-            "parentContext": "Ubicación",
-            "siblingContext": null
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "Région",
-            "name": "region_fr",
-            "automationId": "gh-state",
-            "placeholder": "Île-de-France",
-            "parentContext": "Adresse",
-            "siblingContext": null
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "Province",
-            "name": "province",
-            "automationId": "input-province",
-            "placeholder": "Province",
-            "parentContext": "Mailing",
-            "siblingContext": null
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "ZIP Code *",
-            "name": "zip",
-            "automationId": "zip-input",
-            "placeholder": "94105",
-            "parentContext": "Address",
-            "siblingContext": "5-digit"
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "Postal Code *",
-            "name": "postalCode",
-            "automationId": "qa-zip",
-            "placeholder": "Enter postal code",
-            "parentContext": "Location",
-            "siblingContext": "Required"
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "PLZ *",
-            "name": "wd-Zip",
-            "automationId": "input-plz",
-            "placeholder": "10115",
-            "parentContext": "Anschrift",
-            "siblingContext": null
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "Código Postal *",
-            "name": "codigoPostal",
-            "automationId": "lever-zip",
-            "placeholder": "28001",
-            "parentContext": "Ubicación",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "Code postal *",
-            "name": "codepostal_fr",
-            "automationId": "gh-zip",
-            "placeholder": "75001",
-            "parentContext": "Adresse",
-            "siblingContext": null
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "Postcode",
-            "name": "postcode",
-            "automationId": "input-postcode",
-            "placeholder": "Postal code",
-            "parentContext": "Mailing",
-            "siblingContext": null
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "Country *",
-            "name": "country",
-            "automationId": "country-input",
-            "placeholder": "Select country",
-            "parentContext": "Address",
-            "siblingContext": "Required"
-        },
-        "label": "country"
-    },
-    {
-        "features": {
-            "label": "Country",
-            "name": "countryField",
-            "automationId": "qa-country",
-            "placeholder": "United States",
-            "parentContext": "Location",
-            "siblingContext": null
-        },
-        "label": "country"
-    },
-    {
-        "features": {
-            "label": "Land *",
-            "name": "wd-Country",
-            "automationId": "input-land",
-            "placeholder": "Deutschland",
-            "parentContext": "Anschrift",
-            "siblingContext": null
-        },
-        "label": "country"
-    },
-    {
-        "features": {
-            "label": "País *",
-            "name": "pais",
-            "automationId": "lever-country",
-            "placeholder": "España",
-            "parentContext": "Ubicación",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "country"
-    },
-    {
-        "features": {
-            "label": "Pays *",
-            "name": "pays_fr",
-            "automationId": "gh-country",
-            "placeholder": "France",
-            "parentContext": "Adresse",
-            "siblingContext": null
-        },
-        "label": "country"
-    },
-    {
-        "features": {
-            "label": "Nation",
-            "name": "nation",
-            "automationId": "input-nation",
-            "placeholder": "Country",
-            "parentContext": "Mailing",
-            "siblingContext": null
-        },
-        "label": "country"
-    },
-    {
-        "features": {
-            "label": "Current Location",
-            "name": "currentLocation",
-            "automationId": "location-input",
-            "placeholder": "City, State",
-            "parentContext": "About You",
-            "siblingContext": "Where do you live?"
-        },
-        "label": "current_location"
-    },
-    {
-        "features": {
-            "label": "Location",
-            "name": "location",
-            "automationId": "qa-location",
-            "placeholder": "Your location",
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "current_location"
-    },
-    {
-        "features": {
-            "label": "Aktueller Standort",
-            "name": "wd-Location",
-            "automationId": "input-standort",
-            "placeholder": "Berlin, Deutschland",
-            "parentContext": "Profil",
-            "siblingContext": null
-        },
-        "label": "current_location"
-    },
-    {
-        "features": {
-            "label": "Ubicación actual",
-            "name": "ubicacion",
-            "automationId": "lever-location",
-            "placeholder": "Madrid, España",
-            "parentContext": "Perfil",
-            "siblingContext": null
-        },
-        "label": "current_location"
-    },
-    {
-        "features": {
-            "label": "Localisation actuelle",
-            "name": "localisation_fr",
-            "automationId": "gh-location",
-            "placeholder": "Paris, France",
-            "parentContext": "Profil",
-            "siblingContext": null
-        },
-        "label": "current_location"
-    },
-    {
-        "features": {
-            "label": "Where are you based?",
-            "name": "basedIn",
-            "automationId": "input-based",
-            "placeholder": "City",
-            "parentContext": "Info",
-            "siblingContext": null
-        },
-        "label": "current_location"
-    },
-    {
-        "features": {
-            "label": "Cover Letter",
-            "name": "coverLetter",
-            "automationId": "cover-letter-upload",
-            "placeholder": null,
-            "parentContext": "Documents",
-            "siblingContext": "Optional"
-        },
-        "label": "cover_letter"
-    },
-    {
-        "features": {
-            "label": "Upload Cover Letter",
-            "name": "coverLetterFile",
-            "automationId": "qa-cover-letter",
-            "placeholder": "Select file",
-            "parentContext": "Attachments",
-            "siblingContext": null
-        },
-        "label": "cover_letter"
-    },
-    {
-        "features": {
-            "label": "Anschreiben",
-            "name": "wd-CoverLetter",
-            "automationId": "input-anschreiben",
-            "placeholder": null,
-            "parentContext": "Dokumente",
-            "siblingContext": "Optional"
-        },
-        "label": "cover_letter"
-    },
-    {
-        "features": {
-            "label": "Carta de presentación",
-            "name": "carta_es",
-            "automationId": "lever-cover",
-            "placeholder": "Subir carta",
-            "parentContext": "Documentos",
-            "siblingContext": null
-        },
-        "label": "cover_letter"
-    },
-    {
-        "features": {
-            "label": "Lettre de motivation",
-            "name": "lettre_fr",
-            "automationId": "gh-cover",
-            "placeholder": null,
-            "parentContext": "Documents",
-            "siblingContext": "Télécharger"
-        },
-        "label": "cover_letter"
-    },
-    {
-        "features": {
-            "label": "Attach Cover Letter",
-            "name": "attachCover",
-            "automationId": "input-letter",
-            "placeholder": "Upload letter",
-            "parentContext": "Files",
-            "siblingContext": null
-        },
-        "label": "cover_letter"
-    },
-    {
-        "features": {
-            "label": "Company",
-            "name": "company",
-            "automationId": "company-input",
-            "placeholder": "Company name",
-            "parentContext": "Experience",
-            "siblingContext": "Employer"
-        },
-        "label": "employer_name"
-    },
-    {
-        "features": {
-            "label": "Employer Name *",
-            "name": "employerName",
-            "automationId": "qa-employer",
-            "placeholder": "Where did you work?",
-            "parentContext": "Work History",
-            "siblingContext": "Required"
-        },
-        "label": "employer_name"
-    },
-    {
-        "features": {
-            "label": "Arbeitgeber",
-            "name": "wd-Employer",
-            "automationId": "input-arbeitgeber",
-            "placeholder": "Firma",
-            "parentContext": "Berufserfahrung",
-            "siblingContext": null
-        },
-        "label": "employer_name"
-    },
-    {
-        "features": {
-            "label": "Empresa",
-            "name": "empresa_es",
-            "automationId": "lever-employer",
-            "placeholder": "Nombre de empresa",
-            "parentContext": "Experiencia",
-            "siblingContext": null
-        },
-        "label": "employer_name"
-    },
-    {
-        "features": {
-            "label": "Entreprise",
-            "name": "entreprise_fr",
-            "automationId": "gh-employer",
-            "placeholder": "Nom de l'entreprise",
-            "parentContext": "Expérience",
-            "siblingContext": null
-        },
-        "label": "employer_name"
-    },
-    {
-        "features": {
-            "label": "Organization",
-            "name": "organization",
-            "automationId": "input-org",
-            "placeholder": "Org name",
-            "parentContext": "Work",
-            "siblingContext": null
-        },
-        "label": "employer_name"
-    },
-    {
-        "features": {
-            "label": "Job Title *",
-            "name": "jobTitle",
-            "automationId": "job-title-input",
-            "placeholder": "Software Engineer",
-            "parentContext": "Experience",
-            "siblingContext": "Your role"
-        },
-        "label": "job_title"
-    },
-    {
-        "features": {
-            "label": "Position Title",
-            "name": "positionTitle",
-            "automationId": "qa-title",
-            "placeholder": "Title held",
-            "parentContext": "Work History",
-            "siblingContext": "Required"
-        },
-        "label": "job_title"
-    },
-    {
-        "features": {
-            "label": "Berufsbezeichnung *",
-            "name": "wd-Title",
-            "automationId": "input-titel",
-            "placeholder": "z.B. Entwickler",
-            "parentContext": "Position",
-            "siblingContext": null
-        },
-        "label": "job_title"
-    },
-    {
-        "features": {
-            "label": "Puesto *",
-            "name": "puesto_es",
-            "automationId": "lever-title",
-            "placeholder": "Título del puesto",
-            "parentContext": "Empleo",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "job_title"
-    },
-    {
-        "features": {
-            "label": "Intitulé du poste *",
-            "name": "intitule_fr",
-            "automationId": "gh-title",
-            "placeholder": "Poste occupé",
-            "parentContext": "Expérience",
-            "siblingContext": null
-        },
-        "label": "job_title"
-    },
-    {
-        "features": {
-            "label": "Role",
-            "name": "role",
-            "automationId": "input-role",
-            "placeholder": "Your role",
-            "parentContext": "Work",
-            "siblingContext": null
-        },
-        "label": "job_title"
-    },
-    {
-        "features": {
-            "label": "School Name *",
-            "name": "schoolName",
-            "automationId": "school-input",
-            "placeholder": "University of...",
-            "parentContext": "Education",
-            "siblingContext": "Institution"
-        },
-        "label": "institution_name"
-    },
-    {
-        "features": {
-            "label": "University",
-            "name": "university",
-            "automationId": "qa-school",
-            "placeholder": "Where did you study?",
-            "parentContext": "Academic History",
-            "siblingContext": "Required"
-        },
-        "label": "institution_name"
-    },
-    {
-        "features": {
-            "label": "Hochschule *",
-            "name": "wd-School",
-            "automationId": "input-uni",
-            "placeholder": "Universität",
-            "parentContext": "Ausbildung",
-            "siblingContext": null
-        },
-        "label": "institution_name"
-    },
-    {
-        "features": {
-            "label": "Universidad *",
-            "name": "universidad_es",
-            "automationId": "lever-school",
-            "placeholder": "Nombre de universidad",
-            "parentContext": "Educación",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "institution_name"
-    },
-    {
-        "features": {
-            "label": "Établissement *",
-            "name": "etablissement_fr",
-            "automationId": "gh-school",
-            "placeholder": "Nom de l'école",
-            "parentContext": "Formation",
-            "siblingContext": null
-        },
-        "label": "institution_name"
-    },
-    {
-        "features": {
-            "label": "College",
-            "name": "college",
-            "automationId": "input-college",
-            "placeholder": "College name",
-            "parentContext": "Education",
-            "siblingContext": null
-        },
-        "label": "institution_name"
-    },
-    {
-        "features": {
-            "label": "Degree *",
-            "name": "degree",
-            "automationId": "degree-input",
-            "placeholder": "Bachelor's, Master's...",
-            "parentContext": "Education",
-            "siblingContext": "Type of degree"
-        },
-        "label": "degree_type"
-    },
-    {
-        "features": {
-            "label": "Degree Type",
-            "name": "degreeType",
-            "automationId": "qa-degree",
-            "placeholder": "Select degree",
-            "parentContext": "Academic History",
-            "siblingContext": null
-        },
-        "label": "degree_type"
-    },
-    {
-        "features": {
-            "label": "Abschluss *",
-            "name": "wd-Degree",
-            "automationId": "input-abschluss",
-            "placeholder": "Bachelor/Master",
-            "parentContext": "Ausbildung",
-            "siblingContext": null
-        },
-        "label": "degree_type"
-    },
-    {
-        "features": {
-            "label": "Título *",
-            "name": "titulo_es",
-            "automationId": "lever-degree",
-            "placeholder": "Tipo de título",
-            "parentContext": "Educación",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "degree_type"
-    },
-    {
-        "features": {
-            "label": "Diplôme *",
-            "name": "diplome_fr",
-            "automationId": "gh-degree",
-            "placeholder": "Licence/Master",
-            "parentContext": "Formation",
-            "siblingContext": null
-        },
-        "label": "degree_type"
-    },
-    {
-        "features": {
-            "label": "Qualification",
-            "name": "qualification",
-            "automationId": "input-qual",
-            "placeholder": "Degree type",
-            "parentContext": "Education",
-            "siblingContext": null
-        },
-        "label": "degree_type"
-    },
-    {
-        "features": {
-            "label": "Field of Study *",
-            "name": "fieldOfStudy",
-            "automationId": "fos-input",
-            "placeholder": "Computer Science",
-            "parentContext": "Education",
-            "siblingContext": "Major"
-        },
-        "label": "field_of_study"
-    },
-    {
-        "features": {
-            "label": "Major",
-            "name": "major",
-            "automationId": "qa-major",
-            "placeholder": "Your major",
-            "parentContext": "Academic Details",
-            "siblingContext": null
-        },
-        "label": "field_of_study"
-    },
-    {
-        "features": {
-            "label": "Studienfach *",
-            "name": "wd-Major",
-            "automationId": "input-fach",
-            "placeholder": "Informatik",
-            "parentContext": "Studium",
-            "siblingContext": null
-        },
-        "label": "field_of_study"
-    },
-    {
-        "features": {
-            "label": "Carrera *",
-            "name": "carrera_es",
-            "automationId": "lever-major",
-            "placeholder": "Campo de estudio",
-            "parentContext": "Educación",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "field_of_study"
-    },
-    {
-        "features": {
-            "label": "Domaine d'études *",
-            "name": "domaine_fr",
-            "automationId": "gh-major",
-            "placeholder": "Spécialité",
-            "parentContext": "Formation",
-            "siblingContext": null
-        },
-        "label": "field_of_study"
-    },
-    {
-        "features": {
-            "label": "Discipline",
-            "name": "discipline",
-            "automationId": "input-disc",
-            "placeholder": "Subject area",
-            "parentContext": "Education",
-            "siblingContext": null
-        },
-        "label": "field_of_study"
-    },
-    {
-        "features": {
-            "label": "Skills *",
-            "name": "skills",
-            "automationId": "skills-input",
-            "placeholder": "Python, JavaScript, SQL...",
-            "parentContext": "Qualifications",
-            "siblingContext": "Comma separated"
-        },
-        "label": "skills"
-    },
-    {
-        "features": {
-            "label": "Key Skills",
-            "name": "keySkills",
-            "automationId": "qa-skills",
-            "placeholder": "Enter your skills",
-            "parentContext": "Competencies",
-            "siblingContext": "Required"
-        },
-        "label": "skills"
-    },
-    {
-        "features": {
-            "label": "Fähigkeiten *",
-            "name": "wd-Skills",
-            "automationId": "input-skills",
-            "placeholder": "Ihre Fähigkeiten",
-            "parentContext": "Qualifikationen",
-            "siblingContext": null
-        },
-        "label": "skills"
-    },
-    {
-        "features": {
-            "label": "Habilidades *",
-            "name": "habilidades_es",
-            "automationId": "lever-skills",
-            "placeholder": "Tus habilidades",
-            "parentContext": "Perfil",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "skills"
-    },
-    {
-        "features": {
-            "label": "Compétences *",
-            "name": "competences_fr",
-            "automationId": "gh-skills",
-            "placeholder": "Vos compétences",
-            "parentContext": "Profil",
-            "siblingContext": null
-        },
-        "label": "skills"
-    },
-    {
-        "features": {
-            "label": "Expertise",
-            "name": "expertise",
-            "automationId": "input-expertise",
-            "placeholder": "Your expertise",
-            "parentContext": "Skills",
-            "siblingContext": null
-        },
-        "label": "skills"
-    },
-    {
-        "features": {
-            "label": "Years of Experience *",
-            "name": "yearsExperience",
-            "automationId": "exp-input",
-            "placeholder": "e.g. 5",
-            "parentContext": "Background",
-            "siblingContext": "Total years"
-        },
-        "label": "years_experience"
-    },
-    {
-        "features": {
-            "label": "Total Experience",
-            "name": "totalExperience",
-            "automationId": "qa-years",
-            "placeholder": "Number of years",
-            "parentContext": "Summary",
-            "siblingContext": "Required"
-        },
-        "label": "years_experience"
-    },
-    {
-        "features": {
-            "label": "Berufserfahrung (Jahre) *",
-            "name": "wd-Experience",
-            "automationId": "input-erfahrung",
-            "placeholder": "z.B. 3",
-            "parentContext": "Profil",
-            "siblingContext": null
-        },
-        "label": "years_experience"
-    },
-    {
-        "features": {
-            "label": "Años de experiencia *",
-            "name": "anos_es",
-            "automationId": "lever-years",
-            "placeholder": "Número de años",
-            "parentContext": "Experiencia",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "years_experience"
-    },
-    {
-        "features": {
-            "label": "Années d'expérience *",
-            "name": "annees_fr",
-            "automationId": "gh-years",
-            "placeholder": "Nombre d'années",
-            "parentContext": "Expérience",
-            "siblingContext": null
-        },
-        "label": "years_experience"
-    },
-    {
-        "features": {
-            "label": "Experience (Years)",
-            "name": "expYears",
-            "automationId": "input-exp-years",
-            "placeholder": "Years",
-            "parentContext": "Career",
-            "siblingContext": null
-        },
-        "label": "years_experience"
-    },
-    {
-        "features": {
-            "label": "Expected Salary *",
-            "name": "expectedSalary",
-            "automationId": "salary-input",
-            "placeholder": "$80,000",
-            "parentContext": "Compensation",
-            "siblingContext": "Annual base"
-        },
-        "label": "salary_expected"
-    },
-    {
-        "features": {
-            "label": "Salary Expectation",
-            "name": "salaryExpectation",
-            "automationId": "qa-salary",
-            "placeholder": "Desired salary",
-            "parentContext": "Preferences",
-            "siblingContext": "Required"
-        },
-        "label": "salary_expected"
-    },
-    {
-        "features": {
-            "label": "Gehaltsvorstellung *",
-            "name": "wd-Salary",
-            "automationId": "input-gehalt",
-            "placeholder": "Wunschgehalt",
-            "parentContext": "Vergütung",
-            "siblingContext": null
-        },
-        "label": "salary_expected"
-    },
-    {
-        "features": {
-            "label": "Salario esperado *",
-            "name": "salario_es",
-            "automationId": "lever-salary",
-            "placeholder": "Expectativa salarial",
-            "parentContext": "Compensación",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "salary_expected"
-    },
-    {
-        "features": {
-            "label": "Prétention salariale *",
-            "name": "pretention_fr",
-            "automationId": "gh-salary",
-            "placeholder": "Salaire souhaité",
-            "parentContext": "Rémunération",
-            "siblingContext": null
-        },
-        "label": "salary_expected"
-    },
-    {
-        "features": {
-            "label": "Desired Compensation",
-            "name": "desiredComp",
-            "automationId": "input-comp",
-            "placeholder": "Amount",
-            "parentContext": "Pay",
-            "siblingContext": null
-        },
-        "label": "salary_expected"
-    },
-    {
-        "features": {
-            "label": "Site Search",
-            "name": "search",
-            "automationId": "search-input",
-            "placeholder": "Search...",
-            "parentContext": "Navigation",
-            "siblingContext": null
-        },
-        "label": "unknown"
-    },
-    {
-        "features": {
-            "label": "Keyword",
-            "name": "keyword",
-            "automationId": "qa-search",
-            "placeholder": "Enter keywords",
-            "parentContext": "Header",
-            "siblingContext": "Press Enter"
-        },
-        "label": "unknown"
-    },
-    {
-        "features": {
-            "label": "Suche",
-            "name": "wd-Search",
-            "automationId": "input-suche",
-            "placeholder": "Suchen...",
-            "parentContext": "Topbar",
-            "siblingContext": null
-        },
-        "label": "unknown"
-    },
-    {
-        "features": {
-            "label": "Buscar",
-            "name": "buscar_es",
-            "automationId": "lever-search",
-            "placeholder": "Buscar...",
-            "parentContext": "Navegación",
-            "siblingContext": null
-        },
-        "label": "unknown"
-    },
-    {
-        "features": {
-            "label": "Rechercher",
-            "name": "recherche_fr",
-            "automationId": "gh-search",
-            "placeholder": "Rechercher...",
-            "parentContext": "Entête",
-            "siblingContext": null
-        },
-        "label": "unknown"
-    },
-    {
-        "features": {
-            "label": "Newsletter Signup",
-            "name": "newsletter",
-            "automationId": "input-newsletter",
-            "placeholder": "Your email",
-            "parentContext": "Footer",
-            "siblingContext": "Subscribe"
-        },
-        "label": "unknown"
-    },
-    {
-        "features": {
-            "label": "Promo Code",
-            "name": "promoCode",
-            "automationId": "qa-promo",
-            "placeholder": "Enter code",
-            "parentContext": "Checkout",
-            "siblingContext": "Optional"
-        },
-        "label": "unknown"
-    },
-    {
-        "features": {
-            "label": "Captcha",
-            "name": "captcha",
-            "automationId": "input-captcha",
-            "placeholder": "Enter code",
-            "parentContext": "Security",
-            "siblingContext": "Verify"
-        },
-        "label": "unknown"
-    },
-    {
-        "features": {
-            "label": "Comments",
-            "name": "comments",
-            "automationId": "lever-comments",
-            "placeholder": "Leave a comment",
-            "parentContext": "Feedback",
-            "siblingContext": null
-        },
-        "label": "unknown"
-    },
-    {
-        "features": {
-            "label": "Message",
-            "name": "message",
-            "automationId": "gh-message",
-            "placeholder": "Your message",
-            "parentContext": "Contact Form",
-            "siblingContext": null
-        },
-        "label": "unknown"
-    }
+  {
+    "features": {
+      "label": "First Name",
+      "name": "firstName",
+      "automationId": "first-name-input",
+      "placeholder": "John",
+      "parentContext": "Personal Information",
+      "siblingContext": "Required"
+    },
+    "label": "first_name"
+  },
+  {
+    "features": {
+      "label": "Your First Name *",
+      "name": "applicant_fname",
+      "automationId": "qa-fname",
+      "placeholder": "Enter first name",
+      "parentContext": "Contact Details",
+      "siblingContext": null
+    },
+    "label": "first_name"
+  },
+  {
+    "features": {
+      "label": "Nombre",
+      "name": "nombre_input",
+      "automationId": "lever-first",
+      "placeholder": "Tu nombre",
+      "parentContext": "Datos Personales",
+      "siblingContext": "Campo obligatorio"
+    },
+    "label": "first_name"
+  },
+  {
+    "features": {
+      "label": "Vorname *",
+      "name": "wd-FirstName",
+      "automationId": "input-vorname",
+      "placeholder": "Max",
+      "parentContext": "Bewerbung",
+      "siblingContext": null
+    },
+    "label": "first_name"
+  },
+  {
+    "features": {
+      "label": "Given Name",
+      "name": "givenName",
+      "automationId": "gh-given-name",
+      "placeholder": null,
+      "parentContext": "Legal Name",
+      "siblingContext": "As on passport"
+    },
+    "label": "first_name"
+  },
+  {
+    "features": {
+      "label": "Prénom *",
+      "name": "prenom_field",
+      "automationId": "qa-prenom",
+      "placeholder": "Jean",
+      "parentContext": "Identité",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "first_name"
+  },
+  {
+    "features": {
+      "label": "First",
+      "name": "name_first",
+      "automationId": "input-first",
+      "placeholder": null,
+      "parentContext": "Name",
+      "siblingContext": null
+    },
+    "label": "first_name"
+  },
+  {
+    "features": {
+      "label": "Legal First Name",
+      "name": "legal_first",
+      "automationId": "legal-fname",
+      "placeholder": "Legal name",
+      "parentContext": "Verification",
+      "siblingContext": "Must match ID"
+    },
+    "label": "first_name"
+  },
+  {
+    "features": {
+      "label": "Last Name",
+      "name": "lastName",
+      "automationId": "last-name-input",
+      "placeholder": "Smith",
+      "parentContext": "Personal Information",
+      "siblingContext": "Required"
+    },
+    "label": "last_name"
+  },
+  {
+    "features": {
+      "label": "Your Last Name *",
+      "name": "applicant_lname",
+      "automationId": "qa-lname",
+      "placeholder": "Enter last name",
+      "parentContext": "Contact Details",
+      "siblingContext": null
+    },
+    "label": "last_name"
+  },
+  {
+    "features": {
+      "label": "Apellido",
+      "name": "apellido_input",
+      "automationId": "lever-last",
+      "placeholder": "Tu apellido",
+      "parentContext": "Datos Personales",
+      "siblingContext": "Campo obligatorio"
+    },
+    "label": "last_name"
+  },
+  {
+    "features": {
+      "label": "Nachname *",
+      "name": "wd-LastName",
+      "automationId": "input-nachname",
+      "placeholder": "Müller",
+      "parentContext": "Bewerbung",
+      "siblingContext": null
+    },
+    "label": "last_name"
+  },
+  {
+    "features": {
+      "label": "Family Name",
+      "name": "familyName",
+      "automationId": "gh-family-name",
+      "placeholder": null,
+      "parentContext": "Legal Name",
+      "siblingContext": "Surname"
+    },
+    "label": "last_name"
+  },
+  {
+    "features": {
+      "label": "Nom de famille *",
+      "name": "nom_field",
+      "automationId": "qa-nom",
+      "placeholder": "Dupont",
+      "parentContext": "Identité",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "last_name"
+  },
+  {
+    "features": {
+      "label": "Surname",
+      "name": "surname",
+      "automationId": "input-surname",
+      "placeholder": null,
+      "parentContext": "Name",
+      "siblingContext": null
+    },
+    "label": "last_name"
+  },
+  {
+    "features": {
+      "label": "Last",
+      "name": "name_last",
+      "automationId": "lever-last-name",
+      "placeholder": "Family name",
+      "parentContext": "Name",
+      "siblingContext": null
+    },
+    "label": "last_name"
+  },
+  {
+    "features": {
+      "label": "Email Address *",
+      "name": "email",
+      "automationId": "email-input",
+      "placeholder": "you@example.com",
+      "parentContext": "Contact",
+      "siblingContext": "Primary email"
+    },
+    "label": "email"
+  },
+  {
+    "features": {
+      "label": "Email",
+      "name": "email_address",
+      "automationId": "qa-email",
+      "placeholder": "Enter email",
+      "parentContext": "Contact Details",
+      "siblingContext": "Required"
+    },
+    "label": "email"
+  },
+  {
+    "features": {
+      "label": "E-Mail *",
+      "name": "wd-Email",
+      "automationId": "input-email",
+      "placeholder": "name@firma.de",
+      "parentContext": "Kontakt",
+      "siblingContext": null
+    },
+    "label": "email"
+  },
+  {
+    "features": {
+      "label": "Correo electrónico *",
+      "name": "correo",
+      "automationId": "lever-email",
+      "placeholder": "correo@ejemplo.com",
+      "parentContext": "Contacto",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "email"
+  },
+  {
+    "features": {
+      "label": "Adresse e-mail *",
+      "name": "email_fr",
+      "automationId": "gh-email",
+      "placeholder": "email@example.fr",
+      "parentContext": "Coordonnées",
+      "siblingContext": null
+    },
+    "label": "email"
+  },
+  {
+    "features": {
+      "label": "Work Email",
+      "name": "workEmail",
+      "automationId": "input-work-email",
+      "placeholder": "work@company.com",
+      "parentContext": "Professional Contact",
+      "siblingContext": "Preferred"
+    },
+    "label": "email"
+  },
+  {
+    "features": {
+      "label": "Personal Email",
+      "name": "personalEmail",
+      "automationId": "qa-personal-email",
+      "placeholder": null,
+      "parentContext": "Contact Info",
+      "siblingContext": null
+    },
+    "label": "email"
+  },
+  {
+    "features": {
+      "label": "Your Email",
+      "name": "user_email",
+      "automationId": "lever-user-email",
+      "placeholder": "Enter your email",
+      "parentContext": "Account",
+      "siblingContext": "For login"
+    },
+    "label": "email"
+  },
+  {
+    "features": {
+      "label": "Phone Number *",
+      "name": "phone",
+      "automationId": "phone-input",
+      "placeholder": "+1 555-0100",
+      "parentContext": "Contact",
+      "siblingContext": "Include country code"
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "Phone",
+      "name": "phone_number",
+      "automationId": "qa-phone",
+      "placeholder": "555-555-5555",
+      "parentContext": "Contact Details",
+      "siblingContext": "Required"
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "Telefon *",
+      "name": "wd-Phone",
+      "automationId": "input-telefon",
+      "placeholder": "+49 123 456789",
+      "parentContext": "Kontakt",
+      "siblingContext": null
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "Teléfono *",
+      "name": "telefono",
+      "automationId": "lever-phone",
+      "placeholder": "+34 600 000 000",
+      "parentContext": "Contacto",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "Numéro de téléphone *",
+      "name": "telephone_fr",
+      "automationId": "gh-phone",
+      "placeholder": "+33 1 23 45 67 89",
+      "parentContext": "Coordonnées",
+      "siblingContext": null
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "Contact Number",
+      "name": "contactNumber",
+      "automationId": "input-contact",
+      "placeholder": "Your phone",
+      "parentContext": "Contact Info",
+      "siblingContext": "Mobile or landline"
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "Primary Phone",
+      "name": "primaryPhone",
+      "automationId": "qa-primary-phone",
+      "placeholder": null,
+      "parentContext": "Contact",
+      "siblingContext": "Best number"
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "Phone (with country code)",
+      "name": "intl_phone",
+      "automationId": "lever-intl-phone",
+      "placeholder": "+1...",
+      "parentContext": "Communication",
+      "siblingContext": null
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "Home Phone",
+      "name": "homePhone",
+      "automationId": "home-phone-input",
+      "placeholder": "Landline",
+      "parentContext": "Contact",
+      "siblingContext": "Optional"
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Landline",
+      "name": "landline",
+      "automationId": "qa-landline",
+      "placeholder": "Home number",
+      "parentContext": "Contact Details",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Festnetz",
+      "name": "wd-Landline",
+      "automationId": "input-festnetz",
+      "placeholder": "030 12345678",
+      "parentContext": "Kontakt",
+      "siblingContext": "Optional"
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Teléfono fijo",
+      "name": "fijo",
+      "automationId": "lever-landline",
+      "placeholder": "91 000 00 00",
+      "parentContext": "Contacto",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Téléphone fixe",
+      "name": "fixe_fr",
+      "automationId": "gh-home-phone",
+      "placeholder": "01 23 45 67 89",
+      "parentContext": "Coordonnées",
+      "siblingContext": null
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "Home Number",
+      "name": "homeNumber",
+      "automationId": "input-home-num",
+      "placeholder": null,
+      "parentContext": "Contact Info",
+      "siblingContext": "Alternative"
+    },
+    "label": "phone_home"
+  },
+  {
+    "features": {
+      "label": "LinkedIn Profile",
+      "name": "linkedin",
+      "automationId": "linkedin-input",
+      "placeholder": "https://linkedin.com/in/...",
+      "parentContext": "Social",
+      "siblingContext": "Recommended"
+    },
+    "label": "linkedin_url"
+  },
+  {
+    "features": {
+      "label": "LinkedIn URL *",
+      "name": "linkedinUrl",
+      "automationId": "qa-linkedin",
+      "placeholder": "Your LinkedIn profile",
+      "parentContext": "Professional Links",
+      "siblingContext": "Required"
+    },
+    "label": "linkedin_url"
+  },
+  {
+    "features": {
+      "label": "LinkedIn-Profil",
+      "name": "wd-LinkedIn",
+      "automationId": "input-linkedin",
+      "placeholder": "https://linkedin.com/in/...",
+      "parentContext": "Soziale Medien",
+      "siblingContext": null
+    },
+    "label": "linkedin_url"
+  },
+  {
+    "features": {
+      "label": "Perfil de LinkedIn",
+      "name": "linkedin_es",
+      "automationId": "lever-linkedin",
+      "placeholder": "URL de LinkedIn",
+      "parentContext": "Redes",
+      "siblingContext": null
+    },
+    "label": "linkedin_url"
+  },
+  {
+    "features": {
+      "label": "Profil LinkedIn",
+      "name": "linkedin_fr",
+      "automationId": "gh-linkedin",
+      "placeholder": "https://linkedin.com/in/...",
+      "parentContext": "Réseaux sociaux",
+      "siblingContext": null
+    },
+    "label": "linkedin_url"
+  },
+  {
+    "features": {
+      "label": "LinkedIn",
+      "name": "linkedin_link",
+      "automationId": "input-li-url",
+      "placeholder": "linkedin.com/in/username",
+      "parentContext": "Links",
+      "siblingContext": "Public profile"
+    },
+    "label": "linkedin_url"
+  },
+  {
+    "features": {
+      "label": "GitHub Profile",
+      "name": "github",
+      "automationId": "github-input",
+      "placeholder": "https://github.com/...",
+      "parentContext": "Developer Links",
+      "siblingContext": "For technical roles"
+    },
+    "label": "github_url"
+  },
+  {
+    "features": {
+      "label": "GitHub URL",
+      "name": "githubUrl",
+      "automationId": "qa-github",
+      "placeholder": "Your GitHub profile",
+      "parentContext": "Technical Profile",
+      "siblingContext": null
+    },
+    "label": "github_url"
+  },
+  {
+    "features": {
+      "label": "GitHub-Profil",
+      "name": "wd-GitHub",
+      "automationId": "input-github",
+      "placeholder": "https://github.com/...",
+      "parentContext": "Links",
+      "siblingContext": null
+    },
+    "label": "github_url"
+  },
+  {
+    "features": {
+      "label": "Cuenta GitHub",
+      "name": "github_es",
+      "automationId": "lever-github",
+      "placeholder": "URL de GitHub",
+      "parentContext": "Enlaces",
+      "siblingContext": null
+    },
+    "label": "github_url"
+  },
+  {
+    "features": {
+      "label": "Profil GitHub",
+      "name": "github_fr",
+      "automationId": "gh-github",
+      "placeholder": "https://github.com/...",
+      "parentContext": "Développeur",
+      "siblingContext": null
+    },
+    "label": "github_url"
+  },
+  {
+    "features": {
+      "label": "GitHub",
+      "name": "github_link",
+      "automationId": "input-gh-url",
+      "placeholder": "github.com/username",
+      "parentContext": "Code",
+      "siblingContext": "Show your work"
+    },
+    "label": "github_url"
+  },
+  {
+    "features": {
+      "label": "Portfolio URL",
+      "name": "portfolio",
+      "automationId": "portfolio-input",
+      "placeholder": "https://yourportfolio.com",
+      "parentContext": "Work Samples",
+      "siblingContext": "Showcase projects"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Portfolio",
+      "name": "portfolioUrl",
+      "automationId": "qa-portfolio",
+      "placeholder": "Your portfolio site",
+      "parentContext": "Links",
+      "siblingContext": null
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Portfolio-Link",
+      "name": "wd-Portfolio",
+      "automationId": "input-portfolio",
+      "placeholder": "https://...",
+      "parentContext": "Arbeitsproben",
+      "siblingContext": null
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Portafolio",
+      "name": "portafolio_es",
+      "automationId": "lever-portfolio",
+      "placeholder": "URL de portafolio",
+      "parentContext": "Proyectos",
+      "siblingContext": null
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Portfolio",
+      "name": "portfolio_fr",
+      "automationId": "gh-portfolio",
+      "placeholder": "https://...",
+      "parentContext": "Travaux",
+      "siblingContext": null
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Personal Portfolio",
+      "name": "personal_portfolio",
+      "automationId": "input-folio",
+      "placeholder": "Link to work",
+      "parentContext": "Creative",
+      "siblingContext": null
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "City *",
+      "name": "city",
+      "automationId": "city-input",
+      "placeholder": "San Francisco",
+      "parentContext": "Address",
+      "siblingContext": "Required"
+    },
+    "label": "city"
+  },
+  {
+    "features": {
+      "label": "City",
+      "name": "cityField",
+      "automationId": "qa-city",
+      "placeholder": "Your city",
+      "parentContext": "Location",
+      "siblingContext": null
+    },
+    "label": "city"
+  },
+  {
+    "features": {
+      "label": "Stadt *",
+      "name": "wd-City",
+      "automationId": "input-stadt",
+      "placeholder": "Berlin",
+      "parentContext": "Anschrift",
+      "siblingContext": null
+    },
+    "label": "city"
+  },
+  {
+    "features": {
+      "label": "Ciudad *",
+      "name": "ciudad",
+      "automationId": "lever-city",
+      "placeholder": "Madrid",
+      "parentContext": "Ubicación",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "city"
+  },
+  {
+    "features": {
+      "label": "Ville *",
+      "name": "ville_fr",
+      "automationId": "gh-city",
+      "placeholder": "Paris",
+      "parentContext": "Adresse",
+      "siblingContext": null
+    },
+    "label": "city"
+  },
+  {
+    "features": {
+      "label": "Town",
+      "name": "town",
+      "automationId": "input-town",
+      "placeholder": "Town/City",
+      "parentContext": "Mailing",
+      "siblingContext": null
+    },
+    "label": "city"
+  },
+  {
+    "features": {
+      "label": "State *",
+      "name": "state",
+      "automationId": "state-input",
+      "placeholder": "California",
+      "parentContext": "Address",
+      "siblingContext": "Required"
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "State / Province",
+      "name": "stateProvince",
+      "automationId": "qa-state",
+      "placeholder": "Select state",
+      "parentContext": "Location",
+      "siblingContext": null
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "Bundesland",
+      "name": "wd-State",
+      "automationId": "input-bundesland",
+      "placeholder": "z.B. Bayern",
+      "parentContext": "Anschrift",
+      "siblingContext": null
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "Provincia",
+      "name": "provincia",
+      "automationId": "lever-state",
+      "placeholder": "Barcelona",
+      "parentContext": "Ubicación",
+      "siblingContext": null
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "Région",
+      "name": "region_fr",
+      "automationId": "gh-state",
+      "placeholder": "Île-de-France",
+      "parentContext": "Adresse",
+      "siblingContext": null
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "Province",
+      "name": "province",
+      "automationId": "input-province",
+      "placeholder": "Province",
+      "parentContext": "Mailing",
+      "siblingContext": null
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "ZIP Code *",
+      "name": "zip",
+      "automationId": "zip-input",
+      "placeholder": "94105",
+      "parentContext": "Address",
+      "siblingContext": "5-digit"
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "Postal Code *",
+      "name": "postalCode",
+      "automationId": "qa-zip",
+      "placeholder": "Enter postal code",
+      "parentContext": "Location",
+      "siblingContext": "Required"
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "PLZ *",
+      "name": "wd-Zip",
+      "automationId": "input-plz",
+      "placeholder": "10115",
+      "parentContext": "Anschrift",
+      "siblingContext": null
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "Código Postal *",
+      "name": "codigoPostal",
+      "automationId": "lever-zip",
+      "placeholder": "28001",
+      "parentContext": "Ubicación",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "Code postal *",
+      "name": "codepostal_fr",
+      "automationId": "gh-zip",
+      "placeholder": "75001",
+      "parentContext": "Adresse",
+      "siblingContext": null
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "Postcode",
+      "name": "postcode",
+      "automationId": "input-postcode",
+      "placeholder": "Postal code",
+      "parentContext": "Mailing",
+      "siblingContext": null
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "Country *",
+      "name": "country",
+      "automationId": "country-input",
+      "placeholder": "Select country",
+      "parentContext": "Address",
+      "siblingContext": "Required"
+    },
+    "label": "country"
+  },
+  {
+    "features": {
+      "label": "Country",
+      "name": "countryField",
+      "automationId": "qa-country",
+      "placeholder": "United States",
+      "parentContext": "Location",
+      "siblingContext": null
+    },
+    "label": "country"
+  },
+  {
+    "features": {
+      "label": "Land *",
+      "name": "wd-Country",
+      "automationId": "input-land",
+      "placeholder": "Deutschland",
+      "parentContext": "Anschrift",
+      "siblingContext": null
+    },
+    "label": "country"
+  },
+  {
+    "features": {
+      "label": "País *",
+      "name": "pais",
+      "automationId": "lever-country",
+      "placeholder": "España",
+      "parentContext": "Ubicación",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "country"
+  },
+  {
+    "features": {
+      "label": "Pays *",
+      "name": "pays_fr",
+      "automationId": "gh-country",
+      "placeholder": "France",
+      "parentContext": "Adresse",
+      "siblingContext": null
+    },
+    "label": "country"
+  },
+  {
+    "features": {
+      "label": "Nation",
+      "name": "nation",
+      "automationId": "input-nation",
+      "placeholder": "Country",
+      "parentContext": "Mailing",
+      "siblingContext": null
+    },
+    "label": "country"
+  },
+  {
+    "features": {
+      "label": "Current Location",
+      "name": "currentLocation",
+      "automationId": "location-input",
+      "placeholder": "City, State",
+      "parentContext": "About You",
+      "siblingContext": "Where do you live?"
+    },
+    "label": "current_location"
+  },
+  {
+    "features": {
+      "label": "Location",
+      "name": "location",
+      "automationId": "qa-location",
+      "placeholder": "Your location",
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "current_location"
+  },
+  {
+    "features": {
+      "label": "Aktueller Standort",
+      "name": "wd-Location",
+      "automationId": "input-standort",
+      "placeholder": "Berlin, Deutschland",
+      "parentContext": "Profil",
+      "siblingContext": null
+    },
+    "label": "current_location"
+  },
+  {
+    "features": {
+      "label": "Ubicación actual",
+      "name": "ubicacion",
+      "automationId": "lever-location",
+      "placeholder": "Madrid, España",
+      "parentContext": "Perfil",
+      "siblingContext": null
+    },
+    "label": "current_location"
+  },
+  {
+    "features": {
+      "label": "Localisation actuelle",
+      "name": "localisation_fr",
+      "automationId": "gh-location",
+      "placeholder": "Paris, France",
+      "parentContext": "Profil",
+      "siblingContext": null
+    },
+    "label": "current_location"
+  },
+  {
+    "features": {
+      "label": "Where are you based?",
+      "name": "basedIn",
+      "automationId": "input-based",
+      "placeholder": "City",
+      "parentContext": "Info",
+      "siblingContext": null
+    },
+    "label": "current_location"
+  },
+  {
+    "features": {
+      "label": "Cover Letter",
+      "name": "coverLetter",
+      "automationId": "cover-letter-upload",
+      "placeholder": null,
+      "parentContext": "Documents",
+      "siblingContext": "Optional"
+    },
+    "label": "cover_letter"
+  },
+  {
+    "features": {
+      "label": "Upload Cover Letter",
+      "name": "coverLetterFile",
+      "automationId": "qa-cover-letter",
+      "placeholder": "Select file",
+      "parentContext": "Attachments",
+      "siblingContext": null
+    },
+    "label": "cover_letter"
+  },
+  {
+    "features": {
+      "label": "Anschreiben",
+      "name": "wd-CoverLetter",
+      "automationId": "input-anschreiben",
+      "placeholder": null,
+      "parentContext": "Dokumente",
+      "siblingContext": "Optional"
+    },
+    "label": "cover_letter"
+  },
+  {
+    "features": {
+      "label": "Carta de presentación",
+      "name": "carta_es",
+      "automationId": "lever-cover",
+      "placeholder": "Subir carta",
+      "parentContext": "Documentos",
+      "siblingContext": null
+    },
+    "label": "cover_letter"
+  },
+  {
+    "features": {
+      "label": "Lettre de motivation",
+      "name": "lettre_fr",
+      "automationId": "gh-cover",
+      "placeholder": null,
+      "parentContext": "Documents",
+      "siblingContext": "Télécharger"
+    },
+    "label": "cover_letter"
+  },
+  {
+    "features": {
+      "label": "Attach Cover Letter",
+      "name": "attachCover",
+      "automationId": "input-letter",
+      "placeholder": "Upload letter",
+      "parentContext": "Files",
+      "siblingContext": null
+    },
+    "label": "cover_letter"
+  },
+  {
+    "features": {
+      "label": "Company",
+      "name": "company",
+      "automationId": "company-input",
+      "placeholder": "Company name",
+      "parentContext": "Experience",
+      "siblingContext": "Employer"
+    },
+    "label": "company_name"
+  },
+  {
+    "features": {
+      "label": "Employer Name *",
+      "name": "employerName",
+      "automationId": "qa-employer",
+      "placeholder": "Where did you work?",
+      "parentContext": "Work History",
+      "siblingContext": "Required"
+    },
+    "label": "company_name"
+  },
+  {
+    "features": {
+      "label": "Arbeitgeber",
+      "name": "wd-Employer",
+      "automationId": "input-arbeitgeber",
+      "placeholder": "Firma",
+      "parentContext": "Berufserfahrung",
+      "siblingContext": null
+    },
+    "label": "company_name"
+  },
+  {
+    "features": {
+      "label": "Empresa",
+      "name": "empresa_es",
+      "automationId": "lever-employer",
+      "placeholder": "Nombre de empresa",
+      "parentContext": "Experiencia",
+      "siblingContext": null
+    },
+    "label": "company_name"
+  },
+  {
+    "features": {
+      "label": "Entreprise",
+      "name": "entreprise_fr",
+      "automationId": "gh-employer",
+      "placeholder": "Nom de l'entreprise",
+      "parentContext": "Expérience",
+      "siblingContext": null
+    },
+    "label": "company_name"
+  },
+  {
+    "features": {
+      "label": "Organization",
+      "name": "organization",
+      "automationId": "input-org",
+      "placeholder": "Org name",
+      "parentContext": "Work",
+      "siblingContext": null
+    },
+    "label": "company_name"
+  },
+  {
+    "features": {
+      "label": "Job Title *",
+      "name": "jobTitle",
+      "automationId": "job-title-input",
+      "placeholder": "Software Engineer",
+      "parentContext": "Experience",
+      "siblingContext": "Your role"
+    },
+    "label": "job_title"
+  },
+  {
+    "features": {
+      "label": "Position Title",
+      "name": "positionTitle",
+      "automationId": "qa-title",
+      "placeholder": "Title held",
+      "parentContext": "Work History",
+      "siblingContext": "Required"
+    },
+    "label": "job_title"
+  },
+  {
+    "features": {
+      "label": "Berufsbezeichnung *",
+      "name": "wd-Title",
+      "automationId": "input-titel",
+      "placeholder": "z.B. Entwickler",
+      "parentContext": "Position",
+      "siblingContext": null
+    },
+    "label": "job_title"
+  },
+  {
+    "features": {
+      "label": "Puesto *",
+      "name": "puesto_es",
+      "automationId": "lever-title",
+      "placeholder": "Título del puesto",
+      "parentContext": "Empleo",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "job_title"
+  },
+  {
+    "features": {
+      "label": "Intitulé du poste *",
+      "name": "intitule_fr",
+      "automationId": "gh-title",
+      "placeholder": "Poste occupé",
+      "parentContext": "Expérience",
+      "siblingContext": null
+    },
+    "label": "job_title"
+  },
+  {
+    "features": {
+      "label": "Role",
+      "name": "role",
+      "automationId": "input-role",
+      "placeholder": "Your role",
+      "parentContext": "Work",
+      "siblingContext": null
+    },
+    "label": "job_title"
+  },
+  {
+    "features": {
+      "label": "School Name *",
+      "name": "schoolName",
+      "automationId": "school-input",
+      "placeholder": "University of...",
+      "parentContext": "Education",
+      "siblingContext": "Institution"
+    },
+    "label": "institution_name"
+  },
+  {
+    "features": {
+      "label": "University",
+      "name": "university",
+      "automationId": "qa-school",
+      "placeholder": "Where did you study?",
+      "parentContext": "Academic History",
+      "siblingContext": "Required"
+    },
+    "label": "institution_name"
+  },
+  {
+    "features": {
+      "label": "Hochschule *",
+      "name": "wd-School",
+      "automationId": "input-uni",
+      "placeholder": "Universität",
+      "parentContext": "Ausbildung",
+      "siblingContext": null
+    },
+    "label": "institution_name"
+  },
+  {
+    "features": {
+      "label": "Universidad *",
+      "name": "universidad_es",
+      "automationId": "lever-school",
+      "placeholder": "Nombre de universidad",
+      "parentContext": "Educación",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "institution_name"
+  },
+  {
+    "features": {
+      "label": "Établissement *",
+      "name": "etablissement_fr",
+      "automationId": "gh-school",
+      "placeholder": "Nom de l'école",
+      "parentContext": "Formation",
+      "siblingContext": null
+    },
+    "label": "institution_name"
+  },
+  {
+    "features": {
+      "label": "College",
+      "name": "college",
+      "automationId": "input-college",
+      "placeholder": "College name",
+      "parentContext": "Education",
+      "siblingContext": null
+    },
+    "label": "institution_name"
+  },
+  {
+    "features": {
+      "label": "Degree *",
+      "name": "degree",
+      "automationId": "degree-input",
+      "placeholder": "Bachelor's, Master's...",
+      "parentContext": "Education",
+      "siblingContext": "Type of degree"
+    },
+    "label": "degree_type"
+  },
+  {
+    "features": {
+      "label": "Degree Type",
+      "name": "degreeType",
+      "automationId": "qa-degree",
+      "placeholder": "Select degree",
+      "parentContext": "Academic History",
+      "siblingContext": null
+    },
+    "label": "degree_type"
+  },
+  {
+    "features": {
+      "label": "Abschluss *",
+      "name": "wd-Degree",
+      "automationId": "input-abschluss",
+      "placeholder": "Bachelor/Master",
+      "parentContext": "Ausbildung",
+      "siblingContext": null
+    },
+    "label": "degree_type"
+  },
+  {
+    "features": {
+      "label": "Título *",
+      "name": "titulo_es",
+      "automationId": "lever-degree",
+      "placeholder": "Tipo de título",
+      "parentContext": "Educación",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "degree_type"
+  },
+  {
+    "features": {
+      "label": "Diplôme *",
+      "name": "diplome_fr",
+      "automationId": "gh-degree",
+      "placeholder": "Licence/Master",
+      "parentContext": "Formation",
+      "siblingContext": null
+    },
+    "label": "degree_type"
+  },
+  {
+    "features": {
+      "label": "Qualification",
+      "name": "qualification",
+      "automationId": "input-qual",
+      "placeholder": "Degree type",
+      "parentContext": "Education",
+      "siblingContext": null
+    },
+    "label": "degree_type"
+  },
+  {
+    "features": {
+      "label": "Field of Study *",
+      "name": "fieldOfStudy",
+      "automationId": "fos-input",
+      "placeholder": "Computer Science",
+      "parentContext": "Education",
+      "siblingContext": "Major"
+    },
+    "label": "field_of_study"
+  },
+  {
+    "features": {
+      "label": "Major",
+      "name": "major",
+      "automationId": "qa-major",
+      "placeholder": "Your major",
+      "parentContext": "Academic Details",
+      "siblingContext": null
+    },
+    "label": "field_of_study"
+  },
+  {
+    "features": {
+      "label": "Studienfach *",
+      "name": "wd-Major",
+      "automationId": "input-fach",
+      "placeholder": "Informatik",
+      "parentContext": "Studium",
+      "siblingContext": null
+    },
+    "label": "field_of_study"
+  },
+  {
+    "features": {
+      "label": "Carrera *",
+      "name": "carrera_es",
+      "automationId": "lever-major",
+      "placeholder": "Campo de estudio",
+      "parentContext": "Educación",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "field_of_study"
+  },
+  {
+    "features": {
+      "label": "Domaine d'études *",
+      "name": "domaine_fr",
+      "automationId": "gh-major",
+      "placeholder": "Spécialité",
+      "parentContext": "Formation",
+      "siblingContext": null
+    },
+    "label": "field_of_study"
+  },
+  {
+    "features": {
+      "label": "Discipline",
+      "name": "discipline",
+      "automationId": "input-disc",
+      "placeholder": "Subject area",
+      "parentContext": "Education",
+      "siblingContext": null
+    },
+    "label": "field_of_study"
+  },
+  {
+    "features": {
+      "label": "Skills *",
+      "name": "skills",
+      "automationId": "skills-input",
+      "placeholder": "Python, JavaScript, SQL...",
+      "parentContext": "Qualifications",
+      "siblingContext": "Comma separated"
+    },
+    "label": "skills"
+  },
+  {
+    "features": {
+      "label": "Key Skills",
+      "name": "keySkills",
+      "automationId": "qa-skills",
+      "placeholder": "Enter your skills",
+      "parentContext": "Competencies",
+      "siblingContext": "Required"
+    },
+    "label": "skills"
+  },
+  {
+    "features": {
+      "label": "Fähigkeiten *",
+      "name": "wd-Skills",
+      "automationId": "input-skills",
+      "placeholder": "Ihre Fähigkeiten",
+      "parentContext": "Qualifikationen",
+      "siblingContext": null
+    },
+    "label": "skills"
+  },
+  {
+    "features": {
+      "label": "Habilidades *",
+      "name": "habilidades_es",
+      "automationId": "lever-skills",
+      "placeholder": "Tus habilidades",
+      "parentContext": "Perfil",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "skills"
+  },
+  {
+    "features": {
+      "label": "Compétences *",
+      "name": "competences_fr",
+      "automationId": "gh-skills",
+      "placeholder": "Vos compétences",
+      "parentContext": "Profil",
+      "siblingContext": null
+    },
+    "label": "skills"
+  },
+  {
+    "features": {
+      "label": "Expertise",
+      "name": "expertise",
+      "automationId": "input-expertise",
+      "placeholder": "Your expertise",
+      "parentContext": "Skills",
+      "siblingContext": null
+    },
+    "label": "skills"
+  },
+  {
+    "features": {
+      "label": "Years of Experience *",
+      "name": "yearsExperience",
+      "automationId": "exp-input",
+      "placeholder": "e.g. 5",
+      "parentContext": "Background",
+      "siblingContext": "Total years"
+    },
+    "label": "years_experience"
+  },
+  {
+    "features": {
+      "label": "Total Experience",
+      "name": "totalExperience",
+      "automationId": "qa-years",
+      "placeholder": "Number of years",
+      "parentContext": "Summary",
+      "siblingContext": "Required"
+    },
+    "label": "years_experience"
+  },
+  {
+    "features": {
+      "label": "Berufserfahrung (Jahre) *",
+      "name": "wd-Experience",
+      "automationId": "input-erfahrung",
+      "placeholder": "z.B. 3",
+      "parentContext": "Profil",
+      "siblingContext": null
+    },
+    "label": "years_experience"
+  },
+  {
+    "features": {
+      "label": "Años de experiencia *",
+      "name": "anos_es",
+      "automationId": "lever-years",
+      "placeholder": "Número de años",
+      "parentContext": "Experiencia",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "years_experience"
+  },
+  {
+    "features": {
+      "label": "Années d'expérience *",
+      "name": "annees_fr",
+      "automationId": "gh-years",
+      "placeholder": "Nombre d'années",
+      "parentContext": "Expérience",
+      "siblingContext": null
+    },
+    "label": "years_experience"
+  },
+  {
+    "features": {
+      "label": "Experience (Years)",
+      "name": "expYears",
+      "automationId": "input-exp-years",
+      "placeholder": "Years",
+      "parentContext": "Career",
+      "siblingContext": null
+    },
+    "label": "years_experience"
+  },
+  {
+    "features": {
+      "label": "Expected Salary *",
+      "name": "expectedSalary",
+      "automationId": "salary-input",
+      "placeholder": "$80,000",
+      "parentContext": "Compensation",
+      "siblingContext": "Annual base"
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Salary Expectation",
+      "name": "salaryExpectation",
+      "automationId": "qa-salary",
+      "placeholder": "Desired salary",
+      "parentContext": "Preferences",
+      "siblingContext": "Required"
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Gehaltsvorstellung *",
+      "name": "wd-Salary",
+      "automationId": "input-gehalt",
+      "placeholder": "Wunschgehalt",
+      "parentContext": "Vergütung",
+      "siblingContext": null
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Salario esperado *",
+      "name": "salario_es",
+      "automationId": "lever-salary",
+      "placeholder": "Expectativa salarial",
+      "parentContext": "Compensación",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Prétention salariale *",
+      "name": "pretention_fr",
+      "automationId": "gh-salary",
+      "placeholder": "Salaire souhaité",
+      "parentContext": "Rémunération",
+      "siblingContext": null
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Desired Compensation",
+      "name": "desiredComp",
+      "automationId": "input-comp",
+      "placeholder": "Amount",
+      "parentContext": "Pay",
+      "siblingContext": null
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Site Search",
+      "name": "search",
+      "automationId": "search-input",
+      "placeholder": "Search...",
+      "parentContext": "Navigation",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Keyword",
+      "name": "keyword",
+      "automationId": "qa-search",
+      "placeholder": "Enter keywords",
+      "parentContext": "Header",
+      "siblingContext": "Press Enter"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Suche",
+      "name": "wd-Search",
+      "automationId": "input-suche",
+      "placeholder": "Suchen...",
+      "parentContext": "Topbar",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Buscar",
+      "name": "buscar_es",
+      "automationId": "lever-search",
+      "placeholder": "Buscar...",
+      "parentContext": "Navegación",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Rechercher",
+      "name": "recherche_fr",
+      "automationId": "gh-search",
+      "placeholder": "Rechercher...",
+      "parentContext": "Entête",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Newsletter Signup",
+      "name": "newsletter",
+      "automationId": "input-newsletter",
+      "placeholder": "Your email",
+      "parentContext": "Footer",
+      "siblingContext": "Subscribe"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Promo Code",
+      "name": "promoCode",
+      "automationId": "qa-promo",
+      "placeholder": "Enter code",
+      "parentContext": "Checkout",
+      "siblingContext": "Optional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Captcha",
+      "name": "captcha",
+      "automationId": "input-captcha",
+      "placeholder": "Enter code",
+      "parentContext": "Security",
+      "siblingContext": "Verify"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Comments",
+      "name": "comments",
+      "automationId": "lever-comments",
+      "placeholder": "Leave a comment",
+      "parentContext": "Feedback",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Message",
+      "name": "message",
+      "automationId": "gh-message",
+      "placeholder": "Your message",
+      "parentContext": "Contact Form",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  }
 ]

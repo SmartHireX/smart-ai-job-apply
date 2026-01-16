@@ -41,8 +41,9 @@ class HybridClassifier {
     static UNANIMOUS_CONFIDENCE = 0.99;         // Boost when both agree
 
     // Weighted voting ratios (when disagreeing)
-    static HEURISTIC_WEIGHT = 0.6;  // Heuristic slightly more trusted
-    static NEURAL_WEIGHT = 0.4;     // Neural for generalization
+    // Weighted voting ratios (when disagreeing)
+    static HEURISTIC_WEIGHT = 0.4;  // Heuristic weight lower due to lower base accuracy (78%)
+    static NEURAL_WEIGHT = 0.6;     // Neural weight higher due to improved V7 accuracy (86%)
 
     // ========================================================================
     // CONSTRUCTOR
@@ -230,6 +231,7 @@ class HybridClassifier {
 
     /**
      * Arbitrate between Heuristic and Neural results using 5-tier decision system
+     * Enhanced with Category-Specific Thresholds
      * @private
      * @param {Object} hResult - Heuristic result
      * @param {Object} nResult - Neural result
@@ -241,7 +243,20 @@ class HybridClassifier {
         const nLabel = nResult?.label || 'unknown';
         const nConf = nResult?.confidence || 0;
 
-        this._log(`Arbitration: H(${hLabel}:${hConf.toFixed(2)}) vs N(${nLabel}:${nConf.toFixed(2)})`);
+        // 1. Determine Arbitration Context (Category)
+        // We use the proposed labels to determine which "mode" we are in
+        const proposedLabel = hLabel !== 'unknown' ? hLabel : nLabel;
+        const category = this._getGroupType(proposedLabel);
+
+        // 2. Get Dynamic Thresholds based on Category
+        const {
+            heuristicThreshold,
+            neuralThreshold,
+            heuristicWeight,
+            neuralWeight
+        } = this._getDynamicThresholds(category);
+
+        this._log(`Arbitration [${category}]: H(${hLabel}:${hConf.toFixed(2)}) vs N(${nLabel}:${nConf.toFixed(2)}) | Thresh: H>${heuristicThreshold} N>${neuralThreshold}`);
 
         // ========== TIER 1: UNANIMOUS AGREEMENT ==========
         // When both classifiers agree, boost confidence to 99%
@@ -258,9 +273,9 @@ class HybridClassifier {
         }
 
         // ========== TIER 2: STRONG HEURISTIC ==========
-        // Heuristic with 95%+ confidence (strong regex match)
-        // Trust it completely - these are usually obvious patterns
-        if (hLabel !== 'unknown' && hConf >= HybridClassifier.HEURISTIC_STRONG_THRESHOLD) {
+        // Trust Heuristic if above category-specific threshold
+        // (Lower threshold for Contact/Identity, Higher for Job/Edu)
+        if (hLabel !== 'unknown' && hConf >= heuristicThreshold) {
             this._metrics.heuristicWins++;
             return {
                 label: hLabel,
@@ -273,10 +288,10 @@ class HybridClassifier {
         }
 
         // ========== TIER 3: STRONG NEURAL (WEAK HEURISTIC) ==========
-        // Neural is very confident (85%+) and heuristic is weak (<80%)
-        // This covers cases where regex fails but context is clear
+        // Trust Neural if above category-specific threshold and Heuristic is weak
+        // (Lower threshold for Job/Edu, Higher for Contact/Identity)
         if (nLabel !== 'unknown' &&
-            nConf > HybridClassifier.NEURAL_STRONG_THRESHOLD &&
+            nConf > neuralThreshold &&
             hConf < HybridClassifier.HEURISTIC_WEAK_THRESHOLD) {
             this._metrics.neuralWins++;
             return {
@@ -294,8 +309,9 @@ class HybridClassifier {
         if (hLabel !== 'unknown' && nLabel !== 'unknown') {
             this._metrics.weightedVotes++;
 
-            const hScore = hConf * HybridClassifier.HEURISTIC_WEIGHT;
-            const nScore = nConf * HybridClassifier.NEURAL_WEIGHT;
+            // Use Dynamic Weights
+            const hScore = hConf * heuristicWeight;
+            const nScore = nConf * neuralWeight;
 
             if (hScore > nScore) {
                 return {
@@ -347,6 +363,48 @@ class HybridClassifier {
             source: 'ensemble_ambiguous',
             agreementType: 'both_failed'
         };
+    }
+
+    /**
+     * Get dynamic arbitration thresholds based on field category
+     * @private
+     */
+    _getDynamicThresholds(category) {
+        // Defaults
+        let heuristicThreshold = HybridClassifier.HEURISTIC_STRONG_THRESHOLD; // 0.95
+        let neuralThreshold = HybridClassifier.NEURAL_STRONG_THRESHOLD;       // 0.85
+        let heuristicWeight = HybridClassifier.HEURISTIC_WEIGHT;              // 0.4
+        let neuralWeight = HybridClassifier.NEURAL_WEIGHT;                    // 0.6
+
+        switch (category) {
+            // PATTERN-HEAVY FIELDS: Trust Heuristics More
+            case 'contact':
+            case 'identity':
+            case 'online_presence':
+            case 'location':
+                heuristicThreshold = 0.85; // Lower h-bar (Regex is reliable)
+                neuralThreshold = 0.90;    // Raise n-bar (Neural struggles with exact strings)
+                heuristicWeight = 0.7;     // Bias voting to heuristic
+                neuralWeight = 0.3;
+                break;
+
+            // CONTEXT-HEAVY FIELDS: Trust Neural More
+            case 'work_experience':
+            case 'education':
+            case 'skills':
+            case 'availability':
+                heuristicThreshold = 0.98; // Raise h-bar (Hard to regex job descriptions)
+                neuralThreshold = 0.75;    // Lower n-bar (Neural excels at context)
+                heuristicWeight = 0.4;     // Bias voting to neural
+                neuralWeight = 0.6;
+                break;
+
+            default:
+                // Keep defaults for misc/unknown
+                break;
+        }
+
+        return { heuristicThreshold, neuralThreshold, heuristicWeight, neuralWeight };
     }
 
     // ========================================================================

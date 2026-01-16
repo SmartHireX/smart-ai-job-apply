@@ -1,1256 +1,1256 @@
 [
-    {
-        "features": {
-            "label": "Salary Expectation",
-            "name": "salaryExpectation",
-            "automationId": "salary-input",
-            "placeholder": "Your expected salary",
-            "parentContext": "Compensation",
-            "siblingContext": "Annual"
-        },
-        "label": "salary"
-    },
-    {
-        "features": {
-            "label": "Expected Salary *",
-            "name": "expectedSalary",
-            "automationId": "qa-salary",
-            "placeholder": "Enter amount",
-            "parentContext": "Offer",
-            "siblingContext": "USD"
-        },
-        "label": "salary"
-    },
-    {
-        "features": {
-            "label": "Gehaltsvorstellung *",
-            "name": "wd-Salary",
-            "automationId": "input-gehalt",
-            "placeholder": "Ihre Gehaltsvorstellung",
-            "parentContext": "Vergütung",
-            "siblingContext": "EUR pro Jahr"
-        },
-        "label": "salary"
-    },
-    {
-        "features": {
-            "label": "Salario esperado *",
-            "name": "salario_es",
-            "automationId": "lever-salary",
-            "placeholder": "Cantidad esperada",
-            "parentContext": "Compensación",
-            "siblingContext": "Anual"
-        },
-        "label": "salary"
-    },
-    {
-        "features": {
-            "label": "Salaire souhaité *",
-            "name": "salaire_fr",
-            "automationId": "gh-salary",
-            "placeholder": "Montant",
-            "parentContext": "Rémunération",
-            "siblingContext": "Annuel"
-        },
-        "label": "salary"
-    },
-    {
-        "features": {
-            "label": "Compensation Range",
-            "name": "compRange",
-            "automationId": "input-comp",
-            "placeholder": "$80k - $120k",
-            "parentContext": "Benefits",
-            "siblingContext": null
-        },
-        "label": "salary"
-    },
-    {
-        "features": {
-            "label": "Current Salary",
-            "name": "currentSalary",
-            "automationId": "curr-salary-input",
-            "placeholder": "Your current salary",
-            "parentContext": "Compensation",
-            "siblingContext": "Optional"
-        },
-        "label": "current_salary"
-    },
-    {
-        "features": {
-            "label": "Present Compensation",
-            "name": "presentComp",
-            "automationId": "qa-curr-salary",
-            "placeholder": "Current pay",
-            "parentContext": "History",
-            "siblingContext": null
-        },
-        "label": "current_salary"
-    },
-    {
-        "features": {
-            "label": "Aktuelles Gehalt",
-            "name": "wd-CurrentSalary",
-            "automationId": "input-aktuell-gehalt",
-            "placeholder": "Ihr aktuelles Gehalt",
-            "parentContext": "Vergütung",
-            "siblingContext": "Freiwillig"
-        },
-        "label": "current_salary"
-    },
-    {
-        "features": {
-            "label": "Salario actual",
-            "name": "salarioActual_es",
-            "automationId": "lever-curr-salary",
-            "placeholder": "Su salario actual",
-            "parentContext": "Compensación",
-            "siblingContext": "Opcional"
-        },
-        "label": "current_salary"
-    },
-    {
-        "features": {
-            "label": "Salaire actuel",
-            "name": "salaireActuel_fr",
-            "automationId": "gh-curr-salary",
-            "placeholder": "Votre salaire actuel",
-            "parentContext": "Rémunération",
-            "siblingContext": "Facultatif"
-        },
-        "label": "current_salary"
-    },
-    {
-        "features": {
-            "label": "What do you earn now?",
-            "name": "earnNow",
-            "automationId": "input-earn",
-            "placeholder": "Amount",
-            "parentContext": "Financial",
-            "siblingContext": null
-        },
-        "label": "current_salary"
-    },
-    {
-        "features": {
-            "label": "Portfolio URL",
-            "name": "portfolioUrl",
-            "automationId": "portfolio-input",
-            "placeholder": "https://yourportfolio.com",
-            "parentContext": "Links",
-            "siblingContext": "Your work"
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "Portfolio Website",
-            "name": "portfolioSite",
-            "automationId": "qa-portfolio",
-            "placeholder": "Link to portfolio",
-            "parentContext": "Professional Links",
-            "siblingContext": null
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "Portfolio-Link",
-            "name": "wd-Portfolio",
-            "automationId": "input-portfolio",
-            "placeholder": "https://...",
-            "parentContext": "Links",
-            "siblingContext": "Optional"
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "Portafolio",
-            "name": "portafolio_es",
-            "automationId": "lever-portfolio",
-            "placeholder": "URL de su portafolio",
-            "parentContext": "Enlaces",
-            "siblingContext": "Opcional"
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "Site portfolio",
-            "name": "sitePortfolio_fr",
-            "automationId": "gh-portfolio",
-            "placeholder": "Lien vers portfolio",
-            "parentContext": "Liens",
-            "siblingContext": "Facultatif"
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "Personal Website",
-            "name": "personalSite",
-            "automationId": "input-site",
-            "placeholder": "URL",
-            "parentContext": "Online Presence",
-            "siblingContext": null
-        },
-        "label": "portfolio_url"
-    },
-    {
-        "features": {
-            "label": "References",
-            "name": "references",
-            "automationId": "refs-input",
-            "placeholder": "Name and contact",
-            "parentContext": "Professional Background",
-            "siblingContext": "Optional"
-        },
-        "label": "references"
-    },
-    {
-        "features": {
-            "label": "Professional References",
-            "name": "profRefs",
-            "automationId": "qa-refs",
-            "placeholder": "List references",
-            "parentContext": "Verification",
-            "siblingContext": null
-        },
-        "label": "references"
-    },
-    {
-        "features": {
-            "label": "Referenzen",
-            "name": "wd-References",
-            "automationId": "input-referenzen",
-            "placeholder": "Name und Kontakt",
-            "parentContext": "Hintergrund",
-            "siblingContext": "Optional"
-        },
-        "label": "references"
-    },
-    {
-        "features": {
-            "label": "Referencias profesionales",
-            "name": "referencias_es",
-            "automationId": "lever-refs",
-            "placeholder": "Nombre y contacto",
-            "parentContext": "Verificación",
-            "siblingContext": "Opcional"
-        },
-        "label": "references"
-    },
-    {
-        "features": {
-            "label": "Références professionnelles",
-            "name": "references_fr",
-            "automationId": "gh-refs",
-            "placeholder": "Nom et contact",
-            "parentContext": "Vérification",
-            "siblingContext": "Facultatif"
-        },
-        "label": "references"
-    },
-    {
-        "features": {
-            "label": "Reference Contact",
-            "name": "refContact",
-            "automationId": "input-ref",
-            "placeholder": "Contact info",
-            "parentContext": "Background Check",
-            "siblingContext": null
-        },
-        "label": "references"
-    },
-    {
-        "features": {
-            "label": "Emergency Contact Name *",
-            "name": "emergencyName",
-            "automationId": "emergency-name-input",
-            "placeholder": "Contact person",
-            "parentContext": "Emergency Info",
-            "siblingContext": "Required"
-        },
-        "label": "emergency_contact_name"
-    },
-    {
-        "features": {
-            "label": "Emergency Contact",
-            "name": "emergencyContact",
-            "automationId": "qa-emergency",
-            "placeholder": "Name of contact",
-            "parentContext": "Safety",
-            "siblingContext": null
-        },
-        "label": "emergency_contact_name"
-    },
-    {
-        "features": {
-            "label": "Notfallkontakt Name *",
-            "name": "wd-EmergencyName",
-            "automationId": "input-notfall-name",
-            "placeholder": "Kontaktperson",
-            "parentContext": "Notfall",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "emergency_contact_name"
-    },
-    {
-        "features": {
-            "label": "Contacto de emergencia *",
-            "name": "contactoEmerg_es",
-            "automationId": "lever-emergency",
-            "placeholder": "Nombre del contacto",
-            "parentContext": "Emergencia",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "emergency_contact_name"
-    },
-    {
-        "features": {
-            "label": "Contact d'urgence *",
-            "name": "contactUrgence_fr",
-            "automationId": "gh-emergency",
-            "placeholder": "Nom du contact",
-            "parentContext": "Urgence",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "emergency_contact_name"
-    },
-    {
-        "features": {
-            "label": "In case of emergency",
-            "name": "iceName",
-            "automationId": "input-ice",
-            "placeholder": "Contact name",
-            "parentContext": "HR",
-            "siblingContext": null
-        },
-        "label": "emergency_contact_name"
-    },
-    {
-        "features": {
-            "label": "Emergency Contact Phone *",
-            "name": "emergencyPhone",
-            "automationId": "emergency-phone-input",
-            "placeholder": "Contact number",
-            "parentContext": "Emergency Info",
-            "siblingContext": "Required"
-        },
-        "label": "emergency_contact_phone"
-    },
-    {
-        "features": {
-            "label": "Emergency Phone",
-            "name": "emergencyTel",
-            "automationId": "qa-emergency-phone",
-            "placeholder": "Phone number",
-            "parentContext": "Safety",
-            "siblingContext": null
-        },
-        "label": "emergency_contact_phone"
-    },
-    {
-        "features": {
-            "label": "Notfallkontakt Telefon *",
-            "name": "wd-EmergencyPhone",
-            "automationId": "input-notfall-tel",
-            "placeholder": "Telefonnummer",
-            "parentContext": "Notfall",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "emergency_contact_phone"
-    },
-    {
-        "features": {
-            "label": "Teléfono de emergencia *",
-            "name": "telEmerg_es",
-            "automationId": "lever-emergency-phone",
-            "placeholder": "Número de teléfono",
-            "parentContext": "Emergencia",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "emergency_contact_phone"
-    },
-    {
-        "features": {
-            "label": "Téléphone d'urgence *",
-            "name": "telUrgence_fr",
-            "automationId": "gh-emergency-phone",
-            "placeholder": "Numéro de téléphone",
-            "parentContext": "Urgence",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "emergency_contact_phone"
-    },
-    {
-        "features": {
-            "label": "ICE Phone",
-            "name": "icePhone",
-            "automationId": "input-ice-phone",
-            "placeholder": "Phone",
-            "parentContext": "HR",
-            "siblingContext": null
-        },
-        "label": "emergency_contact_phone"
-    },
-    {
-        "features": {
-            "label": "Relationship to Emergency Contact",
-            "name": "emergencyRelation",
-            "automationId": "emergency-rel-input",
-            "placeholder": "e.g. Spouse, Parent",
-            "parentContext": "Emergency Info",
-            "siblingContext": "Optional"
-        },
-        "label": "emergency_contact_relationship"
-    },
-    {
-        "features": {
-            "label": "Emergency Contact Relationship",
-            "name": "emergencyRel",
-            "automationId": "qa-emergency-rel",
-            "placeholder": "How are they related?",
-            "parentContext": "Safety",
-            "siblingContext": null
-        },
-        "label": "emergency_contact_relationship"
-    },
-    {
-        "features": {
-            "label": "Beziehung zum Notfallkontakt",
-            "name": "wd-EmergencyRel",
-            "automationId": "input-beziehung",
-            "placeholder": "z.B. Ehepartner",
-            "parentContext": "Notfall",
-            "siblingContext": "Optional"
-        },
-        "label": "emergency_contact_relationship"
-    },
-    {
-        "features": {
-            "label": "Relación con contacto",
-            "name": "relacionEmerg_es",
-            "automationId": "lever-rel",
-            "placeholder": "p.ej. Cónyuge",
-            "parentContext": "Emergencia",
-            "siblingContext": "Opcional"
-        },
-        "label": "emergency_contact_relationship"
-    },
-    {
-        "features": {
-            "label": "Relation avec contact",
-            "name": "relationUrgence_fr",
-            "automationId": "gh-rel",
-            "placeholder": "p.ex. Conjoint",
-            "parentContext": "Urgence",
-            "siblingContext": "Facultatif"
-        },
-        "label": "emergency_contact_relationship"
-    },
-    {
-        "features": {
-            "label": "Relation",
-            "name": "relation",
-            "automationId": "input-relation",
-            "placeholder": "Relationship",
-            "parentContext": "HR",
-            "siblingContext": null
-        },
-        "label": "emergency_contact_relationship"
-    },
-    {
-        "features": {
-            "label": "Date of Birth *",
-            "name": "dob",
-            "automationId": "dob-input",
-            "placeholder": "MM/DD/YYYY",
-            "parentContext": "Personal Info",
-            "siblingContext": "Required"
-        },
-        "label": "date_of_birth"
-    },
-    {
-        "features": {
-            "label": "Birth Date",
-            "name": "birthDate",
-            "automationId": "qa-dob",
-            "placeholder": "Your birthday",
-            "parentContext": "Legal",
-            "siblingContext": null
-        },
-        "label": "date_of_birth"
-    },
-    {
-        "features": {
-            "label": "Geburtsdatum *",
-            "name": "wd-DOB",
-            "automationId": "input-geburt",
-            "placeholder": "TT.MM.JJJJ",
-            "parentContext": "Persönliche Daten",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "date_of_birth"
-    },
-    {
-        "features": {
-            "label": "Fecha de nacimiento *",
-            "name": "fechaNac_es",
-            "automationId": "lever-dob",
-            "placeholder": "DD/MM/AAAA",
-            "parentContext": "Información personal",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "date_of_birth"
-    },
-    {
-        "features": {
-            "label": "Date de naissance *",
-            "name": "dateNaiss_fr",
-            "automationId": "gh-dob",
-            "placeholder": "JJ/MM/AAAA",
-            "parentContext": "Informations personnelles",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "date_of_birth"
-    },
-    {
-        "features": {
-            "label": "Birthday",
-            "name": "birthday",
-            "automationId": "input-bday",
-            "placeholder": "Your DOB",
-            "parentContext": "Identity",
-            "siblingContext": null
-        },
-        "label": "date_of_birth"
-    },
-    {
-        "features": {
-            "label": "National ID / SSN *",
-            "name": "nationalId",
-            "automationId": "ssn-input",
-            "placeholder": "XXX-XX-XXXX",
-            "parentContext": "Legal Info",
-            "siblingContext": "Required"
-        },
-        "label": "ssn"
-    },
-    {
-        "features": {
-            "label": "Social Security Number",
-            "name": "ssn",
-            "automationId": "qa-ssn",
-            "placeholder": "Enter SSN",
-            "parentContext": "Tax",
-            "siblingContext": null
-        },
-        "label": "ssn"
-    },
-    {
-        "features": {
-            "label": "Sozialversicherungsnummer *",
-            "name": "wd-SSN",
-            "automationId": "input-sozial",
-            "placeholder": "Ihre SV-Nummer",
-            "parentContext": "Rechtliches",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "ssn"
-    },
-    {
-        "features": {
-            "label": "Número de seguro social *",
-            "name": "nss_es",
-            "automationId": "lever-ssn",
-            "placeholder": "XXX-XX-XXXX",
-            "parentContext": "Legal",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "ssn"
-    },
-    {
-        "features": {
-            "label": "Numéro de sécurité sociale *",
-            "name": "nss_fr",
-            "automationId": "gh-ssn",
-            "placeholder": "XXX-XX-XXXX",
-            "parentContext": "Légal",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "ssn"
-    },
-    {
-        "features": {
-            "label": "Tax ID",
-            "name": "taxId",
-            "automationId": "input-tax",
-            "placeholder": "Tax number",
-            "parentContext": "Finance",
-            "siblingContext": null
-        },
-        "label": "ssn"
-    },
-    {
-        "features": {
-            "label": "Passport Number",
-            "name": "passportNumber",
-            "automationId": "passport-input",
-            "placeholder": "Your passport #",
-            "parentContext": "Travel",
-            "siblingContext": "Optional"
-        },
-        "label": "passport"
-    },
-    {
-        "features": {
-            "label": "Passport #",
-            "name": "passportNo",
-            "automationId": "qa-passport",
-            "placeholder": "Passport number",
-            "parentContext": "International",
-            "siblingContext": null
-        },
-        "label": "passport"
-    },
-    {
-        "features": {
-            "label": "Reisepassnummer",
-            "name": "wd-Passport",
-            "automationId": "input-reisepass",
-            "placeholder": "Pass-Nr.",
-            "parentContext": "Reise",
-            "siblingContext": "Optional"
-        },
-        "label": "passport"
-    },
-    {
-        "features": {
-            "label": "Número de pasaporte",
-            "name": "pasaporte_es",
-            "automationId": "lever-passport",
-            "placeholder": "Número",
-            "parentContext": "Internacional",
-            "siblingContext": "Opcional"
-        },
-        "label": "passport"
-    },
-    {
-        "features": {
-            "label": "Numéro de passeport",
-            "name": "passeport_fr",
-            "automationId": "gh-passport",
-            "placeholder": "Numéro",
-            "parentContext": "International",
-            "siblingContext": "Facultatif"
-        },
-        "label": "passport"
-    },
-    {
-        "features": {
-            "label": "Travel Document",
-            "name": "travelDoc",
-            "automationId": "input-travel",
-            "placeholder": "Document number",
-            "parentContext": "Immigration",
-            "siblingContext": null
-        },
-        "label": "passport"
-    },
-    {
-        "features": {
-            "label": "Driver's License Number",
-            "name": "driverLicense",
-            "automationId": "dl-input",
-            "placeholder": "License #",
-            "parentContext": "Identification",
-            "siblingContext": "Optional"
-        },
-        "label": "drivers_license"
-    },
-    {
-        "features": {
-            "label": "DL Number",
-            "name": "dlNumber",
-            "automationId": "qa-dl",
-            "placeholder": "Your DL #",
-            "parentContext": "ID",
-            "siblingContext": null
-        },
-        "label": "drivers_license"
-    },
-    {
-        "features": {
-            "label": "Führerscheinnummer",
-            "name": "wd-DL",
-            "automationId": "input-fuehrerschein",
-            "placeholder": "FS-Nummer",
-            "parentContext": "Ausweis",
-            "siblingContext": "Optional"
-        },
-        "label": "drivers_license"
-    },
-    {
-        "features": {
-            "label": "Número de licencia",
-            "name": "licencia_es",
-            "automationId": "lever-dl",
-            "placeholder": "Número de licencia",
-            "parentContext": "Identificación",
-            "siblingContext": "Opcional"
-        },
-        "label": "drivers_license"
-    },
-    {
-        "features": {
-            "label": "Numéro de permis",
-            "name": "permis_fr",
-            "automationId": "gh-dl",
-            "placeholder": "Numéro",
-            "parentContext": "ID",
-            "siblingContext": "Facultatif"
-        },
-        "label": "drivers_license"
-    },
-    {
-        "features": {
-            "label": "License #",
-            "name": "licenseNum",
-            "automationId": "input-license",
-            "placeholder": "DL number",
-            "parentContext": "Credentials",
-            "siblingContext": null
-        },
-        "label": "drivers_license"
-    },
-    {
-        "features": {
-            "label": "Postal Code *",
-            "name": "postalCode",
-            "automationId": "postal-input",
-            "placeholder": "Your postal code",
-            "parentContext": "Address",
-            "siblingContext": "Required"
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "ZIP/Postal Code",
-            "name": "zipPostal",
-            "automationId": "qa-postal",
-            "placeholder": "Enter code",
-            "parentContext": "Location",
-            "siblingContext": null
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "Postleitzahl *",
-            "name": "wd-PostalCode",
-            "automationId": "input-plz",
-            "placeholder": "PLZ",
-            "parentContext": "Adresse",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "Código postal *",
-            "name": "codigoPostal_es",
-            "automationId": "lever-postal",
-            "placeholder": "CP",
-            "parentContext": "Dirección",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "Code postal *",
-            "name": "codePostal_fr",
-            "automationId": "gh-postal",
-            "placeholder": "CP",
-            "parentContext": "Adresse",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "Postcode",
-            "name": "postcode",
-            "automationId": "input-postcode",
-            "placeholder": "Code",
-            "parentContext": "Address",
-            "siblingContext": null
-        },
-        "label": "zip_code"
-    },
-    {
-        "features": {
-            "label": "Province/State *",
-            "name": "provinceState",
-            "automationId": "province-input",
-            "placeholder": "Select state",
-            "parentContext": "Address",
-            "siblingContext": "Required"
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "State/Province",
-            "name": "stateProvince",
-            "automationId": "qa-state",
-            "placeholder": "Your state",
-            "parentContext": "Location",
-            "siblingContext": null
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "Bundesland *",
-            "name": "wd-State",
-            "automationId": "input-bundesland",
-            "placeholder": "Wählen Sie",
-            "parentContext": "Adresse",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "Provincia/Estado *",
-            "name": "provincia_es",
-            "automationId": "lever-state",
-            "placeholder": "Seleccionar",
-            "parentContext": "Dirección",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "Province/État *",
-            "name": "province_fr",
-            "automationId": "gh-state",
-            "placeholder": "Sélectionner",
-            "parentContext": "Adresse",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "Region",
-            "name": "region",
-            "automationId": "input-region",
-            "placeholder": "State/Province",
-            "parentContext": "Geo",
-            "siblingContext": null
-        },
-        "label": "state"
-    },
-    {
-        "features": {
-            "label": "Country of Citizenship *",
-            "name": "citizenship",
-            "automationId": "citizenship-input",
-            "placeholder": "Select country",
-            "parentContext": "Legal",
-            "siblingContext": "Required"
-        },
-        "label": "citizenship"
-    },
-    {
-        "features": {
-            "label": "Citizenship",
-            "name": "citizenshipCountry",
-            "automationId": "qa-citizenship",
-            "placeholder": "Your nationality",
-            "parentContext": "Immigration",
-            "siblingContext": null
-        },
-        "label": "citizenship"
-    },
-    {
-        "features": {
-            "label": "Staatsangehörigkeit *",
-            "name": "wd-Citizenship",
-            "automationId": "input-staats",
-            "placeholder": "Land wählen",
-            "parentContext": "Rechtliches",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "citizenship"
-    },
-    {
-        "features": {
-            "label": "Ciudadanía *",
-            "name": "ciudadania_es",
-            "automationId": "lever-citizenship",
-            "placeholder": "Seleccionar país",
-            "parentContext": "Legal",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "citizenship"
-    },
-    {
-        "features": {
-            "label": "Citoyenneté *",
-            "name": "citoyennete_fr",
-            "automationId": "gh-citizenship",
-            "placeholder": "Sélectionner pays",
-            "parentContext": "Légal",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "citizenship"
-    },
-    {
-        "features": {
-            "label": "Nationality",
-            "name": "nationality",
-            "automationId": "input-nationality",
-            "placeholder": "Country",
-            "parentContext": "Identity",
-            "siblingContext": null
-        },
-        "label": "citizenship"
-    },
-    {
-        "features": {
-            "label": "T-Shirt Size",
-            "name": "tshirtSize",
-            "automationId": "tshirt-input",
-            "placeholder": "Select size",
-            "parentContext": "Swag",
-            "siblingContext": "Optional"
-        },
-        "label": "tshirt_size"
-    },
-    {
-        "features": {
-            "label": "Shirt Size",
-            "name": "shirtSize",
-            "automationId": "qa-shirt",
-            "placeholder": "S, M, L, XL",
-            "parentContext": "Merchandise",
-            "siblingContext": null
-        },
-        "label": "tshirt_size"
-    },
-    {
-        "features": {
-            "label": "T-Shirt-Größe",
-            "name": "wd-TShirt",
-            "automationId": "input-shirt",
-            "placeholder": "Größe wählen",
-            "parentContext": "Swag",
-            "siblingContext": "Optional"
-        },
-        "label": "tshirt_size"
-    },
-    {
-        "features": {
-            "label": "Talla de camiseta",
-            "name": "talla_es",
-            "automationId": "lever-shirt",
-            "placeholder": "Seleccionar",
-            "parentContext": "Merchandising",
-            "siblingContext": "Opcional"
-        },
-        "label": "tshirt_size"
-    },
-    {
-        "features": {
-            "label": "Taille de t-shirt",
-            "name": "tailleTshirt_fr",
-            "automationId": "gh-shirt",
-            "placeholder": "Sélectionner",
-            "parentContext": "Goodies",
-            "siblingContext": "Facultatif"
-        },
-        "label": "tshirt_size"
-    },
-    {
-        "features": {
-            "label": "Apparel Size",
-            "name": "apparelSize",
-            "automationId": "input-apparel",
-            "placeholder": "Size",
-            "parentContext": "Swag",
-            "siblingContext": null
-        },
-        "label": "tshirt_size"
-    },
-    {
-        "features": {
-            "label": "Dietary Restrictions",
-            "name": "dietaryRestrictions",
-            "automationId": "diet-input",
-            "placeholder": "Any restrictions?",
-            "parentContext": "Events",
-            "siblingContext": "Optional"
-        },
-        "label": "dietary_restrictions"
-    },
-    {
-        "features": {
-            "label": "Food Allergies / Preferences",
-            "name": "foodPrefs",
-            "automationId": "qa-diet",
-            "placeholder": "Dietary needs",
-            "parentContext": "Catering",
-            "siblingContext": null
-        },
-        "label": "dietary_restrictions"
-    },
-    {
-        "features": {
-            "label": "Ernährungseinschränkungen",
-            "name": "wd-Diet",
-            "automationId": "input-ernaehrung",
-            "placeholder": "Einschränkungen",
-            "parentContext": "Veranstaltungen",
-            "siblingContext": "Optional"
-        },
-        "label": "dietary_restrictions"
-    },
-    {
-        "features": {
-            "label": "Restricciones alimentarias",
-            "name": "restricciones_es",
-            "automationId": "lever-diet",
-            "placeholder": "Alergias o preferencias",
-            "parentContext": "Eventos",
-            "siblingContext": "Opcional"
-        },
-        "label": "dietary_restrictions"
-    },
-    {
-        "features": {
-            "label": "Restrictions alimentaires",
-            "name": "restrictions_fr",
-            "automationId": "gh-diet",
-            "placeholder": "Allergies ou préférences",
-            "parentContext": "Événements",
-            "siblingContext": "Facultatif"
-        },
-        "label": "dietary_restrictions"
-    },
-    {
-        "features": {
-            "label": "Food Allergies",
-            "name": "foodAllergies",
-            "automationId": "input-allergies",
-            "placeholder": "List allergies",
-            "parentContext": "Health",
-            "siblingContext": null
-        },
-        "label": "dietary_restrictions"
-    },
-    {
-        "features": {
-            "label": "Skype ID",
-            "name": "skypeId",
-            "automationId": "skype-input",
-            "placeholder": "Your Skype username",
-            "parentContext": "Social",
-            "siblingContext": "Optional"
-        },
-        "label": "skype_url"
-    },
-    {
-        "features": {
-            "label": "Skype Username",
-            "name": "skypeUsername",
-            "automationId": "qa-skype",
-            "placeholder": "Skype handle",
-            "parentContext": "Communications",
-            "siblingContext": null
-        },
-        "label": "skype_url"
-    },
-    {
-        "features": {
-            "label": "Skype-ID",
-            "name": "wd-Skype",
-            "automationId": "input-skype",
-            "placeholder": "Ihr Skype-Name",
-            "parentContext": "Soziale Medien",
-            "siblingContext": "Optional"
-        },
-        "label": "skype_url"
-    },
-    {
-        "features": {
-            "label": "Usuario de Skype",
-            "name": "skype_es",
-            "automationId": "lever-skype",
-            "placeholder": "Nombre de usuario",
-            "parentContext": "Social",
-            "siblingContext": "Opcional"
-        },
-        "label": "skype_url"
-    },
-    {
-        "features": {
-            "label": "Identifiant Skype",
-            "name": "skype_fr",
-            "automationId": "gh-skype",
-            "placeholder": "Nom d'utilisateur",
-            "parentContext": "Social",
-            "siblingContext": "Facultatif"
-        },
-        "label": "skype_url"
-    },
-    {
-        "features": {
-            "label": "Skype",
-            "name": "skype",
-            "automationId": "input-skype-id",
-            "placeholder": "Username",
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "skype_url"
-    },
-    {
-        "features": {
-            "label": "WhatsApp Number",
-            "name": "whatsappNumber",
-            "automationId": "whatsapp-input",
-            "placeholder": "+1234567890",
-            "parentContext": "Contact",
-            "siblingContext": "Optional"
-        },
-        "label": "whatsapp"
-    },
-    {
-        "features": {
-            "label": "WhatsApp",
-            "name": "whatsapp",
-            "automationId": "qa-whatsapp",
-            "placeholder": "Phone for WhatsApp",
-            "parentContext": "Communications",
-            "siblingContext": null
-        },
-        "label": "whatsapp"
-    },
-    {
-        "features": {
-            "label": "WhatsApp-Nummer",
-            "name": "wd-WhatsApp",
-            "automationId": "input-whatsapp",
-            "placeholder": "+49...",
-            "parentContext": "Kontakt",
-            "siblingContext": "Optional"
-        },
-        "label": "whatsapp"
-    },
-    {
-        "features": {
-            "label": "Número de WhatsApp",
-            "name": "whatsapp_es",
-            "automationId": "lever-whatsapp",
-            "placeholder": "+34...",
-            "parentContext": "Contacto",
-            "siblingContext": "Opcional"
-        },
-        "label": "whatsapp"
-    },
-    {
-        "features": {
-            "label": "Numéro WhatsApp",
-            "name": "whatsapp_fr",
-            "automationId": "gh-whatsapp",
-            "placeholder": "+33...",
-            "parentContext": "Contact",
-            "siblingContext": "Facultatif"
-        },
-        "label": "whatsapp"
-    },
-    {
-        "features": {
-            "label": "WA Number",
-            "name": "waNumber",
-            "automationId": "input-wa",
-            "placeholder": "Phone number",
-            "parentContext": "Messaging",
-            "siblingContext": null
-        },
-        "label": "whatsapp"
-    },
-    {
-        "features": {
-            "label": "YouTube Channel",
-            "name": "youtubeChannel",
-            "automationId": "youtube-input",
-            "placeholder": "Channel URL",
-            "parentContext": "Social Media",
-            "siblingContext": "Optional"
-        },
-        "label": "youtube_url"
-    },
-    {
-        "features": {
-            "label": "YouTube",
-            "name": "youtube",
-            "automationId": "qa-youtube",
-            "placeholder": "Your channel",
-            "parentContext": "Content",
-            "siblingContext": null
-        },
-        "label": "youtube_url"
-    },
-    {
-        "features": {
-            "label": "YouTube-Kanal",
-            "name": "wd-YouTube",
-            "automationId": "input-youtube",
-            "placeholder": "Kanal-URL",
-            "parentContext": "Soziale Medien",
-            "siblingContext": "Optional"
-        },
-        "label": "youtube_url"
-    },
-    {
-        "features": {
-            "label": "Canal de YouTube",
-            "name": "youtube_es",
-            "automationId": "lever-youtube",
-            "placeholder": "URL del canal",
-            "parentContext": "Social",
-            "siblingContext": "Opcional"
-        },
-        "label": "youtube_url"
-    },
-    {
-        "features": {
-            "label": "Chaîne YouTube",
-            "name": "youtube_fr",
-            "automationId": "gh-youtube",
-            "placeholder": "URL de la chaîne",
-            "parentContext": "Social",
-            "siblingContext": "Facultatif"
-        },
-        "label": "youtube_url"
-    },
-    {
-        "features": {
-            "label": "YT Channel",
-            "name": "ytChannel",
-            "automationId": "input-yt",
-            "placeholder": "URL",
-            "parentContext": "Media",
-            "siblingContext": null
-        },
-        "label": "youtube_url"
-    }
+  {
+    "features": {
+      "label": "Salary Expectation",
+      "name": "salaryExpectation",
+      "automationId": "salary-input",
+      "placeholder": "Your expected salary",
+      "parentContext": "Compensation",
+      "siblingContext": "Annual"
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Expected Salary *",
+      "name": "expectedSalary",
+      "automationId": "qa-salary",
+      "placeholder": "Enter amount",
+      "parentContext": "Offer",
+      "siblingContext": "USD"
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Gehaltsvorstellung *",
+      "name": "wd-Salary",
+      "automationId": "input-gehalt",
+      "placeholder": "Ihre Gehaltsvorstellung",
+      "parentContext": "Vergütung",
+      "siblingContext": "EUR pro Jahr"
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Salario esperado *",
+      "name": "salario_es",
+      "automationId": "lever-salary",
+      "placeholder": "Cantidad esperada",
+      "parentContext": "Compensación",
+      "siblingContext": "Anual"
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Salaire souhaité *",
+      "name": "salaire_fr",
+      "automationId": "gh-salary",
+      "placeholder": "Montant",
+      "parentContext": "Rémunération",
+      "siblingContext": "Annuel"
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Compensation Range",
+      "name": "compRange",
+      "automationId": "input-comp",
+      "placeholder": "$80k - $120k",
+      "parentContext": "Benefits",
+      "siblingContext": null
+    },
+    "label": "salary_expected"
+  },
+  {
+    "features": {
+      "label": "Current Salary",
+      "name": "currentSalary",
+      "automationId": "curr-salary-input",
+      "placeholder": "Your current salary",
+      "parentContext": "Compensation",
+      "siblingContext": "Optional"
+    },
+    "label": "salary_current"
+  },
+  {
+    "features": {
+      "label": "Present Compensation",
+      "name": "presentComp",
+      "automationId": "qa-curr-salary",
+      "placeholder": "Current pay",
+      "parentContext": "History",
+      "siblingContext": null
+    },
+    "label": "salary_current"
+  },
+  {
+    "features": {
+      "label": "Aktuelles Gehalt",
+      "name": "wd-CurrentSalary",
+      "automationId": "input-aktuell-gehalt",
+      "placeholder": "Ihr aktuelles Gehalt",
+      "parentContext": "Vergütung",
+      "siblingContext": "Freiwillig"
+    },
+    "label": "salary_current"
+  },
+  {
+    "features": {
+      "label": "Salario actual",
+      "name": "salarioActual_es",
+      "automationId": "lever-curr-salary",
+      "placeholder": "Su salario actual",
+      "parentContext": "Compensación",
+      "siblingContext": "Opcional"
+    },
+    "label": "salary_current"
+  },
+  {
+    "features": {
+      "label": "Salaire actuel",
+      "name": "salaireActuel_fr",
+      "automationId": "gh-curr-salary",
+      "placeholder": "Votre salaire actuel",
+      "parentContext": "Rémunération",
+      "siblingContext": "Facultatif"
+    },
+    "label": "salary_current"
+  },
+  {
+    "features": {
+      "label": "What do you earn now?",
+      "name": "earnNow",
+      "automationId": "input-earn",
+      "placeholder": "Amount",
+      "parentContext": "Financial",
+      "siblingContext": null
+    },
+    "label": "salary_current"
+  },
+  {
+    "features": {
+      "label": "Portfolio URL",
+      "name": "portfolioUrl",
+      "automationId": "portfolio-input",
+      "placeholder": "https://yourportfolio.com",
+      "parentContext": "Links",
+      "siblingContext": "Your work"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Portfolio Website",
+      "name": "portfolioSite",
+      "automationId": "qa-portfolio",
+      "placeholder": "Link to portfolio",
+      "parentContext": "Professional Links",
+      "siblingContext": null
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Portfolio-Link",
+      "name": "wd-Portfolio",
+      "automationId": "input-portfolio",
+      "placeholder": "https://...",
+      "parentContext": "Links",
+      "siblingContext": "Optional"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Portafolio",
+      "name": "portafolio_es",
+      "automationId": "lever-portfolio",
+      "placeholder": "URL de su portafolio",
+      "parentContext": "Enlaces",
+      "siblingContext": "Opcional"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Site portfolio",
+      "name": "sitePortfolio_fr",
+      "automationId": "gh-portfolio",
+      "placeholder": "Lien vers portfolio",
+      "parentContext": "Liens",
+      "siblingContext": "Facultatif"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Personal Website",
+      "name": "personalSite",
+      "automationId": "input-site",
+      "placeholder": "URL",
+      "parentContext": "Online Presence",
+      "siblingContext": null
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "References",
+      "name": "references",
+      "automationId": "refs-input",
+      "placeholder": "Name and contact",
+      "parentContext": "Professional Background",
+      "siblingContext": "Optional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Professional References",
+      "name": "profRefs",
+      "automationId": "qa-refs",
+      "placeholder": "List references",
+      "parentContext": "Verification",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Referenzen",
+      "name": "wd-References",
+      "automationId": "input-referenzen",
+      "placeholder": "Name und Kontakt",
+      "parentContext": "Hintergrund",
+      "siblingContext": "Optional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Referencias profesionales",
+      "name": "referencias_es",
+      "automationId": "lever-refs",
+      "placeholder": "Nombre y contacto",
+      "parentContext": "Verificación",
+      "siblingContext": "Opcional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Références professionnelles",
+      "name": "references_fr",
+      "automationId": "gh-refs",
+      "placeholder": "Nom et contact",
+      "parentContext": "Vérification",
+      "siblingContext": "Facultatif"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Reference Contact",
+      "name": "refContact",
+      "automationId": "input-ref",
+      "placeholder": "Contact info",
+      "parentContext": "Background Check",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Emergency Contact Name *",
+      "name": "emergencyName",
+      "automationId": "emergency-name-input",
+      "placeholder": "Contact person",
+      "parentContext": "Emergency Info",
+      "siblingContext": "Required"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Emergency Contact",
+      "name": "emergencyContact",
+      "automationId": "qa-emergency",
+      "placeholder": "Name of contact",
+      "parentContext": "Safety",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Notfallkontakt Name *",
+      "name": "wd-EmergencyName",
+      "automationId": "input-notfall-name",
+      "placeholder": "Kontaktperson",
+      "parentContext": "Notfall",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Contacto de emergencia *",
+      "name": "contactoEmerg_es",
+      "automationId": "lever-emergency",
+      "placeholder": "Nombre del contacto",
+      "parentContext": "Emergencia",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Contact d'urgence *",
+      "name": "contactUrgence_fr",
+      "automationId": "gh-emergency",
+      "placeholder": "Nom du contact",
+      "parentContext": "Urgence",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "In case of emergency",
+      "name": "iceName",
+      "automationId": "input-ice",
+      "placeholder": "Contact name",
+      "parentContext": "HR",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Emergency Contact Phone *",
+      "name": "emergencyPhone",
+      "automationId": "emergency-phone-input",
+      "placeholder": "Contact number",
+      "parentContext": "Emergency Info",
+      "siblingContext": "Required"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Emergency Phone",
+      "name": "emergencyTel",
+      "automationId": "qa-emergency-phone",
+      "placeholder": "Phone number",
+      "parentContext": "Safety",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Notfallkontakt Telefon *",
+      "name": "wd-EmergencyPhone",
+      "automationId": "input-notfall-tel",
+      "placeholder": "Telefonnummer",
+      "parentContext": "Notfall",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Teléfono de emergencia *",
+      "name": "telEmerg_es",
+      "automationId": "lever-emergency-phone",
+      "placeholder": "Número de teléfono",
+      "parentContext": "Emergencia",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Téléphone d'urgence *",
+      "name": "telUrgence_fr",
+      "automationId": "gh-emergency-phone",
+      "placeholder": "Numéro de téléphone",
+      "parentContext": "Urgence",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "ICE Phone",
+      "name": "icePhone",
+      "automationId": "input-ice-phone",
+      "placeholder": "Phone",
+      "parentContext": "HR",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Relationship to Emergency Contact",
+      "name": "emergencyRelation",
+      "automationId": "emergency-rel-input",
+      "placeholder": "e.g. Spouse, Parent",
+      "parentContext": "Emergency Info",
+      "siblingContext": "Optional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Emergency Contact Relationship",
+      "name": "emergencyRel",
+      "automationId": "qa-emergency-rel",
+      "placeholder": "How are they related?",
+      "parentContext": "Safety",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Beziehung zum Notfallkontakt",
+      "name": "wd-EmergencyRel",
+      "automationId": "input-beziehung",
+      "placeholder": "z.B. Ehepartner",
+      "parentContext": "Notfall",
+      "siblingContext": "Optional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Relación con contacto",
+      "name": "relacionEmerg_es",
+      "automationId": "lever-rel",
+      "placeholder": "p.ej. Cónyuge",
+      "parentContext": "Emergencia",
+      "siblingContext": "Opcional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Relation avec contact",
+      "name": "relationUrgence_fr",
+      "automationId": "gh-rel",
+      "placeholder": "p.ex. Conjoint",
+      "parentContext": "Urgence",
+      "siblingContext": "Facultatif"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Relation",
+      "name": "relation",
+      "automationId": "input-relation",
+      "placeholder": "Relationship",
+      "parentContext": "HR",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Date of Birth *",
+      "name": "dob",
+      "automationId": "dob-input",
+      "placeholder": "MM/DD/YYYY",
+      "parentContext": "Personal Info",
+      "siblingContext": "Required"
+    },
+    "label": "date_of_birth"
+  },
+  {
+    "features": {
+      "label": "Birth Date",
+      "name": "birthDate",
+      "automationId": "qa-dob",
+      "placeholder": "Your birthday",
+      "parentContext": "Legal",
+      "siblingContext": null
+    },
+    "label": "date_of_birth"
+  },
+  {
+    "features": {
+      "label": "Geburtsdatum *",
+      "name": "wd-DOB",
+      "automationId": "input-geburt",
+      "placeholder": "TT.MM.JJJJ",
+      "parentContext": "Persönliche Daten",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "date_of_birth"
+  },
+  {
+    "features": {
+      "label": "Fecha de nacimiento *",
+      "name": "fechaNac_es",
+      "automationId": "lever-dob",
+      "placeholder": "DD/MM/AAAA",
+      "parentContext": "Información personal",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "date_of_birth"
+  },
+  {
+    "features": {
+      "label": "Date de naissance *",
+      "name": "dateNaiss_fr",
+      "automationId": "gh-dob",
+      "placeholder": "JJ/MM/AAAA",
+      "parentContext": "Informations personnelles",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "date_of_birth"
+  },
+  {
+    "features": {
+      "label": "Birthday",
+      "name": "birthday",
+      "automationId": "input-bday",
+      "placeholder": "Your DOB",
+      "parentContext": "Identity",
+      "siblingContext": null
+    },
+    "label": "date_of_birth"
+  },
+  {
+    "features": {
+      "label": "National ID / SSN *",
+      "name": "nationalId",
+      "automationId": "ssn-input",
+      "placeholder": "XXX-XX-XXXX",
+      "parentContext": "Legal Info",
+      "siblingContext": "Required"
+    },
+    "label": "tax_id"
+  },
+  {
+    "features": {
+      "label": "Social Security Number",
+      "name": "ssn",
+      "automationId": "qa-ssn",
+      "placeholder": "Enter SSN",
+      "parentContext": "Tax",
+      "siblingContext": null
+    },
+    "label": "tax_id"
+  },
+  {
+    "features": {
+      "label": "Sozialversicherungsnummer *",
+      "name": "wd-SSN",
+      "automationId": "input-sozial",
+      "placeholder": "Ihre SV-Nummer",
+      "parentContext": "Rechtliches",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "tax_id"
+  },
+  {
+    "features": {
+      "label": "Número de seguro social *",
+      "name": "nss_es",
+      "automationId": "lever-ssn",
+      "placeholder": "XXX-XX-XXXX",
+      "parentContext": "Legal",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "tax_id"
+  },
+  {
+    "features": {
+      "label": "Numéro de sécurité sociale *",
+      "name": "nss_fr",
+      "automationId": "gh-ssn",
+      "placeholder": "XXX-XX-XXXX",
+      "parentContext": "Légal",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "tax_id"
+  },
+  {
+    "features": {
+      "label": "Tax ID",
+      "name": "taxId",
+      "automationId": "input-tax",
+      "placeholder": "Tax number",
+      "parentContext": "Finance",
+      "siblingContext": null
+    },
+    "label": "tax_id"
+  },
+  {
+    "features": {
+      "label": "Passport Number",
+      "name": "passportNumber",
+      "automationId": "passport-input",
+      "placeholder": "Your passport #",
+      "parentContext": "Travel",
+      "siblingContext": "Optional"
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "Passport #",
+      "name": "passportNo",
+      "automationId": "qa-passport",
+      "placeholder": "Passport number",
+      "parentContext": "International",
+      "siblingContext": null
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "Reisepassnummer",
+      "name": "wd-Passport",
+      "automationId": "input-reisepass",
+      "placeholder": "Pass-Nr.",
+      "parentContext": "Reise",
+      "siblingContext": "Optional"
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "Número de pasaporte",
+      "name": "pasaporte_es",
+      "automationId": "lever-passport",
+      "placeholder": "Número",
+      "parentContext": "Internacional",
+      "siblingContext": "Opcional"
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "Numéro de passeport",
+      "name": "passeport_fr",
+      "automationId": "gh-passport",
+      "placeholder": "Numéro",
+      "parentContext": "International",
+      "siblingContext": "Facultatif"
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "Travel Document",
+      "name": "travelDoc",
+      "automationId": "input-travel",
+      "placeholder": "Document number",
+      "parentContext": "Immigration",
+      "siblingContext": null
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "Driver's License Number",
+      "name": "driverLicense",
+      "automationId": "dl-input",
+      "placeholder": "License #",
+      "parentContext": "Identification",
+      "siblingContext": "Optional"
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "DL Number",
+      "name": "dlNumber",
+      "automationId": "qa-dl",
+      "placeholder": "Your DL #",
+      "parentContext": "ID",
+      "siblingContext": null
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "Führerscheinnummer",
+      "name": "wd-DL",
+      "automationId": "input-fuehrerschein",
+      "placeholder": "FS-Nummer",
+      "parentContext": "Ausweis",
+      "siblingContext": "Optional"
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "Número de licencia",
+      "name": "licencia_es",
+      "automationId": "lever-dl",
+      "placeholder": "Número de licencia",
+      "parentContext": "Identificación",
+      "siblingContext": "Opcional"
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "Numéro de permis",
+      "name": "permis_fr",
+      "automationId": "gh-dl",
+      "placeholder": "Numéro",
+      "parentContext": "ID",
+      "siblingContext": "Facultatif"
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "License #",
+      "name": "licenseNum",
+      "automationId": "input-license",
+      "placeholder": "DL number",
+      "parentContext": "Credentials",
+      "siblingContext": null
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "Postal Code *",
+      "name": "postalCode",
+      "automationId": "postal-input",
+      "placeholder": "Your postal code",
+      "parentContext": "Address",
+      "siblingContext": "Required"
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "ZIP/Postal Code",
+      "name": "zipPostal",
+      "automationId": "qa-postal",
+      "placeholder": "Enter code",
+      "parentContext": "Location",
+      "siblingContext": null
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "Postleitzahl *",
+      "name": "wd-PostalCode",
+      "automationId": "input-plz",
+      "placeholder": "PLZ",
+      "parentContext": "Adresse",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "Código postal *",
+      "name": "codigoPostal_es",
+      "automationId": "lever-postal",
+      "placeholder": "CP",
+      "parentContext": "Dirección",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "Code postal *",
+      "name": "codePostal_fr",
+      "automationId": "gh-postal",
+      "placeholder": "CP",
+      "parentContext": "Adresse",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "Postcode",
+      "name": "postcode",
+      "automationId": "input-postcode",
+      "placeholder": "Code",
+      "parentContext": "Address",
+      "siblingContext": null
+    },
+    "label": "zip_code"
+  },
+  {
+    "features": {
+      "label": "Province/State *",
+      "name": "provinceState",
+      "automationId": "province-input",
+      "placeholder": "Select state",
+      "parentContext": "Address",
+      "siblingContext": "Required"
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "State/Province",
+      "name": "stateProvince",
+      "automationId": "qa-state",
+      "placeholder": "Your state",
+      "parentContext": "Location",
+      "siblingContext": null
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "Bundesland *",
+      "name": "wd-State",
+      "automationId": "input-bundesland",
+      "placeholder": "Wählen Sie",
+      "parentContext": "Adresse",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "Provincia/Estado *",
+      "name": "provincia_es",
+      "automationId": "lever-state",
+      "placeholder": "Seleccionar",
+      "parentContext": "Dirección",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "Province/État *",
+      "name": "province_fr",
+      "automationId": "gh-state",
+      "placeholder": "Sélectionner",
+      "parentContext": "Adresse",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "Region",
+      "name": "region",
+      "automationId": "input-region",
+      "placeholder": "State/Province",
+      "parentContext": "Geo",
+      "siblingContext": null
+    },
+    "label": "state"
+  },
+  {
+    "features": {
+      "label": "Country of Citizenship *",
+      "name": "citizenship",
+      "automationId": "citizenship-input",
+      "placeholder": "Select country",
+      "parentContext": "Legal",
+      "siblingContext": "Required"
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "Citizenship",
+      "name": "citizenshipCountry",
+      "automationId": "qa-citizenship",
+      "placeholder": "Your nationality",
+      "parentContext": "Immigration",
+      "siblingContext": null
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "Staatsangehörigkeit *",
+      "name": "wd-Citizenship",
+      "automationId": "input-staats",
+      "placeholder": "Land wählen",
+      "parentContext": "Rechtliches",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "Ciudadanía *",
+      "name": "ciudadania_es",
+      "automationId": "lever-citizenship",
+      "placeholder": "Seleccionar país",
+      "parentContext": "Legal",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "Citoyenneté *",
+      "name": "citoyennete_fr",
+      "automationId": "gh-citizenship",
+      "placeholder": "Sélectionner pays",
+      "parentContext": "Légal",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "Nationality",
+      "name": "nationality",
+      "automationId": "input-nationality",
+      "placeholder": "Country",
+      "parentContext": "Identity",
+      "siblingContext": null
+    },
+    "label": "citizenship"
+  },
+  {
+    "features": {
+      "label": "T-Shirt Size",
+      "name": "tshirtSize",
+      "automationId": "tshirt-input",
+      "placeholder": "Select size",
+      "parentContext": "Swag",
+      "siblingContext": "Optional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Shirt Size",
+      "name": "shirtSize",
+      "automationId": "qa-shirt",
+      "placeholder": "S, M, L, XL",
+      "parentContext": "Merchandise",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "T-Shirt-Größe",
+      "name": "wd-TShirt",
+      "automationId": "input-shirt",
+      "placeholder": "Größe wählen",
+      "parentContext": "Swag",
+      "siblingContext": "Optional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Talla de camiseta",
+      "name": "talla_es",
+      "automationId": "lever-shirt",
+      "placeholder": "Seleccionar",
+      "parentContext": "Merchandising",
+      "siblingContext": "Opcional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Taille de t-shirt",
+      "name": "tailleTshirt_fr",
+      "automationId": "gh-shirt",
+      "placeholder": "Sélectionner",
+      "parentContext": "Goodies",
+      "siblingContext": "Facultatif"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Apparel Size",
+      "name": "apparelSize",
+      "automationId": "input-apparel",
+      "placeholder": "Size",
+      "parentContext": "Swag",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Dietary Restrictions",
+      "name": "dietaryRestrictions",
+      "automationId": "diet-input",
+      "placeholder": "Any restrictions?",
+      "parentContext": "Events",
+      "siblingContext": "Optional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Food Allergies / Preferences",
+      "name": "foodPrefs",
+      "automationId": "qa-diet",
+      "placeholder": "Dietary needs",
+      "parentContext": "Catering",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Ernährungseinschränkungen",
+      "name": "wd-Diet",
+      "automationId": "input-ernaehrung",
+      "placeholder": "Einschränkungen",
+      "parentContext": "Veranstaltungen",
+      "siblingContext": "Optional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Restricciones alimentarias",
+      "name": "restricciones_es",
+      "automationId": "lever-diet",
+      "placeholder": "Alergias o preferencias",
+      "parentContext": "Eventos",
+      "siblingContext": "Opcional"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Restrictions alimentaires",
+      "name": "restrictions_fr",
+      "automationId": "gh-diet",
+      "placeholder": "Allergies ou préférences",
+      "parentContext": "Événements",
+      "siblingContext": "Facultatif"
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Food Allergies",
+      "name": "foodAllergies",
+      "automationId": "input-allergies",
+      "placeholder": "List allergies",
+      "parentContext": "Health",
+      "siblingContext": null
+    },
+    "label": "unknown"
+  },
+  {
+    "features": {
+      "label": "Skype ID",
+      "name": "skypeId",
+      "automationId": "skype-input",
+      "placeholder": "Your Skype username",
+      "parentContext": "Social",
+      "siblingContext": "Optional"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Skype Username",
+      "name": "skypeUsername",
+      "automationId": "qa-skype",
+      "placeholder": "Skype handle",
+      "parentContext": "Communications",
+      "siblingContext": null
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Skype-ID",
+      "name": "wd-Skype",
+      "automationId": "input-skype",
+      "placeholder": "Ihr Skype-Name",
+      "parentContext": "Soziale Medien",
+      "siblingContext": "Optional"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Usuario de Skype",
+      "name": "skype_es",
+      "automationId": "lever-skype",
+      "placeholder": "Nombre de usuario",
+      "parentContext": "Social",
+      "siblingContext": "Opcional"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Identifiant Skype",
+      "name": "skype_fr",
+      "automationId": "gh-skype",
+      "placeholder": "Nom d'utilisateur",
+      "parentContext": "Social",
+      "siblingContext": "Facultatif"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Skype",
+      "name": "skype",
+      "automationId": "input-skype-id",
+      "placeholder": "Username",
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "WhatsApp Number",
+      "name": "whatsappNumber",
+      "automationId": "whatsapp-input",
+      "placeholder": "+1234567890",
+      "parentContext": "Contact",
+      "siblingContext": "Optional"
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "WhatsApp",
+      "name": "whatsapp",
+      "automationId": "qa-whatsapp",
+      "placeholder": "Phone for WhatsApp",
+      "parentContext": "Communications",
+      "siblingContext": null
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "WhatsApp-Nummer",
+      "name": "wd-WhatsApp",
+      "automationId": "input-whatsapp",
+      "placeholder": "+49...",
+      "parentContext": "Kontakt",
+      "siblingContext": "Optional"
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "Número de WhatsApp",
+      "name": "whatsapp_es",
+      "automationId": "lever-whatsapp",
+      "placeholder": "+34...",
+      "parentContext": "Contacto",
+      "siblingContext": "Opcional"
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "Numéro WhatsApp",
+      "name": "whatsapp_fr",
+      "automationId": "gh-whatsapp",
+      "placeholder": "+33...",
+      "parentContext": "Contact",
+      "siblingContext": "Facultatif"
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "WA Number",
+      "name": "waNumber",
+      "automationId": "input-wa",
+      "placeholder": "Phone number",
+      "parentContext": "Messaging",
+      "siblingContext": null
+    },
+    "label": "phone"
+  },
+  {
+    "features": {
+      "label": "YouTube Channel",
+      "name": "youtubeChannel",
+      "automationId": "youtube-input",
+      "placeholder": "Channel URL",
+      "parentContext": "Social Media",
+      "siblingContext": "Optional"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "YouTube",
+      "name": "youtube",
+      "automationId": "qa-youtube",
+      "placeholder": "Your channel",
+      "parentContext": "Content",
+      "siblingContext": null
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "YouTube-Kanal",
+      "name": "wd-YouTube",
+      "automationId": "input-youtube",
+      "placeholder": "Kanal-URL",
+      "parentContext": "Soziale Medien",
+      "siblingContext": "Optional"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Canal de YouTube",
+      "name": "youtube_es",
+      "automationId": "lever-youtube",
+      "placeholder": "URL del canal",
+      "parentContext": "Social",
+      "siblingContext": "Opcional"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "Chaîne YouTube",
+      "name": "youtube_fr",
+      "automationId": "gh-youtube",
+      "placeholder": "URL de la chaîne",
+      "parentContext": "Social",
+      "siblingContext": "Facultatif"
+    },
+    "label": "portfolio_url"
+  },
+  {
+    "features": {
+      "label": "YT Channel",
+      "name": "ytChannel",
+      "automationId": "input-yt",
+      "placeholder": "URL",
+      "parentContext": "Media",
+      "siblingContext": null
+    },
+    "label": "portfolio_url"
+  }
 ]

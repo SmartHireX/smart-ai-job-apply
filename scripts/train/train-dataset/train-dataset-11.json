@@ -1,1520 +1,1520 @@
 [
-    {
-        "features": {
-            "label": "Graduation Date",
-            "name": "gradDate",
-            "automationId": "grad-date-input",
-            "placeholder": "MM/YYYY",
-            "parentContext": "Education",
-            "siblingContext": "Expected or actual"
-        },
-        "label": "graduation_date"
-    },
-    {
-        "features": {
-            "label": "Date of Graduation *",
-            "name": "graduationDate",
-            "automationId": "qa-grad-date",
-            "placeholder": "When did you graduate?",
-            "parentContext": "Academic History",
-            "siblingContext": "Required"
-        },
-        "label": "graduation_date"
-    },
-    {
-        "features": {
-            "label": "Abschlussdatum *",
-            "name": "wd-GradDate",
-            "automationId": "input-abschlussdatum",
-            "placeholder": "MM/JJJJ",
-            "parentContext": "Ausbildung",
-            "siblingContext": null
-        },
-        "label": "graduation_date"
-    },
-    {
-        "features": {
-            "label": "Fecha de graduación *",
-            "name": "fechaGrad_es",
-            "automationId": "lever-grad",
-            "placeholder": "MM/AAAA",
-            "parentContext": "Educación",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "graduation_date"
-    },
-    {
-        "features": {
-            "label": "Date d'obtention *",
-            "name": "dateObtention_fr",
-            "automationId": "gh-grad-date",
-            "placeholder": "MM/AAAA",
-            "parentContext": "Formation",
-            "siblingContext": null
-        },
-        "label": "graduation_date"
-    },
-    {
-        "features": {
-            "label": "Year Graduated",
-            "name": "yearGrad",
-            "automationId": "input-year-grad",
-            "placeholder": "2020",
-            "parentContext": "Degree Info",
-            "siblingContext": null
-        },
-        "label": "graduation_date"
-    },
-    {
-        "features": {
-            "label": "GPA",
-            "name": "gpa",
-            "automationId": "gpa-input",
-            "placeholder": "3.8",
-            "parentContext": "Education",
-            "siblingContext": "On 4.0 scale"
-        },
-        "label": "gpa"
-    },
-    {
-        "features": {
-            "label": "Grade Point Average",
-            "name": "gradePointAvg",
-            "automationId": "qa-gpa",
-            "placeholder": "Enter GPA",
-            "parentContext": "Academic Performance",
-            "siblingContext": null
-        },
-        "label": "gpa"
-    },
-    {
-        "features": {
-            "label": "Notendurchschnitt",
-            "name": "wd-GPA",
-            "automationId": "input-note",
-            "placeholder": "z.B. 1.5",
-            "parentContext": "Studium",
-            "siblingContext": "Optional"
-        },
-        "label": "gpa"
-    },
-    {
-        "features": {
-            "label": "Promedio *",
-            "name": "promedio_es",
-            "automationId": "lever-gpa",
-            "placeholder": "8.5",
-            "parentContext": "Educación",
-            "siblingContext": null
-        },
-        "label": "gpa"
-    },
-    {
-        "features": {
-            "label": "Moyenne *",
-            "name": "moyenne_fr",
-            "automationId": "gh-gpa",
-            "placeholder": "14/20",
-            "parentContext": "Formation",
-            "siblingContext": null
-        },
-        "label": "gpa"
-    },
-    {
-        "features": {
-            "label": "Academic Score",
-            "name": "academicScore",
-            "automationId": "input-score",
-            "placeholder": "Score",
-            "parentContext": "Grades",
-            "siblingContext": null
-        },
-        "label": "gpa"
-    },
-    {
-        "features": {
-            "label": "Start Date",
-            "name": "expStartDate",
-            "automationId": "exp-start-input",
-            "placeholder": "MM/YYYY",
-            "parentContext": "Experience",
-            "siblingContext": "When you started"
-        },
-        "label": "job_start_date"
-    },
-    {
-        "features": {
-            "label": "From *",
-            "name": "fromDate",
-            "automationId": "qa-from-date",
-            "placeholder": "Start date",
-            "parentContext": "Work History",
-            "siblingContext": "Required"
-        },
-        "label": "job_start_date"
-    },
-    {
-        "features": {
-            "label": "Von *",
-            "name": "wd-StartDate",
-            "automationId": "input-von",
-            "placeholder": "MM/JJJJ",
-            "parentContext": "Berufserfahrung",
-            "siblingContext": null
-        },
-        "label": "job_start_date"
-    },
-    {
-        "features": {
-            "label": "Fecha de inicio *",
-            "name": "fechaIni_es",
-            "automationId": "lever-from",
-            "placeholder": "MM/AAAA",
-            "parentContext": "Experiencia",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "job_start_date"
-    },
-    {
-        "features": {
-            "label": "Date de début *",
-            "name": "dateDebut_fr",
-            "automationId": "gh-from",
-            "placeholder": "MM/AAAA",
-            "parentContext": "Expérience",
-            "siblingContext": null
-        },
-        "label": "job_start_date"
-    },
-    {
-        "features": {
-            "label": "Employment Start",
-            "name": "empStart",
-            "automationId": "input-emp-start",
-            "placeholder": "Start",
-            "parentContext": "Job",
-            "siblingContext": null
-        },
-        "label": "job_start_date"
-    },
-    {
-        "features": {
-            "label": "End Date",
-            "name": "expEndDate",
-            "automationId": "exp-end-input",
-            "placeholder": "MM/YYYY",
-            "parentContext": "Experience",
-            "siblingContext": "Leave blank if current"
-        },
-        "label": "job_end_date"
-    },
-    {
-        "features": {
-            "label": "To",
-            "name": "toDate",
-            "automationId": "qa-to-date",
-            "placeholder": "End date or Present",
-            "parentContext": "Work History",
-            "siblingContext": null
-        },
-        "label": "job_end_date"
-    },
-    {
-        "features": {
-            "label": "Bis",
-            "name": "wd-EndDate",
-            "automationId": "input-bis",
-            "placeholder": "MM/JJJJ",
-            "parentContext": "Berufserfahrung",
-            "siblingContext": "Leer wenn aktuell"
-        },
-        "label": "job_end_date"
-    },
-    {
-        "features": {
-            "label": "Fecha de fin",
-            "name": "fechaFin_es",
-            "automationId": "lever-to",
-            "placeholder": "MM/AAAA o Presente",
-            "parentContext": "Experiencia",
-            "siblingContext": null
-        },
-        "label": "job_end_date"
-    },
-    {
-        "features": {
-            "label": "Date de fin",
-            "name": "dateFin_fr",
-            "automationId": "gh-to",
-            "placeholder": "MM/AAAA ou En cours",
-            "parentContext": "Expérience",
-            "siblingContext": null
-        },
-        "label": "job_end_date"
-    },
-    {
-        "features": {
-            "label": "Employment End",
-            "name": "empEnd",
-            "automationId": "input-emp-end",
-            "placeholder": "End",
-            "parentContext": "Job",
-            "siblingContext": "Current?"
-        },
-        "label": "job_end_date"
-    },
-    {
-        "features": {
-            "label": "Job Description",
-            "name": "jobDescription",
-            "automationId": "job-desc-input",
-            "placeholder": "Describe your responsibilities",
-            "parentContext": "Experience",
-            "siblingContext": "Max 500 words"
-        },
-        "label": "job_description"
-    },
-    {
-        "features": {
-            "label": "Description of Role *",
-            "name": "roleDescription",
-            "automationId": "qa-desc",
-            "placeholder": "What did you do?",
-            "parentContext": "Work History",
-            "siblingContext": "Required"
-        },
-        "label": "job_description"
-    },
-    {
-        "features": {
-            "label": "Aufgabenbeschreibung *",
-            "name": "wd-Description",
-            "automationId": "input-aufgaben",
-            "placeholder": "Ihre Aufgaben",
-            "parentContext": "Position",
-            "siblingContext": null
-        },
-        "label": "job_description"
-    },
-    {
-        "features": {
-            "label": "Descripción del puesto *",
-            "name": "descripcion_es",
-            "automationId": "lever-desc",
-            "placeholder": "Sus responsabilidades",
-            "parentContext": "Experiencia",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "job_description"
-    },
-    {
-        "features": {
-            "label": "Description du poste *",
-            "name": "descPoste_fr",
-            "automationId": "gh-desc",
-            "placeholder": "Vos responsabilités",
-            "parentContext": "Expérience",
-            "siblingContext": null
-        },
-        "label": "job_description"
-    },
-    {
-        "features": {
-            "label": "Responsibilities",
-            "name": "responsibilities",
-            "automationId": "input-resp",
-            "placeholder": "Key duties",
-            "parentContext": "Job",
-            "siblingContext": null
-        },
-        "label": "job_description"
-    },
-    {
-        "features": {
-            "label": "Current Company",
-            "name": "currentCompany",
-            "automationId": "current-company-input",
-            "placeholder": "Where do you work now?",
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "current_company"
-    },
-    {
-        "features": {
-            "label": "Current Employer",
-            "name": "currentEmployer",
-            "automationId": "qa-curr-company",
-            "placeholder": "Company name",
-            "parentContext": "Summary",
-            "siblingContext": null
-        },
-        "label": "current_company"
-    },
-    {
-        "features": {
-            "label": "Aktueller Arbeitgeber",
-            "name": "wd-CurrentCompany",
-            "automationId": "input-aktueller-ag",
-            "placeholder": "Ihre aktuelle Firma",
-            "parentContext": "Profil",
-            "siblingContext": null
-        },
-        "label": "current_company"
-    },
-    {
-        "features": {
-            "label": "Empresa actual",
-            "name": "empresaActual_es",
-            "automationId": "lever-curr-company",
-            "placeholder": "Donde trabaja ahora",
-            "parentContext": "Resumen",
-            "siblingContext": null
-        },
-        "label": "current_company"
-    },
-    {
-        "features": {
-            "label": "Employeur actuel",
-            "name": "employeurActuel_fr",
-            "automationId": "gh-curr-company",
-            "placeholder": "Votre entreprise actuelle",
-            "parentContext": "Profil",
-            "siblingContext": null
-        },
-        "label": "current_company"
-    },
-    {
-        "features": {
-            "label": "Present Employer",
-            "name": "presentEmp",
-            "automationId": "input-present-emp",
-            "placeholder": "Current employer",
-            "parentContext": "Career",
-            "siblingContext": null
-        },
-        "label": "current_company"
-    },
-    {
-        "features": {
-            "label": "Current Job Title",
-            "name": "currentTitle",
-            "automationId": "current-title-input",
-            "placeholder": "Your current role",
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "current_title"
-    },
-    {
-        "features": {
-            "label": "Current Position",
-            "name": "currentPosition",
-            "automationId": "qa-curr-title",
-            "placeholder": "Job title",
-            "parentContext": "Summary",
-            "siblingContext": null
-        },
-        "label": "current_title"
-    },
-    {
-        "features": {
-            "label": "Aktuelle Position",
-            "name": "wd-CurrentTitle",
-            "automationId": "input-aktuelle-pos",
-            "placeholder": "Ihre aktuelle Rolle",
-            "parentContext": "Profil",
-            "siblingContext": null
-        },
-        "label": "current_title"
-    },
-    {
-        "features": {
-            "label": "Puesto actual",
-            "name": "puestoActual_es",
-            "automationId": "lever-curr-title",
-            "placeholder": "Su rol actual",
-            "parentContext": "Resumen",
-            "siblingContext": null
-        },
-        "label": "current_title"
-    },
-    {
-        "features": {
-            "label": "Poste actuel",
-            "name": "poste_fr",
-            "automationId": "gh-curr-title",
-            "placeholder": "Votre rôle actuel",
-            "parentContext": "Profil",
-            "siblingContext": null
-        },
-        "label": "current_title"
-    },
-    {
-        "features": {
-            "label": "Current Role",
-            "name": "currRole",
-            "automationId": "input-curr-role",
-            "placeholder": "Role",
-            "parentContext": "Career",
-            "siblingContext": null
-        },
-        "label": "current_title"
-    },
-    {
-        "features": {
-            "label": "Gender *",
-            "name": "gender",
-            "automationId": "gender-select",
-            "placeholder": "Select gender",
-            "parentContext": "EEO",
-            "siblingContext": "Voluntary"
-        },
-        "label": "gender"
-    },
-    {
-        "features": {
-            "label": "Gender Identity",
-            "name": "genderIdentity",
-            "automationId": "qa-gender",
-            "placeholder": "How do you identify?",
-            "parentContext": "Diversity",
-            "siblingContext": "Optional"
-        },
-        "label": "gender"
-    },
-    {
-        "features": {
-            "label": "Geschlecht",
-            "name": "wd-Gender",
-            "automationId": "input-geschlecht",
-            "placeholder": "Bitte wählen",
-            "parentContext": "Chancengleichheit",
-            "siblingContext": "Freiwillig"
-        },
-        "label": "gender"
-    },
-    {
-        "features": {
-            "label": "Género",
-            "name": "genero_es",
-            "automationId": "lever-gender",
-            "placeholder": "Seleccionar género",
-            "parentContext": "Diversidad",
-            "siblingContext": "Voluntario"
-        },
-        "label": "gender"
-    },
-    {
-        "features": {
-            "label": "Genre",
-            "name": "genre_fr",
-            "automationId": "gh-gender",
-            "placeholder": "Sélectionner",
-            "parentContext": "Égalité",
-            "siblingContext": "Facultatif"
-        },
-        "label": "gender"
-    },
-    {
-        "features": {
-            "label": "Sex",
-            "name": "sex",
-            "automationId": "input-sex",
-            "placeholder": "Select",
-            "parentContext": "EEOC",
-            "siblingContext": null
-        },
-        "label": "gender"
-    },
-    {
-        "features": {
-            "label": "Race/Ethnicity *",
-            "name": "raceEthnicity",
-            "automationId": "race-select",
-            "placeholder": "Select race/ethnicity",
-            "parentContext": "EEO",
-            "siblingContext": "Voluntary"
-        },
-        "label": "race"
-    },
-    {
-        "features": {
-            "label": "Race",
-            "name": "race",
-            "automationId": "qa-race",
-            "placeholder": "How do you identify?",
-            "parentContext": "Diversity",
-            "siblingContext": "Optional"
-        },
-        "label": "race"
-    },
-    {
-        "features": {
-            "label": "Ethnische Herkunft",
-            "name": "wd-Race",
-            "automationId": "input-herkunft",
-            "placeholder": "Bitte wählen",
-            "parentContext": "Chancengleichheit",
-            "siblingContext": "Freiwillig"
-        },
-        "label": "race"
-    },
-    {
-        "features": {
-            "label": "Raza/Etnia",
-            "name": "raza_es",
-            "automationId": "lever-race",
-            "placeholder": "Seleccionar",
-            "parentContext": "Diversidad",
-            "siblingContext": "Voluntario"
-        },
-        "label": "race"
-    },
-    {
-        "features": {
-            "label": "Origine ethnique",
-            "name": "origine_fr",
-            "automationId": "gh-race",
-            "placeholder": "Sélectionner",
-            "parentContext": "Égalité",
-            "siblingContext": "Facultatif"
-        },
-        "label": "race"
-    },
-    {
-        "features": {
-            "label": "Ethnicity",
-            "name": "ethnicity",
-            "automationId": "input-ethnicity",
-            "placeholder": "Select",
-            "parentContext": "EEOC",
-            "siblingContext": null
-        },
-        "label": "ethnicity"
-    },
-    {
-        "features": {
-            "label": "Veteran Status *",
-            "name": "veteranStatus",
-            "automationId": "veteran-select",
-            "placeholder": "Select status",
-            "parentContext": "EEO",
-            "siblingContext": "Voluntary"
-        },
-        "label": "veteran"
-    },
-    {
-        "features": {
-            "label": "Are you a veteran?",
-            "name": "isVeteran",
-            "automationId": "qa-veteran",
-            "placeholder": "Yes / No",
-            "parentContext": "Military",
-            "siblingContext": null
-        },
-        "label": "veteran"
-    },
-    {
-        "features": {
-            "label": "Veteranenstatus",
-            "name": "wd-Veteran",
-            "automationId": "input-veteran",
-            "placeholder": "Bitte wählen",
-            "parentContext": "Chancengleichheit",
-            "siblingContext": "Freiwillig"
-        },
-        "label": "veteran"
-    },
-    {
-        "features": {
-            "label": "¿Es veterano?",
-            "name": "veterano_es",
-            "automationId": "lever-veteran",
-            "placeholder": "Sí / No",
-            "parentContext": "Servicio militar",
-            "siblingContext": "Voluntario"
-        },
-        "label": "veteran"
-    },
-    {
-        "features": {
-            "label": "Statut de vétéran",
-            "name": "statVeteran_fr",
-            "automationId": "gh-veteran",
-            "placeholder": "Sélectionner",
-            "parentContext": "Égalité",
-            "siblingContext": "Facultatif"
-        },
-        "label": "veteran"
-    },
-    {
-        "features": {
-            "label": "Protected Veteran",
-            "name": "protectedVet",
-            "automationId": "input-vet",
-            "placeholder": "Select",
-            "parentContext": "EEOC",
-            "siblingContext": null
-        },
-        "label": "veteran"
-    },
-    {
-        "features": {
-            "label": "Disability Status *",
-            "name": "disabilityStatus",
-            "automationId": "disability-select",
-            "placeholder": "Select status",
-            "parentContext": "EEO",
-            "siblingContext": "Voluntary"
-        },
-        "label": "disability"
-    },
-    {
-        "features": {
-            "label": "Do you have a disability?",
-            "name": "hasDisability",
-            "automationId": "qa-disability",
-            "placeholder": "Yes / No / Prefer not to answer",
-            "parentContext": "Accessibility",
-            "siblingContext": null
-        },
-        "label": "disability"
-    },
-    {
-        "features": {
-            "label": "Behinderung",
-            "name": "wd-Disability",
-            "automationId": "input-behinderung",
-            "placeholder": "Bitte wählen",
-            "parentContext": "Chancengleichheit",
-            "siblingContext": "Freiwillig"
-        },
-        "label": "disability"
-    },
-    {
-        "features": {
-            "label": "¿Tiene alguna discapacidad?",
-            "name": "discapacidad_es",
-            "automationId": "lever-disability",
-            "placeholder": "Sí / No",
-            "parentContext": "Accesibilidad",
-            "siblingContext": "Voluntario"
-        },
-        "label": "disability"
-    },
-    {
-        "features": {
-            "label": "Situation de handicap",
-            "name": "handicap_fr",
-            "automationId": "gh-disability",
-            "placeholder": "Sélectionner",
-            "parentContext": "Égalité",
-            "siblingContext": "Facultatif"
-        },
-        "label": "disability"
-    },
-    {
-        "features": {
-            "label": "Disability (CC-305)",
-            "name": "cc305",
-            "automationId": "input-dis",
-            "placeholder": "Select",
-            "parentContext": "EEOC",
-            "siblingContext": null
-        },
-        "label": "disability"
-    },
-    {
-        "features": {
-            "label": "Authorized to work in the US? *",
-            "name": "workAuth",
-            "automationId": "work-auth-select",
-            "placeholder": "Yes / No",
-            "parentContext": "Legal",
-            "siblingContext": "Required"
-        },
-        "label": "work_auth"
-    },
-    {
-        "features": {
-            "label": "Work Authorization",
-            "name": "workAuthorization",
-            "automationId": "qa-work-auth",
-            "placeholder": "Are you authorized?",
-            "parentContext": "Compliance",
-            "siblingContext": null
-        },
-        "label": "work_auth"
-    },
-    {
-        "features": {
-            "label": "Arbeitsgenehmigung",
-            "name": "wd-WorkAuth",
-            "automationId": "input-genehmigung",
-            "placeholder": "Ja / Nein",
-            "parentContext": "Recht",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "work_auth"
-    },
-    {
-        "features": {
-            "label": "¿Autorizado para trabajar?",
-            "name": "autorizado_es",
-            "automationId": "lever-auth",
-            "placeholder": "Sí / No",
-            "parentContext": "Legal",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "work_auth"
-    },
-    {
-        "features": {
-            "label": "Autorisé à travailler?",
-            "name": "autorise_fr",
-            "automationId": "gh-auth",
-            "placeholder": "Oui / Non",
-            "parentContext": "Légal",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "work_auth"
-    },
-    {
-        "features": {
-            "label": "Eligible to work",
-            "name": "eligibleWork",
-            "automationId": "input-eligible",
-            "placeholder": "Select",
-            "parentContext": "Employment",
-            "siblingContext": null
-        },
-        "label": "work_auth"
-    },
-    {
-        "features": {
-            "label": "Require sponsorship? *",
-            "name": "sponsorship",
-            "automationId": "sponsor-select",
-            "placeholder": "Yes / No",
-            "parentContext": "Legal",
-            "siblingContext": "For visa"
-        },
-        "label": "sponsorship"
-    },
-    {
-        "features": {
-            "label": "Visa Sponsorship Required",
-            "name": "visaSponsorship",
-            "automationId": "qa-sponsorship",
-            "placeholder": "Will you need sponsorship?",
-            "parentContext": "Immigration",
-            "siblingContext": null
-        },
-        "label": "sponsorship"
-    },
-    {
-        "features": {
-            "label": "Visumsponsoring benötigt",
-            "name": "wd-Sponsorship",
-            "automationId": "input-visa-sponsor",
-            "placeholder": "Ja / Nein",
-            "parentContext": "Aufenthaltsrecht",
-            "siblingContext": null
-        },
-        "label": "sponsorship"
-    },
-    {
-        "features": {
-            "label": "¿Requiere patrocinio de visa?",
-            "name": "patrocinio_es",
-            "automationId": "lever-sponsor",
-            "placeholder": "Sí / No",
-            "parentContext": "Inmigración",
-            "siblingContext": null
-        },
-        "label": "sponsorship"
-    },
-    {
-        "features": {
-            "label": "Besoin de parrainage visa?",
-            "name": "parrainage_fr",
-            "automationId": "gh-sponsor",
-            "placeholder": "Oui / Non",
-            "parentContext": "Immigration",
-            "siblingContext": null
-        },
-        "label": "sponsorship"
-    },
-    {
-        "features": {
-            "label": "Need sponsorship?",
-            "name": "needSponsor",
-            "automationId": "input-need-sponsor",
-            "placeholder": "Select",
-            "parentContext": "Work Right",
-            "siblingContext": null
-        },
-        "label": "sponsorship"
-    },
-    {
-        "features": {
-            "label": "Notice Period *",
-            "name": "noticePeriod",
-            "automationId": "notice-input",
-            "placeholder": "e.g. 2 weeks",
-            "parentContext": "Availability",
-            "siblingContext": "Required"
-        },
-        "label": "notice_period_in_days"
-    },
-    {
-        "features": {
-            "label": "How much notice do you need?",
-            "name": "howMuchNotice",
-            "automationId": "qa-notice",
-            "placeholder": "Notice required",
-            "parentContext": "Transition",
-            "siblingContext": null
-        },
-        "label": "notice_period_in_days"
-    },
-    {
-        "features": {
-            "label": "Kündigungsfrist *",
-            "name": "wd-Notice",
-            "automationId": "input-kuendigung",
-            "placeholder": "z.B. 1 Monat",
-            "parentContext": "Verfügbarkeit",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "notice_period_in_days"
-    },
-    {
-        "features": {
-            "label": "Periodo de preaviso *",
-            "name": "preaviso_es",
-            "automationId": "lever-notice",
-            "placeholder": "p.ej. 15 días",
-            "parentContext": "Disponibilidad",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "notice_period_in_days"
-    },
-    {
-        "features": {
-            "label": "Préavis requis *",
-            "name": "preavis_fr",
-            "automationId": "gh-notice",
-            "placeholder": "p.ex. 1 mois",
-            "parentContext": "Disponibilité",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "notice_period_in_days"
-    },
-    {
-        "features": {
-            "label": "Notice Required",
-            "name": "noticeReq",
-            "automationId": "input-notice-req",
-            "placeholder": "Period",
-            "parentContext": "Timeline",
-            "siblingContext": null
-        },
-        "label": "notice_period_in_days"
-    },
-    {
-        "features": {
-            "label": "Remote Work Preference *",
-            "name": "remotePreference",
-            "automationId": "remote-select",
-            "placeholder": "Remote / Hybrid / On-site",
-            "parentContext": "Work Style",
-            "siblingContext": "Required"
-        },
-        "label": "remote_preference"
-    },
-    {
-        "features": {
-            "label": "Work Location Preference",
-            "name": "workLocPref",
-            "automationId": "qa-remote",
-            "placeholder": "Where would you like to work?",
-            "parentContext": "Preferences",
-            "siblingContext": null
-        },
-        "label": "remote_preference"
-    },
-    {
-        "features": {
-            "label": "Home-Office-Präferenz *",
-            "name": "wd-Remote",
-            "automationId": "input-homeoffice",
-            "placeholder": "Bitte wählen",
-            "parentContext": "Arbeitsmodell",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "remote_preference"
-    },
-    {
-        "features": {
-            "label": "¿Trabajo remoto? *",
-            "name": "remoto_es",
-            "automationId": "lever-remote",
-            "placeholder": "Remoto / Híbrido / Presencial",
-            "parentContext": "Preferencias",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "remote_preference"
-    },
-    {
-        "features": {
-            "label": "Préférence télétravail *",
-            "name": "teletravail_fr",
-            "automationId": "gh-remote",
-            "placeholder": "Sélectionner",
-            "parentContext": "Mode de travail",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "remote_preference"
-    },
-    {
-        "features": {
-            "label": "Remote / On-site / Hybrid",
-            "name": "workMode",
-            "automationId": "input-mode",
-            "placeholder": "Select preference",
-            "parentContext": "Location",
-            "siblingContext": null
-        },
-        "label": "remote_preference"
-    },
-    {
-        "features": {
-            "label": "Full Name *",
-            "name": "fullName",
-            "automationId": "full-name-input",
-            "placeholder": "John Smith",
-            "parentContext": "Personal Information",
-            "siblingContext": "Required"
-        },
-        "label": "full_name"
-    },
-    {
-        "features": {
-            "label": "Complete Name",
-            "name": "completeName",
-            "automationId": "qa-fullname",
-            "placeholder": "First and last name",
-            "parentContext": "Identity",
-            "siblingContext": null
-        },
-        "label": "full_name"
-    },
-    {
-        "features": {
-            "label": "Vollständiger Name *",
-            "name": "wd-FullName",
-            "automationId": "input-vollname",
-            "placeholder": "Max Mustermann",
-            "parentContext": "Persönliche Daten",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "full_name"
-    },
-    {
-        "features": {
-            "label": "Nombre completo *",
-            "name": "nombreCompleto_es",
-            "automationId": "lever-fullname",
-            "placeholder": "Juan García",
-            "parentContext": "Identidad",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "full_name"
-    },
-    {
-        "features": {
-            "label": "Nom complet *",
-            "name": "nomComplet_fr",
-            "automationId": "gh-fullname",
-            "placeholder": "Jean Dupont",
-            "parentContext": "Identité",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "full_name"
-    },
-    {
-        "features": {
-            "label": "Your Name",
-            "name": "yourName",
-            "automationId": "input-your-name",
-            "placeholder": "Full name",
-            "parentContext": "Account",
-            "siblingContext": null
-        },
-        "label": "full_name"
-    },
-    {
-        "features": {
-            "label": "Middle Name",
-            "name": "middleName",
-            "automationId": "middle-name-input",
-            "placeholder": "Optional",
-            "parentContext": "Personal Information",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle Initial",
-            "name": "middleInitial",
-            "automationId": "qa-middle",
-            "placeholder": "M.I.",
-            "parentContext": "Legal Name",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Zweiter Vorname",
-            "name": "wd-MiddleName",
-            "automationId": "input-zweiter",
-            "placeholder": "Falls vorhanden",
-            "parentContext": "Name",
-            "siblingContext": "Optional"
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Segundo nombre",
-            "name": "segundo_es",
-            "automationId": "lever-middle",
-            "placeholder": "Si aplica",
-            "parentContext": "Nombre",
-            "siblingContext": "Opcional"
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Deuxième prénom",
-            "name": "deuxieme_fr",
-            "automationId": "gh-middle",
-            "placeholder": "Si applicable",
-            "parentContext": "Nom",
-            "siblingContext": "Facultatif"
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Middle",
-            "name": "middle",
-            "automationId": "input-mid",
-            "placeholder": "Middle name/initial",
-            "parentContext": "Name",
-            "siblingContext": null
-        },
-        "label": "middle_name"
-    },
-    {
-        "features": {
-            "label": "Preferred Name",
-            "name": "preferredName",
-            "automationId": "preferred-name-input",
-            "placeholder": "Nickname",
-            "parentContext": "Personal Information",
-            "siblingContext": "What should we call you?"
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Go By",
-            "name": "goBy",
-            "automationId": "qa-preferred",
-            "placeholder": "Preferred name",
-            "parentContext": "Profile",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Rufname",
-            "name": "wd-Preferred",
-            "automationId": "input-rufname",
-            "placeholder": "Wie möchten Sie genannt werden?",
-            "parentContext": "Persönliches",
-            "siblingContext": "Optional"
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Nombre preferido",
-            "name": "nombrePref_es",
-            "automationId": "lever-preferred",
-            "placeholder": "¿Cómo le llamamos?",
-            "parentContext": "Perfil",
-            "siblingContext": "Opcional"
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Nom préféré",
-            "name": "nomPref_fr",
-            "automationId": "gh-preferred",
-            "placeholder": "Surnom",
-            "parentContext": "Profil",
-            "siblingContext": "Facultatif"
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Nickname",
-            "name": "nickname",
-            "automationId": "input-nick",
-            "placeholder": "Alias",
-            "parentContext": "Contact",
-            "siblingContext": null
-        },
-        "label": "preferred_name"
-    },
-    {
-        "features": {
-            "label": "Secondary Email",
-            "name": "secondaryEmail",
-            "automationId": "alt-email-input",
-            "placeholder": "Backup email",
-            "parentContext": "Contact",
-            "siblingContext": "Optional"
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Alternative Email",
-            "name": "altEmail",
-            "automationId": "qa-alt-email",
-            "placeholder": "Another email address",
-            "parentContext": "Contact Details",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Zweit-E-Mail",
-            "name": "wd-AltEmail",
-            "automationId": "input-zweit-email",
-            "placeholder": "Alternative E-Mail",
-            "parentContext": "Kontakt",
-            "siblingContext": "Optional"
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Email secundario",
-            "name": "emailSec_es",
-            "automationId": "lever-alt-email",
-            "placeholder": "Email alternativo",
-            "parentContext": "Contacto",
-            "siblingContext": "Opcional"
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Email secondaire",
-            "name": "emailSec_fr",
-            "automationId": "gh-alt-email",
-            "placeholder": "Email alternatif",
-            "parentContext": "Coordonnées",
-            "siblingContext": "Facultatif"
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Backup Email",
-            "name": "backupEmail",
-            "automationId": "input-backup",
-            "placeholder": "Alternate contact",
-            "parentContext": "Communication",
-            "siblingContext": null
-        },
-        "label": "email_secondary"
-    },
-    {
-        "features": {
-            "label": "Photo",
-            "name": "photo",
-            "automationId": "photo-upload",
-            "placeholder": null,
-            "parentContext": "Profile",
-            "siblingContext": "Optional headshot"
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Profile Picture",
-            "name": "profilePic",
-            "automationId": "qa-photo",
-            "placeholder": "Upload image",
-            "parentContext": "Personalization",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Profilbild",
-            "name": "wd-Photo",
-            "automationId": "input-bild",
-            "placeholder": null,
-            "parentContext": "Profil",
-            "siblingContext": "Optional"
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Foto de perfil",
-            "name": "foto_es",
-            "automationId": "lever-photo",
-            "placeholder": "Subir foto",
-            "parentContext": "Perfil",
-            "siblingContext": "Opcional"
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Photo de profil",
-            "name": "photoProfil_fr",
-            "automationId": "gh-photo",
-            "placeholder": null,
-            "parentContext": "Profil",
-            "siblingContext": "Facultatif"
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "Avatar",
-            "name": "avatar",
-            "automationId": "input-avatar",
-            "placeholder": "Upload",
-            "parentContext": "Account",
-            "siblingContext": null
-        },
-        "label": "profile_photo"
-    },
-    {
-        "features": {
-            "label": "I agree to the Terms *",
-            "name": "agreeTerms",
-            "automationId": "terms-checkbox",
-            "placeholder": null,
-            "parentContext": "Legal",
-            "siblingContext": "Required"
-        },
-        "label": "agreement"
-    },
-    {
-        "features": {
-            "label": "Accept Privacy Policy",
-            "name": "acceptPrivacy",
-            "automationId": "qa-terms",
-            "placeholder": null,
-            "parentContext": "Consent",
-            "siblingContext": null
-        },
-        "label": "agreement"
-    },
-    {
-        "features": {
-            "label": "Ich stimme den AGB zu *",
-            "name": "wd-Terms",
-            "automationId": "input-agb",
-            "placeholder": null,
-            "parentContext": "Rechtliches",
-            "siblingContext": "Pflichtfeld"
-        },
-        "label": "agreement"
-    },
-    {
-        "features": {
-            "label": "Acepto los términos *",
-            "name": "acepto_es",
-            "automationId": "lever-terms",
-            "placeholder": null,
-            "parentContext": "Legal",
-            "siblingContext": "Obligatorio"
-        },
-        "label": "agreement"
-    },
-    {
-        "features": {
-            "label": "J'accepte les conditions *",
-            "name": "accepte_fr",
-            "automationId": "gh-terms",
-            "placeholder": null,
-            "parentContext": "Légal",
-            "siblingContext": "Obligatoire"
-        },
-        "label": "agreement"
-    },
-    {
-        "features": {
-            "label": "Terms and Conditions",
-            "name": "termsConditions",
-            "automationId": "input-tnc",
-            "placeholder": null,
-            "parentContext": "Agreement",
-            "siblingContext": null
-        },
-        "label": "agreement"
-    },
-    {
-        "features": {
-            "label": "Certifications",
-            "name": "certifications",
-            "automationId": "certs-input",
-            "placeholder": "AWS, PMP, etc.",
-            "parentContext": "Qualifications",
-            "siblingContext": "Comma separated"
-        },
-        "label": "certifications"
-    },
-    {
-        "features": {
-            "label": "Professional Certifications",
-            "name": "profCerts",
-            "automationId": "qa-certs",
-            "placeholder": "List your certs",
-            "parentContext": "Credentials",
-            "siblingContext": null
-        },
-        "label": "certifications"
-    },
-    {
-        "features": {
-            "label": "Zertifizierungen",
-            "name": "wd-Certs",
-            "automationId": "input-zertifikate",
-            "placeholder": "Ihre Zertifikate",
-            "parentContext": "Qualifikationen",
-            "siblingContext": null
-        },
-        "label": "certifications"
-    },
-    {
-        "features": {
-            "label": "Certificaciones",
-            "name": "certificaciones_es",
-            "automationId": "lever-certs",
-            "placeholder": "Sus certificados",
-            "parentContext": "Credenciales",
-            "siblingContext": null
-        },
-        "label": "certifications"
-    },
-    {
-        "features": {
-            "label": "Certifications",
-            "name": "certifications_fr",
-            "automationId": "gh-certs",
-            "placeholder": "Vos certifications",
-            "parentContext": "Qualifications",
-            "siblingContext": null
-        },
-        "label": "certifications"
-    },
-    {
-        "features": {
-            "label": "Licenses & Certifications",
-            "name": "licensesCerts",
-            "automationId": "input-lic-cert",
-            "placeholder": "Your credentials",
-            "parentContext": "Professional",
-            "siblingContext": null
-        },
-        "label": "certifications"
-    },
-    {
-        "features": {
-            "label": "Languages",
-            "name": "languages",
-            "automationId": "languages-input",
-            "placeholder": "English, Spanish...",
-            "parentContext": "Skills",
-            "siblingContext": "Languages you speak"
-        },
-        "label": "languages"
-    },
-    {
-        "features": {
-            "label": "Language Skills",
-            "name": "langSkills",
-            "automationId": "qa-languages",
-            "placeholder": "List your languages",
-            "parentContext": "Competencies",
-            "siblingContext": null
-        },
-        "label": "languages"
-    },
-    {
-        "features": {
-            "label": "Sprachkenntnisse",
-            "name": "wd-Languages",
-            "automationId": "input-sprachen",
-            "placeholder": "Ihre Sprachen",
-            "parentContext": "Fähigkeiten",
-            "siblingContext": null
-        },
-        "label": "languages"
-    },
-    {
-        "features": {
-            "label": "Idiomas",
-            "name": "idiomas_es",
-            "automationId": "lever-languages",
-            "placeholder": "Sus idiomas",
-            "parentContext": "Habilidades",
-            "siblingContext": null
-        },
-        "label": "languages"
-    },
-    {
-        "features": {
-            "label": "Langues parlées",
-            "name": "langues_fr",
-            "automationId": "gh-languages",
-            "placeholder": "Vos langues",
-            "parentContext": "Compétences",
-            "siblingContext": null
-        },
-        "label": "languages"
-    },
-    {
-        "features": {
-            "label": "Spoken Languages",
-            "name": "spokenLangs",
-            "automationId": "input-spoken",
-            "placeholder": "Languages",
-            "parentContext": "Communication",
-            "siblingContext": null
-        },
-        "label": "languages"
-    }
+  {
+    "features": {
+      "label": "Graduation Date",
+      "name": "gradDate",
+      "automationId": "grad-date-input",
+      "placeholder": "MM/YYYY",
+      "parentContext": "Education",
+      "siblingContext": "Expected or actual"
+    },
+    "label": "graduation_date"
+  },
+  {
+    "features": {
+      "label": "Date of Graduation *",
+      "name": "graduationDate",
+      "automationId": "qa-grad-date",
+      "placeholder": "When did you graduate?",
+      "parentContext": "Academic History",
+      "siblingContext": "Required"
+    },
+    "label": "graduation_date"
+  },
+  {
+    "features": {
+      "label": "Abschlussdatum *",
+      "name": "wd-GradDate",
+      "automationId": "input-abschlussdatum",
+      "placeholder": "MM/JJJJ",
+      "parentContext": "Ausbildung",
+      "siblingContext": null
+    },
+    "label": "graduation_date"
+  },
+  {
+    "features": {
+      "label": "Fecha de graduación *",
+      "name": "fechaGrad_es",
+      "automationId": "lever-grad",
+      "placeholder": "MM/AAAA",
+      "parentContext": "Educación",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "graduation_date"
+  },
+  {
+    "features": {
+      "label": "Date d'obtention *",
+      "name": "dateObtention_fr",
+      "automationId": "gh-grad-date",
+      "placeholder": "MM/AAAA",
+      "parentContext": "Formation",
+      "siblingContext": null
+    },
+    "label": "graduation_date"
+  },
+  {
+    "features": {
+      "label": "Year Graduated",
+      "name": "yearGrad",
+      "automationId": "input-year-grad",
+      "placeholder": "2020",
+      "parentContext": "Degree Info",
+      "siblingContext": null
+    },
+    "label": "graduation_date"
+  },
+  {
+    "features": {
+      "label": "GPA",
+      "name": "gpa",
+      "automationId": "gpa-input",
+      "placeholder": "3.8",
+      "parentContext": "Education",
+      "siblingContext": "On 4.0 scale"
+    },
+    "label": "gpa"
+  },
+  {
+    "features": {
+      "label": "Grade Point Average",
+      "name": "gradePointAvg",
+      "automationId": "qa-gpa",
+      "placeholder": "Enter GPA",
+      "parentContext": "Academic Performance",
+      "siblingContext": null
+    },
+    "label": "gpa"
+  },
+  {
+    "features": {
+      "label": "Notendurchschnitt",
+      "name": "wd-GPA",
+      "automationId": "input-note",
+      "placeholder": "z.B. 1.5",
+      "parentContext": "Studium",
+      "siblingContext": "Optional"
+    },
+    "label": "gpa"
+  },
+  {
+    "features": {
+      "label": "Promedio *",
+      "name": "promedio_es",
+      "automationId": "lever-gpa",
+      "placeholder": "8.5",
+      "parentContext": "Educación",
+      "siblingContext": null
+    },
+    "label": "gpa"
+  },
+  {
+    "features": {
+      "label": "Moyenne *",
+      "name": "moyenne_fr",
+      "automationId": "gh-gpa",
+      "placeholder": "14/20",
+      "parentContext": "Formation",
+      "siblingContext": null
+    },
+    "label": "gpa"
+  },
+  {
+    "features": {
+      "label": "Academic Score",
+      "name": "academicScore",
+      "automationId": "input-score",
+      "placeholder": "Score",
+      "parentContext": "Grades",
+      "siblingContext": null
+    },
+    "label": "gpa"
+  },
+  {
+    "features": {
+      "label": "Start Date",
+      "name": "expStartDate",
+      "automationId": "exp-start-input",
+      "placeholder": "MM/YYYY",
+      "parentContext": "Experience",
+      "siblingContext": "When you started"
+    },
+    "label": "job_start_date"
+  },
+  {
+    "features": {
+      "label": "From *",
+      "name": "fromDate",
+      "automationId": "qa-from-date",
+      "placeholder": "Start date",
+      "parentContext": "Work History",
+      "siblingContext": "Required"
+    },
+    "label": "job_start_date"
+  },
+  {
+    "features": {
+      "label": "Von *",
+      "name": "wd-StartDate",
+      "automationId": "input-von",
+      "placeholder": "MM/JJJJ",
+      "parentContext": "Berufserfahrung",
+      "siblingContext": null
+    },
+    "label": "job_start_date"
+  },
+  {
+    "features": {
+      "label": "Fecha de inicio *",
+      "name": "fechaIni_es",
+      "automationId": "lever-from",
+      "placeholder": "MM/AAAA",
+      "parentContext": "Experiencia",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "job_start_date"
+  },
+  {
+    "features": {
+      "label": "Date de début *",
+      "name": "dateDebut_fr",
+      "automationId": "gh-from",
+      "placeholder": "MM/AAAA",
+      "parentContext": "Expérience",
+      "siblingContext": null
+    },
+    "label": "job_start_date"
+  },
+  {
+    "features": {
+      "label": "Employment Start",
+      "name": "empStart",
+      "automationId": "input-emp-start",
+      "placeholder": "Start",
+      "parentContext": "Job",
+      "siblingContext": null
+    },
+    "label": "job_start_date"
+  },
+  {
+    "features": {
+      "label": "End Date",
+      "name": "expEndDate",
+      "automationId": "exp-end-input",
+      "placeholder": "MM/YYYY",
+      "parentContext": "Experience",
+      "siblingContext": "Leave blank if current"
+    },
+    "label": "job_end_date"
+  },
+  {
+    "features": {
+      "label": "To",
+      "name": "toDate",
+      "automationId": "qa-to-date",
+      "placeholder": "End date or Present",
+      "parentContext": "Work History",
+      "siblingContext": null
+    },
+    "label": "job_end_date"
+  },
+  {
+    "features": {
+      "label": "Bis",
+      "name": "wd-EndDate",
+      "automationId": "input-bis",
+      "placeholder": "MM/JJJJ",
+      "parentContext": "Berufserfahrung",
+      "siblingContext": "Leer wenn aktuell"
+    },
+    "label": "job_end_date"
+  },
+  {
+    "features": {
+      "label": "Fecha de fin",
+      "name": "fechaFin_es",
+      "automationId": "lever-to",
+      "placeholder": "MM/AAAA o Presente",
+      "parentContext": "Experiencia",
+      "siblingContext": null
+    },
+    "label": "job_end_date"
+  },
+  {
+    "features": {
+      "label": "Date de fin",
+      "name": "dateFin_fr",
+      "automationId": "gh-to",
+      "placeholder": "MM/AAAA ou En cours",
+      "parentContext": "Expérience",
+      "siblingContext": null
+    },
+    "label": "job_end_date"
+  },
+  {
+    "features": {
+      "label": "Employment End",
+      "name": "empEnd",
+      "automationId": "input-emp-end",
+      "placeholder": "End",
+      "parentContext": "Job",
+      "siblingContext": "Current?"
+    },
+    "label": "job_end_date"
+  },
+  {
+    "features": {
+      "label": "Job Description",
+      "name": "jobDescription",
+      "automationId": "job-desc-input",
+      "placeholder": "Describe your responsibilities",
+      "parentContext": "Experience",
+      "siblingContext": "Max 500 words"
+    },
+    "label": "job_description"
+  },
+  {
+    "features": {
+      "label": "Description of Role *",
+      "name": "roleDescription",
+      "automationId": "qa-desc",
+      "placeholder": "What did you do?",
+      "parentContext": "Work History",
+      "siblingContext": "Required"
+    },
+    "label": "job_description"
+  },
+  {
+    "features": {
+      "label": "Aufgabenbeschreibung *",
+      "name": "wd-Description",
+      "automationId": "input-aufgaben",
+      "placeholder": "Ihre Aufgaben",
+      "parentContext": "Position",
+      "siblingContext": null
+    },
+    "label": "job_description"
+  },
+  {
+    "features": {
+      "label": "Descripción del puesto *",
+      "name": "descripcion_es",
+      "automationId": "lever-desc",
+      "placeholder": "Sus responsabilidades",
+      "parentContext": "Experiencia",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "job_description"
+  },
+  {
+    "features": {
+      "label": "Description du poste *",
+      "name": "descPoste_fr",
+      "automationId": "gh-desc",
+      "placeholder": "Vos responsabilités",
+      "parentContext": "Expérience",
+      "siblingContext": null
+    },
+    "label": "job_description"
+  },
+  {
+    "features": {
+      "label": "Responsibilities",
+      "name": "responsibilities",
+      "automationId": "input-resp",
+      "placeholder": "Key duties",
+      "parentContext": "Job",
+      "siblingContext": null
+    },
+    "label": "job_description"
+  },
+  {
+    "features": {
+      "label": "Current Company",
+      "name": "currentCompany",
+      "automationId": "current-company-input",
+      "placeholder": "Where do you work now?",
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "current_company"
+  },
+  {
+    "features": {
+      "label": "Current Employer",
+      "name": "currentEmployer",
+      "automationId": "qa-curr-company",
+      "placeholder": "Company name",
+      "parentContext": "Summary",
+      "siblingContext": null
+    },
+    "label": "current_company"
+  },
+  {
+    "features": {
+      "label": "Aktueller Arbeitgeber",
+      "name": "wd-CurrentCompany",
+      "automationId": "input-aktueller-ag",
+      "placeholder": "Ihre aktuelle Firma",
+      "parentContext": "Profil",
+      "siblingContext": null
+    },
+    "label": "current_company"
+  },
+  {
+    "features": {
+      "label": "Empresa actual",
+      "name": "empresaActual_es",
+      "automationId": "lever-curr-company",
+      "placeholder": "Donde trabaja ahora",
+      "parentContext": "Resumen",
+      "siblingContext": null
+    },
+    "label": "current_company"
+  },
+  {
+    "features": {
+      "label": "Employeur actuel",
+      "name": "employeurActuel_fr",
+      "automationId": "gh-curr-company",
+      "placeholder": "Votre entreprise actuelle",
+      "parentContext": "Profil",
+      "siblingContext": null
+    },
+    "label": "current_company"
+  },
+  {
+    "features": {
+      "label": "Present Employer",
+      "name": "presentEmp",
+      "automationId": "input-present-emp",
+      "placeholder": "Current employer",
+      "parentContext": "Career",
+      "siblingContext": null
+    },
+    "label": "current_company"
+  },
+  {
+    "features": {
+      "label": "Current Job Title",
+      "name": "currentTitle",
+      "automationId": "current-title-input",
+      "placeholder": "Your current role",
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "current_title"
+  },
+  {
+    "features": {
+      "label": "Current Position",
+      "name": "currentPosition",
+      "automationId": "qa-curr-title",
+      "placeholder": "Job title",
+      "parentContext": "Summary",
+      "siblingContext": null
+    },
+    "label": "current_title"
+  },
+  {
+    "features": {
+      "label": "Aktuelle Position",
+      "name": "wd-CurrentTitle",
+      "automationId": "input-aktuelle-pos",
+      "placeholder": "Ihre aktuelle Rolle",
+      "parentContext": "Profil",
+      "siblingContext": null
+    },
+    "label": "current_title"
+  },
+  {
+    "features": {
+      "label": "Puesto actual",
+      "name": "puestoActual_es",
+      "automationId": "lever-curr-title",
+      "placeholder": "Su rol actual",
+      "parentContext": "Resumen",
+      "siblingContext": null
+    },
+    "label": "current_title"
+  },
+  {
+    "features": {
+      "label": "Poste actuel",
+      "name": "poste_fr",
+      "automationId": "gh-curr-title",
+      "placeholder": "Votre rôle actuel",
+      "parentContext": "Profil",
+      "siblingContext": null
+    },
+    "label": "current_title"
+  },
+  {
+    "features": {
+      "label": "Current Role",
+      "name": "currRole",
+      "automationId": "input-curr-role",
+      "placeholder": "Role",
+      "parentContext": "Career",
+      "siblingContext": null
+    },
+    "label": "current_title"
+  },
+  {
+    "features": {
+      "label": "Gender *",
+      "name": "gender",
+      "automationId": "gender-select",
+      "placeholder": "Select gender",
+      "parentContext": "EEO",
+      "siblingContext": "Voluntary"
+    },
+    "label": "gender"
+  },
+  {
+    "features": {
+      "label": "Gender Identity",
+      "name": "genderIdentity",
+      "automationId": "qa-gender",
+      "placeholder": "How do you identify?",
+      "parentContext": "Diversity",
+      "siblingContext": "Optional"
+    },
+    "label": "gender"
+  },
+  {
+    "features": {
+      "label": "Geschlecht",
+      "name": "wd-Gender",
+      "automationId": "input-geschlecht",
+      "placeholder": "Bitte wählen",
+      "parentContext": "Chancengleichheit",
+      "siblingContext": "Freiwillig"
+    },
+    "label": "gender"
+  },
+  {
+    "features": {
+      "label": "Género",
+      "name": "genero_es",
+      "automationId": "lever-gender",
+      "placeholder": "Seleccionar género",
+      "parentContext": "Diversidad",
+      "siblingContext": "Voluntario"
+    },
+    "label": "gender"
+  },
+  {
+    "features": {
+      "label": "Genre",
+      "name": "genre_fr",
+      "automationId": "gh-gender",
+      "placeholder": "Sélectionner",
+      "parentContext": "Égalité",
+      "siblingContext": "Facultatif"
+    },
+    "label": "gender"
+  },
+  {
+    "features": {
+      "label": "Sex",
+      "name": "sex",
+      "automationId": "input-sex",
+      "placeholder": "Select",
+      "parentContext": "EEOC",
+      "siblingContext": null
+    },
+    "label": "gender"
+  },
+  {
+    "features": {
+      "label": "Race/Ethnicity *",
+      "name": "raceEthnicity",
+      "automationId": "race-select",
+      "placeholder": "Select race/ethnicity",
+      "parentContext": "EEO",
+      "siblingContext": "Voluntary"
+    },
+    "label": "race"
+  },
+  {
+    "features": {
+      "label": "Race",
+      "name": "race",
+      "automationId": "qa-race",
+      "placeholder": "How do you identify?",
+      "parentContext": "Diversity",
+      "siblingContext": "Optional"
+    },
+    "label": "race"
+  },
+  {
+    "features": {
+      "label": "Ethnische Herkunft",
+      "name": "wd-Race",
+      "automationId": "input-herkunft",
+      "placeholder": "Bitte wählen",
+      "parentContext": "Chancengleichheit",
+      "siblingContext": "Freiwillig"
+    },
+    "label": "race"
+  },
+  {
+    "features": {
+      "label": "Raza/Etnia",
+      "name": "raza_es",
+      "automationId": "lever-race",
+      "placeholder": "Seleccionar",
+      "parentContext": "Diversidad",
+      "siblingContext": "Voluntario"
+    },
+    "label": "race"
+  },
+  {
+    "features": {
+      "label": "Origine ethnique",
+      "name": "origine_fr",
+      "automationId": "gh-race",
+      "placeholder": "Sélectionner",
+      "parentContext": "Égalité",
+      "siblingContext": "Facultatif"
+    },
+    "label": "race"
+  },
+  {
+    "features": {
+      "label": "Ethnicity",
+      "name": "ethnicity",
+      "automationId": "input-ethnicity",
+      "placeholder": "Select",
+      "parentContext": "EEOC",
+      "siblingContext": null
+    },
+    "label": "ethnicity"
+  },
+  {
+    "features": {
+      "label": "Veteran Status *",
+      "name": "veteranStatus",
+      "automationId": "veteran-select",
+      "placeholder": "Select status",
+      "parentContext": "EEO",
+      "siblingContext": "Voluntary"
+    },
+    "label": "veteran"
+  },
+  {
+    "features": {
+      "label": "Are you a veteran?",
+      "name": "isVeteran",
+      "automationId": "qa-veteran",
+      "placeholder": "Yes / No",
+      "parentContext": "Military",
+      "siblingContext": null
+    },
+    "label": "veteran"
+  },
+  {
+    "features": {
+      "label": "Veteranenstatus",
+      "name": "wd-Veteran",
+      "automationId": "input-veteran",
+      "placeholder": "Bitte wählen",
+      "parentContext": "Chancengleichheit",
+      "siblingContext": "Freiwillig"
+    },
+    "label": "veteran"
+  },
+  {
+    "features": {
+      "label": "¿Es veterano?",
+      "name": "veterano_es",
+      "automationId": "lever-veteran",
+      "placeholder": "Sí / No",
+      "parentContext": "Servicio militar",
+      "siblingContext": "Voluntario"
+    },
+    "label": "veteran"
+  },
+  {
+    "features": {
+      "label": "Statut de vétéran",
+      "name": "statVeteran_fr",
+      "automationId": "gh-veteran",
+      "placeholder": "Sélectionner",
+      "parentContext": "Égalité",
+      "siblingContext": "Facultatif"
+    },
+    "label": "veteran"
+  },
+  {
+    "features": {
+      "label": "Protected Veteran",
+      "name": "protectedVet",
+      "automationId": "input-vet",
+      "placeholder": "Select",
+      "parentContext": "EEOC",
+      "siblingContext": null
+    },
+    "label": "veteran"
+  },
+  {
+    "features": {
+      "label": "Disability Status *",
+      "name": "disabilityStatus",
+      "automationId": "disability-select",
+      "placeholder": "Select status",
+      "parentContext": "EEO",
+      "siblingContext": "Voluntary"
+    },
+    "label": "disability"
+  },
+  {
+    "features": {
+      "label": "Do you have a disability?",
+      "name": "hasDisability",
+      "automationId": "qa-disability",
+      "placeholder": "Yes / No / Prefer not to answer",
+      "parentContext": "Accessibility",
+      "siblingContext": null
+    },
+    "label": "disability"
+  },
+  {
+    "features": {
+      "label": "Behinderung",
+      "name": "wd-Disability",
+      "automationId": "input-behinderung",
+      "placeholder": "Bitte wählen",
+      "parentContext": "Chancengleichheit",
+      "siblingContext": "Freiwillig"
+    },
+    "label": "disability"
+  },
+  {
+    "features": {
+      "label": "¿Tiene alguna discapacidad?",
+      "name": "discapacidad_es",
+      "automationId": "lever-disability",
+      "placeholder": "Sí / No",
+      "parentContext": "Accesibilidad",
+      "siblingContext": "Voluntario"
+    },
+    "label": "disability"
+  },
+  {
+    "features": {
+      "label": "Situation de handicap",
+      "name": "handicap_fr",
+      "automationId": "gh-disability",
+      "placeholder": "Sélectionner",
+      "parentContext": "Égalité",
+      "siblingContext": "Facultatif"
+    },
+    "label": "disability"
+  },
+  {
+    "features": {
+      "label": "Disability (CC-305)",
+      "name": "cc305",
+      "automationId": "input-dis",
+      "placeholder": "Select",
+      "parentContext": "EEOC",
+      "siblingContext": null
+    },
+    "label": "disability"
+  },
+  {
+    "features": {
+      "label": "Authorized to work in the US? *",
+      "name": "workAuth",
+      "automationId": "work-auth-select",
+      "placeholder": "Yes / No",
+      "parentContext": "Legal",
+      "siblingContext": "Required"
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "Work Authorization",
+      "name": "workAuthorization",
+      "automationId": "qa-work-auth",
+      "placeholder": "Are you authorized?",
+      "parentContext": "Compliance",
+      "siblingContext": null
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "Arbeitsgenehmigung",
+      "name": "wd-WorkAuth",
+      "automationId": "input-genehmigung",
+      "placeholder": "Ja / Nein",
+      "parentContext": "Recht",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "¿Autorizado para trabajar?",
+      "name": "autorizado_es",
+      "automationId": "lever-auth",
+      "placeholder": "Sí / No",
+      "parentContext": "Legal",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "Autorisé à travailler?",
+      "name": "autorise_fr",
+      "automationId": "gh-auth",
+      "placeholder": "Oui / Non",
+      "parentContext": "Légal",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "Eligible to work",
+      "name": "eligibleWork",
+      "automationId": "input-eligible",
+      "placeholder": "Select",
+      "parentContext": "Employment",
+      "siblingContext": null
+    },
+    "label": "work_auth"
+  },
+  {
+    "features": {
+      "label": "Require sponsorship? *",
+      "name": "sponsorship",
+      "automationId": "sponsor-select",
+      "placeholder": "Yes / No",
+      "parentContext": "Legal",
+      "siblingContext": "For visa"
+    },
+    "label": "sponsorship"
+  },
+  {
+    "features": {
+      "label": "Visa Sponsorship Required",
+      "name": "visaSponsorship",
+      "automationId": "qa-sponsorship",
+      "placeholder": "Will you need sponsorship?",
+      "parentContext": "Immigration",
+      "siblingContext": null
+    },
+    "label": "sponsorship"
+  },
+  {
+    "features": {
+      "label": "Visumsponsoring benötigt",
+      "name": "wd-Sponsorship",
+      "automationId": "input-visa-sponsor",
+      "placeholder": "Ja / Nein",
+      "parentContext": "Aufenthaltsrecht",
+      "siblingContext": null
+    },
+    "label": "sponsorship"
+  },
+  {
+    "features": {
+      "label": "¿Requiere patrocinio de visa?",
+      "name": "patrocinio_es",
+      "automationId": "lever-sponsor",
+      "placeholder": "Sí / No",
+      "parentContext": "Inmigración",
+      "siblingContext": null
+    },
+    "label": "sponsorship"
+  },
+  {
+    "features": {
+      "label": "Besoin de parrainage visa?",
+      "name": "parrainage_fr",
+      "automationId": "gh-sponsor",
+      "placeholder": "Oui / Non",
+      "parentContext": "Immigration",
+      "siblingContext": null
+    },
+    "label": "sponsorship"
+  },
+  {
+    "features": {
+      "label": "Need sponsorship?",
+      "name": "needSponsor",
+      "automationId": "input-need-sponsor",
+      "placeholder": "Select",
+      "parentContext": "Work Right",
+      "siblingContext": null
+    },
+    "label": "sponsorship"
+  },
+  {
+    "features": {
+      "label": "Notice Period *",
+      "name": "noticePeriod",
+      "automationId": "notice-input",
+      "placeholder": "e.g. 2 weeks",
+      "parentContext": "Availability",
+      "siblingContext": "Required"
+    },
+    "label": "notice_period_in_days"
+  },
+  {
+    "features": {
+      "label": "How much notice do you need?",
+      "name": "howMuchNotice",
+      "automationId": "qa-notice",
+      "placeholder": "Notice required",
+      "parentContext": "Transition",
+      "siblingContext": null
+    },
+    "label": "notice_period_in_days"
+  },
+  {
+    "features": {
+      "label": "Kündigungsfrist *",
+      "name": "wd-Notice",
+      "automationId": "input-kuendigung",
+      "placeholder": "z.B. 1 Monat",
+      "parentContext": "Verfügbarkeit",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "notice_period_in_days"
+  },
+  {
+    "features": {
+      "label": "Periodo de preaviso *",
+      "name": "preaviso_es",
+      "automationId": "lever-notice",
+      "placeholder": "p.ej. 15 días",
+      "parentContext": "Disponibilidad",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "notice_period_in_days"
+  },
+  {
+    "features": {
+      "label": "Préavis requis *",
+      "name": "preavis_fr",
+      "automationId": "gh-notice",
+      "placeholder": "p.ex. 1 mois",
+      "parentContext": "Disponibilité",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "notice_period_in_days"
+  },
+  {
+    "features": {
+      "label": "Notice Required",
+      "name": "noticeReq",
+      "automationId": "input-notice-req",
+      "placeholder": "Period",
+      "parentContext": "Timeline",
+      "siblingContext": null
+    },
+    "label": "notice_period_in_days"
+  },
+  {
+    "features": {
+      "label": "Remote Work Preference *",
+      "name": "remotePreference",
+      "automationId": "remote-select",
+      "placeholder": "Remote / Hybrid / On-site",
+      "parentContext": "Work Style",
+      "siblingContext": "Required"
+    },
+    "label": "remote_preference"
+  },
+  {
+    "features": {
+      "label": "Work Location Preference",
+      "name": "workLocPref",
+      "automationId": "qa-remote",
+      "placeholder": "Where would you like to work?",
+      "parentContext": "Preferences",
+      "siblingContext": null
+    },
+    "label": "remote_preference"
+  },
+  {
+    "features": {
+      "label": "Home-Office-Präferenz *",
+      "name": "wd-Remote",
+      "automationId": "input-homeoffice",
+      "placeholder": "Bitte wählen",
+      "parentContext": "Arbeitsmodell",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "remote_preference"
+  },
+  {
+    "features": {
+      "label": "¿Trabajo remoto? *",
+      "name": "remoto_es",
+      "automationId": "lever-remote",
+      "placeholder": "Remoto / Híbrido / Presencial",
+      "parentContext": "Preferencias",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "remote_preference"
+  },
+  {
+    "features": {
+      "label": "Préférence télétravail *",
+      "name": "teletravail_fr",
+      "automationId": "gh-remote",
+      "placeholder": "Sélectionner",
+      "parentContext": "Mode de travail",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "remote_preference"
+  },
+  {
+    "features": {
+      "label": "Remote / On-site / Hybrid",
+      "name": "workMode",
+      "automationId": "input-mode",
+      "placeholder": "Select preference",
+      "parentContext": "Location",
+      "siblingContext": null
+    },
+    "label": "remote_preference"
+  },
+  {
+    "features": {
+      "label": "Full Name *",
+      "name": "fullName",
+      "automationId": "full-name-input",
+      "placeholder": "John Smith",
+      "parentContext": "Personal Information",
+      "siblingContext": "Required"
+    },
+    "label": "full_name"
+  },
+  {
+    "features": {
+      "label": "Complete Name",
+      "name": "completeName",
+      "automationId": "qa-fullname",
+      "placeholder": "First and last name",
+      "parentContext": "Identity",
+      "siblingContext": null
+    },
+    "label": "full_name"
+  },
+  {
+    "features": {
+      "label": "Vollständiger Name *",
+      "name": "wd-FullName",
+      "automationId": "input-vollname",
+      "placeholder": "Max Mustermann",
+      "parentContext": "Persönliche Daten",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "full_name"
+  },
+  {
+    "features": {
+      "label": "Nombre completo *",
+      "name": "nombreCompleto_es",
+      "automationId": "lever-fullname",
+      "placeholder": "Juan García",
+      "parentContext": "Identidad",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "full_name"
+  },
+  {
+    "features": {
+      "label": "Nom complet *",
+      "name": "nomComplet_fr",
+      "automationId": "gh-fullname",
+      "placeholder": "Jean Dupont",
+      "parentContext": "Identité",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "full_name"
+  },
+  {
+    "features": {
+      "label": "Your Name",
+      "name": "yourName",
+      "automationId": "input-your-name",
+      "placeholder": "Full name",
+      "parentContext": "Account",
+      "siblingContext": null
+    },
+    "label": "full_name"
+  },
+  {
+    "features": {
+      "label": "Middle Name",
+      "name": "middleName",
+      "automationId": "middle-name-input",
+      "placeholder": "Optional",
+      "parentContext": "Personal Information",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle Initial",
+      "name": "middleInitial",
+      "automationId": "qa-middle",
+      "placeholder": "M.I.",
+      "parentContext": "Legal Name",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Zweiter Vorname",
+      "name": "wd-MiddleName",
+      "automationId": "input-zweiter",
+      "placeholder": "Falls vorhanden",
+      "parentContext": "Name",
+      "siblingContext": "Optional"
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Segundo nombre",
+      "name": "segundo_es",
+      "automationId": "lever-middle",
+      "placeholder": "Si aplica",
+      "parentContext": "Nombre",
+      "siblingContext": "Opcional"
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Deuxième prénom",
+      "name": "deuxieme_fr",
+      "automationId": "gh-middle",
+      "placeholder": "Si applicable",
+      "parentContext": "Nom",
+      "siblingContext": "Facultatif"
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Middle",
+      "name": "middle",
+      "automationId": "input-mid",
+      "placeholder": "Middle name/initial",
+      "parentContext": "Name",
+      "siblingContext": null
+    },
+    "label": "middle_name"
+  },
+  {
+    "features": {
+      "label": "Preferred Name",
+      "name": "preferredName",
+      "automationId": "preferred-name-input",
+      "placeholder": "Nickname",
+      "parentContext": "Personal Information",
+      "siblingContext": "What should we call you?"
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Go By",
+      "name": "goBy",
+      "automationId": "qa-preferred",
+      "placeholder": "Preferred name",
+      "parentContext": "Profile",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Rufname",
+      "name": "wd-Preferred",
+      "automationId": "input-rufname",
+      "placeholder": "Wie möchten Sie genannt werden?",
+      "parentContext": "Persönliches",
+      "siblingContext": "Optional"
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Nombre preferido",
+      "name": "nombrePref_es",
+      "automationId": "lever-preferred",
+      "placeholder": "¿Cómo le llamamos?",
+      "parentContext": "Perfil",
+      "siblingContext": "Opcional"
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Nom préféré",
+      "name": "nomPref_fr",
+      "automationId": "gh-preferred",
+      "placeholder": "Surnom",
+      "parentContext": "Profil",
+      "siblingContext": "Facultatif"
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Nickname",
+      "name": "nickname",
+      "automationId": "input-nick",
+      "placeholder": "Alias",
+      "parentContext": "Contact",
+      "siblingContext": null
+    },
+    "label": "preferred_name"
+  },
+  {
+    "features": {
+      "label": "Secondary Email",
+      "name": "secondaryEmail",
+      "automationId": "alt-email-input",
+      "placeholder": "Backup email",
+      "parentContext": "Contact",
+      "siblingContext": "Optional"
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Alternative Email",
+      "name": "altEmail",
+      "automationId": "qa-alt-email",
+      "placeholder": "Another email address",
+      "parentContext": "Contact Details",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Zweit-E-Mail",
+      "name": "wd-AltEmail",
+      "automationId": "input-zweit-email",
+      "placeholder": "Alternative E-Mail",
+      "parentContext": "Kontakt",
+      "siblingContext": "Optional"
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Email secundario",
+      "name": "emailSec_es",
+      "automationId": "lever-alt-email",
+      "placeholder": "Email alternativo",
+      "parentContext": "Contacto",
+      "siblingContext": "Opcional"
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Email secondaire",
+      "name": "emailSec_fr",
+      "automationId": "gh-alt-email",
+      "placeholder": "Email alternatif",
+      "parentContext": "Coordonnées",
+      "siblingContext": "Facultatif"
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Backup Email",
+      "name": "backupEmail",
+      "automationId": "input-backup",
+      "placeholder": "Alternate contact",
+      "parentContext": "Communication",
+      "siblingContext": null
+    },
+    "label": "email_secondary"
+  },
+  {
+    "features": {
+      "label": "Photo",
+      "name": "photo",
+      "automationId": "photo-upload",
+      "placeholder": null,
+      "parentContext": "Profile",
+      "siblingContext": "Optional headshot"
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Profile Picture",
+      "name": "profilePic",
+      "automationId": "qa-photo",
+      "placeholder": "Upload image",
+      "parentContext": "Personalization",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Profilbild",
+      "name": "wd-Photo",
+      "automationId": "input-bild",
+      "placeholder": null,
+      "parentContext": "Profil",
+      "siblingContext": "Optional"
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Foto de perfil",
+      "name": "foto_es",
+      "automationId": "lever-photo",
+      "placeholder": "Subir foto",
+      "parentContext": "Perfil",
+      "siblingContext": "Opcional"
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Photo de profil",
+      "name": "photoProfil_fr",
+      "automationId": "gh-photo",
+      "placeholder": null,
+      "parentContext": "Profil",
+      "siblingContext": "Facultatif"
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "Avatar",
+      "name": "avatar",
+      "automationId": "input-avatar",
+      "placeholder": "Upload",
+      "parentContext": "Account",
+      "siblingContext": null
+    },
+    "label": "profile_photo"
+  },
+  {
+    "features": {
+      "label": "I agree to the Terms *",
+      "name": "agreeTerms",
+      "automationId": "terms-checkbox",
+      "placeholder": null,
+      "parentContext": "Legal",
+      "siblingContext": "Required"
+    },
+    "label": "agreement"
+  },
+  {
+    "features": {
+      "label": "Accept Privacy Policy",
+      "name": "acceptPrivacy",
+      "automationId": "qa-terms",
+      "placeholder": null,
+      "parentContext": "Consent",
+      "siblingContext": null
+    },
+    "label": "agreement"
+  },
+  {
+    "features": {
+      "label": "Ich stimme den AGB zu *",
+      "name": "wd-Terms",
+      "automationId": "input-agb",
+      "placeholder": null,
+      "parentContext": "Rechtliches",
+      "siblingContext": "Pflichtfeld"
+    },
+    "label": "agreement"
+  },
+  {
+    "features": {
+      "label": "Acepto los términos *",
+      "name": "acepto_es",
+      "automationId": "lever-terms",
+      "placeholder": null,
+      "parentContext": "Legal",
+      "siblingContext": "Obligatorio"
+    },
+    "label": "agreement"
+  },
+  {
+    "features": {
+      "label": "J'accepte les conditions *",
+      "name": "accepte_fr",
+      "automationId": "gh-terms",
+      "placeholder": null,
+      "parentContext": "Légal",
+      "siblingContext": "Obligatoire"
+    },
+    "label": "agreement"
+  },
+  {
+    "features": {
+      "label": "Terms and Conditions",
+      "name": "termsConditions",
+      "automationId": "input-tnc",
+      "placeholder": null,
+      "parentContext": "Agreement",
+      "siblingContext": null
+    },
+    "label": "agreement"
+  },
+  {
+    "features": {
+      "label": "Certifications",
+      "name": "certifications",
+      "automationId": "certs-input",
+      "placeholder": "AWS, PMP, etc.",
+      "parentContext": "Qualifications",
+      "siblingContext": "Comma separated"
+    },
+    "label": "certifications"
+  },
+  {
+    "features": {
+      "label": "Professional Certifications",
+      "name": "profCerts",
+      "automationId": "qa-certs",
+      "placeholder": "List your certs",
+      "parentContext": "Credentials",
+      "siblingContext": null
+    },
+    "label": "certifications"
+  },
+  {
+    "features": {
+      "label": "Zertifizierungen",
+      "name": "wd-Certs",
+      "automationId": "input-zertifikate",
+      "placeholder": "Ihre Zertifikate",
+      "parentContext": "Qualifikationen",
+      "siblingContext": null
+    },
+    "label": "certifications"
+  },
+  {
+    "features": {
+      "label": "Certificaciones",
+      "name": "certificaciones_es",
+      "automationId": "lever-certs",
+      "placeholder": "Sus certificados",
+      "parentContext": "Credenciales",
+      "siblingContext": null
+    },
+    "label": "certifications"
+  },
+  {
+    "features": {
+      "label": "Certifications",
+      "name": "certifications_fr",
+      "automationId": "gh-certs",
+      "placeholder": "Vos certifications",
+      "parentContext": "Qualifications",
+      "siblingContext": null
+    },
+    "label": "certifications"
+  },
+  {
+    "features": {
+      "label": "Licenses & Certifications",
+      "name": "licensesCerts",
+      "automationId": "input-lic-cert",
+      "placeholder": "Your credentials",
+      "parentContext": "Professional",
+      "siblingContext": null
+    },
+    "label": "certifications"
+  },
+  {
+    "features": {
+      "label": "Languages",
+      "name": "languages",
+      "automationId": "languages-input",
+      "placeholder": "English, Spanish...",
+      "parentContext": "Skills",
+      "siblingContext": "Languages you speak"
+    },
+    "label": "languages"
+  },
+  {
+    "features": {
+      "label": "Language Skills",
+      "name": "langSkills",
+      "automationId": "qa-languages",
+      "placeholder": "List your languages",
+      "parentContext": "Competencies",
+      "siblingContext": null
+    },
+    "label": "languages"
+  },
+  {
+    "features": {
+      "label": "Sprachkenntnisse",
+      "name": "wd-Languages",
+      "automationId": "input-sprachen",
+      "placeholder": "Ihre Sprachen",
+      "parentContext": "Fähigkeiten",
+      "siblingContext": null
+    },
+    "label": "languages"
+  },
+  {
+    "features": {
+      "label": "Idiomas",
+      "name": "idiomas_es",
+      "automationId": "lever-languages",
+      "placeholder": "Sus idiomas",
+      "parentContext": "Habilidades",
+      "siblingContext": null
+    },
+    "label": "languages"
+  },
+  {
+    "features": {
+      "label": "Langues parlées",
+      "name": "langues_fr",
+      "automationId": "gh-languages",
+      "placeholder": "Vos langues",
+      "parentContext": "Compétences",
+      "siblingContext": null
+    },
+    "label": "languages"
+  },
+  {
+    "features": {
+      "label": "Spoken Languages",
+      "name": "spokenLangs",
+      "automationId": "input-spoken",
+      "placeholder": "Languages",
+      "parentContext": "Communication",
+      "siblingContext": null
+    },
+    "label": "languages"
+  }
 ]
