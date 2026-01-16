@@ -244,62 +244,52 @@ class NeuralClassifier {
      * @returns {Object}
      */
     _getFallbackFieldTypes() {
-        // 129-class list matching FieldTypes.js v5.0
+        // 89-class list matching FieldTypes.js v5.0 (cleaned)
         const ORDERED_CLASSES = [
             'unknown',
-            // Identity (1-8)
+            // Identity (1-6)
             'first_name', 'middle_name', 'last_name', 'full_name', 'preferred_name',
-            'headline', 'summary', 'profile_photo',
-            // Contact (9-13)
-            'email', 'email_secondary', 'phone', 'phone_mobile', 'phone_home',
-            // Online Presence (14-22)
-            'linkedin_url', 'github_url', 'portfolio_url', 'website_url', 'twitter_url',
-            'facebook_url', 'instagram_url', 'google_scholar_url', 'other_url',
-            // Location (23-32)
-            'address_line_1', 'address_line_2', 'city', 'state', 'zip_code', 'country',
-            'current_location', 'timezone', 'relocation', 'preferred_location',
-            // Work Experience (33-44)
+            'profile_photo',
+            // Contact (7-10)
+            'email', 'email_secondary', 'phone', 'phone_home',
+            // Online Presence (11-14)
+            'linkedin_url', 'github_url', 'portfolio_url', 'twitter_url',
+            // Location (15-22)
+            'address_line', 'city', 'state', 'zip_code', 'country',
+            'current_location', 'timezone', 'preferred_location',
+            // Work Experience (23-31)
             'job_title', 'current_title', 'company_name', 'current_company',
-            'job_start_date', 'job_end_date', 'job_current', 'job_description',
-            'job_location', 'years_experience', 'industry', 'department',
-            // Education (45-57)
-            'institution_name', 'school_name', 'degree_type', 'field_of_study',
-            'major', 'minor', 'gpa', 'graduation_date',
+            'job_start_date', 'job_end_date', 'job_description',
+            'job_location', 'years_experience',
+            // Education (32-41)
+            'institution_name', 'degree_type', 'field_of_study',
+            'major', 'gpa', 'graduation_date',
             'education_start_date', 'education_end_date', 'education_current',
-            'honors', 'education_level',
-            // Skills (58-65)
-            'skills', 'technical_skills', 'certifications', 'licenses',
-            'languages', 'language_proficiency', 'years_skill', 'skill_level',
-            // References (66-69)
-            'reference_name', 'reference_email', 'reference_phone', 'reference_relationship',
-            // Demographics (70-77)
-            'gender', 'gender_identity', 'pronouns', 'race', 'ethnicity',
+            'education_level',
+            // Skills (42-47)
+            'skills', 'technical_skills', 'certifications',
+            'languages', 'language_proficiency', 'years_skill',
+            // Demographics (48-53)
+            'gender', 'race', 'ethnicity',
             'veteran', 'disability', 'marital_status',
-            // Compensation (78-83)
-            'salary_current', 'salary_expected', 'salary_minimum', 'salary_currency',
-            'bonus_expected', 'equity_expected',
-            // Availability (84-89)
-            'start_date', 'availability', 'notice_period', 'work_type',
-            'shift_preference', 'travel_percentage',
-            // Preferences (90-96)
+            // Compensation (54-55)
+            'salary_current', 'salary_expected',
+            // Availability (56-59)
+            'start_date', 'notice_period', 'work_type', 'shift_preference',
+            // Preferences (60-64)
             'remote_preference', 'job_type_preference', 'work_style',
-            'communication_style', 'career_goals', 'desired_role', 'interest_areas',
-            // Legal (97-108)
-            'work_auth', 'sponsorship', 'visa_status', 'citizenship',
-            'clearance', 'clearance_active', 'legal_age', 'tax_id',
-            'date_of_birth', 'background_check', 'criminal_record', 'drug_test',
-            // Federal/Military (109-114)
+            'career_goals', 'interest_areas',
+            // Legal (65-75)
+            'work_auth', 'sponsorship', 'visa_status', 'citizenship', 'clearance',
+            'legal_age', 'tax_id', 'date_of_birth', 'background_check',
+            'criminal_record', 'drug_test',
+            // Federal/Military (76-81)
             'military_service', 'service_dates', 'discharge_status',
             'federal_employee', 'federal_grade', 'schedule_a',
-            // Academic (115-119)
-            'publications', 'patents', 'research_interests',
-            'thesis_title', 'advisor_name',
-            // Application Context (120-127)
-            'referral_source', 'referrer_name', 'referrer_email', 'employee_id',
-            'job_id', 'requisition_id', 'application_date', 'resume_filename',
-            // Supplemental (128-134)
-            'cover_letter', 'additional_info', 'notes', 'intro_note',
-            'custom_question', 'generic_question', 'agreement'
+            // Supplemental (82-85)
+            'cover_letter', 'additional_info', 'intro_note', 'agreement',
+            // Resume (86-88)
+            'resume', 'resume_text', 'resume_upload'
         ];
 
         return {

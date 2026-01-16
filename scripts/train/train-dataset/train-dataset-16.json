@@ -1,0 +1,574 @@
+[
+    {
+        "features": {
+            "label": "Degree",
+            "name": "degree",
+            "automationId": "degree-select",
+            "placeholder": "Select degree",
+            "parentContext": "Education",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Degree Type",
+            "name": "degree_type",
+            "automationId": "wd-Degree",
+            "placeholder": "BS, MS, PhD",
+            "parentContext": "Academic Background",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Academic Degree",
+            "name": "academic_degree",
+            "automationId": "degree-input",
+            "placeholder": "Bachelor's, Master's",
+            "parentContext": "Education History",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Highest Degree",
+            "name": "highest_degree",
+            "automationId": "highest-deg",
+            "placeholder": null,
+            "parentContext": "Qualifications",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Degree Earned",
+            "name": "degree_earned",
+            "automationId": "deg-earned",
+            "placeholder": "e.g. B.A., M.S.",
+            "parentContext": "Education",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Diplôme",
+            "name": "diplome",
+            "automationId": "ember-diplome",
+            "placeholder": "Licence, Master, Doctorat",
+            "parentContext": "Formation",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Abschluss",
+            "name": "abschluss",
+            "automationId": "input-abschluss",
+            "placeholder": "Bachelor, Master, Doktor",
+            "parentContext": "Ausbildung",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Título académico",
+            "name": "titulo_acad",
+            "automationId": "grado-input",
+            "placeholder": "Licenciatura, Maestría",
+            "parentContext": "Educación",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Level of Degree",
+            "name": "deg_level",
+            "automationId": "degree-level-select",
+            "placeholder": "Associate, Bachelor, etc.",
+            "parentContext": "Academic",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Qualification",
+            "name": "qualification",
+            "automationId": "qual-field",
+            "placeholder": "Degree obtained",
+            "parentContext": "Studies",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Undergraduate Degree",
+            "name": "undergrad_deg",
+            "automationId": "ug-degree",
+            "placeholder": "BA, BS, BFA",
+            "parentContext": "Education",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Graduate Degree",
+            "name": "grad_deg",
+            "automationId": "graduate-degree",
+            "placeholder": "MA, MS, MBA, PhD",
+            "parentContext": "Advanced Education",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Doctorate",
+            "name": "doctorate",
+            "automationId": "phd-field",
+            "placeholder": "PhD, MD, JD",
+            "parentContext": "Terminal Degree",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Associate's Degree",
+            "name": "associates",
+            "automationId": "aa-degree",
+            "placeholder": "AA, AS, AAS",
+            "parentContext": "Two-Year Degree",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Diploma Type",
+            "name": "diploma_type",
+            "automationId": "diploma-select",
+            "placeholder": null,
+            "parentContext": "Completion",
+            "siblingContext": null
+        },
+        "label": "degree"
+    },
+    {
+        "features": {
+            "label": "Current Title",
+            "name": "current_title",
+            "automationId": "curr-title-input",
+            "placeholder": "Your current role",
+            "parentContext": "Employment",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Current Position",
+            "name": "current_position",
+            "automationId": "wd-Current-Title",
+            "placeholder": "Job title",
+            "parentContext": "Career",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Present Job Title",
+            "name": "present_job_title",
+            "automationId": "curr-job-title",
+            "placeholder": null,
+            "parentContext": "Current Employment",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Your Title",
+            "name": "your_title",
+            "automationId": "title-current",
+            "placeholder": "e.g. Senior Engineer",
+            "parentContext": "Job",
+            "siblingContext": "Current role"
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Current Role",
+            "name": "current_role",
+            "automationId": "role-current",
+            "placeholder": "What do you do?",
+            "parentContext": "Work",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Poste actuel",
+            "name": "poste_actuel",
+            "automationId": "ember-current-title",
+            "placeholder": "Titre du poste",
+            "parentContext": "Emploi",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Aktuelle Position",
+            "name": "aktuelle_position",
+            "automationId": "input-curr-pos",
+            "placeholder": "Berufsbezeichnung",
+            "parentContext": "Arbeit",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Cargo actual",
+            "name": "cargo_actual",
+            "automationId": "titulo-actual",
+            "placeholder": "Su puesto actual",
+            "parentContext": "Empleo",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Job Title (Current)",
+            "name": "job_title_curr",
+            "automationId": "current-jobtitle",
+            "placeholder": null,
+            "parentContext": "Professional Info",
+            "siblingContext": "Present employer"
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "What is your current title?",
+            "name": "curr_title_q",
+            "automationId": "question-curr-title",
+            "placeholder": "Enter title",
+            "parentContext": "Employment Status",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Title at Current Employer",
+            "name": "title_at_curr_emp",
+            "automationId": "title-current-emp",
+            "placeholder": null,
+            "parentContext": "Work History",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Most Recent Title",
+            "name": "recent_title",
+            "automationId": "most-recent-title",
+            "placeholder": "Latest position",
+            "parentContext": "Experience",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Secondary Email",
+            "name": "email_secondary",
+            "automationId": "secondary-email-input",
+            "placeholder": "Alternate email",
+            "parentContext": "Contact Info",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Alternate Email Address",
+            "name": "alternate_email",
+            "automationId": "wd-Email-Alt",
+            "placeholder": "backup@example.com",
+            "parentContext": "Communication",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Email 2",
+            "name": "email2",
+            "automationId": "email-2-field",
+            "placeholder": "Additional email",
+            "parentContext": "Contact",
+            "siblingContext": "Optional"
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Backup Email",
+            "name": "backup_email",
+            "automationId": "email-backup",
+            "placeholder": null,
+            "parentContext": "Account Recovery",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Other Email",
+            "name": "other_email",
+            "automationId": "other-email-input",
+            "placeholder": "Another email",
+            "parentContext": "Contact Details",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Courriel secondaire",
+            "name": "courriel_sec",
+            "automationId": "ember-email-sec",
+            "placeholder": "Email alternatif",
+            "parentContext": "Coordonnées",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Zweit-E-Mail",
+            "name": "zweit_email",
+            "automationId": "input-email-2",
+            "placeholder": "Alternative E-Mail",
+            "parentContext": "Kontakt",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Email secundario",
+            "name": "email_secundario",
+            "automationId": "correo-secundario",
+            "placeholder": "Correo alternativo",
+            "parentContext": "Contacto",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Personal Email",
+            "name": "personal_email",
+            "automationId": "personal-email-field",
+            "placeholder": "Personal address",
+            "parentContext": "Alternative Contact",
+            "siblingContext": "If different from work"
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Recovery Email",
+            "name": "recovery_email",
+            "automationId": "recovery-email-input",
+            "placeholder": "For password reset",
+            "parentContext": "Security",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Alternative Email Address",
+            "name": "alt_email_addr",
+            "automationId": "alt-email",
+            "placeholder": null,
+            "parentContext": "Contact Information",
+            "siblingContext": "Secondary"
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Additional Email",
+            "name": "additional_email",
+            "automationId": "add-email",
+            "placeholder": "Optional email",
+            "parentContext": "Communications",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Contact Email (Alternate)",
+            "name": "contact_email_alt",
+            "automationId": "contact-alt-email",
+            "placeholder": null,
+            "parentContext": "Reach You",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Email Address 2",
+            "name": "email_addr_2",
+            "automationId": "second-email",
+            "placeholder": "Second email",
+            "parentContext": "Profile",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Spare Email",
+            "name": "spare_email",
+            "automationId": "spare-email-field",
+            "placeholder": null,
+            "parentContext": "Contact Options",
+            "siblingContext": null
+        },
+        "label": "email_secondary"
+    },
+    {
+        "features": {
+            "label": "Ethnicity",
+            "name": "ethnicity",
+            "automationId": "ethnicity-select",
+            "placeholder": "Select ethnicity",
+            "parentContext": "Demographics",
+            "siblingContext": "Voluntary"
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Race/Ethnicity",
+            "name": "race_ethnicity",
+            "automationId": "wd-Ethnicity",
+            "placeholder": null,
+            "parentContext": "EEO",
+            "siblingContext": null
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Ethnic Background",
+            "name": "ethnic_background",
+            "automationId": "ethnic-bg-select",
+            "placeholder": null,
+            "parentContext": "Diversity",
+            "siblingContext": "Self-identify"
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Ethnic Origin",
+            "name": "ethnic_origin",
+            "automationId": "origin-select",
+            "placeholder": null,
+            "parentContext": "Equal Opportunity",
+            "siblingContext": null
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Ethnicity/Race",
+            "name": "ethnicity_race",
+            "automationId": "ember-ethnicity",
+            "placeholder": "Select",
+            "parentContext": "EEOC Data",
+            "siblingContext": "Voluntary self-ID"
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Origine ethnique",
+            "name": "origine_ethnique",
+            "automationId": null,
+            "placeholder": null,
+            "parentContext": "Diversité",
+            "siblingContext": "Facultatif"
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Ethnische Zugehörigkeit",
+            "name": "ethnische_zugehoerigkeit",
+            "automationId": "input-ethnicity",
+            "placeholder": null,
+            "parentContext": "Gleichstellung",
+            "siblingContext": "Freiwillig"
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Etnia",
+            "name": "etnia",
+            "automationId": "etnia-select",
+            "placeholder": "Seleccionar",
+            "parentContext": "Diversidad",
+            "siblingContext": "Voluntario"
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Heritage",
+            "name": "heritage",
+            "automationId": "heritage-field",
+            "placeholder": null,
+            "parentContext": "Background",
+            "siblingContext": "Cultural background"
+        },
+        "label": "ethnicity"
+    },
+    {
+        "features": {
+            "label": "Racial Identity",
+            "name": "racial_identity",
+            "automationId": "racial-id",
+            "placeholder": null,
+            "parentContext": "Self-Identification",
+            "siblingContext": null
+        },
+        "label": "ethnicity"
+    }
+]

@@ -31,8 +31,8 @@ class HeuristicEngine {
      */
     static FIELD_ALIASES = {
         // Location synonyms
-        'address': 'address_line_1',
-        'street': 'address_line_1',
+        'address': 'address_line',
+        'street': 'address_line',
 
         // Work synonyms
         'current_company': 'company_name',
@@ -40,9 +40,7 @@ class HeuristicEngine {
         'current_title': 'job_title',
         'position': 'job_title',
 
-        // Education synonyms
-        'major': 'field_of_study',
-        'degree': 'degree_type',
+        // Education synonyms        'degree': 'degree_type',
         'college': 'institution_name',
         'university': 'institution_name',
 
@@ -57,8 +55,8 @@ class HeuristicEngine {
         'current_salary': 'salary_current',
 
         // Date synonyms
-        'start_date': 'availability',  // Generic start date → availability
-        'available_start_date': 'availability',
+        'start_date': 'start_date',  // Generic start date → availability
+        'available_start_date': 'start_date',
 
         // Contact synonyms
         'mobile': 'phone',
@@ -180,18 +178,6 @@ class HeuristicEngine {
             confidence: 0.95,
             category: 'social'
         },
-
-        website_url: {
-            patterns: [
-                /\b(website|web[_\-\s]?site|homepage)\b/i,
-                /\b(personal[_\-\s]?website|personal[_\-\s]?url)\b/i,
-                /\b(web[_\-\s]?url|your[_\-\s]?url)\b/i,
-                /\bblog[_\-\s]?url\b/i
-            ],
-            confidence: 0.93,
-            category: 'social'
-        },
-
         twitter_url: {
             patterns: [
                 /\b(twitter|x\.com)\b/i,
@@ -204,19 +190,6 @@ class HeuristicEngine {
         },
 
         // ======================== LOCATION ========================
-        address_line_1: {
-            patterns: [
-                /\b(address|street[_\-\s]?address|mailing[_\-\s]?address)\b/i,
-                /\b(home[_\-\s]?address|residential[_\-\s]?address)\b/i,
-                /\b(current[_\-\s]?address|permanent[_\-\s]?address)\b/i,
-                /\b(address[_\-\s]?line[_\-\s]?[12]?|street[_\-\s]?line)\b/i,
-                /\b(adresse|dirección|indirizzo)\b/i  // DE/FR, ES, IT
-            ],
-            confidence: 0.94,
-            category: 'location',
-            negative: /\b(email|e[\-_]?mail|ip|mac|web|url)\s*(address|adresse)/i
-        },
-
         city: {
             patterns: [
                 /\b(city|town|municipality)\b/i,
@@ -564,17 +537,6 @@ class HeuristicEngine {
         },
 
         // ======================== MISCELLANEOUS ========================
-        referral_source: {
-            patterns: [
-                /\b(how[_\-\s]?did[_\-\s]?you[_\-\s]?hear|referral[_\-\s]?source)\b/i,
-                /\b(where[_\-\s]?did[_\-\s]?you[_\-\s]?hear|source)\b/i,
-                /\b(how[_\-\s]?did[_\-\s]?you[_\-\s]?find[_\-\s]?us|referral)\b/i,
-                /\b(employee[_\-\s]?referral|referred[_\-\s]?by)\b/i
-            ],
-            confidence: 0.95,
-            category: 'misc'
-        },
-
         cover_letter: {
             patterns: [
                 /\b(cover[_\-\s]?letter|cover[_\-\s]?note)\b/i,
@@ -585,17 +547,6 @@ class HeuristicEngine {
             confidence: 0.94,
             category: 'misc'
         },
-
-        generic_question: {
-            patterns: [
-                /\b(additional[_\-\s]?information|additional[_\-\s]?comments)\b/i,
-                /\b(other[_\-\s]?information|notes|comments)\b/i,
-                /\b(anything[_\-\s]?else|other[_\-\s]?details)\b/i
-            ],
-            confidence: 0.85,
-            category: 'misc'
-        },
-
         // ==================== BATCH 1: PERSONAL IDENTITY EXTENDED ====================
         middle_name: {
             patterns: [
@@ -635,42 +586,7 @@ class HeuristicEngine {
             ],
             confidence: 0.96,
             category: 'personal'
-        },
-
-        phone_mobile: {
-            patterns: [
-                /\b(mobile[_\-\s]?phone|mobile[_\-\s]?number|cell[_\-\s]?phone)\b/i,
-                /\b(cell|cellular|handy)\b/i,  // handy = mobile in DE
-                /\bmovil\b/i  // ES
-            ],
-            confidence: 0.97,
-            category: 'personal'
-        },
-
-        headline: {
-            patterns: [
-                /\b(headline|tagline|professional[_\-\s]?headline)\b/i,
-                /\b(professional[_\-\s]?title|profile[_\-\s]?headline)\b/i,
-                /\bone[_\-\s]?liner\b/i
-            ],
-            confidence: 0.94,
-            category: 'personal',
-            negative: /\b(news[_\-\s]?headline|article[_\-\s]?headline|breaking[_\-\s]?news)\b/i
-        },
-
-        summary: {
-            patterns: [
-                /\b(summary|professional[_\-\s]?summary|profile[_\-\s]?summary)\b/i,
-                /\b(bio|biography|about[_\-\s]?me|about[_\-\s]?yourself)\b/i,
-                /\b(executive[_\-\s]?summary|professional[_\-\s]?profile)\b/i,
-                /\bpersonal[_\-\s]?statement\b/i
-            ],
-            confidence: 0.92,
-            category: 'personal',
-            negative: /\bjob[_\-\s]?summary|position[_\-\s]?summary/i
-        },
-
-        profile_photo: {
+        }, profile_photo: {
             patterns: [
                 /\b(profile[_\-\s]?photo|profile[_\-\s]?picture|photo)\b/i,
                 /\b(headshot|avatar|profile[_\-\s]?image)\b/i,
@@ -680,17 +596,6 @@ class HeuristicEngine {
             confidence: 0.95,
             category: 'personal'
         },
-
-        pronouns: {
-            patterns: [
-                /\b(pronouns|preferred[_\-\s]?pronouns|gender[_\-\s]?pronouns)\b/i,
-                /\b(she[\/\-]her|he[\/\-]him|they[\/\-]them)\b/i,
-                /\bhow[_\-\s]?should[_\-\s]?we[_\-\s]?address[_\-\s]?you\b/i
-            ],
-            confidence: 0.98,
-            category: 'personal'
-        },
-
         date_of_birth: {
             patterns: [
                 /\b(date[_\-\s]?of[_\-\s]?birth|dob|birth[_\-\s]?date)\b/i,
@@ -699,29 +604,7 @@ class HeuristicEngine {
             ],
             confidence: 0.98,
             category: 'personal'
-        },
-
-        gender_identity: {
-            patterns: [
-                /\b(gender[_\-\s]?identity|how[_\-\s]?do[_\-\s]?you[_\-\s]?identify)\b/i,
-                /\b(gender[_\-\s]?expression|identify[_\-\s]?as)\b/i
-            ],
-            confidence: 0.97,
-            category: 'demographics'
-        },
-
-        address_line_2: {
-            patterns: [
-                /\b(address[_\-\s]?line[_\-\s]?2|address[_\-\s]?2)\b/i,
-                /\b(apartment|apt|suite|unit|floor)\b/i,
-                /\b(building|flat|room)\b/i,
-                /\bwohnung\b/i  // DE apartment
-            ],
-            confidence: 0.95,
-            category: 'location'
-        },
-
-        current_location: {
+        }, current_location: {
             patterns: [
                 /\b(current[_\-\s]?location|present[_\-\s]?location)\b/i,
                 /\b(where[_\-\s]?are[_\-\s]?you[_\-\s]?located|your[_\-\s]?location)\b/i,
@@ -763,18 +646,6 @@ class HeuristicEngine {
             category: 'work',
             negative: /\b(previous[_\-\s]?title|past[_\-\s]?title|former[_\-\s]?position)\b/i
         },
-
-        job_current: {
-            patterns: [
-                /\b(currently[_\-\s]?working[_\-\s]?here|current[_\-\s]?job)\b/i,
-                /\b(still[_\-\s]?working|present[_\-\s]?position)\b/i,
-                /\b(is[_\-\s]?this[_\-\s]?current|work[_\-\s]?here[_\-\s]?now)\b/i,
-                /\bpresent$/i
-            ],
-            confidence: 0.94,
-            category: 'work'
-        },
-
         years_experience: {
             patterns: [
                 /\b(years[_\-\s]?of[_\-\s]?experience|total[_\-\s]?experience)\b/i,
@@ -805,48 +676,7 @@ class HeuristicEngine {
             confidence: 0.92,
             category: 'preferences'
         },
-
-        department: {
-            patterns: [
-                /\b(department|dept|division|team)\b/i,
-                /\b(functional[_\-\s]?area|business[_\-\s]?unit)\b/i,
-                /\babteilung\b/i  // DE
-            ],
-            confidence: 0.91,
-            category: 'work'
-        },
-
-        industry: {
-            patterns: [
-                /\b(industry|sector|field)\b/i,
-                /\b(industry[_\-\s]?sector|business[_\-\s]?sector)\b/i,
-                /\b(domain|vertical)\b/i
-            ],
-            confidence: 0.90,
-            category: 'work'
-        },
-
-        employee_id: {
-            patterns: [
-                /\b(employee[_\-\s]?id|employee[_\-\s]?number|staff[_\-\s]?id)\b/i,
-                /\b(emp[_\-\s]?id|personnel[_\-\s]?number)\b/i,
-                /\bmitarbeiter[_\-\s]?nummer\b/i  // DE
-            ],
-            confidence: 0.96,
-            category: 'work'
-        },
-
         // ==================== BATCH 3: EDUCATION EXTENDED ====================
-        school_name: {
-            patterns: [
-                /\b(school[_\-\s]?name|high[_\-\s]?school|secondary[_\-\s]?school)\b/i,
-                /\b(name[_\-\s]?of[_\-\s]?school|educational[_\-\s]?institution)\b/i,
-                /\bschule\b/i  // DE
-            ],
-            confidence: 0.95,
-            category: 'education'
-        },
-
         degree: {
             patterns: [
                 /\b(degree|degree[_\-\s]?level|highest[_\-\s]?degree)\b/i,
@@ -888,58 +718,6 @@ class HeuristicEngine {
             confidence: 0.94,
             category: 'education'
         },
-
-        minor: {
-            patterns: [
-                /\b(minor|second[_\-\s]?major|secondary[_\-\s]?field)\b/i,
-                /\barea[_\-\s]?of[_\-\s]?minor\b/i
-            ],
-            confidence: 0.95,
-            category: 'education'
-        },
-
-        honors: {
-            patterns: [
-                /\b(honors|honours|awards|distinctions)\b/i,
-                /\b(academic[_\-\s]?honors|dean'?s[_\-\s]?list)\b/i,
-                /\b(cum[_\-\s]?laude|magna[_\-\s]?cum[_\-\s]?laude|summa[_\-\s]?cum[_\-\s]?laude)\b/i,
-                /\b(auszeichnungen|reconocimientos)\b/i  // DE, ES
-            ],
-            confidence: 0.96,
-            category: 'education'
-        },
-
-        publications: {
-            patterns: [
-                /\b(publications|published[_\-\s]?papers|research[_\-\s]?papers)\b/i,
-                /\b(scholarly[_\-\s]?articles|journal[_\-\s]?articles)\b/i,
-                /\b(research[_\-\s]?publications|academic[_\-\s]?publications)\b/i,
-                /\bpublikationen\b/i  // DE
-            ],
-            confidence: 0.97,
-            category: 'education'
-        },
-
-        thesis_title: {
-            patterns: [
-                /\b(thesis[_\-\s]?title|dissertation[_\-\s]?title)\b/i,
-                /\b(thesis|dissertation|capstone[_\-\s]?project)\b/i,
-                /\b(research[_\-\s]?topic|thesis[_\-\s]?topic)\b/i
-            ],
-            confidence: 0.97,
-            category: 'education'
-        },
-
-        advisor_name: {
-            patterns: [
-                /\b(advisor[_\-\s]?name|thesis[_\-\s]?advisor|faculty[_\-\s]?advisor)\b/i,
-                /\b(supervisor|mentor|adviser)\b/i,
-                /\b(dissertation[_\-\s]?advisor|research[_\-\s]?advisor)\b/i
-            ],
-            confidence: 0.96,
-            category: 'education'
-        },
-
         graduation_date: {
             patterns: [
                 /\b(graduation[_\-\s]?date|date[_\-\s]?of[_\-\s]?graduation)\b/i,
@@ -983,17 +761,6 @@ class HeuristicEngine {
             confidence: 0.96,
             category: 'skills'
         },
-
-        licenses: {
-            patterns: [
-                /\b(licenses?|licensing|professional[_\-\s]?licenses?)\b/i,
-                /\b(license[_\-\s]?number|license[_\-\s]?type)\b/i,
-                /\b(driver'?s[_\-\s]?license|driving[_\-\s]?license)\b/i
-            ],
-            confidence: 0.96,
-            category: 'skills'
-        },
-
         languages: {
             patterns: [
                 /\b(languages?|language[_\-\s]?skills|language[_\-\s]?proficiency)\b/i,
@@ -1014,66 +781,7 @@ class HeuristicEngine {
             confidence: 0.94,
             category: 'skills'
         },
-
-        skill_level: {
-            patterns: [
-                /\b(skill[_\-\s]?level|proficiency[_\-\s]?level|expertise[_\-\s]?level)\b/i,
-                /\b(beginner|intermediate|advanced|expert)\b/i,
-                /\b(years[_\-\s]?of[_\-\s]?experience[_\-\s]?with)\b/i
-            ],
-            confidence: 0.92,
-            category: 'skills'
-        },
-
-        patents: {
-            patterns: [
-                /\b(patents?|patent[_\-\s]?applications?)\b/i,
-                /\b(intellectual[_\-\s]?property|ip[_\-\s]?portfolio)\b/i,
-                /\b(patent[_\-\s]?number|patent[_\-\s]?title)\b/i
-            ],
-            confidence: 0.98,
-            category: 'skills'
-        },
-
         // ==================== BATCH 5: REFERENCES ====================
-        reference_name: {
-            patterns: [
-                /\b(reference[_\-\s]?name|referee[_\-\s]?name)\b/i,
-                /\b(reference[_\-\s]?contact|professional[_\-\s]?reference)\b/i,
-                /\b(name[_\-\s]?of[_\-\s]?reference|reference[_\-\s]?person)\b/i
-            ],
-            confidence: 0.97,
-            category: 'references'
-        },
-
-        reference_email: {
-            patterns: [
-                /\b(reference[_\-\s]?email|referee[_\-\s]?email)\b/i,
-                /\b(reference[_\-\s]?contact[_\-\s]?email)\b/i
-            ],
-            confidence: 0.98,
-            category: 'references'
-        },
-
-        reference_phone: {
-            patterns: [
-                /\b(reference[_\-\s]?phone|referee[_\-\s]?phone)\b/i,
-                /\b(reference[_\-\s]?contact[_\-\s]?number|reference[_\-\s]?tel)\b/i
-            ],
-            confidence: 0.98,
-            category: 'references'
-        },
-
-        reference_relationship: {
-            patterns: [
-                /\b(reference[_\-\s]?relationship|relationship[_\-\s]?to[_\-\s]?reference)\b/i,
-                /\b(how[_\-\s]?do[_\-\s]?you[_\-\s]?know|referee[_\-\s]?relation)\b/i,
-                /\b(supervisor|colleague|manager|professor)\b/i
-            ],
-            confidence: 0.96,
-            category: 'references'
-        },
-
         // ==================== BATCH 6: EEO & LEGAL (Continued) ====================
         ethnicity: {
             patterns: [
@@ -1102,17 +810,6 @@ class HeuristicEngine {
             confidence: 0.98,
             category: 'legal'
         },
-
-        clearance_active: {
-            patterns: [
-                /\b(active[_\-\s]?clearance|clearance[_\-\s]?active)\b/i,
-                /\b(current[_\-\s]?clearance[_\-\s]?status)\b/i,
-                /\b(is[_\-\s]?your[_\-\s]?clearance[_\-\s]?active)\b/i
-            ],
-            confidence: 0.98,
-            category: 'legal'
-        },
-
         background_check: {
             patterns: [
                 /\b(background[_\-\s]?check|background[_\-\s]?screening)\b/i,
@@ -1132,30 +829,7 @@ class HeuristicEngine {
             ],
             confidence: 0.94,
             category: 'preferences'
-        },
-
-        availability: {
-            patterns: [
-                /\b(availability|available|when[_\-\s]?available)\b/i,
-                /\b(immediate[_\-\s]?availability|available[_\-\s]?immediately)\b/i,
-                /\b(how[_\-\s]?soon[_\-\s]?available)\b/i
-            ],
-            confidence: 0.92,
-            category: 'preferences',
-            negative: /start[_\-\s]?date/i
-        },
-
-        relocation: {
-            patterns: [
-                /\b(relocation|relocate|willing[_\-\s]?to[_\-\s]?relocate)\b/i,
-                /\b(open[_\-\s]?to[_\-\s]?relocation|relocation[_\-\s]?preference)\b/i,
-                /\b(move[_\-\s]?to|willing[_\-\s]?to[_\-\s]?move)\b/i
-            ],
-            confidence: 0.96,
-            category: 'preferences'
-        },
-
-        remote_preference: {
+        }, remote_preference: {
             patterns: [
                 /\b(remote[_\-\s]?preference|work[_\-\s]?preference)\b/i,
                 /\b(remote|hybrid|on[_\-\s]?site|office[_\-\s]?based)\b/i,
@@ -1176,77 +850,7 @@ class HeuristicEngine {
             category: 'preferences'
         },
 
-        travel_percentage: {
-            patterns: [
-                /\b(travel[_\-\s]?percentage|willing[_\-\s]?to[_\-\s]?travel)\b/i,
-                /\b(travel[_\-\s]?requirements?|ability[_\-\s]?to[_\-\s]?travel)\b/i,
-                /\b(%[_\-\s]?travel|percent[_\-\s]?travel)\b/i
-            ],
-            confidence: 0.96,
-            category: 'preferences'
-        },
-
-        salary_minimum: {
-            patterns: [
-                /\b(minimum[_\-\s]?salary|salary[_\-\s]?minimum)\b/i,
-                /\b(lowest[_\-\s]?acceptable[_\-\s]?salary|minimum[_\-\s]?compensation)\b/i
-            ],
-            confidence: 0.97,
-            category: 'compensation'
-        },
-
-        salary_currency: {
-            patterns: [
-                /\b(salary[_\-\s]?currency|currency)\b/i,
-                /\b(usd|eur|gbp|inr|cad)\b/i,
-                /\b(payment[_\-\s]?currency)\b/i
-            ],
-            confidence: 0.94,
-            category: 'compensation'
-        },
-
-        bonus_expected: {
-            patterns: [
-                /\b(bonus[_\-\s]?expectation|expected[_\-\s]?bonus)\b/i,
-                /\b(annual[_\-\s]?bonus|performance[_\-\s]?bonus)\b/i,
-                /\b(target[_\-\s]?bonus)\b/i
-            ],
-            confidence: 0.96,
-            category: 'compensation'
-        },
-
-        equity_expected: {
-            patterns: [
-                /\b(equity[_\-\s]?expectation|stock[_\-\s]?options)\b/i,
-                /\b(rsu|restricted[_\-\s]?stock[_\-\s]?units)\b/i,
-                /\b(equity[_\-\s]?compensation|stock[_\-\s]?grant)\b/i
-            ],
-            confidence: 0.97,
-            category: 'compensation'
-        },
-
         // ==================== BATCH 8: SOCIAL & ONLINE ====================
-        instagram_url: {
-            patterns: [
-                /\b(instagram|ig)\b/i,
-                /\binstagram[_\-\s]?(url|handle|profile|link)\b/i,
-                /\binsta[_\-\s]?handle\b/i,
-                /instagram\.com/i
-            ],
-            confidence: 0.98,
-            category: 'social'
-        },
-
-        facebook_url: {
-            patterns: [
-                /\bfacebook\b/i,
-                /\bfacebook[_\-\s]?(url|profile|page|link)\b/i,
-                /\bfb[_\-\s]?(url|profile)\b/i,
-                /facebook\.com/i
-            ],
-            confidence: 0.98,
-            category: 'social'
-        },
 
         youtube_url: {
             patterns: [
@@ -1268,28 +872,6 @@ class HeuristicEngine {
             confidence: 0.98,
             category: 'social'
         },
-
-        google_scholar_url: {
-            patterns: [
-                /\bgoogle[_\-\s]?scholar\b/i,
-                /\bscholar[_\-\s]?google\b/i,
-                /\bscholar[_\-\s]?(profile|url|link)\b/i,
-                /scholar\.google/i
-            ],
-            confidence: 0.99,
-            category: 'social'
-        },
-
-        other_url: {
-            patterns: [
-                /\b(other[_\-\s]?url|additional[_\-\s]?url|website)\b/i,
-                /\b(other[_\-\s]?link|additional[_\-\s]?link)\b/i,
-                /\b(online[_\-\s]?presence|web[_\-\s]?presence)\b/i
-            ],
-            confidence: 0.88,
-            category: 'social'
-        },
-
         // ==================== BATCH 9: BEHAVIORAL & META ====================
         strengths: {
             patterns: [
@@ -1341,17 +923,6 @@ class HeuristicEngine {
             confidence: 0.92,
             category: 'behavioral'
         },
-
-        desired_role: {
-            patterns: [
-                /\b(desired[_\-\s]?role|target[_\-\s]?role|role[_\-\s]?seeking)\b/i,
-                /\b(what[_\-\s]?role[_\-\s]?are[_\-\s]?you[_\-\s]?looking[_\-\s]?for)\b/i,
-                /\b(ideal[_\-\s]?position|dream[_\-\s]?job)\b/i
-            ],
-            confidence: 0.93,
-            category: 'behavioral'
-        },
-
         referral_name: {
             patterns: [
                 /\b(referral[_\-\s]?name|referred[_\-\s]?by|who[_\-\s]?referred[_\-\s]?you)\b/i,
@@ -1361,25 +932,6 @@ class HeuristicEngine {
             confidence: 0.96,
             category: 'misc'
         },
-
-        referrer_name: {
-            patterns: [
-                /\b(referrer[_\-\s]?name|referring[_\-\s]?employee)\b/i,
-                /\b(name[_\-\s]?of[_\-\s]?person[_\-\s]?who[_\-\s]?referred)\b/i
-            ],
-            confidence: 0.96,
-            category: 'misc'
-        },
-
-        referrer_email: {
-            patterns: [
-                /\b(referrer[_\-\s]?email|referring[_\-\s]?employee[_\-\s]?email)\b/i,
-                /\b(email[_\-\s]?of[_\-\s]?referrer)\b/i
-            ],
-            confidence: 0.97,
-            category: 'misc'
-        },
-
         referral_code: {
             patterns: [
                 /\b(referral[_\-\s]?code|promo[_\-\s]?code|invitation[_\-\s]?code)\b/i,
@@ -1389,17 +941,6 @@ class HeuristicEngine {
             confidence: 0.97,
             category: 'misc'
         },
-
-        resume_filename: {
-            patterns: [
-                /\b(resume[_\-\s]?file|cv[_\-\s]?file|resume[_\-\s]?filename)\b/i,
-                /\b(upload[_\-\s]?resume|attach[_\-\s]?resume)\b/i,
-                /\b(curriculum[_\-\s]?vitae|resume[_\-\/\s]cv)\b/i
-            ],
-            confidence: 0.94,
-            category: 'misc'
-        },
-
         agreement: {
             patterns: [
                 /\b(agree|agreement|i[_\-\s]?agree|consent)\b/i,
@@ -1420,17 +961,6 @@ class HeuristicEngine {
             confidence: 0.88,
             category: 'misc'
         },
-
-        notes: {
-            patterns: [
-                /\b(notes?|additional[_\-\s]?notes?|comments?)\b/i,
-                /\b(remarks?|additional[_\-\s]?comments?)\b/i,
-                /\b(anmerkungen|notas)\b/i  // DE, ES
-            ],
-            confidence: 0.86,
-            category: 'misc'
-        },
-
         // ==================== BATCH 10: REMAINING FIELDS ====================
         work_type: {
             patterns: [
