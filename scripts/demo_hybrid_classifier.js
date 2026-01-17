@@ -7,11 +7,11 @@
  * - HeuristicEngine.js (Pattern-based classifier)
  */
 
-const FieldTypes = require('./autofill/domains/inference/FieldTypes.js');
-const HeuristicEngine = require('./autofill/domains/inference/HeuristicEngine.js');
-const NeuralClassifier = require('./autofill/domains/inference/neural-classifier.js');
-const HybridClassifier = require('./autofill/domains/inference/HybridClassifier.js');
-const FeatureExtractor = require('./autofill/domains/inference/feature-extractor.js');
+const FieldTypes = require('../autofill/domains/inference/FieldTypes.js');
+const HeuristicEngine = require('../autofill/domains/inference/HeuristicEngine.js');
+const NeuralClassifier = require('../autofill/domains/inference/neural-classifier.js');
+const HybridClassifier = require('../autofill/domains/inference/HybridClassifier.js');
+const FeatureExtractor = require('../autofill/domains/inference/feature-extractor.js');
 
 console.log('🧪 HybridClassifier Architecture Demo\n');
 console.log('='.repeat(70));
@@ -78,6 +78,21 @@ const testFields = [
         placeholder: 'Current company name',
         type: 'text',
         label: 'Company'
+    },
+    // Category-Specific Test Cases
+    {
+        name: 'phone_mobile',
+        id: 'cell',
+        placeholder: '555-0123',
+        type: 'tel',
+        label: 'Mobile Phone (Contact - Trusts Heuristic)'
+    },
+    {
+        name: 'job_desc',
+        id: 'description',
+        placeholder: 'Led a team of 5 engineers to build...',
+        type: 'textarea',
+        label: 'Job Description (Context - Trusts Neural)'
     }
 ];
 

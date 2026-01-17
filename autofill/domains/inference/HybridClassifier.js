@@ -390,7 +390,9 @@ class HybridClassifier {
     _getNeuralClassifier() {
         if (this._neuralClassifier) return this._neuralClassifier;
         if (typeof window !== 'undefined' && window.NeuralClassifier) {
-            this._neuralClassifier = new window.NeuralClassifier();
+            this._neuralClassifier = new window.NeuralClassifier({
+                fieldTypes: window.FieldTypes
+            });
             return this._neuralClassifier;
         }
         return null;

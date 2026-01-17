@@ -7,3 +7,10 @@ AIzaSyCm5hEmrgXFtN1unBY1pT7Jv1XLt3_t2vA
 AIzaSyDFVLK6cog16P59n27vPC9mnozDwVBCB3I
 AIzaSyAw63RiJ-V_IndlDb36QWb_OnykTx-Wb98
 AIzaSyB6bWPBDmWx7RLwF0nFQVYrrypkP7-VH80
+
+
+await chrome.storage.local.remove(['selectionCache', 'multiCache', 'smartMemory']);
+console.log("Caches Cleared");
+
+
+ git push https://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@github.com/SmartHireX/smart-ai-job-apply.git main

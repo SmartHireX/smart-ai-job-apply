@@ -1,0 +1,85 @@
+[Dependencies] FieldTypes V5.0 loaded into window
+[Dependencies] HeuristicEngine V2.0 loaded into window
+🧠 Neural Classifier Training Script V4
+========================================
+
+📂 Loading TRAINING datasets from train-dataset/...
+   Loaded 186 samples from train-dataset-10.json
+   Loaded 168 samples from train-dataset-11.json
+   Loaded 132 samples from train-dataset-12.json
+   Loaded 108 samples from train-dataset-13.json
+   Loaded 395 samples from train-dataset-2.json
+   Loaded 395 samples from train-dataset-3.json
+   Loaded 395 samples from train-dataset-4.json
+   Loaded 350 samples from train-dataset-5.json
+   Loaded 260 samples from train-dataset-6.json
+   Loaded 260 samples from train-dataset-7.json
+   Loaded 405 samples from train-dataset-8.json
+   Loaded 402 samples from train-dataset-9.json
+   Total training samples: 3456
+
+📂 Loading TEST datasets from test-dataset/...
+   Loaded 75 samples from test-dataset-2.json
+   Loaded 64 samples from test-dataset-3.json
+   Loaded 54 samples from test-dataset-4.json
+   Loaded 60 samples from test-dataset-5.json
+   Total test samples: 253
+
+🔀 Splitting data for validation (20% validation)...
+   Training samples: 2765
+   Validation samples: 691
+
+⚖️ Balancing training dataset...
+   Balanced training samples: 3404
+
+📊 Training on 160 classes:
+   phone_home: 68
+   middle_name: 67
+   email_secondary: 67
+   headline: 67
+   preferred_name: 66
+   profile_photo: 65
+   summary: 61
+   start_date: 34
+   zip_code: 32
+   state: 31
+   ... and 150 more
+
+🔧 Initializing NeuralClassifier...
+[NeuralClassifier] Failed to load baseline weights: TypeError: Failed to parse URL from autofill/domains/inference/model_v4_baseline.json
+    at node:internal/deps/undici/undici:12637:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  [cause]: TypeError [ERR_INVALID_URL]: Invalid URL
+      at new NodeError (node:internal/errors:405:5)
+      at new URL (node:internal/url:676:13)
+      at new Request (node:internal/deps/undici/undici:6119:25)
+      at fetch (node:internal/deps/undici/undici:10415:25)
+      at Object.fetch (node:internal/deps/undici/undici:12636:10)
+      at fetch (node:internal/process/pre_execution:281:25)
+      at NeuralClassifier._loadBaselineWeights (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/neural-classifier.js:974:36)
+      at NeuralClassifier.init (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/neural-classifier.js:181:47)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at async train (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/scripts/train/train_model.js:243:5) {
+    input: 'autofill/domains/inference/model_v4_baseline.json',
+    code: 'ERR_INVALID_URL'
+  }
+}
+[DEBUG] Weights initialized:
+  W1: 79 x 512
+  W2: 512 x 256
+  W3: 256 x 128
+  W4: 128 x 135
+   Classifier ready.
+
+🏋️ Starting training (500000 iterations)...
+[ERROR] Input size mismatch: got 84, expected 79
+[ERROR] First few inputs: [
+  0, 0,   0, 0, 0,
+  1, 0, 0.5, 0, 0
+]
+Error: Input size mismatch: 84 != 79
+    at NeuralClassifier._forwardStandard (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/neural-classifier.js:675:19)
+    at NeuralClassifier._forward (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/neural-classifier.js:657:21)
+    at NeuralClassifier.train (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/neural-classifier.js:531:72)
+    at train (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/scripts/train/train_model.js:255:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)

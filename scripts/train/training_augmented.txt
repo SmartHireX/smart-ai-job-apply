@@ -1,0 +1,110 @@
+[Dependencies] FieldTypes V5.0 loaded into window
+[Dependencies] HeuristicEngine V2.0 loaded into window
+🧠 Neural Classifier Training Script V4
+========================================
+
+📂 Loading TRAINING datasets...
+   ✅ Found augmented dataset, loading...
+   ✅ Loaded 6455 augmented samples
+   Total training samples: 6455
+
+📂 Loading TEST datasets from test-dataset/...
+   Loaded 75 samples from test-dataset-2.json
+   Loaded 64 samples from test-dataset-3.json
+   Loaded 54 samples from test-dataset-4.json
+   Loaded 60 samples from test-dataset-5.json
+   Total test samples: 253
+
+🔀 Splitting data for validation (20% validation)...
+   Training samples: 5164
+   Validation samples: 1291
+
+⚖️ Balancing training dataset...
+   Balanced training samples: 5699
+
+📊 Training on 160 classes:
+   email_secondary: 130
+   headline: 117
+   summary: 107
+   middle_name: 107
+   preferred_name: 98
+   phone_home: 95
+   portfolio_url: 86
+   github_url: 83
+   linkedin_url: 80
+   profile_photo: 74
+   ... and 150 more
+
+🔧 Initializing NeuralClassifier...
+[NeuralClassifier] Failed to load baseline weights: TypeError: Failed to parse URL from autofill/domains/inference/model_v4_baseline.json
+    at node:internal/deps/undici/undici:12637:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  [cause]: TypeError [ERR_INVALID_URL]: Invalid URL
+      at new NodeError (node:internal/errors:405:5)
+      at new URL (node:internal/url:676:13)
+      at new Request (node:internal/deps/undici/undici:6119:25)
+      at fetch (node:internal/deps/undici/undici:10415:25)
+      at Object.fetch (node:internal/deps/undici/undici:12636:10)
+      at fetch (node:internal/process/pre_execution:281:25)
+      at NeuralClassifier._loadBaselineWeights (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/neural-classifier.js:974:36)
+      at NeuralClassifier.init (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/neural-classifier.js:181:47)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at async train (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/scripts/train/train_model.js:260:5) {
+    input: 'autofill/domains/inference/model_v4_baseline.json',
+    code: 'ERR_INVALID_URL'
+  }
+}
+[DEBUG] Weights initialized:
+  W1: 84 x 512
+  W2: 512 x 256
+  W3: 256 x 128
+  W4: 128 x 135
+   Classifier ready.
+
+🏋️ Starting training (500000 iterations)...
+   Iteration 50000/500000 (80.6s, 620 samples/sec)
+   Iteration 100000/500000 (160.6s, 623 samples/sec)
+   💾 Checkpoint saved at iteration 100000
+   Iteration 150000/500000 (240.1s, 625 samples/sec)
+   Iteration 200000/500000 (319.4s, 626 samples/sec)
+   💾 Checkpoint saved at iteration 200000
+   Iteration 250000/500000 (398.8s, 627 samples/sec)
+   Iteration 300000/500000 (477.4s, 628 samples/sec)
+   💾 Checkpoint saved at iteration 300000
+   Iteration 350000/500000 (556.9s, 628 samples/sec)
+   Iteration 400000/500000 (635.5s, 629 samples/sec)
+   💾 Checkpoint saved at iteration 400000
+   Iteration 450000/500000 (714.7s, 630 samples/sec)
+   Iteration 500000/500000 (794.2s, 630 samples/sec)
+   💾 Checkpoint saved at iteration 500000
+
+✅ Training complete! Weights saved to /Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/model_v4_baseline.json
+
+📊 Evaluating on TEST set...
+
+   🎯 OVERALL ACCURACY: 56.52% (143/253)
+
+   ❌ Worst performing classes:
+     - address: 0.0% (0/5)
+     - current_company: 0.0% (0/5)
+     - current_title: 0.0% (0/5)
+     - job_current: 0.0% (0/4)
+     - degree: 0.0% (0/4)
+     - major: 0.0% (0/4)
+     - remote_preference: 0.0% (0/3)
+     - start_date: 0.0% (0/3)
+
+   ✅ Best performing classes:
+     - profile_photo: 100.0% (3/3)
+     - youtube_url: 100.0% (3/3)
+     - instagram_url: 100.0% (3/3)
+     - portfolio_url: 100.0% (3/3)
+     - date_of_birth: 100.0% (3/3)
+     - gender: 100.0% (3/3)
+     - languages: 100.0% (4/4)
+     - certifications: 100.0% (4/4)
+
+   Classes at 100%: 19/160
+   Classes at 0%: 17
+
+🎉 Done!

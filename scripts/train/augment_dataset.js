@@ -26,7 +26,9 @@ const LABEL_SYNONYMS = {
 
     // Contact fields
     'email': ['email address', 'e-mail', 'electronic mail', 'contact email'],
+    'email_secondary': ['alternate email', 'secondary email', 'backup email', 'other email'],
     'phone': ['phone number', 'telephone', 'mobile', 'cell phone', 'contact number'],
+    'phone_home': ['home phone', 'landline', 'residence phone'],
     'address': ['street address', 'mailing address', 'home address'],
     'city': ['town', 'municipality'],
     'state': ['province', 'region'],
@@ -59,6 +61,16 @@ const LABEL_SYNONYMS = {
     'salary expectation': ['desired salary', 'expected salary', 'salary requirement'],
     'availability': ['start date', 'available to start', 'when can you start'],
     'work authorization': ['eligible to work', 'work permit', 'visa status'],
+
+    // Underperforming Classes (Targeted Augmentation)
+    'military_service': ['veteran status', 'military experience', 'armed forces', 'service history'],
+    'publications': ['published works', 'papers', 'research papers', 'articles'],
+    'patents': ['inventions', 'intellectual property', 'patent list'],
+    'awards': ['honors', 'achievements', 'recognitions', 'prizes'],
+    'speaking': ['presentations', 'public speaking', 'conference talks'],
+    'references': ['referees', 'recommendations', 'professional references'],
+    'hobbies': ['interests', 'activities', 'pastimes', 'leisure'],
+    'volunteering': ['community service', 'volunteer work', 'pro bono'],
 
     // Preferences
     'willing to relocate': ['open to relocation', 'relocation', 'can relocate'],
@@ -257,14 +269,14 @@ function augmentDataset() {
     console.log('🔤 Step 1: Generating synonym variations...');
     let augmented = [];
     for (const sample of originalData) {
-        const variations = augmentSample(sample, 2);  // 2 label variations max
+        const variations = augmentSample(sample, 5);  // Increased from 2 to 5
         augmented = augmented.concat(variations);
     }
     console.log(`   Generated ${augmented.length} synonym variations\n`);
 
     // Step 2: Context mixing
     console.log('🔀 Step 2: Mixing contexts...');
-    const mixed = mixContexts(originalData, 1);
+    const mixed = mixContexts(originalData, 3);   // Increased from 1 to 3
     augmented = augmented.concat(mixed);
     console.log(`   Generated ${mixed.length} context-mixed samples\n`);
 

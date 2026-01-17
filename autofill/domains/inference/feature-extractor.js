@@ -4,8 +4,8 @@
  * Instead of hashing, uses explicit keyword presence features for each class.
  * This creates sparse but highly discriminative feature vectors.
  * 
- * Feature Vector (97 dimensions):
- *   - Keyword Presence (88 dims): One per class, binary if keywords match
+ * Feature Vector (95 dimensions used in V7 training):
+ *   - Keyword Presence (86 dims): One per class
  *   - Structural Features (9 dims): Type, label, placeholder, dropdown, etc.
  * 
  * @module FeatureExtractorV3
@@ -15,9 +15,9 @@
 class FeatureExtractorV3 {
 
     static VERSION = '3.0.0';
-    static FEATURE_DIM = 95;  // 86 classes + 9 structural
+    static FEATURE_DIM = 95;  // matches training data
 
-    // Keyword map for each of 88 classes
+    // Keyword map for 86 classes (Archive Version)
     static KEYWORD_MAP = {
         'unknown': [],
         'first_name': ['first', 'given', 'fname', 'vorname', 'prénom', 'primer', 'nombre', 'firstname'],
@@ -119,7 +119,7 @@ class FeatureExtractorV3 {
     /**
      * Extract features from a field object
      * @param {Object} field - Field object with attributes
-     * @returns {number[]} Feature vector (97 dims)
+     * @returns {number[]} Feature vector (95 dims)
      */
     extract(field) {
         if (!field) {
@@ -129,7 +129,7 @@ class FeatureExtractorV3 {
         // Collect all text from field
         const allText = this._collectText(field).toLowerCase();
 
-        // Part 1: Keyword presence features (88 dims)
+        // Part 1: Keyword presence features (86 dims)
         const keywordFeatures = this._extractKeywordFeatures(allText);
 
         // Part 2: Structural features (9 dims)
@@ -181,7 +181,7 @@ class FeatureExtractorV3 {
     }
 
     /**
-     * Extract keyword presence features for all 88 classes
+     * Extract keyword presence features for all 86 classes
      * @private
      */
     _extractKeywordFeatures(text) {
@@ -192,14 +192,14 @@ class FeatureExtractorV3 {
             const keywords = FeatureExtractorV3.KEYWORD_MAP[cls];
             let score = 0;
 
-            for (const keyword of keywords) {
-                if (text.includes(keyword)) {
-                    // Boost score for longer/more specific keywords
-                    score += keyword.split(' ').length;
+            if (keywords) {
+                for (const keyword of keywords) {
+                    if (text.includes(keyword)) {
+                        score += keyword.split(' ').length;
+                    }
                 }
             }
 
-            // Normalize to [0, 1] - cap at 1
             features.push(Math.min(score / 3, 1));
         }
 

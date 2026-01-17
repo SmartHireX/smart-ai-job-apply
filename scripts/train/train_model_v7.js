@@ -23,7 +23,8 @@ const NeuralClassifierV7 = require('../../autofill/domains/inference/neural-clas
 
 const CONFIG = {
     // Data paths
-    trainDataPath: path.join(__dirname, 'train-dataset-v3.json'),
+    // Data paths
+    trainDataPath: path.join(__dirname, 'train-dataset-v3-balanced.json'),
     outputPath: path.join(__dirname, '../../autofill/domains/inference/model_v7.json'),
 
     // Training parameters
@@ -33,11 +34,11 @@ const CONFIG = {
     testSplit: 0.05,              // 5% for final testing
 
     // Early stopping
-    patience: 30,                 // Increased patience for longer training
-    minDelta: 0.0005,             // Stricter improvement threshold
+    patience: 40,                 // Increased patience
+    minDelta: 0.0001,             // Stricter improvement threshold
 
     // Logging
-    logEveryEpoch: 5,             // Log every 5 epochs
+    logEveryEpoch: 1,             // Log every epoch for monitoring
     saveEveryEpoch: 50
 };
 

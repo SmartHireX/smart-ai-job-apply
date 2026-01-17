@@ -1,0 +1,120 @@
+[Dependencies] FieldTypes V5.0 loaded into window
+[Dependencies] HeuristicEngine V2.0 loaded into window
+🧠 Neural Classifier Training Script V4
+========================================
+
+📂 Loading TRAINING datasets from train-dataset/...
+   Loaded 186 samples from train-dataset-10.json
+   Loaded 168 samples from train-dataset-11.json
+   Loaded 132 samples from train-dataset-12.json
+   Loaded 108 samples from train-dataset-13.json
+   Loaded 395 samples from train-dataset-2.json
+   Loaded 395 samples from train-dataset-3.json
+   Loaded 395 samples from train-dataset-4.json
+   Loaded 350 samples from train-dataset-5.json
+   Loaded 260 samples from train-dataset-6.json
+   Loaded 260 samples from train-dataset-7.json
+   Loaded 405 samples from train-dataset-8.json
+   Loaded 402 samples from train-dataset-9.json
+   Total training samples: 3456
+
+📂 Loading TEST datasets from test-dataset/...
+   Loaded 75 samples from test-dataset-2.json
+   Loaded 64 samples from test-dataset-3.json
+   Loaded 54 samples from test-dataset-4.json
+   Loaded 60 samples from test-dataset-5.json
+   Total test samples: 253
+
+🔀 Splitting data for validation (20% validation)...
+   Training samples: 2765
+   Validation samples: 691
+
+⚖️ Balancing training dataset...
+   Balanced training samples: 3446
+
+📊 Training on 160 classes:
+   phone_home: 75
+   middle_name: 71
+   headline: 69
+   preferred_name: 65
+   summary: 64
+   profile_photo: 64
+   email_secondary: 60
+   start_date: 31
+   state: 31
+   zip_code: 30
+   ... and 150 more
+
+🔧 Initializing NeuralClassifier...
+[NeuralClassifier] Failed to load baseline weights: TypeError: Failed to parse URL from autofill/domains/inference/model_v4_baseline.json
+    at node:internal/deps/undici/undici:12637:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  [cause]: TypeError [ERR_INVALID_URL]: Invalid URL
+      at new NodeError (node:internal/errors:405:5)
+      at new URL (node:internal/url:676:13)
+      at new Request (node:internal/deps/undici/undici:6119:25)
+      at fetch (node:internal/deps/undici/undici:10415:25)
+      at Object.fetch (node:internal/deps/undici/undici:12636:10)
+      at fetch (node:internal/process/pre_execution:281:25)
+      at NeuralClassifier._loadBaselineWeights (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/neural-classifier.js:974:36)
+      at NeuralClassifier.init (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/neural-classifier.js:181:47)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at async train (/Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/scripts/train/train_model.js:243:5) {
+    input: 'autofill/domains/inference/model_v4_baseline.json',
+    code: 'ERR_INVALID_URL'
+  }
+}
+[DEBUG] Weights initialized:
+  W1: 84 x 512
+  W2: 512 x 256
+  W3: 256 x 128
+  W4: 128 x 135
+   Classifier ready.
+
+🏋️ Starting training (500000 iterations)...
+   Iteration 50000/500000 (83.8s, 597 samples/sec)
+   Iteration 100000/500000 (166.9s, 599 samples/sec)
+   💾 Checkpoint saved at iteration 100000
+   Iteration 150000/500000 (249.9s, 600 samples/sec)
+   Iteration 200000/500000 (332.4s, 602 samples/sec)
+   💾 Checkpoint saved at iteration 200000
+   Iteration 250000/500000 (413.5s, 605 samples/sec)
+   Iteration 300000/500000 (495.5s, 605 samples/sec)
+   💾 Checkpoint saved at iteration 300000
+   Iteration 350000/500000 (577.3s, 606 samples/sec)
+   Iteration 400000/500000 (658.5s, 607 samples/sec)
+   💾 Checkpoint saved at iteration 400000
+   Iteration 450000/500000 (739.7s, 608 samples/sec)
+   Iteration 500000/500000 (820.7s, 609 samples/sec)
+   💾 Checkpoint saved at iteration 500000
+
+✅ Training complete! Weights saved to /Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/model_v4_baseline.json
+
+📊 Evaluating on TEST set...
+
+   🎯 OVERALL ACCURACY: 56.52% (143/253)
+
+   ❌ Worst performing classes:
+     - address: 0.0% (0/5)
+     - current_company: 0.0% (0/5)
+     - current_title: 0.0% (0/5)
+     - job_current: 0.0% (0/4)
+     - degree: 0.0% (0/4)
+     - major: 0.0% (0/4)
+     - remote_preference: 0.0% (0/3)
+     - start_date: 0.0% (0/3)
+
+   ✅ Best performing classes:
+     - profile_photo: 100.0% (3/3)
+     - youtube_url: 100.0% (3/3)
+     - instagram_url: 100.0% (3/3)
+     - portfolio_url: 100.0% (3/3)
+     - date_of_birth: 100.0% (3/3)
+     - gender: 100.0% (3/3)
+     - languages: 100.0% (4/4)
+     - certifications: 100.0% (4/4)
+
+   Classes at 100%: 19/160
+   Classes at 0%: 17
+
+🎉 Done!

@@ -56,7 +56,7 @@ class HeuristicEngine {
 
         // Date synonyms
         'start_date': 'start_date',  // Generic start date → availability
-                // Contact synonyms
+        // Contact synonyms
         'mobile': 'phone',
         'cellphone': 'phone',
         'telephone': 'phone'
@@ -244,7 +244,7 @@ class HeuristicEngine {
             ],
             confidence: 0.96,
             category: 'work',
-            negative: /\b(job[_\-\s]?description|page[_\-\s]?title|document[_\-\s]?title|book[_\-\s]?title)\b/i
+            negative: /\b(job[_\-\s]?description|page[_\-\s]?title|document[_\-\s]?title|book[_\-\s]?title|fit[_\-\s]?for[_\-\s]?(this|the)?[_\-\s]?role)\b/i
         },
 
         company_name: {
@@ -427,22 +427,22 @@ class HeuristicEngine {
         },
 
         // ======================== COMPENSATION ========================
-        salary_current: {
-            patterns: [
-                /\b(current[_\-\s]?salary|current[_\-\s]?ctc|present[_\-\s]?salary)\b/i,
-                /\b(current[_\-\s]?compensation|current[_\-\s]?pay)\b/i,
-                /\b(existing[_\-\s]?salary|annual[_\-\s]?salary)\b/i
-            ],
-            confidence: 0.97,
-            category: 'compensation'
-        },
-
         salary_expected: {
             patterns: [
                 /\b(expected[_\-\s]?salary|desired[_\-\s]?salary)\b/i,
                 /\b(salary[_\-\s]?expectation|salary[_\-\s]?requirement)\b/i,
                 /\b(desired[_\-\s]?compensation|expected[_\-\s]?pay)\b/i,
                 /\b(target[_\-\s]?salary|preferred[_\-\s]?salary)\b/i
+            ],
+            confidence: 0.97,
+            category: 'compensation'
+        },
+
+        salary_current: {
+            patterns: [
+                /\b(current[_\-\s]?salary|current[_\-\s]?ctc|present[_\-\s]?salary)\b/i,
+                /\b(current[_\-\s]?compensation|current[_\-\s]?pay)\b/i,
+                /\b(existing[_\-\s]?salary|current[_\-\s]?annual[_\-\s]?salary)\b/i
             ],
             confidence: 0.97,
             category: 'compensation'
@@ -542,7 +542,7 @@ class HeuristicEngine {
                 /\b(why[_\-\s]?should[_\-\s]?we[_\-\s]?hire|about[_\-\s]?yourself)\b/i,
                 /\btell[_\-\s]?us[_\-\s]?about[_\-\s]?yourself\b/i
             ],
-            confidence: 0.94,
+            confidence: 0.98,
             category: 'misc'
         },
         // ==================== BATCH 1: PERSONAL IDENTITY EXTENDED ====================
@@ -981,8 +981,8 @@ class HeuristicEngine {
     static PRIORITY_RULES = {
         compensation: {
             test: /\b(salary|ctc|remuneration|compensation|pay)\b/i,
-            expected: /\b(expect|desire|want|prefer|target|requirement)\b/i,
-            current: /\b(current|present|existing|annual)\b/i
+            expected: /\b(expect\w*|desire\w*|want|prefer\w*|target|requirement)\b/i,
+            current: /\b(current|present|existing)\b/i
         },
         date: {
             hasDate: /\b(date|month|year)\b/i,

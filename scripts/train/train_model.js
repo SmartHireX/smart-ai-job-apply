@@ -40,9 +40,9 @@ const CONFIG = {
     outputPath: path.join(__dirname, '../../autofill/domains/inference/model_v4_baseline.json'),
 
     // Training parameters
-    iterations: 10000, // Reduced for quick verification
-    logEvery: 1000,
-    saveEvery: 5000,
+    iterations: 50000,  // Quick V3 verification
+    logEvery: 50000,
+    saveEvery: 100000,
 
     // NEW: Validation & Early Stopping
     validationSplit: 0.2,      // 20% of training data for validation
@@ -50,10 +50,11 @@ const CONFIG = {
     earlyStopPatience: 5,      // Stop if no improvement for 5 validation checks
     minDelta: 0.001,           // Minimum improvement threshold
 
-    // Learning rate scheduling
+    // Learning rate scheduling - FIXED: slower decay to maintain learning
     initialLR: 0.05,
-    lrDecayRate: 0.95,
-    lrDecayEvery: 50000
+    lrDecayRate: 0.99,        // Was 0.95, now slower decay
+    lrDecayEvery: 10000,      // Decay more frequently but less aggressively
+    minLR: 0.001              // Minimum LR floor to prevent 0
 };
 
 // ============================================================================
@@ -78,6 +79,28 @@ function loadDatasetsFromFolder(folderPath) {
         }
     }
     return merged;
+}
+
+function loadRegeneratedDataset() {
+    const regeneratedPath = path.join(__dirname, 'train-dataset-regenerated.json');
+    if (fs.existsSync(regeneratedPath)) {
+        console.log('   ✅ Found REGENERATED dataset (proper 84-dim features), loading...');
+        const data = JSON.parse(fs.readFileSync(regeneratedPath, 'utf8'));
+        console.log(`   ✅ Loaded ${data.length} regenerated samples`);
+        return data;
+    }
+    return null;
+}
+
+function loadV3Dataset() {
+    const v3Path = path.join(__dirname, 'train-dataset-v3.json');
+    if (fs.existsSync(v3Path)) {
+        console.log('   ✅ Found V3 KEYWORD-BASED dataset (95-dim features), loading...');
+        const data = JSON.parse(fs.readFileSync(v3Path, 'utf8'));
+        console.log(`   ✅ Loaded ${data.length} V3 samples`);
+        return data;
+    }
+    return null;
 }
 
 function loadAugmentedDataset() {
@@ -198,34 +221,32 @@ async function train() {
     console.log('🧠 Neural Classifier Training Script V4');
     console.log('========================================');
 
-    // Load training data - prefer augmented if available
+    // Load training data - prefer V3 (keyword) > regenerated > augmented > raw
     console.log('\n📂 Loading TRAINING datasets...');
-    let trainData = loadAugmentedDataset();
+    let trainData = loadV3Dataset();  // First priority: V3 keyword-based 95-dim features
 
     if (!trainData) {
-        console.log('   ⚠️  No augmented dataset found, loading from train-dataset/...');
+        trainData = loadRegeneratedDataset();
+    }
+
+    if (!trainData) {
+        trainData = loadAugmentedDataset();
+    }
+
+    if (!trainData) {
+        console.log('   ⚠️  No V3/regenerated/augmented dataset found, loading from train-dataset/...');
         trainData = loadDatasetsFromFolder(CONFIG.trainFolder);
     }
 
     console.log(`   Total training samples: ${trainData.length}`);
 
-    // Load test data from folder
-    console.log('\n📂 Loading TEST datasets from test-dataset/...');
-    let testData = loadDatasetsFromFolder(CONFIG.testFolder);
-    console.log(`   Total test samples: ${testData.length}`);
-
-    if (trainData.length === 0) {
-        console.error('❌ No training data found!');
-        return;
-    }
-
-    if (testData.length === 0) {
-        console.warn('⚠️ No test data found, will use 10% of training for testing');
-        trainData = shuffleArray(trainData);
-        const splitIdx = Math.floor(trainData.length * 0.9);
-        testData = trainData.slice(splitIdx);
-        trainData = trainData.slice(0, splitIdx);
-    }
+    // Use 10% of training data for testing (ensures consistent V3 features)
+    console.log('\n📂 Splitting training data for validation (10% test)...');
+    trainData = shuffleArray(trainData);
+    const splitIdx = Math.floor(trainData.length * 0.9);
+    let testData = trainData.slice(splitIdx);
+    trainData = trainData.slice(0, splitIdx);
+    console.log(`   Training samples: ${trainData.length}, Test samples: ${testData.length}`);
 
     // Split training data into train/validation
     console.log(`\n🔀 Splitting data for validation (${CONFIG.validationSplit * 100}% validation)...`);
