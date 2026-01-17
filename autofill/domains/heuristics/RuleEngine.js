@@ -246,6 +246,7 @@ class RuleEngine {
         // Return all that match
         return group.filter(field => {
             const text = `${field.label} ${field.value}`.toLowerCase();
+            console.log(`🔍 [RuleEngine] Checking: "${field}" Context: "[${text}]"`);
             return this.hybridFuzzyScore(text, String(targetValue).toLowerCase()) > 0.8;
         });
     }
@@ -255,6 +256,7 @@ class RuleEngine {
         let maxScore = 0;
         options.forEach(opt => {
             const val = typeof opt === 'object' ? (opt.value || opt.label) : opt;
+            console.log(`🔍 [RuleEngine] Checking: "${opt}" Context: "[${val}]", target : "${targetValue}"`);
             const score = this.hybridFuzzyScore(String(val).toLowerCase(), String(targetValue).toLowerCase());
             if (score > maxScore) {
                 maxScore = score;

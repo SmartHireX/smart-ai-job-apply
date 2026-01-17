@@ -331,6 +331,8 @@ class ExecutionEngine {
                 }
             }
 
+            // console.log(`🔍 [SmartSelect] Option: "${option.text}" (Val: ${option.value}) vs Target: "${targetValue}" -> Score: ${score}`);
+
             if (score > maxScore) {
                 maxScore = score;
                 bestMatch = option.value;
@@ -338,7 +340,7 @@ class ExecutionEngine {
         }
 
         if (bestMatch !== null && maxScore >= 70) {
-            // console.log(`🎯 [SmartSelect] Fuzzy Matched "${targetValue}" -> "${bestMatch}" (Score: ${maxScore})`);
+            console.log(`🎯 [SmartSelect] WINNER: "${bestMatch}" (Score: ${maxScore}) for Target: "${targetValue}"`);
             if (this.nativeSelectSetter) {
                 this.nativeSelectSetter.call(element, bestMatch);
             } else {
