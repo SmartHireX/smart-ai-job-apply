@@ -113,10 +113,16 @@ class FieldRoutingPatterns {
 
         const exclusionKeywords = [
             'currently employed', 'are you employed', 'notice period',
-            'authorized to work', 'require sponsorship', 'relocate'
+            'authorized to work', 'require sponsorship', 'relocate',
+            'education level', 'highest degree', 'degree type',
+            'years of experience', 'total experience'
         ];
-        if (exclusionKeywords.some(kw => ctx.includes(kw))) {
-            return false;
+        // CRITICAL: Only exclude if there is NO explicit index in the name
+        // (e.g. "school_0_degree" should still be allowed, but "degree_level" should be excluded)
+        if (!/[\b_.-]\d+[\b_.-]/.test(ctx)) {
+            if (exclusionKeywords.some(kw => ctx.includes(kw))) {
+                return false;
+            }
         }
 
         // 3. Section Keywords (Job/Education)
