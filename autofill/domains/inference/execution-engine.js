@@ -286,11 +286,14 @@ class ExecutionEngine {
         if (element.value === targetValue) return;
 
         // 3. Smart Fuzzy Match (Text, Value, Label, ID)
-        const normalize = (str) => String(str || '').toLowerCase().trim();
-        const target = normalize(targetValue);
+        const normalize = (str) => String(str || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+        const targetClean = normalize(targetValue);
+        const targetNum = parseFloat(String(targetValue).replace(/[^0-9.]/g, ''));
 
         // Find best option
         let bestMatch = null;
+        let maxScore = 0;
+
         for (const option of element.options) {
             // Check all possible identifiers for this option
             const candidates = [
@@ -298,13 +301,52 @@ class ExecutionEngine {
                 option.text,
                 option.getAttribute('label'),
                 option.id
-            ];
+            ].filter(Boolean); // Filter nulls
 
-            // If ANY candidate matches the target
-            if (candidates.some(c => normalize(c) === target)) {
-                bestMatch = option.value;
-                break;
+            let score = 0;
+
+            for (const cand of candidates) {
+                const candClean = normalize(cand);
+
+                // A. Exact Match (Highest Priority)
+                if (candClean === targetClean) {
+                    score = 100;
+                    break;
+                }
+
+                // B. Numeric Match (e.g. "30 days" vs "30")
+                if (!isNaN(targetNum)) {
+                    const candNum = parseFloat(String(cand).replace(/[^0-9.]/g, ''));
+                    if (!isNaN(candNum) && candNum === targetNum) {
+                        score = Math.max(score, 90);
+                    }
+                }
+
+                // C. Containment Match (e.g. "United States" vs "United States of America")
+                if (candClean.includes(targetClean) || targetClean.includes(candClean)) {
+                    // Check if meaningful containment (at least 3 chars)
+                    if (Math.min(candClean.length, targetClean.length) > 3) {
+                        score = Math.max(score, 70);
+                    }
+                }
             }
+
+            if (score > maxScore) {
+                maxScore = score;
+                bestMatch = option.value;
+            }
+        }
+
+        if (bestMatch !== null && maxScore >= 70) {
+            // console.log(`🎯 [SmartSelect] Fuzzy Matched "${targetValue}" -> "${bestMatch}" (Score: ${maxScore})`);
+            if (this.nativeSelectSetter) {
+                this.nativeSelectSetter.call(element, bestMatch);
+            } else {
+                element.value = bestMatch;
+            }
+            // For robust frameworks (React/Angular), dispatch change
+            this.dispatchEvents(element);
+            return;
         }
 
         if (bestMatch !== null) {
