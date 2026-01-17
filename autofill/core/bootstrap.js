@@ -59,7 +59,7 @@ const SCRIPT_QUEUE = [
     'autofill/domains/inference/FieldTypes.js',
     'autofill/domains/inference/HeuristicEngine.js',
     'autofill/domains/inference/OptimizedMathKernel.js',
-    'autofill/domains/inference/OptimizedMathKernel.js',
+
     'autofill/domains/inference/neural-classifier-v8.js',
     'autofill/domains/inference/HybridClassifier.js',
     'common/infrastructure/config.js',
