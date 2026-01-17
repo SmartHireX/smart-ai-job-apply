@@ -80,69 +80,46 @@ function classifyFieldType(signature) {
 // CACHE STORAGE (Dual-Store Strategy)
 // ============================================================================
 
-const SELECTION_CACHE_KEY = 'selectionCache'; // Standard Values
-const MULTI_CACHE_KEY = 'multiCache';         // Arrays (Skills, Jobs, Edu)
+// ============================================================================
+// CACHE STORAGE (3-Tier Architecture)
+// ============================================================================
+
+const CACHE_KEYS = {
+    ATOMIC_SINGLE: 'ATOMIC_SINGLE',     // Scalar Values (Email, Phone)
+    ATOMIC_MULTI: 'ATOMIC_MULTI',       // Sets (Skills, Interests)
+    SECTIONAL_MULTI: 'SECTIONAL_MULTI'  // Row-Based Arrays (Jobs, Edu)
+};
+
 const METADATA_KEY = 'selectionCacheMetadata';
 
-// Helper: Determine if field belongs to MultiCache
-// Priority: ML Label > Field Label/Context
-// EXCLUDES: Profile questions (authorization, visa, veteran, etc.)
-function isMultiCacheType(semanticKey, field = null) {
-    // Use centralized routing logic for Profile Questions check
-    const PROFILE_QUESTIONS_PATTERN = window.FIELD_ROUTING_PATTERNS.PROFILE_QUESTIONS;
-
-    // Check if this is a profile question (should NOT be multiCache)
-    if (field) {
-        const context = [field.label, field.parentContext, field.name].filter(Boolean).join(' ').toLowerCase();
-        if (PROFILE_QUESTIONS_PATTERN.test(context)) {
-            return false; // Profile questions go to SmartMemory, not MultiCache
-        }
-    }
-    if (PROFILE_QUESTIONS_PATTERN.test(semanticKey)) {
-        return false;
-    }
-
-    // EXEMPTION: Scope-Isolated Keys (SECTION:...) are flattened scalar keys
-    // They should go to SelectionCache (Memory), not MultiCache (Global Arrays)
-    if (semanticKey.startsWith('SECTION:')) {
-        return false;
-    }
-
+// Helper: Determine target cache bucket based on Field Type
+function determineCacheStrategy(semanticKey, field = null) {
     // 0. EXPLICIT ROUTING (Architecture V2)
-    // If instance_type is available, use it as the source of truth.
     if (field && field.instance_type) {
-        if (field.instance_type === 'ATOMIC_MULTI') return true;    // Skills, Interests -> MultiCache (Set)
-        if (field.instance_type === 'SECTIONAL_MULTI') return true; // Job Titles -> MultiCache (List)
-        if (field.instance_type === 'ATOMIC_SINGLE') return false;  // Phone, Email -> SelectionCache (Scalar)
+        if (field.instance_type === 'ATOMIC_MULTI') return CACHE_KEYS.ATOMIC_MULTI;
+        if (field.instance_type === 'SECTIONAL_MULTI') return CACHE_KEYS.SECTIONAL_MULTI;
+        if (field.instance_type === 'ATOMIC_SINGLE') return CACHE_KEYS.ATOMIC_SINGLE;
     }
 
-    // 1. If we have field with high-confidence ML prediction, use that
-    if (field && field.ml_prediction && field.ml_prediction.confidence > 0.9) {
-        const mlLabel = field.ml_prediction.label.toLowerCase();
-        // Check if ML label indicates a section field
-        if (/job|employer|institution|degree|education|work|school/.test(mlLabel)) {
-            return true;
-        }
-        // Skills are also multi
-        if (/skill/.test(mlLabel)) {
-            return true;
-        }
+    // 1. FALLBACK INFERENCE (Legacy/Heuristic)
+    // Check for Sectional Keywords
+    if (/job|employer|institution|degree|education|work|school|title|position/.test(semanticKey)) {
+        return CACHE_KEYS.SECTIONAL_MULTI;
     }
 
-    // 2. If we have field, check its label and parent context for section keywords
-    if (field) {
-        const context = [field.label, field.parentContext, field.section_type, field.name].filter(Boolean).join(' ').toLowerCase();
-        if (/employ|job|education|school|university|degree|edu_|work_/.test(context)) {
-            return true;
-        }
+    // Check for Atomic Multi Keywords
+    if (/skill|interest|technolog|language/.test(semanticKey)) {
+        return CACHE_KEYS.ATOMIC_MULTI;
     }
 
-    // 3. Fallback: Check the semantic key itself (includes shortened prefixes)
-    // Matches: edu_0_school, work_1_employer, job_title, etc.
-    const isSection = /job|employer|institution|degree|education|school|edu_|work_/.test(semanticKey);
-    const isMultiSelect = /skill/.test(semanticKey);
+    // Default to Single
+    return CACHE_KEYS.ATOMIC_SINGLE;
+}
 
-    return isSection || isMultiSelect;
+// Legacy Alias for backward compatibility (if needed by other modules)
+function isMultiCacheType(semanticKey, field) {
+    const strategy = determineCacheStrategy(semanticKey, field);
+    return strategy !== CACHE_KEYS.ATOMIC_SINGLE;
 }
 
 async function getCache(cacheKey) {
@@ -587,58 +564,43 @@ async function getCachedValue(fieldOrSelector, labelArg) {
 
     // ... (rest of function logic)
 
-    // 2. Select Cache - Prefer multiCache for eligible fields
-    const isMultiCacheEligible = isMultiCacheType(semanticType, field);
-    let targetCacheKey = isMultiCacheEligible ? MULTI_CACHE_KEY : SELECTION_CACHE_KEY;
-
-    let cache = await getCache(targetCacheKey);
+    // 2. Select Cache Bucket
+    const targetBucket = determineCacheStrategy(semanticType, field);
+    let cache = await getCache(targetBucket);
     let cached = null;
 
-    // console.log(`[InteractionLog] 🔎 Cache Keys in ${targetCacheKey}: [${Object.keys(cache).join(', ')}]`);
+    // A. SECTIONAL LOOKUP
+    if (targetBucket === CACHE_KEYS.SECTIONAL_MULTI) {
+        const parentSection = getSectionMapping(semanticType);
+        if (parentSection && cache[parentSection]) {
+            const index = getFieldIndex(field, label);
+            const sectionEntry = cache[parentSection];
 
-    // A. SECTIONAL LOOKUP (V2 Row-Based)
-    const parentSection = getSectionMapping(semanticType);
-    if (parentSection && cache[parentSection]) {
-        const index = getFieldIndex(field, label);
-        const sectionEntry = cache[parentSection];
-        // console.log(`[InteractionLog] 📂 Section Lookup: ${parentSection}[${index}].${semanticType}`);
-
-        if (Array.isArray(sectionEntry.value) && sectionEntry.value[index]) {
-            const rowValue = sectionEntry.value[index][semanticType];
-            if (rowValue !== undefined) {
-                return {
-                    value: rowValue,
-                    confidence: 0.95, // High confidence for structural match
-                    source: 'section_row_cache',
-                    semanticType: semanticType
-                };
+            if (Array.isArray(sectionEntry.value) && sectionEntry.value[index]) {
+                const rowValue = sectionEntry.value[index][semanticType];
+                if (rowValue !== undefined) {
+                    return {
+                        value: rowValue,
+                        confidence: 0.95,
+                        source: 'section_row_cache',
+                        semanticType: semanticType
+                    };
+                }
             }
         }
     }
 
-    // B. Direct Hit (Legacy/Scalar)
+    // B. DIRECT HIT (in primary bucket)
     if (cache[semanticType]) {
         cached = cache[semanticType];
-        // console.log(`[InteractionLog] 🎯 Direct Hit in ${targetCacheKey}: ${semanticType}`);
-    } else if (isML && fallbackKey && cache[fallbackKey]) {
-        // ML key missed, try the fallback key
-        semanticType = fallbackKey;
-        cached = cache[fallbackKey];
-        // console.log(`[InteractionLog] 🎯 Fallback Hit in ${targetCacheKey}: ${fallbackKey}`);
     }
 
-    // B. Cross-Cache Fallback: If multiCache-eligible but not found, try selectionCache (backward compat)
-    if (!cached && isMultiCacheEligible) {
-        const legacyCache = await getCache(SELECTION_CACHE_KEY);
-        if (legacyCache[semanticType]) {
-            cached = legacyCache[semanticType];
-            targetCacheKey = SELECTION_CACHE_KEY;
-            // console.log(`[InteractionLog] 🔄 Legacy Hit in ${SELECTION_CACHE_KEY}: ${semanticType} (should migrate to multiCache)`);
-        } else if (fallbackKey && legacyCache[fallbackKey]) {
-            cached = legacyCache[fallbackKey];
-            semanticType = fallbackKey;
-            targetCacheKey = SELECTION_CACHE_KEY;
-            // console.log(`[InteractionLog] 🔄 Legacy Fallback Hit in ${SELECTION_CACHE_KEY}: ${fallbackKey}`);
+    // C. CROSS-BUCKET FALLBACK (If miss in primary, try Atomic Single/legacy)
+    if (!cached && targetBucket !== CACHE_KEYS.ATOMIC_SINGLE) {
+        const singleCache = await getCache(CACHE_KEYS.ATOMIC_SINGLE);
+        if (singleCache[semanticType]) {
+            cached = singleCache[semanticType];
+            // console.log(`[InteractionLog] 🔄 Fallback Hit in ATOMIC_SINGLE: ${semanticType}`);
         }
     }
     // B. Fuzzy Search (Secondary)
@@ -733,12 +695,11 @@ async function cacheSelection(field, label, value) {
         if (!semanticType) return;
 
         // 2. Determine Storage Strategy
-        const isMultiCache = isMultiCacheType(semanticType, field);
-        const targetCacheKey = isMultiCache ? MULTI_CACHE_KEY : SELECTION_CACHE_KEY;
+        const targetCacheKey = determineCacheStrategy(semanticType, field);
         const cache = await getCache(targetCacheKey);
 
         // A. SECTIONAL_MULTI: Row-Based Storage (Array of Hashes)
-        if (field.instance_type === 'SECTIONAL_MULTI' || /job|work|education|employer|school|degree|institution|title/.test(semanticType)) {
+        if (targetCacheKey === CACHE_KEYS.SECTIONAL_MULTI) {
             const index = getFieldIndex(field, label);
             const parentSection = getSectionMapping(semanticType);
 
@@ -750,7 +711,8 @@ async function cacheSelection(field, label, value) {
                         fieldType: 'section',
                         lastUsed: Date.now(),
                         useCount: 0,
-                        confidence: 1.0
+                        confidence: 1.0,
+                        variants: []
                     };
                 }
                 const entry = cache[parentSection];
@@ -763,28 +725,22 @@ async function cacheSelection(field, label, value) {
                 entry.value[index][semanticType] = value;
                 entry.lastUsed = Date.now();
 
-                // Update variants for the parent section key
+                // Update variants (on parent)
                 const normLabel = normalizeFieldName(label);
-                if (normLabel && !entry.variants.includes(normLabel)) {
+                if (normLabel && entry.variants && !entry.variants.includes(normLabel)) {
                     entry.variants.push(normLabel);
                 }
             } else {
-                // Fallback: Legacy Column-Based (if no parent section mapped)
+                // Fallback: Legacy Column-Based
                 if (!cache[semanticType]) cache[semanticType] = { value: [], useCount: 0, confidence: 0.75, variants: [] };
                 const entry = cache[semanticType];
                 if (!Array.isArray(entry.value)) entry.value = entry.value ? [entry.value] : [];
                 entry.value[index] = value;
                 entry.lastUsed = Date.now();
-
-                // Update variants for the semanticType key
-                const normLabel = normalizeFieldName(label);
-                if (normLabel && !entry.variants.includes(normLabel)) {
-                    entry.variants.push(normLabel);
-                }
             }
         }
         // B. ATOMIC_MULTI: Merged Sets (Skills, Interests)
-        else if (field.instance_type === 'ATOMIC_MULTI' || semanticType === 'skills' || field.multiple || field.type === 'checkbox') {
+        else if (targetCacheKey === CACHE_KEYS.ATOMIC_MULTI) {
             if (!cache[semanticType]) cache[semanticType] = { value: [], useCount: 0, confidence: 0.75, variants: [] };
             const entry = cache[semanticType];
 
@@ -804,31 +760,25 @@ async function cacheSelection(field, label, value) {
             entry.value = Array.from(set);
             entry.lastUsed = Date.now();
 
-            // Update variants for the semanticType key
             const normLabel = normalizeFieldName(label);
-            if (normLabel && !entry.variants.includes(normLabel)) {
-                entry.variants.push(normLabel);
-            }
+            if (normLabel && !entry.variants.includes(normLabel)) entry.variants.push(normLabel);
         }
-        // C. STANDARD SCALAR (Atomic Single)
+        // C. ATOMIC_SINGLE: Scalar Values
         else {
             if (!cache[semanticType]) cache[semanticType] = { value: null, useCount: 0, confidence: 0.75, variants: [] };
             const entry = cache[semanticType];
             entry.value = value;
             entry.lastUsed = Date.now();
 
-            // Update variants for the semanticType key
             const normLabel = normalizeFieldName(label);
-            if (normLabel && !entry.variants.includes(normLabel)) {
-                entry.variants.push(normLabel);
-            }
+            if (normLabel && !entry.variants.includes(normLabel)) entry.variants.push(normLabel);
         }
 
         await saveCache(targetCacheKey, cache);
 
         // Meta update
         const meta = await getMetadata();
-        meta.totalEntries = Object.keys(cache).length;
+        meta.totalEntries = (await getCache(CACHE_KEYS.ATOMIC_SINGLE)).length + (await getCache(CACHE_KEYS.ATOMIC_MULTI)).length; // Approx
         await saveMetadata(meta);
 
     }).catch(err => console.error('[InteractionLog] Error in cacheSelection:', err));
@@ -838,8 +788,8 @@ async function cacheSelection(field, label, value) {
 }
 
 async function cleanupCache() {
-    // Cleanup both
-    const caches = [SELECTION_CACHE_KEY, MULTI_CACHE_KEY];
+    // Cleanup all buckets
+    const caches = Object.values(CACHE_KEYS);
     const TTL_MS = 90 * 24 * 60 * 60 * 1000;
     const now = Date.now();
     let cleaned = 0;
@@ -860,17 +810,18 @@ async function cleanupCache() {
 }
 
 async function getCacheStats() {
-    const sel = await getCache(SELECTION_CACHE_KEY);
-    const multi = await getCache(MULTI_CACHE_KEY);
+    const single = await getCache(CACHE_KEYS.ATOMIC_SINGLE);
+    const multiSet = await getCache(CACHE_KEYS.ATOMIC_MULTI);
+    const multiSec = await getCache(CACHE_KEYS.SECTIONAL_MULTI);
 
     // Merge for display
-    const merged = { ...sel, ...multi };
+    const merged = { ...single, ...multiSet, ...multiSec };
 
     return {
         totalEntries: Object.keys(merged).length,
         entries: Object.entries(merged).map(([type, data]) => ({
             type,
-            storage: isMultiCacheType(type) ? 'multiCache' : 'selectionCache',
+            bucket: determineCacheStrategy(type),
             value: data.value,
             useCount: data.useCount
         }))
@@ -878,9 +829,10 @@ async function getCacheStats() {
 }
 
 async function clearCache() {
-    // Clears: Selection (Standard), Multi (Arrays), and Smart Memory (Global Fallback)
-    await chrome.storage.local.remove([SELECTION_CACHE_KEY, MULTI_CACHE_KEY, METADATA_KEY, 'smartMemory']);
-    // console.log('[InteractionLog] 🗑️ All Caches Cleared: Selection, Multi, and SmartMemory');
+    // Clears: All 3 buckets + Metadata + SmartMemory
+    const keysToRemove = [...Object.values(CACHE_KEYS), METADATA_KEY, 'smartMemory'];
+    await chrome.storage.local.remove(keysToRemove);
+    // console.log('[InteractionLog] 🗑️ All Caches Cleared');
 }
 
 // Export
