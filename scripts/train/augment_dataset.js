@@ -224,7 +224,7 @@ function mixContexts(samples, maxMixed = 2) {
                 features: {
                     ...base.features,
                     parentContext: donor.features.parentContext,
-                    siblingContext: base.features.siblingContext
+                    siblingContext: '' // base.features.siblingContext (Disabled)
                 },
                 label: cls
             });
@@ -233,7 +233,7 @@ function mixContexts(samples, maxMixed = 2) {
                 features: {
                     ...base.features,
                     parentContext: base.features.parentContext,
-                    siblingContext: donor.features.siblingContext
+                    siblingContext: '' // donor.features.siblingContext (Disabled)
                 },
                 label: cls
             });
@@ -262,6 +262,11 @@ function augmentDataset() {
         originalData = originalData.concat(data);
         console.log(`   Loaded ${data.length} samples from ${file}`);
     }
+
+    // STRIP SIBLING CONTEXT from all samples (User Request)
+    originalData.forEach(sample => {
+        if (sample.features) sample.features.siblingContext = '';
+    });
 
     console.log(`\n📊 Original dataset: ${originalData.length} samples\n`);
 

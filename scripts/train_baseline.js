@@ -50,7 +50,8 @@ class SimpleFeatureExtractor {
 
             // NEW: Rich Context Signals
             ...this.hashText(field.parentContext || '', 10),  // 10 parent
-            ...this.hashText(field.siblingContext || '', 10)  // 10 sibling
+            // ...this.hashText(field.siblingContext || '', 10)  // 10 sibling (Disabled)
+            ...new Array(10).fill(0) // Zero out sibling context
         ];
 
         return features;
@@ -375,54 +376,9 @@ const PARENT_CONTEXTS = {
     generic_question: ['Additional Questions', 'Other Information', 'Comments', '']
 };
 
-// Sibling context patterns
+// Sibling context patterns (Disabled)
 const SIBLING_PATTERNS = {
-    first_name: ['*First Name*, Last Name, Email'],
-    last_name: ['First Name, *Last Name*, Email', 'First Name, *Last Name*, Phone', '*Last Name*, Email, Phone'],
-    full_name: ['*Full Name*, Email, Phone', '*Name*, Email Address', 'Name, *Full Name*, Contact'],
-    email: ['Name, *Email*, Phone', 'Phone, *Email*, LinkedIn', 'First Name, Last Name, *Email*'],
-    phone: ['Email, *Phone*, Address', 'Name, Email, *Phone*', '*Phone*, LinkedIn, Website'],
-    linkedin: ['GitHub, *LinkedIn*, Portfolio', 'Email, *LinkedIn*, Website', '*LinkedIn*, GitHub, Resume'],
-    github: ['LinkedIn, *GitHub*, Portfolio', '*GitHub*, LinkedIn, Website', 'Email, *GitHub*, Portfolio'],
-    portfolio: ['GitHub, *Portfolio*, Resume', 'LinkedIn, *Portfolio*, Website', '*Portfolio*, GitHub, Cover Letter'],
-    website: ['LinkedIn, *Website*, Portfolio', 'GitHub, *Website*, Blog', 'Portfolio, *Website*, Resume'],
-    twitter_url: ['LinkedIn, *Twitter*, Website'],
-    address: ['*Address*, City, State', 'Name, *Address*, Phone', '*Street Address*, Apartment, City'],
-    city: ['Address, *City*, State', '*City*, State, Zip', 'Street, *City*, Country'],
-    state: ['City, *State*, Zip', '*State*, Zip Code, Country', 'Address, City, *State*'],
-    zip_code: ['State, *Zip Code*, Country', 'City, State, *ZIP*', '*Postal Code*, Country'],
-    country: ['Zip, *Country*, Phone', 'State, Zip, *Country*', '*Country*, Address'],
-    job_title: ['*Job Title*, Company, Start Date', '*Position*, Employer, Duration', 'Company, *Title*, Description'],
-    employer_name: ['Job Title, *Company*, Start Date'],
-    job_start_date: ['Company, *Start Date*, End Date', '*From*, To, Description', 'Title, *Start Date*, End Date'],
-    job_end_date: ['Start Date, *End Date*, Description', 'From, *To*, Current', '*End Date*, Responsibilities'],
-    work_description: ['End Date, *Description*, Next Job', 'Company, Title, *Responsibilities*'],
-    job_location: ['Job Title, Company, *Location*'],
-    institution_name: ['*School*, Degree, Major'],
-    degree_type: ['School, *Degree*, Major', '*Degree Type*, Field, Year', 'University, *Qualification*, GPA'],
-    field_of_study: ['Degree, *Major*, GPA', 'School, Degree, *Field of Study*', '*Concentration*, Graduation'],
-    gpa_score: ['Major, *GPA*, Graduation', 'Degree, *Grade*, Year', 'School, Degree, *CGPA*'],
-    education_start_date: ['School, *Start Date*, End Date', '*From*, To, Degree', 'Institution, *Enrollment*, Graduation'],
-    education_end_date: ['Start Date, *End Date*, Degree', 'From, *Graduation*, GPA', '*Completed*, Major, Honors'],
-    gender: ['*Gender*, Race, Veteran', '*Gender Identity*, Ethnicity', 'Demographics, *Gender*, Disability'],
-    race: ['Gender, *Race*, Veteran', '*Ethnicity*, Gender, Disability', 'Demographics, *Race*, Age'],
-    veteran: ['Race, *Veteran Status*, Disability', 'Gender, *Veteran*, Accommodation', '*Military Service*, Citizenship'],
-    disability: ['Veteran, *Disability*, Legal Age', 'Gender, Race, *Disability Status*', '*Accommodation*, Other'],
-    marital_status: ['Gender, *Marital Status*, Race'],
-    salary_current: ['*Current Salary*, Expected', 'Compensation, *Current CTC*', '*Present Salary*, Desired'],
-    salary_expected: ['Current, *Expected Salary*', '*Desired Pay*, Benefits', 'Current CTC, *Salary Expectation*'],
-    desired_salary_text: ['Expected Salary, *Description*', 'Current Salary, *Expectations*'],
-    work_auth: ['*Work Authorization*, Sponsorship', '*Legal Auth*, Citizenship', 'Eligibility, *Right to Work*'],
-    sponsorship: ['Work Auth, *Sponsorship*, Visa', '*Require Sponsorship*, Citizenship', 'Legal, *Visa Sponsorship*'],
-    citizenship: ['Sponsorship, *Citizenship*', 'Work Auth, *Nationality*', '*Citizenship Status*, Visa'],
-    clearance: ['*Security Clearance*, Level', '*Clearance*, Background', 'Security, *Clearance Level*'],
-    legal_age: ['*Over 18*, Certification', 'Disability, *Legal Age*', '*Age Verification*, Work Auth'],
-    tax_id: ['*SSN*, Work Auth', '*Tax ID*, Legal', 'ID, *Social Security*'],
-    criminal_record: ['*Criminal Record*, Explanation'],
-    notice_period: ['*Notice Period*, Start Date'],
-    referral_source: ['*How did you hear?*, Referral', 'Source, *Referral Code*', '*Where heard*, Employee Referral'],
-    cover_letter: ['Resume, *Cover Letter*, References', 'Documents, *Cover Note*', '*Application Letter*, Portfolio'],
-    generic_question: ['*Question*, Comments', 'Other, *Additional Info*', '*Notes*, Submit']
+    // Disabled per user request
 };
 
 // Placeholder variations
@@ -506,7 +462,8 @@ function generateTrainingData() {
                 name: names[Math.floor(Math.random() * names.length)],
                 type: types[Math.floor(Math.random() * types.length)],
                 parentContext: contexts[Math.floor(Math.random() * contexts.length)],
-                siblingContext: siblings[Math.floor(Math.random() * siblings.length)],
+                // siblingContext: siblings[Math.floor(Math.random() * siblings.length)], // Disabled
+                siblingContext: '',
                 placeholder: placeholders[Math.floor(Math.random() * placeholders.length)] || '',
                 class: fieldClass
             };
@@ -527,10 +484,10 @@ function trainModel() {
 
     console.log(`📊 Training data: ${trainingData.length} examples`);
     console.log(`🏗️ Network: 56 → 20 (Leaky ReLU) → ${network.CLASSES.length}`);
-    console.log(`⚙️ Features: label + name + placeholder + parentContext + siblingContext`);
+    console.log(`⚙️ Features: label + name + placeholder + parentContext`);
     console.log(`📦 Params: ~2,001\n`);
 
-    const EPOCHS = 1000; // Extended training for better accuracy
+    const EPOCHS = 600; // Optimized for performance/time trade-off
     const REPORT_INTERVAL = 50;
 
     for (let epoch = 1; epoch <= EPOCHS; epoch++) {

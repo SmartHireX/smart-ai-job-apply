@@ -70,7 +70,8 @@ function generateSample(label, correctClass, isWorkday = false) {
             placeholder: noise > 0.5 ? `Enter your ${label}` : '',
             ariaLabel: noise > 0.7 ? label : '',
             parentContext: isWorkday ? 'Workday Form' : (noise > 0.85 ? 'Personal Info' : ''),
-            siblingContext: noise > 0.95 ? 'Required' : ''
+            // siblingContext: noise > 0.95 ? 'Required' : '' // Disabled per user request
+            siblingContext: ''
         },
         label: correctClass
     };
@@ -79,7 +80,7 @@ function generateSample(label, correctClass, isWorkday = false) {
 function generateDataset() {
     console.log('🧬 Generating synthetic dataset V8 (Enterprise Scale)...');
     let dataset = [];
-    const targetSize = 250000;
+    const targetSize = 50000; // Reduced for faster retraining
 
     // 1. Process Synonym Dictionary
     for (const [className, seeds] of Object.entries(SYNONYMS)) {
