@@ -70,7 +70,9 @@ const SCRIPT_QUEUE = [
     'autofill/utils/field-utils.js',
     'autofill/features/undo-manager.js',
     'autofill/features/self-healing.js',
+    'autofill/features/self-healing.js',
     'autofill/features/ai-field-regeneration.js',
+    'autofill/features/form-observer.js',
 
     // Autofill Workflows (3 files)
     'autofill/workflows/classification-workflow.js',

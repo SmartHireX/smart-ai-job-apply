@@ -70,7 +70,12 @@ class Lifecycle {
         this.registerService('IndexingService', window.IndexingService);
         this.registerService('HistoryManager', window.EntityStore); // Renamed
         this.registerService('PipelineOrchestrator', window.PipelineOrchestrator); // New
+        this.registerService('PipelineOrchestrator', window.PipelineOrchestrator); // New
         this.registerService('PrefetchEngine', window.PrefetchEngine);
+        this.registerService('FormObserver', window.FormObserver);
+
+        // Start Observer immediately
+        if (window.FormObserver) window.FormObserver.start();
     }
 
     /**
