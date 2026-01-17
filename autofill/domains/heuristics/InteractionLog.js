@@ -530,8 +530,18 @@ function generateSemanticKey(fieldOrElement, label) {
     // D. SCOPE ISOLATION (SECTION KEYS)
     // We only want to namespace ATOMIC_SINGLE fields that appear inside a section (e.g. "Did you manage a team?" in Job 1).
     // ATOMIC_MULTI (Skills) should remain global/flat (`skills`).
-    // SECTIONAL_MULTI (Job Title) use the raw key (`job_title`) and rely on Array Storage in multiCache.
-    if (field.scope === 'SECTION' && field.instance_type === 'ATOMIC_SINGLE') {
+    // LEAKAGE FIX: Known Global Keys should NEVER be scoped (Notice Period, Total Exp, Edu Level)
+    const GLOBAL_OVERRIDE_KEYS = [
+        'notice_period', 'notice_period_in_days',
+        'years_experience', 'total_experience', 'experience_years',
+        'education_level', 'highest_degree', 'degree_type',
+        'visa', 'sponsorship', 'work_authorization', 'clearance',
+        'gender', 'race', 'veteran', 'disability'
+    ];
+
+    const isGlobalOverride = GLOBAL_OVERRIDE_KEYS.some(k => fallbackKey.includes(k));
+
+    if (!isGlobalOverride && field.scope === 'SECTION' && field.instance_type === 'ATOMIC_SINGLE') {
         const sectionType = field.section_type || 'section'; // e.g. 'work'
         const index = field.field_index || 0;
 
