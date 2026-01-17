@@ -144,6 +144,9 @@ class ExecutionEngine {
         const tagName = element.tagName.toLowerCase();
         const type = (element.type || '').toLowerCase();
 
+        // Debug Entry
+        console.log(`🛠️ [SetValueRobust] Tag: "${tagName}", Type: "${type}", Target: "${value}"`);
+
         // Special Radio Button Handling
         // For radio groups, we need to find the specific radio button matching the value
         if (type === 'radio') {
@@ -281,7 +284,7 @@ class ExecutionEngine {
         } else {
             element.value = targetValue;
         }
-
+        console.log(`🔍 [SmartSelect] Target: "${targetValue}"`);
         // 2. Verify
         if (element.value === targetValue) return;
 
@@ -289,7 +292,7 @@ class ExecutionEngine {
         const normalize = (str) => String(str || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
         const targetClean = normalize(targetValue);
         const targetNum = parseFloat(String(targetValue).replace(/[^0-9.]/g, ''));
-
+        console.log(`🔍 [SmartSelect] Target: "${targetValue}"`);
         // Find best option
         let bestMatch = null;
         let maxScore = 0;
