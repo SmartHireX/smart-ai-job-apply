@@ -13,6 +13,13 @@ class FieldRoutingPatterns {
     /**
      * 1. Classify the Structural Role (Instance Type)
      * Determines HOW the field behaves (Single vs Set vs Repeating Block)
+     * 
+     * | Type | Description | Examples |
+     * | :--- | :--- | :--- |
+     * | **ATOMIC_SINGLE** | A single value field. | First Name, Email, "Are you authorized?" (Radio) |
+     * | **ATOMIC_MULTI** | A set of values (Order doesn't matter). | Skills, Interests, "Select all that apply" |
+     * | **SECTIONAL_MULTI** | A field inside a repeating list (Order matters). | Job 1 Title, Job 2 Title, School Name |
+     * 
      * @param {Object} field - The field object
      * @returns {string} ATOMIC_SINGLE | ATOMIC_MULTI | SECTIONAL_MULTI | COMPOSITE
      */
@@ -20,18 +27,25 @@ class FieldRoutingPatterns {
         const type = (field.type || 'text').toLowerCase();
         const isCheckOrMulti = type === 'checkbox' || type === 'select-multiple' || field.multiple;
 
-        // A. SECTIONAL_MULTI (Repeating Blocks like Job 1, Job 2)
-        // CRITICAL: Requires BOTH an index AND a repeatable semantic context (to avoid accidental indexing)
+        // A. SPECIAL CASE: ATOMIC_MULTI Sets (Skills, Interests)
+        // Even if they have an index, a group of checkboxes for "Skills" should be ATOMIC_MULTI (a set),
+        // not SECTIONAL_MULTI (repeating blocks like Job 1, Job 2).
+        const context = [field.label, field.name, field.parentContext].filter(Boolean).join(' ').toLowerCase();
+        const atomicSetKeywords = /skills|technologies|tools|languages|hobbies|interests|competencies/i;
+        if (isCheckOrMulti && atomicSetKeywords.test(context)) {
+            return 'ATOMIC_MULTI';
+        }
+
+        // B. SECTIONAL_MULTI (Repeating Blocks like Job 1, Job 2)
+        // CRITICAL: Requires BOTH an index AND a repeatable semantic context
         if (field.field_index !== null && field.field_index !== undefined) {
             // We use isMultiValueEligible to confirm it's semantically a repeating section (Work/Edu)
-            // This satisfies "container is repeatable" requirement
-            const context = [field.label, field.name, field.parentContext].filter(Boolean).join(' ');
             if (this.isMultiValueEligible(context, type)) {
                 return 'SECTIONAL_MULTI';
             }
         }
 
-        // B. ATOMIC_MULTI (Sets like Skills, Interests)
+        // C. ATOMIC_MULTI (Generic Checkboxes/MultiSelects)
         if (isCheckOrMulti) {
             return 'ATOMIC_MULTI';
         }
@@ -54,8 +68,13 @@ class FieldRoutingPatterns {
         }
 
         // B. SECTION (Job 1 vs Job 2)
-        // If it has an index, it is structurally inside a section, 
-        // regardless of whether it is a "Sectional Multi" or "Atomic Single" behavior.
+        // If it has an index, it is structurally inside a section.
+        // EXCEPTION: ATOMIC_MULTI (e.g. Skills) is inherently GLOBAL (a single set of skills for the user),
+        // so we force GLOBAL scope even if it appears to have an index in a section.
+        if (field.instance_type === 'ATOMIC_MULTI') {
+            return 'GLOBAL';
+        }
+
         if (field.field_index !== null && field.field_index !== undefined) {
             return 'SECTION';
         }

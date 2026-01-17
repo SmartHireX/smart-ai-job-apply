@@ -40,6 +40,7 @@ window.NeuralClassifierV8 = NeuralClassifierV8;
 window.HeuristicEngine = HeuristicEngine;
 window.FeatureExtractor = FeatureExtractor;
 window.FieldTypes = FieldTypes;
+global.FieldTypes = FieldTypes; // CRITICAL: For NeuralClassifierV8 class mapping in Node
 
 // ==========================================
 // 3. RUN VERIFICATION
@@ -126,6 +127,33 @@ async function runVerification() {
 
     if (result3.label === 'job_title') {
         console.log('✅ SUCCESS: Correctly Classified');
+    }
+
+    // Test Case 4: Skills Checkbox (The Bug Regression Test)
+    console.log('\n--------------------------------------------------');
+    console.log('🧪 Testing: Skills Checkbox (Regression)');
+    const skillsField = {
+        label: 'JavaScript',
+        name: 'skills',
+        id: 'skill_js',
+        type: 'checkbox',
+        parentContext: '🛠️ Technical Skills',
+        // Mock Element for deep inspection if needed
+        element: {
+            tagName: 'INPUT',
+            type: 'checkbox',
+            getAttribute: () => null
+        }
+    };
+    const skillsResult = await hybrid.classify(skillsField);
+    console.log(`   Final Verdict: [${skillsResult.label}] (Conf: ${skillsResult.confidence.toFixed(4)})`);
+    console.log(`   Source: ${skillsResult.source}`);
+    console.log(`   Scores -> Heuristic: ${skillsResult.heuristicConfidence?.toFixed(4) || 'N/A'} | Neural: ${skillsResult.neuralConfidence?.toFixed(4) || 'N/A'}`);
+
+    if (skillsResult.label === 'skills' || skillsResult.label === 'technical_skills') {
+        console.log('✅ SUCCESS: Identified as Skills (Fix Verified)');
+    } else {
+        console.error('❌ FAILURE: Still Unknown or Wrong Class');
     }
 }
 

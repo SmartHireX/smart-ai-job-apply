@@ -1511,6 +1511,7 @@ class HeuristicEngine {
         // 3. Automation ID / Name / ID - Weight 0.6
         // (Developers often use abbreviations here, so regex finds them well)
         maxScore += check(field.automationId, 0.6);
+        maxScore += check(field.name, 0.6); // ADDED: Critical for "name" attribute matching
         maxScore += check(field.id, 0.6);
 
         // 4. Context (Parent/Sibling) - Weight 0.4

@@ -187,6 +187,13 @@ class PipelineOrchestrator {
                 field.instance_type = window.FIELD_ROUTING_PATTERNS.classifyInstanceType(field);
                 field.scope = window.FIELD_ROUTING_PATTERNS.classifyScope(field);
 
+                // CLEANUP: If scope is GLOBAL, the index is irrelevant and should be removed
+                // to prevent confusion (e.g. Skills set showing index 0).
+                // We keep it for SECTION scope (Job Titles, Scope-Isolated Questions).
+                if (field.scope === 'GLOBAL') {
+                    field.field_index = null;
+                }
+
                 // IMMUTABILITY ENFORCEMENT
                 // Verify these properties cannot be changed downstream
                 try {

@@ -108,6 +108,14 @@ function isMultiCacheType(semanticKey, field = null) {
         return false;
     }
 
+    // 0. EXPLICIT ROUTING (Architecture V2)
+    // If instance_type is available, use it as the source of truth.
+    if (field && field.instance_type) {
+        if (field.instance_type === 'ATOMIC_MULTI') return true;    // Skills, Interests -> MultiCache (Set)
+        if (field.instance_type === 'SECTIONAL_MULTI') return true; // Job Titles -> MultiCache (List)
+        if (field.instance_type === 'ATOMIC_SINGLE') return false;  // Phone, Email -> SelectionCache (Scalar)
+    }
+
     // 1. If we have field with high-confidence ML prediction, use that
     if (field && field.ml_prediction && field.ml_prediction.confidence > 0.9) {
         const mlLabel = field.ml_prediction.label.toLowerCase();
@@ -543,10 +551,10 @@ function generateSemanticKey(fieldOrElement, label) {
     fallbackKey = fallbackKey || normalizeFieldName(field.id) || 'unknown_field';
 
     // D. SCOPE ISOLATION (SECTION KEYS)
-    // If field is in a section (Job 1) but NOT a Repeating Block (like Job Title),
-    // it implies an Atomic Single field inside a Section (e.g. "Did you manage a team?").
-    // We must namespace this key to preventing leaking facts between Job 1 and Job 2.
-    if (field.scope === 'SECTION' && field.instance_type !== 'SECTIONAL_MULTI') {
+    // We only want to namespace ATOMIC_SINGLE fields that appear inside a section (e.g. "Did you manage a team?" in Job 1).
+    // ATOMIC_MULTI (Skills) should remain global/flat (`skills`).
+    // SECTIONAL_MULTI (Job Title) use the raw key (`job_title`) and rely on Array Storage in multiCache.
+    if (field.scope === 'SECTION' && field.instance_type === 'ATOMIC_SINGLE') {
         const sectionType = field.section_type || 'section'; // e.g. 'work'
         const index = field.field_index || 0;
 
@@ -588,7 +596,27 @@ async function getCachedValue(fieldOrSelector, labelArg) {
 
     // console.log(`[InteractionLog] 🔎 Cache Keys in ${targetCacheKey}: [${Object.keys(cache).join(', ')}]`);
 
-    // A. Direct Hit (try ML key first, then fallback key)
+    // A. SECTIONAL LOOKUP (V2 Row-Based)
+    const parentSection = getSectionMapping(semanticType);
+    if (parentSection && cache[parentSection]) {
+        const index = getFieldIndex(field, label);
+        const sectionEntry = cache[parentSection];
+        // console.log(`[InteractionLog] 📂 Section Lookup: ${parentSection}[${index}].${semanticType}`);
+
+        if (Array.isArray(sectionEntry.value) && sectionEntry.value[index]) {
+            const rowValue = sectionEntry.value[index][semanticType];
+            if (rowValue !== undefined) {
+                return {
+                    value: rowValue,
+                    confidence: 0.95, // High confidence for structural match
+                    source: 'section_row_cache',
+                    semanticType: semanticType
+                };
+            }
+        }
+    }
+
+    // B. Direct Hit (Legacy/Scalar)
     if (cache[semanticType]) {
         cached = cache[semanticType];
         // console.log(`[InteractionLog] 🎯 Direct Hit in ${targetCacheKey}: ${semanticType}`);
@@ -688,6 +716,13 @@ function validateSingleOption(field, singleValue) {
     });
 }
 
+// Helper: Map semantic key to parent section
+function getSectionMapping(key) {
+    if (/job|work|employer|company|title|position/.test(key)) return 'work_experience';
+    if (/school|university|degree|education|institution|gpa|major/.test(key)) return 'education';
+    return null;
+}
+
 /**
  * Cache a field selection
  */
@@ -695,64 +730,100 @@ async function cacheSelection(field, label, value) {
     const currentOp = _cacheLock.then(async () => {
         // 1. Generate Key
         const { key: semanticType, isML } = generateSemanticKey(field, label);
-
         if (!semanticType) return;
 
-        // console.log(`[InteractionLog] CacheSelection: Key=${semanticType}`);
-
-        // ... (rest of saving logic) ...
+        // 2. Determine Storage Strategy
         const isMultiCache = isMultiCacheType(semanticType, field);
         const targetCacheKey = isMultiCache ? MULTI_CACHE_KEY : SELECTION_CACHE_KEY;
-        // console.log(`[InteractionLog] 🗄️ Target Cache: ${targetCacheKey} (isMulti: ${isMultiCache}, key: ${semanticType})`);
         const cache = await getCache(targetCacheKey);
 
-        if (!cache[semanticType]) {
-            cache[semanticType] = {
-                value: null,
-                variants: [],
-                fieldType: field.type || field.tagName.toLowerCase(),
-                lastUsed: Date.now(),
-                useCount: 0,
-                confidence: 0.75
-            };
-        }
-
-        const entry = cache[semanticType];
-        // ... (Array vs Scalar Logic) ...
-        // Section fields should be stored as arrays (by index: [0], [1], etc.)
-        const isRepeating = /job|work|education|employer|school|degree|institution|title/.test(semanticType);
-
-        if (isRepeating) {
+        // A. SECTIONAL_MULTI: Row-Based Storage (Array of Hashes)
+        if (field.instance_type === 'SECTIONAL_MULTI' || /job|work|education|employer|school|degree|institution|title/.test(semanticType)) {
             const index = getFieldIndex(field, label);
-            if (!Array.isArray(entry.value)) {
-                entry.value = entry.value ? [entry.value] : [];
+            const parentSection = getSectionMapping(semanticType);
+
+            if (parentSection) {
+                // Initialize Parent Section if missing (e.g. cache['education'])
+                if (!cache[parentSection]) {
+                    cache[parentSection] = {
+                        value: [],
+                        fieldType: 'section',
+                        lastUsed: Date.now(),
+                        useCount: 0,
+                        confidence: 1.0
+                    };
+                }
+                const entry = cache[parentSection];
+                if (!Array.isArray(entry.value)) entry.value = [];
+
+                // Initialize Row at Index
+                if (!entry.value[index]) entry.value[index] = {};
+
+                // Write Value
+                entry.value[index][semanticType] = value;
+                entry.lastUsed = Date.now();
+
+                // Update variants for the parent section key
+                const normLabel = normalizeFieldName(label);
+                if (normLabel && !entry.variants.includes(normLabel)) {
+                    entry.variants.push(normLabel);
+                }
+            } else {
+                // Fallback: Legacy Column-Based (if no parent section mapped)
+                if (!cache[semanticType]) cache[semanticType] = { value: [], useCount: 0, confidence: 0.75, variants: [] };
+                const entry = cache[semanticType];
+                if (!Array.isArray(entry.value)) entry.value = entry.value ? [entry.value] : [];
+                entry.value[index] = value;
+                entry.lastUsed = Date.now();
+
+                // Update variants for the semanticType key
+                const normLabel = normalizeFieldName(label);
+                if (normLabel && !entry.variants.includes(normLabel)) {
+                    entry.variants.push(normLabel);
+                }
             }
-            entry.value[index] = value;
-        } else if (semanticType === 'skills' || field.multiple || field.type === 'checkbox') {
+        }
+        // B. ATOMIC_MULTI: Merged Sets (Skills, Interests)
+        else if (field.instance_type === 'ATOMIC_MULTI' || semanticType === 'skills' || field.multiple || field.type === 'checkbox') {
+            if (!cache[semanticType]) cache[semanticType] = { value: [], useCount: 0, confidence: 0.75, variants: [] };
+            const entry = cache[semanticType];
+
             let inputPayload = value;
             if (typeof value === 'string' && value.includes(',')) {
                 inputPayload = value.split(',').map(s => s.trim()).filter(s => s);
             }
+
             let existingArray = [];
             if (Array.isArray(entry.value)) existingArray = entry.value;
-            else if (typeof entry.value === 'string') existingArray = [entry.value];
+            else if (typeof entry.value === 'string' && entry.value) existingArray = [entry.value];
 
             const set = new Set(existingArray);
             if (Array.isArray(inputPayload)) inputPayload.forEach(i => set.add(i));
-            else set.add(inputPayload);
+            else if (inputPayload) set.add(inputPayload);
+
             entry.value = Array.from(set);
-        } else {
+            entry.lastUsed = Date.now();
+
+            // Update variants for the semanticType key
+            const normLabel = normalizeFieldName(label);
+            if (normLabel && !entry.variants.includes(normLabel)) {
+                entry.variants.push(normLabel);
+            }
+        }
+        // C. STANDARD SCALAR (Atomic Single)
+        else {
+            if (!cache[semanticType]) cache[semanticType] = { value: null, useCount: 0, confidence: 0.75, variants: [] };
+            const entry = cache[semanticType];
             entry.value = value;
+            entry.lastUsed = Date.now();
+
+            // Update variants for the semanticType key
+            const normLabel = normalizeFieldName(label);
+            if (normLabel && !entry.variants.includes(normLabel)) {
+                entry.variants.push(normLabel);
+            }
         }
 
-        entry.lastUsed = Date.now();
-        entry.useCount++;
-        const normLabel = normalizeFieldName(label);
-        if (normLabel && !entry.variants.includes(normLabel)) {
-            entry.variants.push(normLabel);
-        }
-
-        // console.log(`💾 [InteractionLog] Updated: "${semanticType}" → ${JSON.stringify(entry.value)} (Cache: ${targetCacheKey})`);
         await saveCache(targetCacheKey, cache);
 
         // Meta update
