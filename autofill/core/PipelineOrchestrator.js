@@ -429,9 +429,18 @@ class PipelineOrchestrator {
             // Special: ATOMIC_SINGLE + GLOBAL + radio -> groups.memory (Maximize Reuse)
             if (type === 'ATOMIC_SINGLE') {
                 const isRadio = inputType === 'radio';
+                const isSelect = inputType === 'select-one' || inputType === 'select';
 
                 if (scope === 'GLOBAL') {
-                    // Global single fields (including radios) go to Memory for cross-site persistence
+                    // EXCEPTION: Global Selects (Dropdowns) should go to Heuristic group
+                    // This allows better fuzzy matching and logic vs raw memory text
+                    if (isSelect) {
+                        this.assertAllowedResolver(type, scope, 'HeuristicEngine');
+                        groups.heuristic.push(field);
+                        return;
+                    }
+
+                    // Global single fields (including GLOBAL radios) go to Memory for cross-site persistence
                     this.assertAllowedResolver(type, scope, 'GlobalMemory');
                     groups.memory.push(field);
                     return;
