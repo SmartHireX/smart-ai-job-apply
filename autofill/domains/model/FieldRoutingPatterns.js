@@ -26,7 +26,21 @@ class FieldRoutingPatterns {
             return true;
         }
 
-        // 2. Section Keywords (Job/Education)
+        // 2. EXCLUSIONS (Single-Value Fields that might contain section keywords)
+        // These fields should NEVER be treated as repeating section fields
+        if (this.PROFILE_QUESTIONS.test(ctx)) {
+            return false;
+        }
+
+        const exclusionKeywords = [
+            'currently employed', 'are you employed', 'notice period',
+            'authorized to work', 'require sponsorship', 'relocate'
+        ];
+        if (exclusionKeywords.some(kw => ctx.includes(kw))) {
+            return false;
+        }
+
+        // 3. Section Keywords (Job/Education)
         // These fields belong to repeated sections and must be handled by SectionController
         const sectionKeywords = [
             'job', 'employment', 'employer', 'work experience', 'position',
@@ -35,12 +49,10 @@ class FieldRoutingPatterns {
         ];
 
         // Check for presence of any section keyword
-        // We use word boundary check or loose check depending on strictness needed
-        // For now, loose check is safer for coverage.
         const isSection = sectionKeywords.some(kw => ctx.includes(kw));
         if (isSection) return true;
 
-        // 3. Composite Field Keywords (Skills, Lists)
+        // 4. Composite Field Keywords (Skills, Lists)
         const compositeKeywords = [
             'skills', 'technologies', 'tools', 'languages', 'hobbies', 'interests'
         ];
