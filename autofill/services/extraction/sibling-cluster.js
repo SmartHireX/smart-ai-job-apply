@@ -84,10 +84,11 @@ function analyzeSiblingClusters(fields) {
             const window = groupLabels.slice(start, end);
 
             // Re-highlight self within the window (since slice is a copy)
-            const selfInWindowIndex = idx - start;
-            window[selfInWindowIndex] = `*${window[selfInWindowIndex]}*`;
+            // const selfInWindowIndex = idx - start;
+            // window[selfInWindowIndex] = `*${window[selfInWindowIndex]}*`;
 
-            field.siblingContext = window.join(', ');
+            // field.siblingContext = window.join(', '); // Disabled: Too noisy for ML
+            field.siblingContext = '';
         });
 
         // Check against Clusters
