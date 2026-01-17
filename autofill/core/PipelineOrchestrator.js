@@ -283,12 +283,8 @@ class PipelineOrchestrator {
         for (const field of fields) {
             // Pass the FULL field object to allow ML-based lookup
             const cached = await window.InteractionLog.getCachedValue(field);
-            // console.log(`🔍 [Pipeline] InteractionLog Lookup for ${field.selector}:`, cached);
-
             if (cached && cached.confidence > 0.6) { // Lowered from 0.9 to trust user history more
                 results[field.selector] = cached;
-            } else {
-                // console.log(`⚠️ [Pipeline] InteractionLog Miss/LowConf for ${field.selector}`);
             }
         }
         return results;
@@ -404,15 +400,9 @@ class PipelineOrchestrator {
         const groups = { memory: [], heuristic: [], complex: [], general: [] };
 
         fields.forEach(field => {
-            let type = field.instance_type || 'ATOMIC_SINGLE';
+            const type = field.instance_type || 'ATOMIC_SINGLE';
             const scope = field.scope || 'GLOBAL';
             const inputType = (field.type || 'text').toLowerCase();
-
-            // SAFETY: Force select-multiple to ATOMIC_MULTI if not already set
-            if (inputType === 'select-multiple' && type !== 'ATOMIC_MULTI' && type !== 'SECTIONAL_MULTI') {
-                type = 'ATOMIC_MULTI';
-                field.instance_type = 'ATOMIC_MULTI'; // Fix in place
-            }
 
             // --- ROUTING LOGIC (The Truth Table) ---
 
@@ -429,35 +419,26 @@ class PipelineOrchestrator {
             // Special: ATOMIC_SINGLE + GLOBAL + radio -> groups.memory (Maximize Reuse)
             if (type === 'ATOMIC_SINGLE') {
                 const isRadio = inputType === 'radio';
-                const isSelect = inputType === 'select-one' || inputType === 'select';
 
                 if (scope === 'GLOBAL') {
-                    // EXCEPTION: Global Selects (Dropdowns) should go to Heuristic group
-                    // This allows better fuzzy matching and logic vs raw memory text
-                    if (isSelect) {
-                        this.assertAllowedResolver(type, scope, 'HeuristicEngine');
-                        groups.heuristic.push(field);
-                        return;
-                    }
-
-                    // Global single fields (including GLOBAL radios) go to Memory for cross-site persistence
+                    // Global single fields (including radios) go to Memory for cross-site persistence
                     this.assertAllowedResolver(type, scope, 'GlobalMemory');
                     groups.memory.push(field);
                     return;
                 }
 
-                // SECTION SCOPE: Isolated Logic
-                // Route: ATOMIC_SINGLE (Radio OR Select) inside Section -> groups.heuristic
-                if (scope === 'SECTION' && (isRadio || isSelect)) {
-                    // Section-scoped structured inputs (e.g. "Did you manage a team?" or "Notice Period")
-                    // must be isolated in Heuristic group to avoid pollution.
+                if (scope === 'SECTION' && isRadio) {
+                    // Section-scoped radios (e.g. "Did you manage a team?" inside Job 1) 
+                    // must be isolated.
                     this.assertAllowedResolver(type, scope, 'HeuristicEngine');
                     groups.heuristic.push(field);
                     return;
                 }
 
-                // Default remaining ATOMIC_SINGLE to Memory
-                // (e.g. "Company Name" is text, in section, but routed to Memory/InteractionLog)
+                // Allow simple section text fields to go to memory? 
+                // Plan says: "ATOMIC_SINGLE (Text/Email/Date) -> groups.memory" 
+                // But we must respect scope. 
+                // For now, default ATOMIC_SINGLE to memory, but ensure downstream handles keys correctly.
                 this.assertAllowedResolver(type, scope, 'GlobalMemory');
                 groups.memory.push(field);
                 return;
