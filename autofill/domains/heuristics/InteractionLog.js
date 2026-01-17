@@ -624,6 +624,20 @@ async function getCachedValue(fieldOrSelector, labelArg) {
         }
     }
 
+    // 3. Match Logic
+    const match = findBestKeyMatch(semanticType, cache, 0.6, { mlLabel: isML ? semanticType : null, label });
+
+    console.log(`🔍 [InteractionLog] Lookup: "${semanticType}" -> Bucket: ${targetBucket} -> Found:`, match ? match.matchedKey : 'NULL');
+
+    if (match) {
+        return {
+            value: match.value.answer || match.value.value || match.value, // Robust extraction
+            confidence: match.similarity,
+            source: 'selection_cache', // Preserving source ID for legacy compat
+            semanticType: match.matchedKey
+        };
+    }
+
     // B. DIRECT HIT (in primary bucket)
     if (cache[semanticType]) {
         cached = cache[semanticType];
