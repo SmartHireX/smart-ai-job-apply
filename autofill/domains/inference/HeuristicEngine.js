@@ -44,10 +44,6 @@ class HeuristicEngine {
         'college': 'institution_name',
         'university': 'institution_name',
 
-        // Preference synonyms
-        'remote_preference': 'work_style',
-        'work_location_preference': 'work_style',
-
         // Compensation synonyms
         'salary': 'salary_expected',
         'expected_salary': 'salary_expected',
@@ -66,6 +62,35 @@ class HeuristicEngine {
     static CONFIDENCE_HIGH = 0.95;
     static CONFIDENCE_MEDIUM = 0.85;
     static CONFIDENCE_LOW = 0.70;
+    static FUZZY_THRESHOLD = 0.80; // Minimum similarity for a fuzzy match (80%)
+
+    // OPTIONAL: Per-Field Thresholds (Overrides Generic Confidence)
+    static FIELD_THRESHOLDS = {
+        'email': 0.95,
+        'phone': 0.95,
+        'social_security_number': 0.98,
+        'password': 0.98,
+        'confirm_password': 0.98,
+        'years_experience': 0.90,  // Lower threshold for hard field
+        'notice_period_in_days': 0.90,
+        'field_of_study': 0.90
+    };
+
+    // OPTIONAL: Priority Scoring for Overlapping Matches
+    // Higher number = stronger priority in conflict resolution
+    static PRIORITIES = {
+        'full_name': 10,
+        'first_name': 5, // Specificity
+        'last_name': 5,
+        'email': 10,
+        'password': 10
+    };
+
+    // Stop Words (Noise Filter)
+    static STOP_WORDS = new Set([
+        'enter', 'please', 'your', 'input', 'select', 'choose', 'type', 'required', 'optional',
+        'mandatory', 'field', 'value', 'here', 'format', 'example', 'eg', 'i.e'
+    ]);
 
     // ============================================================================
     // PATTERN DEFINITIONS
@@ -78,7 +103,7 @@ class HeuristicEngine {
         first_name: {
             patterns: [
                 /\b(first[_\-\s]?name|fname|given[_\-\s]?name|forename)\b/i,
-                /\b(vorname|prénom|nombre|nome)\b/i,  // DE, FR, ES, IT
+                /\b(first[_\-\s]?name|fname|given[_\-\s]?name|forename)\b/i,
                 /\b(frist[_\-\s]?name|fisrt[_\-\s]?name)\b/i,  // Typos
                 /^(first|given)$/i,
                 /\bapplicant[_\-\s]?first/i,
@@ -92,7 +117,7 @@ class HeuristicEngine {
         last_name: {
             patterns: [
                 /\b(last[_\-\s]?name|lname|family[_\-\s]?name|surname)\b/i,
-                /\b(nachname|nom[_\-\s]?de[_\-\s]?famille|apellido|cognome)\b/i,  // DE, FR, ES, IT
+                /\b(last[_\-\s]?name|lname|family[_\-\s]?name|surname)\b/i,
                 /\b(lsat[_\-\s]?name|lastn[_\-\s]?ame)\b/i,  // Typos
                 /^(last|family|surname)$/i,
                 /\bapplicant[_\-\s]?last/i,
@@ -108,7 +133,7 @@ class HeuristicEngine {
                 /\b(legal[_\-\s]?name|applicant[_\-\s]?name)\b/i,
                 /^name$/i,
                 /\bcandidate[_\-\s]?name\b/i,
-                /\bcontact[_\-\s]?name\b/i
+                /\b(contact[_\-\s]?name|your[_\-\s]?name)\b/i
             ],
             confidence: 0.92,
             category: 'personal',
@@ -665,15 +690,7 @@ class HeuristicEngine {
             category: 'preferences'
         },
 
-        work_style: {
-            patterns: [
-                /\b(work[_\-\s]?style|working[_\-\s]?style|work[_\-\s]?mode)\b/i,
-                /\b(remote|hybrid|onsite|in[_\-\s]?office)\b/i,
-                /\bhow[_\-\s]?do[_\-\s]?you[_\-\s]?prefer[_\-\s]?to[_\-\s]?work\b/i
-            ],
-            confidence: 0.92,
-            category: 'preferences'
-        },
+
         // ==================== BATCH 3: EDUCATION EXTENDED ====================
         degree: {
             patterns: [
@@ -807,6 +824,13 @@ class HeuristicEngine {
             ],
             confidence: 0.98,
             category: 'legal'
+        },
+        emergency_contact: {
+            patterns: [
+                /\b(emergency[_\-\s]?contact|emergency[_\-\s]?number)\b/i
+            ],
+            confidence: 0.98,
+            category: 'personal'
         },
         background_check: {
             patterns: [
@@ -1270,31 +1294,64 @@ class HeuristicEngine {
     /**
      * Match against pattern definitions (Priority 3)
      */
+    /**
+     * Match against pattern definitions using Weighted Scoring (Priority 3)
+     */
     _matchPatterns(text, fullContext, field = {}) {
+        let bestMatch = null;
+        let bestScore = 0;
+
         for (const [label, config] of Object.entries(HeuristicEngine.PATTERNS)) {
-            // Check if any positive pattern matches
-            const matched = config.patterns.some(pattern => pattern.test(text));
+            // Calculate weighted score based on WHERE the match occurred
+            const score = this._calculateWeightedScore(field, config, fullContext);
 
-            if (matched) {
-                // Check negative patterns (exclusions)
-                if (config.negative && config.negative.test(fullContext)) {
-                    continue; // Skip this match - negative pattern triggered
+            // Check against Fuzzy Threshold (e.g., 0.6 means at least ID match or weak label)
+            // We want strong matches. 0.8 usually implies Label or Placeholder match.
+            // If checking negative pattern returned -1, score is negative.
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = { label, config };
+            } else if (score === bestScore && bestMatch) {
+                // OPTIONAL: Conflict Resolution with Priority
+                // If scores are equal, pick the one with higher static Priority
+                const currentPriority = HeuristicEngine.PRIORITIES[bestMatch.label] || 0;
+                const newPriority = HeuristicEngine.PRIORITIES[label] || 0;
+                if (newPriority > currentPriority) {
+                    bestMatch = { label, config };
                 }
-
-                // Track match quality signals for dynamic confidence
-                const matchInfo = {
-                    hasAutocomplete: !!(field.autocomplete && field.autocomplete !== 'off'),
-                    multiAttributeMatch: !!(field.name && field.id),  // Both name and id present
-                    contextConfirmed: false,  // Could be enhanced with context validation
-                    hasNegativeMatch: false  // Already filtered above
-                };
-
-                // Calculate dynamic confidence
-                const adjustedConfidence = this._calculateConfidence(config.confidence, matchInfo);
-
-                return this._createResult(label, adjustedConfidence, config.category);
             }
         }
+
+        // Threshold check:
+        // Score > 0.9 = Label match (Strong)
+        // Score > 0.7 = Placeholder match (Good)
+        // Score > 0.5 = ID/Name match (Weak but acceptable if best)
+
+        if (bestMatch && bestScore >= 0.6) { // Minimum 0.6 (matches ID/Name at least)
+            // Normalize confidence based on score
+            // If score > 1.0 (Label match), confidence = config.confidence
+            // If score < 0.8 (ID match only), penalize confidence
+
+            // OPTIONAL: Use Field-Specific Threshold if available
+            let baseConfidence = HeuristicEngine.FIELD_THRESHOLDS[bestMatch.label] || bestMatch.config.confidence;
+
+            let finalConfidence = baseConfidence;
+            if (bestScore < 0.8) finalConfidence *= 0.9; // Penalty for weak source
+            if (bestScore < 0.7) finalConfidence *= 0.8; // Penalty for ID-only
+
+            // Additional info for debugging
+            const matchInfo = {
+                score: bestScore,
+                sourceAttr: bestScore >= 1.0 ? 'label' : (bestScore >= 0.8 ? 'placeholder' : 'id/name')
+            };
+
+            // Dynamic adjustment (re-using existing logic)
+            finalConfidence = this._calculateConfidence(finalConfidence, matchInfo);
+
+            return this._createResult(bestMatch.label, finalConfidence, bestMatch.config.category);
+        }
+
         return null;
     }
 
@@ -1352,6 +1409,130 @@ class HeuristicEngine {
         if (this.debug) {
             console.log(`[HeuristicEngine] Classification: ${result?.label || 'NO_MATCH'} (${elapsed.toFixed(2)}ms)`);
         }
+    }
+
+    // ============================================================================
+    // ROBUST MATCHING HELPERS ("Simplify Standard")
+    // ============================================================================
+
+    /**
+     * Calculate Levenshtein Distance between two strings
+     * Robustness: Handles typos like "Frst Name" or "Addrss"
+     */
+    _levenshtein(a, b) {
+        if (a.length === 0) return b.length;
+        if (b.length === 0) return a.length;
+
+        const matrix = [];
+
+        // Increment along the first column of each row
+        for (let i = 0; i <= b.length; i++) {
+            matrix[i] = [i];
+        }
+
+        // Increment each column in the first row
+        for (let j = 0; j <= a.length; j++) {
+            matrix[0][j] = j;
+        }
+
+        // Fill in the rest of the matrix
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) == a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1, // substitution
+                        Math.min(
+                            matrix[i][j - 1] + 1, // insertion
+                            matrix[i - 1][j] + 1 // deletion
+                        )
+                    );
+                }
+            }
+        }
+
+        return matrix[b.length][a.length];
+    }
+
+    /**
+     * compute fuzzy match score (0.0 - 1.0)
+     */
+    _getFuzzyScore(text, patternStr) {
+        // Clean text: remove stop words, symbols
+        const cleanText = text.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(' ')
+            .filter(w => !HeuristicEngine.STOP_WORDS.has(w) && w.length > 2)
+            .join(' ');
+
+        const cleanPattern = patternStr.toLowerCase().replace(/[^a-z0-9 ]/g, '');
+
+        if (!cleanText || !cleanPattern) return 0;
+
+        // Exact substring match check first (fast & strong)
+        if (cleanText.includes(cleanPattern)) return 1.0;
+
+        // Levenshtein for typos
+        const dist = this._levenshtein(cleanText, cleanPattern);
+        const maxLength = Math.max(cleanText.length, cleanPattern.length);
+        const similarity = 1 - (dist / maxLength);
+
+        return similarity;
+    }
+
+    /**
+     * Calculate weighted score for a field against a specific pattern config
+     */
+    _calculateWeightedScore(field, config, fullContext) {
+        let maxScore = 0.0;
+
+        // Extract keywords from regex logic (simplification for this hybrid approach)
+        // Ideally, we'd have explicit keywords. We'll extract readable parts from regex source
+        // or rely on the regex testing itself as a binary "match" but weighted by source.
+
+        // REVISED STRATEGY:
+        // Instead of pure fuzzy matching on Regex objects (which is hard),
+        // we use the Regex to test specific attributes and apply the weights.
+
+        const check = (text, weight) => {
+            if (!text) return 0;
+            // Run all regexes for this field type against this specific text
+            // We use the boolean result * weight
+            const matches = config.patterns.some(p => p.test(text));
+            return matches ? weight : 0;
+        };
+
+        // 1. Label (Highest Priority) - Weight 1.0
+        maxScore += check(field.label, 1.0);
+
+        // 2. Placeholder - Weight 0.8
+        maxScore += check(field.placeholder, 0.8);
+
+        // 3. Automation ID / Name / ID - Weight 0.6
+        // (Developers often use abbreviations here, so regex finds them well)
+        maxScore += check(field.automationId, 0.6);
+        maxScore += check(field.id, 0.6);
+
+        // 4. Context (Parent/Sibling) - Weight 0.4
+        // Helps with ambiguous fields (e.g. "Name" inside "Emergency Contact" section)
+        // Also checks Sibling Context (e.g. "First Name" next to "Last Name")
+        if (field.parentContext) {
+            maxScore += check(field.parentContext, 0.4);
+        }
+        if (field.siblingContext) {
+            maxScore += check(field.siblingContext, 0.3);
+        }
+
+        // 5. Negative Lookahead - Veto Power
+        // If the context contains a negative pattern for this field type, invalidate matching
+        if (config.negative && config.negative.test(fullContext)) {
+            return -1.0;
+        }
+
+        // 6. Fuzzy Match Boost (If exact regex failed but fuzziness is high)
+        // Only if we haven't found a strong match yet
+        // ... (Already handled by strict regexes in current approach, leaving for V4)
+
+        return maxScore;
     }
 }
 

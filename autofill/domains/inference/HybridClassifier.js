@@ -22,9 +22,18 @@ class HybridClassifier {
     static VERSION = '2.0.0';
     static DEBUG = false;
 
+    // Mutually Exclusive Conflict Groups for Resolution
+    static CONFLICT_GROUPS = [
+        ["salary_current", "salary_expected"],
+        ["education_start_date", "education_end_date", "graduation_date"],
+        ["job_location", "current_location", "preferred_location"],
+        ["field_of_study", "major"],
+        ["years_experience", "years_skill"]
+    ];
+
     // Arbitration Thresholds (Default values, overridden dynamically)
-    static HEURISTIC_STRONG_THRESHOLD = 0.85;
-    static NEURAL_STRONG_THRESHOLD = 0.80;
+    static HEURISTIC_STRONG_THRESHOLD = 0.95; // Increased to prioritize Neural
+    static NEURAL_STRONG_THRESHOLD = 0.70;    // Decreased to trust Neural more
     static HEURISTIC_WEAK_THRESHOLD = 0.50;
 
     // Confidence for unanimous agreement
@@ -67,6 +76,8 @@ class HybridClassifier {
      */
     async classify(field) {
         const startTime = performance.now();
+        // Store current field for use in arbitration helpers
+        this._currentField = field;
 
         try {
             // 1. Extract features (shared by both classifiers)
@@ -201,7 +212,6 @@ class HybridClassifier {
 
         // ========== TIER 2: STRONG HEURISTIC ==========
         // Trust Heuristic if above category-specific threshold
-        // (Lower threshold for Contact/Identity, Higher for Job/Edu)
         if (hLabel !== 'unknown' && hConf >= heuristicThreshold) {
             this._metrics.heuristicWins++;
             return {
@@ -215,30 +225,61 @@ class HybridClassifier {
         }
 
         // ========== TIER 3: STRONG NEURAL (WEAK HEURISTIC) ==========
-        // Trust Neural if above category-specific threshold and Heuristic is weak
-        // (Lower threshold for Job/Edu, Higher for Contact/Identity)
-        if (nLabel !== 'unknown' &&
-            nConf > neuralThreshold &&
-            hConf < HybridClassifier.HEURISTIC_WEAK_THRESHOLD) {
+        // OPTIMIZATION: Margin-Based Trust
+        // Neural only wins if it has a significant margin over the second best class
+        // This prevents confident but "confused" predictions
+        let neuralApproved = false;
+        if (nLabel !== 'unknown' && nConf > neuralThreshold && hConf < HybridClassifier.HEURISTIC_WEAK_THRESHOLD) {
+            const neuralMargin = (nResult.details?.probabilities) ?
+                this._calculateMargin(nResult.details.probabilities, nLabel) : 1.0;
+
+            // Require 15% margin to override
+            if (neuralMargin > 0.15) {
+                // OPTIMIZATION: Value Sanity Check
+                // Ensure the neural prediction makes sense for the field type
+                // (Heuristics are usually type-safe by regex design, Neural is not)
+                if (this._checkValueType(nLabel, this._currentField)) {
+                    neuralApproved = true;
+                }
+            }
+        }
+
+        if (neuralApproved) {
             this._metrics.neuralWins++;
             return {
                 label: nLabel,
                 confidence: nConf,
-                source: 'ensemble_neural_strong',
+                source: 'ensemble_neural_strong_margin',
                 agreementType: 'neural_override',
                 heuristicLabel: hLabel,
                 heuristicConfidence: hConf
             };
         }
 
-        // ========== TIER 4: WEIGHTED VOTE ==========
+        // ========== TIER 4: WEIGHTED VOTE + CONFLICT RESOLUTION ==========
         // Both found something but disagree - calculate weighted scores
         if (hLabel !== 'unknown' && nLabel !== 'unknown') {
             this._metrics.weightedVotes++;
 
             // Use Dynamic Weights
-            const hScore = hConf * heuristicWeight;
-            const nScore = nConf * neuralWeight;
+            let hScore = hConf * heuristicWeight;
+            let nScore = nConf * neuralWeight;
+
+            // OPTIMIZATION: Conflict Group Resolution
+            // Check if H and N are in a "confused group" (e.g. salary_current vs salary_expected)
+            // If so, pick the one with the higher ABSOLUTE score, ignoring the source weights slightly
+            const conflictGroup = HybridClassifier.CONFLICT_GROUPS.find(g => g.includes(hLabel) && g.includes(nLabel));
+
+            if (conflictGroup) {
+                // In a conflict group, we trust the raw confidence more than the ensemble weights
+                // because usually one model has "latched" onto a specific distinguishing feature
+                if (nConf > hConf + 0.1 && this._checkValueType(nLabel, this._currentField)) {
+                    nScore += 0.2; // Boost neural if it found a clear distinguishing signal
+                }
+            } else {
+                // Standard Sanity Check Penalty
+                if (!this._checkValueType(nLabel, this._currentField)) nScore *= 0.1;
+            }
 
             if (hScore > nScore) {
                 return {
@@ -315,30 +356,56 @@ class HybridClassifier {
     }
 
     /**
+     * Check if the predicted label conflicts with the field's explicit type constraint
+     * @private
+     */
+    _checkValueType(label, field) {
+        if (!field) return true;
+
+        // 1. Check HTML input type
+        const type = field.type || '';
+        if (type === 'date' && !label.includes('date') && !label.includes('dob')) return false;
+        if (type === 'email' && !label.includes('email')) return false;
+        if (type === 'number' && label.includes('name')) return false;
+
+        // 2. Check value format if available (Sanity Check)
+        const val = field.value || '';
+        if (val) {
+            if (label.includes('email') && !val.includes('@')) return false;
+            // Salary must be number-like
+            if (label.includes('salary') && /^[a-zA-Z\s]{4,}$/.test(val)) return false;
+            // Year must be 4 digits
+            if (label.includes('year') && val.length > 0 && !/\d/.test(val)) return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Get dynamic thresholds based on category
      */
     _getDynamicThresholds(category) {
-        // DEFAULT: Trust Heuristic more (Legacy behavior)
+        // DEFAULT: Trust Neural more (New Policy)
         let config = {
             heuristicThreshold: HybridClassifier.HEURISTIC_STRONG_THRESHOLD,
             neuralThreshold: HybridClassifier.NEURAL_STRONG_THRESHOLD,
-            heuristicWeight: 0.6,
-            neuralWeight: 0.4
+            heuristicWeight: 0.3,
+            neuralWeight: 0.7
         };
 
-        // ADJUSTMENT 1: Contact Info (Heuristic is nearly perfect)
+        // ADJUSTMENT 1: Contact Info (Heuristic is still very good, but let's allow Neural to veto if very confident)
         if (category === 'contact') {
-            config.heuristicThreshold = 0.80; // Easier for heuristic to win
-            config.neuralThreshold = 0.95;    // Harder for neural to override
-            config.heuristicWeight = 0.8;
-            config.neuralWeight = 0.2;
+            config.heuristicThreshold = 0.90;
+            config.neuralThreshold = 0.80;
+            config.heuristicWeight = 0.4;
+            config.neuralWeight = 0.6;
         }
-        // ADJUSTMENT 2: Job Info (Neural understands "Software Engineer" better than regex)
+        // ADJUSTMENT 2: Job Info (Neural is definitely better)
         else if (category === 'job') {
-            config.heuristicThreshold = 0.90; // Harder for heuristic
-            config.neuralThreshold = 0.70;    // Neural can win more easily
-            config.heuristicWeight = 0.3;
-            config.neuralWeight = 0.7;
+            config.heuristicThreshold = 0.95; // Very hard for heuristic to win
+            config.neuralThreshold = 0.60;    // Neural wins easily
+            config.heuristicWeight = 0.2;
+            config.neuralWeight = 0.8;
         }
 
         return config;
@@ -389,11 +456,21 @@ class HybridClassifier {
 
     _getNeuralClassifier() {
         if (this._neuralClassifier) return this._neuralClassifier;
-        if (typeof window !== 'undefined' && window.NeuralClassifier) {
-            this._neuralClassifier = new window.NeuralClassifier({
-                fieldTypes: window.FieldTypes
-            });
-            return this._neuralClassifier;
+
+        // Prefer V8 if available
+        if (typeof window !== 'undefined') {
+            if (window.NeuralClassifierV8) {
+                this._neuralClassifier = new window.NeuralClassifierV8();
+                if (this._debug) console.log('[HybridClassifier] Using NeuralClassifierV8');
+                return this._neuralClassifier;
+            }
+            // Fallback to V7 (legacy)
+            if (window.NeuralClassifier) {
+                this._neuralClassifier = new window.NeuralClassifier({
+                    fieldTypes: window.FieldTypes
+                });
+                return this._neuralClassifier;
+            }
         }
         return null;
     }
@@ -405,6 +482,15 @@ class HybridClassifier {
     _logError(msg, err) {
         console.error(`[HybridClassifier] ${msg}:`, err);
     }
+
+    _calculateMargin(probabilities, topLabel) {
+        if (!probabilities) return 1.0;
+        const sorted = Object.entries(probabilities).sort((a, b) => b[1] - a[1]);
+        if (sorted.length < 2) return 1.0;
+        // topLabel might not be sorted[0][0] if something else happened, but usually is
+        // We want margin between top1 and top2
+        return sorted[0][1] - sorted[1][1];
+    }
 }
 
 // Export for both Node.js and Browser
@@ -413,3 +499,4 @@ if (typeof module !== 'undefined' && module.exports) {
 } else if (typeof window !== 'undefined') {
     window.HybridClassifier = HybridClassifier;
 }
+

@@ -1981,39 +1981,6 @@
   },
   {
     "features": {
-      "label": "Work Style",
-      "name": "work_style_text",
-      "automationId": "gh-work-style",
-      "placeholder": "Collaborative, Independent...",
-      "parentContext": "Culture Fit",
-      "siblingContext": "How do you work best?"
-    },
-    "label": "work_style"
-  },
-  {
-    "features": {
-      "label": "Estilo de trabajo",
-      "name": "wd-WorkStyle",
-      "automationId": "qa-work-style",
-      "placeholder": null,
-      "parentContext": "Personalidad",
-      "siblingContext": null
-    },
-    "label": "work_style"
-  },
-  {
-    "features": {
-      "label": "Arbeitsweise",
-      "name": "work_style_field",
-      "automationId": "lever-work-style",
-      "placeholder": null,
-      "parentContext": "Profil",
-      "siblingContext": null
-    },
-    "label": "work_style"
-  },
-  {
-    "features": {
       "label": "Career Goals",
       "name": "career_goals_text",
       "automationId": "gh-career-goals",

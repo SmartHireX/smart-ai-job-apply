@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const INPUT_PATH = path.join(__dirname, 'train-dataset-v3-full.json');
+const INPUT_PATH = path.join(__dirname, 'train-dataset-augmented.json');
 const OUTPUT_PATH = path.join(__dirname, 'train-dataset-v3-balanced.json');
 
 const TARGET_MIN = 50;
@@ -46,6 +46,7 @@ const LABEL_MAP = {
 const buckets = {};
 data.forEach(s => {
     let label = s.label;
+    if (label === 'work_style') return; // FILTERED OUT per user request
     if (LABEL_MAP[label]) {
         label = LABEL_MAP[label];
         s.label = label; // Update sample label in place

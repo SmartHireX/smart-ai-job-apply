@@ -70,6 +70,9 @@ async function prepare() {
             const features = fe.extract(input);
 
             if (features && features.length === 95) {
+                // FILTER: Remove work_style per user request
+                if (sample.label === 'work_style') continue;
+
                 processed.push({
                     features: features,
                     label: sample.label

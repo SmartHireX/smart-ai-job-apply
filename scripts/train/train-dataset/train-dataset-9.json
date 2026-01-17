@@ -1948,39 +1948,6 @@
   },
   {
     "features": {
-      "label": "Work Style",
-      "name": "work_style_input",
-      "automationId": "gh-work-style-field",
-      "placeholder": "Collaborative, Independent, etc.",
-      "parentContext": "Culture Fit",
-      "siblingContext": "How do you work best?"
-    },
-    "label": "work_style"
-  },
-  {
-    "features": {
-      "label": "Estilo de trabajo",
-      "name": "wd-WorkStyle",
-      "automationId": "input-work-style",
-      "placeholder": null,
-      "parentContext": "Personalidad y Cultura",
-      "siblingContext": null
-    },
-    "label": "work_style"
-  },
-  {
-    "features": {
-      "label": "Arbeitsweise",
-      "name": "lever-work-style",
-      "automationId": "qa-work-style-field",
-      "placeholder": null,
-      "parentContext": "Kandidatenprofil",
-      "siblingContext": null
-    },
-    "label": "work_style"
-  },
-  {
-    "features": {
       "label": "Career Goals",
       "name": "career_goals_textarea",
       "automationId": "gh-career-goals",

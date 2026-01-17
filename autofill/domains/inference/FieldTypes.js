@@ -317,7 +317,7 @@
 
     // ============================================================================
     // ORDERED CLASS LIST (Neural Network Output Layer)
-    // Total: 88 classes (reduced from 89)
+    // Total: 87 classes (reduced from 88: work_style removed)
     // ============================================================================
 
     const ORDERED_CLASSES = Object.freeze([
@@ -404,7 +404,7 @@
         // Preferences (60-63)
         'remote_preference',    // 60
         'job_type_preference',  // 61
-        'work_style',           // 62
+
         'career_goals',         // 63
         'interest_areas',       // 64
 

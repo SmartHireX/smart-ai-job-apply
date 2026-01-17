@@ -793,28 +793,6 @@
   },
   {
     "features": {
-      "label": "Work Style",
-      "name": "work_style_pref",
-      "automationId": "style-select",
-      "placeholder": "Independent / Team",
-      "parentContext": "Preferences",
-      "siblingContext": null
-    },
-    "label": "work_style"
-  },
-  {
-    "features": {
-      "label": "Arbeitsweise",
-      "name": "arbeitsweise",
-      "automationId": null,
-      "placeholder": null,
-      "parentContext": "Persönlichkeit",
-      "siblingContext": null
-    },
-    "label": "work_style"
-  },
-  {
-    "features": {
       "label": "Areas of Interest",
       "name": "int_areas",
       "automationId": "wd-Interests",
