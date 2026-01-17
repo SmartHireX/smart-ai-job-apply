@@ -118,7 +118,8 @@ class FieldRoutingPatterns {
         const sectionKeywords = [
             'job', 'employment', 'employer', 'work experience', 'position',
             'education', 'school', 'university', 'college', 'degree', 'institution',
-            'project', 'volunteer', 'certification', 'training'
+            'project', 'volunteer', 'certification', 'training',
+            'description', 'summary', 'responsibilities', 'duties'
         ];
 
         // Check for presence of any section keyword
