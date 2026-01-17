@@ -152,7 +152,7 @@ class FeatureExtractorV3 {
         if (field.placeholder) parts.push(field.placeholder);
         if (field.automationId) parts.push(field.automationId);
         if (field.parentContext) parts.push(field.parentContext);
-        if (field.siblingContext) parts.push(field.siblingContext);
+        // if (field.siblingContext) parts.push(field.siblingContext); // Disabled: Too noisy
 
         // From features object (training data format)
         if (field.features) {
@@ -161,7 +161,7 @@ class FeatureExtractorV3 {
             if (field.features.placeholder) parts.push(field.features.placeholder);
             if (field.features.automationId) parts.push(field.features.automationId);
             if (field.features.parentContext) parts.push(field.features.parentContext);
-            if (field.features.siblingContext) parts.push(field.features.siblingContext);
+            // if (field.features.siblingContext) parts.push(field.features.siblingContext); // Disabled: Too noisy
         }
 
         // DOM access
