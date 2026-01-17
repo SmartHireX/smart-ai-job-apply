@@ -109,6 +109,9 @@ class RuleEngine {
     }
 
     resolveSingleField(field, context, facts) {
+        // STRICT GUARD: Prevent RuleEngine from touching structural/complex fields
+        if (field.instance_type && field.instance_type !== 'ATOMIC_SINGLE') return null;
+
         // Debug Context
         if (this.debug && (context.includes('name') || context.includes('email'))) {
             // console.log(`🔍 [RuleEngine] Checking: "${field.label}" Context: "[${context}]"`);
@@ -435,3 +438,4 @@ class RuleEngine {
 }
 
 if (typeof window !== 'undefined') window.RuleEngine = new RuleEngine();
+if (typeof module !== 'undefined' && module.exports) module.exports = RuleEngine;

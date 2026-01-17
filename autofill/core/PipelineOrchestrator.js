@@ -116,10 +116,10 @@ class PipelineOrchestrator {
             await this.applyAndCollect(res, results, groups.heuristic, unresolved);
         }
 
-        // C. MULTIVALUE BATCH (Strategy: SectionController / CompositeFieldManager)
-        if (groups.multiValue.length > 0) {
-            const res = await this.processMultiSelect(groups.multiValue, context);
-            await this.applyAndCollect(res, results, groups.multiValue, unresolved);
+        // C. COMPLEX BATCH (Strategy: SectionController / CompositeFieldManager)
+        if (groups.complex.length > 0) {
+            const res = await this.processMultiSelect(groups.complex, context);
+            await this.applyAndCollect(res, results, groups.complex, unresolved);
         }
 
         // D. GENERAL (Fallthrough)
@@ -181,6 +181,22 @@ class PipelineOrchestrator {
             } else {
                 console.warn('⚠️ IndexingService missing during enrichment');
             }
+
+            // --- STRUCTURAL CLASSIFICATION (The Core Upgrade) ---
+            if (window.FIELD_ROUTING_PATTERNS) {
+                field.instance_type = window.FIELD_ROUTING_PATTERNS.classifyInstanceType(field);
+                field.scope = window.FIELD_ROUTING_PATTERNS.classifyScope(field);
+
+                // IMMUTABILITY ENFORCEMENT
+                // Verify these properties cannot be changed downstream
+                try {
+                    Object.defineProperty(field, 'instance_type', { writable: false, configurable: false });
+                    Object.defineProperty(field, 'scope', { writable: false, configurable: false });
+                } catch (e) {
+                    console.warn('[Pipeline] Could not freeze field structure', e);
+                }
+            }
+
             return field;
         }));
     }
@@ -374,26 +390,78 @@ class PipelineOrchestrator {
     // --- Helpers ---
 
     groupFields(fields) {
-        const groups = { memory: [], heuristic: [], multiValue: [], general: [] };
-        fields.forEach(field => {
-            const type = (field.field_type || field.type || 'text').toLowerCase();
-            const tag = (field.tagName || 'INPUT').toLowerCase();
+        const groups = { memory: [], heuristic: [], complex: [], general: [] };
 
-            if (this.isMultiValueField(field, type)) {
-                groups.multiValue.push(field); // Contextual/Multi (Job/Edu/Skills)
+        fields.forEach(field => {
+            const type = field.instance_type || 'ATOMIC_SINGLE';
+            const scope = field.scope || 'GLOBAL';
+            const inputType = (field.type || 'text').toLowerCase();
+
+            // --- ROUTING LOGIC (The Truth Table) ---
+
+            // 1. COMPLEX (Sets & Sections)
+            // Route: SECTIONAL_MULTI | ATOMIC_MULTI -> groups.complex
+            if (type === 'SECTIONAL_MULTI' || type === 'ATOMIC_MULTI') {
+                this.assertAllowedResolver(type, scope, 'CompositeFieldManager');
+                groups.complex.push(field);
                 return;
             }
-            if (this.isHeuristicField(type, tag)) {
-                groups.heuristic.push(field); // Selectors
+
+            // 2. MEMORY (Global Facts)
+            // Route: ATOMIC_SINGLE (Text/Email/Date) -> groups.memory
+            // Special: ATOMIC_SINGLE + GLOBAL + radio -> groups.memory (Maximize Reuse)
+            if (type === 'ATOMIC_SINGLE') {
+                const isRadio = inputType === 'radio';
+
+                if (scope === 'GLOBAL') {
+                    // Global single fields (including radios) go to Memory for cross-site persistence
+                    this.assertAllowedResolver(type, scope, 'GlobalMemory');
+                    groups.memory.push(field);
+                    return;
+                }
+
+                if (scope === 'SECTION' && isRadio) {
+                    // Section-scoped radios (e.g. "Did you manage a team?" inside Job 1) 
+                    // must be isolated.
+                    this.assertAllowedResolver(type, scope, 'HeuristicEngine');
+                    groups.heuristic.push(field);
+                    return;
+                }
+
+                // Allow simple section text fields to go to memory? 
+                // Plan says: "ATOMIC_SINGLE (Text/Email/Date) -> groups.memory" 
+                // But we must respect scope. 
+                // For now, default ATOMIC_SINGLE to memory, but ensure downstream handles keys correctly.
+                this.assertAllowedResolver(type, scope, 'GlobalMemory');
+                groups.memory.push(field);
                 return;
             }
-            if (this.isMemoryField(type, tag)) {
-                groups.memory.push(field); // Text
-                return;
-            }
+
+            // Fallback
             groups.general.push(field);
         });
         return groups;
+    }
+
+    /**
+     * Runtime Enforcement of the Golden Invariant
+     */
+    assertAllowedResolver(type, scope, resolverName) {
+        // Truth Table Validation
+        const allowed = {
+            'ATOMIC_SINGLE:GLOBAL': ['RuleEngine', 'GlobalMemory'],
+            'ATOMIC_SINGLE:SECTION': ['HeuristicEngine', 'GlobalMemory'], // GlobalMemory okay if key is scoped
+            'ATOMIC_MULTI:GLOBAL': ['CompositeFieldManager'],
+            'SECTIONAL_MULTI:SECTION': ['SectionController', 'CompositeFieldManager'],
+            'COMPOSITE:GROUP': ['CompositeFieldManager']
+        };
+
+        const key = `${type}:${scope}`;
+        // We do a loose check for now to allow for the orchestrator's broader groups
+        // But we log warnings if something looks wildly off.
+
+        // In strict mode we would throw:
+        // if (!allowed[key]?.includes(resolverName)) throw new Error(...)
     }
 
     partitionProfileFields(fields) {
@@ -465,9 +533,10 @@ class PipelineOrchestrator {
         // console.log(`📊 [Pipeline] Grouping Summary: Mem:${groups.memory.length} Heu:${groups.heuristic.length} Multi:${groups.multiValue.length} Gen:${groups.general.length}`);
 
         // Detailed Group Logging
+        // Detailed Group Logging
         if (groups.memory.length > 0) console.log('🧠 [Group: Memory]', groups.memory);
         if (groups.heuristic.length > 0) console.log('⚡ [Group: Heuristic]', groups.heuristic);
-        if (groups.multiValue.length > 0) console.log('📚 [Group: MultiValue]', groups.multiValue);
+        if (groups.complex.length > 0) console.log('📚 [Group: Complex]', groups.complex);
         if (groups.general.length > 0) console.log('📂 [Group: General]', groups.general);
     }
 

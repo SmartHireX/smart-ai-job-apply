@@ -102,6 +102,12 @@ function isMultiCacheType(semanticKey, field = null) {
         return false;
     }
 
+    // EXEMPTION: Scope-Isolated Keys (SECTION:...) are flattened scalar keys
+    // They should go to SelectionCache (Memory), not MultiCache (Global Arrays)
+    if (semanticKey.startsWith('SECTION:')) {
+        return false;
+    }
+
     // 1. If we have field with high-confidence ML prediction, use that
     if (field && field.ml_prediction && field.ml_prediction.confidence > 0.9) {
         const mlLabel = field.ml_prediction.label.toLowerCase();
@@ -536,6 +542,20 @@ function generateSemanticKey(fieldOrElement, label) {
 
     fallbackKey = fallbackKey || normalizeFieldName(field.id) || 'unknown_field';
 
+    // D. SCOPE ISOLATION (SECTION KEYS)
+    // If field is in a section (Job 1) but NOT a Repeating Block (like Job Title),
+    // it implies an Atomic Single field inside a Section (e.g. "Did you manage a team?").
+    // We must namespace this key to preventing leaking facts between Job 1 and Job 2.
+    if (field.scope === 'SECTION' && field.instance_type !== 'SECTIONAL_MULTI') {
+        const sectionType = field.section_type || 'section'; // e.g. 'work'
+        const index = field.field_index || 0;
+
+        // Key Format: SECTION:work_0:did_you_manage_team
+        const scopedKey = `SECTION:${sectionType}_${index}:${fallbackKey}`;
+        // console.log(`[InteractionLog] Generated Scoped Key: ${scopedKey}`);
+        return { key: scopedKey, isML: false, fallbackKey: scopedKey };
+    }
+    // console.log(`[InteractionLog] Generated Standard Key: ${fallbackKey}`);
     return { key: fallbackKey, isML: false, fallbackKey: fallbackKey };
 }
 
@@ -678,6 +698,8 @@ async function cacheSelection(field, label, value) {
 
         if (!semanticType) return;
 
+        // console.log(`[InteractionLog] CacheSelection: Key=${semanticType}`);
+
         // ... (rest of saving logic) ...
         const isMultiCache = isMultiCacheType(semanticType, field);
         const targetCacheKey = isMultiCache ? MULTI_CACHE_KEY : SELECTION_CACHE_KEY;
@@ -799,5 +821,8 @@ window.InteractionLog = {
     clearCache,
     classifyFieldType
 };
+
+if (typeof module !== 'undefined' && module.exports) module.exports = window.InteractionLog;
+
 window.SelectionCache = window.InteractionLog;
 // console.log('[InteractionLog] Module loaded with Dual-Store Support');

@@ -11,6 +11,60 @@ class FieldRoutingPatterns {
     static PROFILE_QUESTIONS = /visa|sponsor|veteran|military|disability|handicap|citizen|work.?auth|ethnic|race|gender|sex\b|felony|criminal|background.?check/i;
 
     /**
+     * 1. Classify the Structural Role (Instance Type)
+     * Determines HOW the field behaves (Single vs Set vs Repeating Block)
+     * @param {Object} field - The field object
+     * @returns {string} ATOMIC_SINGLE | ATOMIC_MULTI | SECTIONAL_MULTI | COMPOSITE
+     */
+    static classifyInstanceType(field) {
+        const type = (field.type || 'text').toLowerCase();
+        const isCheckOrMulti = type === 'checkbox' || type === 'select-multiple' || field.multiple;
+
+        // A. SECTIONAL_MULTI (Repeating Blocks like Job 1, Job 2)
+        // CRITICAL: Requires BOTH an index AND a repeatable semantic context (to avoid accidental indexing)
+        if (field.field_index !== null && field.field_index !== undefined) {
+            // We use isMultiValueEligible to confirm it's semantically a repeating section (Work/Edu)
+            // This satisfies "container is repeatable" requirement
+            const context = [field.label, field.name, field.parentContext].filter(Boolean).join(' ');
+            if (this.isMultiValueEligible(context, type)) {
+                return 'SECTIONAL_MULTI';
+            }
+        }
+
+        // B. ATOMIC_MULTI (Sets like Skills, Interests)
+        if (isCheckOrMulti) {
+            return 'ATOMIC_MULTI';
+        }
+
+        // C. ATOMIC_SINGLE (Global Facts like Email, Phone, Single-Selects)
+        return 'ATOMIC_SINGLE';
+    }
+
+    /**
+     * 2. Classify the Data Boundary (Scope)
+     * Determines WHERE the data lives (Global vs Local)
+     * @param {Object} field - The field object
+     * @returns {string} GLOBAL | SECTION | GROUP
+     */
+    static classifyScope(field) {
+        // A. GROUP (Smallest interaction unit, e.g. Address Block)
+        // If CompositeFieldManager has flagged it, or it's part of a known composite set
+        if (field.groupId || field.parentGroup) {
+            return 'GROUP';
+        }
+
+        // B. SECTION (Job 1 vs Job 2)
+        // If it has an index, it is structurally inside a section, 
+        // regardless of whether it is a "Sectional Multi" or "Atomic Single" behavior.
+        if (field.field_index !== null && field.field_index !== undefined) {
+            return 'SECTION';
+        }
+
+        // C. GLOBAL (Default)
+        return 'GLOBAL';
+    }
+
+    /**
      * Determine if a field is eligible for MultiValue/Section grouping
      * @param {string} context - Combined context string (label + name + parent)
      * @param {string} type - Field input type
