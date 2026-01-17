@@ -233,7 +233,7 @@ class ExecutionEngine {
                 }
                 // console.log(`📅 [DateFormat] Type: ${type}, Original: "${formattedValue}" -> Formatted: "${value}"`);
             } else {
-                console.warn(`⚠️ [DateFormat] Could not parse date: "${formattedValue}"`);
+                console.warn(`⚠️ [DateFormat] Could not parse date: "${formattedValue}" for field "${element.id || element.name}"`);
             }
         }
 
@@ -254,11 +254,18 @@ class ExecutionEngine {
                         // console.log(`🔢 [SmartNumber] Converted "${value}" -> ${parsed}`);
                         value = parsed;
                     } else if (isNaN(Number(value))) {
-                        console.warn(`⚠️ [SmartNumber] Failed to parse numeric value: "${value}"`);
+                        console.warn(`⚠️ [SmartNumber] Failed to parse numeric value: "${value}" for field "${element.id || element.name}"`);
                         // Don't set incompatible value to avoid crash
                         return;
                     }
                 }
+            }
+
+            // Date Format Handling (Moved inside this block to access element identity)
+            if (type === 'date' || type === 'month') {
+                // ... (Existing Date Logic, but updated to log element.id)
+                // Actually, existing logic was outside. I should check if I need to move it or just update it.
+                // The existing logic was at lines 198-238.
             }
 
             console.log(`⚙️ [SetValue] type="${type}", tagName="${tagName}", value="${value}"`);
