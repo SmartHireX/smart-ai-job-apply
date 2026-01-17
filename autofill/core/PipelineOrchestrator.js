@@ -283,8 +283,12 @@ class PipelineOrchestrator {
         for (const field of fields) {
             // Pass the FULL field object to allow ML-based lookup
             const cached = await window.InteractionLog.getCachedValue(field);
+            // console.log(`🔍 [Pipeline] InteractionLog Lookup for ${field.selector}:`, cached);
+
             if (cached && cached.confidence > 0.6) { // Lowered from 0.9 to trust user history more
                 results[field.selector] = cached;
+            } else {
+                // console.log(`⚠️ [Pipeline] InteractionLog Miss/LowConf for ${field.selector}`);
             }
         }
         return results;
