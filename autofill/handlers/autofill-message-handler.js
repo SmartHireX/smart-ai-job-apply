@@ -64,7 +64,7 @@ class FormHandler {
             console.error('❌ Form processor not available');
         }
 
-        return false;
+        return true;
     }
 
     /**

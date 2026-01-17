@@ -145,11 +145,32 @@ class HybridClassifier {
      * @private
      */
     async _runNeural(field, features) {
-        const classifier = this._getNeuralClassifier();
+        let classifier = this._getNeuralClassifier();
 
         if (!classifier) {
             return { label: 'unknown', confidence: 0, source: 'neural_unavailable' };
         }
+
+        // Ensure weights are loaded (Lazy Load Pattern)
+        if (!classifier.isReady && !this._modelLoadingPromise) {
+            this._modelLoadingPromise = (async () => {
+                try {
+                    const url = chrome.runtime.getURL('autofill/domains/inference/model_v8.json');
+                    const response = await fetch(url);
+                    const weights = await response.json();
+                    await classifier.loadWeights(weights);
+                    if (this._debug) console.log('✅ [Hybrid] Neural V8 Weights Loaded');
+                } catch (e) {
+                    console.error('❌ [Hybrid] Failed to load Neural V8 weights:', e);
+                }
+            })();
+        }
+
+        if (this._modelLoadingPromise) {
+            await this._modelLoadingPromise;
+        }
+
+
 
         try {
             // Neural classifier can work with features or field object
