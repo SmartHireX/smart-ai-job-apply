@@ -1,13 +1,18 @@
 /**
- * MultiValueHandler
+ * CompositeFieldManager
  * 
- * Advanced Field Resolver & Filler.
- * Handles Multi-Selects, Jobs, Education grouping, and Fallback Logic.
+ * Enterprise-Grade Field Resolver & Filler.
+ * Specialized in handling complex, multi-value field groups such as:
+ * - Repeated Sections (Jobs, Education) via SectionController delegation reference
+ * - Multi-Select Groups (Skills, Interests)
+ * - Checkbox/Radio Groups
  * 
- * Pipeline:
- * 1. Cache (SelectionCache)
- * 2. Profile Data (HistoryManager)
- * 3. AI (BatchProcessor - delegation)
+ * Architecture:
+ * 1. Cache Priority: Checks InteractionLog for historical user choices.
+ * 2. Profile Fallback: Checks EntityStore (User Profile) for structured data.
+ * 3. AI Delegation: Flags unresolved fields for the AI Batch Processor.
+ * 
+ * @class
  */
 class CompositeFieldManager {
 
@@ -18,10 +23,12 @@ class CompositeFieldManager {
     }
 
     /**
-     * Group Processing: Handles atomic filling of entire sections (e.g. "Job 1")
-     * Ensures consistency: All fields in a job block get data from the SAME source.
-     * @param {Array} fields - Mixed array of fields
-     * @returns {Object} { filled: [], pending: [] }
+     * Process a group of fields that belong to the same logical section.
+     * Ensures transactional consistency: all fields in a group are resolved against the same entity index.
+     * 
+     * @param {Array<Object>} fields - Array of field objects to process.
+     * @param {Object} context - Execution context containing resumeData.
+     * @returns {Promise<Object>} Result object { filled: [], pending: [] }
      */
     async processGroup(fields, context) {
         const groups = this.groupFieldsBySection(fields);
@@ -29,32 +36,28 @@ class CompositeFieldManager {
         const resumeData = context?.resumeData || {};
 
         for (const [key, group] of Object.entries(groups)) {
-            // key is "work_0", "education_1", or "skills_0"
+            // key format: "{type}_{index}" e.g., "work_0", "skills_0"
             const [type, indexStr] = key.split('_');
             const index = parseInt(indexStr, 10);
 
-            // console.log(`[CompositeManager] Processing Group: ${key} (${group.length} fields)`);
-
-            // 1. Fetch Source Data ONCE for the group
+            // 1. Fetch Source Data ONCE for the group (Performance Optimization)
             let profileEntity = null;
             if (type === 'work' || type === 'education') {
                 profileEntity = this.store ? this.store.getByIndex(type, index) : null;
             }
 
-            // Special Handling for Skills (User Data Fallback)
+            // 2. Prepare User Data Fallback for Skills
             let matchedSkills = [];
             if (type === 'skills' && window.RuleEngine && resumeData.skills) {
-                // Get all option values from the group (assuming checkboxes)
-                const options = group.map(f => f.value || f.label);
+                // Extract all potential options from the UI to match against user profile
+                const options = group.map(f => f.value || f.label || '').filter(Boolean);
                 matchedSkills = window.RuleEngine.matchSkills(options, resumeData.skills);
-                // console.log(`[CompositeManager] Matched ${matchedSkills.length} skills from User Data.`);
             }
 
+            // 3. Process each field in the group
             for (const field of group) {
-                // Attach strict index
-                field.field_index = index;
+                field.field_index = index; // Enforce strict indexing
 
-                // 2. Resolve (pass matchedSkills if applicable)
                 const result = await this.resolveAndFill(field, type, profileEntity, matchedSkills);
 
                 if (result.filled) {
@@ -68,237 +71,390 @@ class CompositeFieldManager {
     }
 
     /**
-     * Helper: Clusters fields by Type + Index
-     */
-    groupFieldsBySection(fields) {
-        const groups = {};
-        fields.forEach(field => {
-            // Use prediction or heuristics to determine type
-            // Note: prediction must be present.
-            const type = this.determineType(field);
-            // Calculate Index here if not present?
-            const index = this.indexer.getIndex(field, type);
-
-            const key = `${type}_${index}`;
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(field);
-        });
-        return groups;
-    }
-
-    determineType(field) {
-        // 1. Use ML Prediction if available (Most Accurate)
-        if (field.ml_prediction) {
-            const label = field.ml_prediction.label;
-
-            // Check category via FieldTypes if available
-            if (window.FieldTypes && window.FieldTypes.getCategoryForField) {
-                const category = window.FieldTypes.getCategoryForField(label);
-                if (category === 'work_experience') return 'work';
-                if (category === 'education') return 'education';
-                if (category === 'skills') return 'skills';
-            }
-
-            // Fallback: Label-based check
-            if (label === 'years_experience') return 'work';
-            if (['job_title', 'company_name', 'job_description'].includes(label)) return 'work';
-            if (['institution_name', 'degree_type', 'major', 'gpa'].includes(label)) return 'education';
-            if (label === 'skills') return 'skills';
-        }
-
-        // 2. Heuristic Rules (Fallback)
-        const label = (field.label || '').toLowerCase();
-
-        // Strict Education check
-        if (/school|degree|major|education|university|college|gpa/.test(label)) return 'education';
-
-        // Strict Skills check
-        if (/skill|technology/i.test(label)) return 'skills';
-
-        // Strict Work check (Only if explicitly work-related)
-        if (/employer|company|job title|work experience|employment history/.test(label)) return 'work';
-
-        // 3. Default: Return NULL or 'misc' to avoid grouping unrelated fields
-        // defaulting to 'work' was causing "Notice Period" etc to be grouped into work_0
-        return null;
-    }
-
-    /**
-     * Main Entry Point: Resolve value for a field and fill it
-     * @param {Object} field - The field object
-     * @param {string} type - 'work', 'education'
-     * @param {Object|null} groupEntity - Pre-fetched profile entity for this group (Optimization)
+     * Resolve value for a single field using the Strategy Chain.
+     * 
+     * @param {Object} field - The target field.
+     * @param {string} type - Section type ('work', 'education', 'skills').
+     * @param {Object|null} groupEntity - Pre-fetched structured entity (optimization).
+     * @param {Array<string>} matchedSkills - Pre-calculated skill matches.
+     * @returns {Promise<Object>} { filled: boolean, source: string, value: any }
      */
     async resolveAndFill(field, type, groupEntity = null, matchedSkills = []) {
         if (!field || !field.element) return { filled: false, source: 'error' };
 
-        // 1. Calculate Index
+        // Ensure index is set
         const index = field.index !== undefined ? field.index : this.indexer.getIndex(field, type);
         field.field_index = index;
 
-        // console.log(`[CompositeManager] Resolving "${field.label}" (${type}) @ Index ${index}`);
-
-        // STRATEGY CHAIN
-
-        // A. Site Cache (Priority)
+        // STRATEGY A: Site Cache (Interaction History)
         if (this.cache) {
-            // FIX: Pass FULL field object so InteractionLog can use index/label for MultiCache resolution
-            // Previously only passed selector, which lost the index context
-            const cached = await this.cache.getCachedValue(field);
+            let cached = null;
+
+            // Special Routing for ATOMIC_MULTI / Grouped Fields
+            if (field.instance_type === 'ATOMIC_MULTI') {
+                // Enterprise Grade: Use the specific cache_label if available (e.g. "interests", "tech_stack")
+                // Fallback to the 'type' (which should be "skills", "interests" etc.)
+                const lookupKey = field.cache_label || type || 'skills';
+
+                cached = await this.cache.getCachedValue({
+                    label: lookupKey,
+                    name: lookupKey,
+                    instance_type: 'ATOMIC_MULTI',
+                    parentContext: lookupKey,
+                    cache_label: lookupKey
+                });
+            } else {
+                // Standard Field Lookup
+                cached = await this.cache.getCachedValue(field);
+            }
+
             if (cached && cached.value) {
-                if (this.fill(field.element, cached.value)) return { filled: true, source: 'cache', value: cached.value };
-            }
-        }
-
-        // B. Skills Logic (User Data Fallback)
-        if (type === 'skills' && matchedSkills.length > 0) {
-            // Provide all matched skills to the field. 
-            // The 'fill' logic will handle checking the specific one if it's a checkbox, 
-            // or joining them if it's a text input.
-            if (this.fill(field.element, matchedSkills)) {
-                // AUTO-CACHE: Save the matched skills list
-                if (this.cache) this.cache.cacheSelection(field, field.label, matchedSkills);
-                return { filled: true, source: 'user_skills', value: matchedSkills };
-            }
-        }
-
-        // C. User Profile (EntityStore for Jobs/Edu)
-        if (this.store && (type === 'work' || type === 'education')) {
-            const data = groupEntity || this.store.getByIndex(type, index);
-            if (data) {
-                const valueToFill = this.extractValueFromEntity(data, field);
-                if (valueToFill) {
-                    if (this.fill(field.element, valueToFill)) {
-                        // AUTO-CACHE: Save this successful profile fill to site cache for next time
-                        if (this.cache) this.cache.cacheSelection(field, field.label, valueToFill);
-                        return { filled: true, source: 'profile', value: valueToFill };
-                    }
+                if (this.fill(field.element, cached.value)) {
+                    return { filled: true, source: 'cache', value: cached.value };
                 }
             }
         }
 
-        // D. Global Memory (Last Resort)
-        if (window.GlobalMemory) {
-            const memRes = await window.GlobalMemory.resolveField(field);
-            if (memRes && memRes.value) {
-                if (this.fill(field.element, memRes.value)) return { filled: true, source: 'global_memory', value: memRes.value };
-            }
-        }
-
-        return { filled: false, source: 'ai_pending' };
+        return { filled: false, source: 'pending_ai' };
     }
 
-    extractValueFromEntity(data, field) {
-        if (typeof data !== 'object') return data; // Primitive skill
-
-        const key = field.ml_prediction?.label || field.short_label;
-        if (key && data[key]) return data[key];
-
-        return null;
-    }
-
-    /**
-     * Universal Fill Function
-     * Handles Array vs Single, Checkbox vs Text
-     */
-    fill(element, value) {
-        if (value === undefined || value === null) return false;
-
-        // Normalize to Array for multi-select logic
-        const values = Array.isArray(value) ? value : [value];
-        const isMultiInput = element.type === 'checkbox' || (element.tagName === 'SELECT' && element.multiple);
-
-        if (isMultiInput) {
-            // Use Array Logic
-            const type = (element.type || '').toLowerCase();
-            if (type === 'checkbox') return this.fillCheckboxGroup(element, values);
-            if (element.tagName === 'SELECT') return this.fillMultiSelect(element, values);
-        } else {
-            // Single Value Logic
-            // If we have [A, B] but simple text input -> Join them? "A, B"
-            // If we have [A] -> Just "A"
-            if (values.length > 1) {
-                return this.fillJoinedText(element, values);
-            } else {
-                return this.fillSingleValue(element, values[0]);
-            }
-        }
-        return false;
-    }
-
-    // --- DOM Manipulators (imported from previous iteration but refined) ---
-
-    fillSingleValue(element, value) {
-        element.value = value;
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-        element.dispatchEvent(new Event('change', { bubbles: true }));
-        return true;
-    }
-
-    fillCheckboxGroup(triggerElement, values) {
-        const name = triggerElement.name;
-        if (!name) return false;
-        const checkboxes = document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(name)}"]`);
-        let filled = 0;
-        checkboxes.forEach(box => {
-            if (values.some(v => this.fuzzyMatch(box.value, v) || this.fuzzyMatch(this.getLabelFor(box), v))) {
-                if (!box.checked) { box.click(); filled++; }
-            }
-        });
-        return filled > 0;
-    }
-
-    fillMultiSelect(select, values) {
-        let filled = 0;
-        Array.from(select.options).forEach(opt => {
-            if (values.some(v => this.fuzzyMatch(opt.value, v) || this.fuzzyMatch(opt.text, v))) {
-                opt.selected = true; filled++;
-            }
-        });
-        if (filled) select.dispatchEvent(new Event('change', { bubbles: true }));
-        return filled > 0;
-    }
-
-    fillJoinedText(element, values) {
-        // Smart Join Strategy
-        // - Textarea: Newlines (better for ATS parsing)
-        // - Input: Comma separated
-        const tagName = (element.tagName || '').toLowerCase();
-        const separator = tagName === 'textarea' ? '\n' : ', ';
-
-        element.value = values.join(separator);
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-        return true;
-    }
-
-    getLabelFor(el) {
-        if (el.labels?.length) return el.labels[0].innerText;
-        return el.closest('label')?.innerText || '';
-    }
-
-    /**
-     * Accurate Fuzzy Match
-     * Uses Token Overlap for "React.js" == "React" accuracy
-     */
-    fuzzyMatch(a, b) {
-        if (!a || !b) return false;
-        const strA = String(a).toLowerCase();
-        const strB = String(b).toLowerCase();
-
-        // 1. Direct Include
-        if (strA.includes(strB) || strB.includes(strA)) return true;
-
-        // 2. Token Jaccard (for multi-word skills like "Machine Learning" vs "ML")
-        const tokensA = new Set(strA.split(/[\s,._-]+/));
-        const tokensB = new Set(strB.split(/[\s,._-]+/));
-
-        let intersect = 0;
-        tokensA.forEach(t => { if (tokensB.has(t)) intersect++; });
-
-        // High threshold for safety
-        return (intersect / Math.min(tokensA.size, tokensB.size)) > 0.75;
+    // STRATEGY B: Skill Matching (User Resume Data)
+    if(type === 'skills' && matchedSkills.length > 0) {
+    if (this.fill(field.element, matchedSkills)) {
+        // Auto-Cache successful user data mapping for future speed
+        if (this.cache) this.cache.cacheSelection(field, field.label, matchedSkills);
+        return { filled: true, source: 'user_skills', value: matchedSkills };
     }
 }
 
+// STRATEGY C: Profile Entity (Work/Education)
+if (this.store && (type === 'work' || type === 'education')) {
+    const data = groupEntity || this.store.getByIndex(type, index);
+    if (data) {
+        const valueToFill = this.extractValueFromEntity(data, field);
+        if (valueToFill) {
+            if (this.fill(field.element, valueToFill)) {
+                if (this.cache) this.cache.cacheSelection(field, field.label, valueToFill);
+                return { filled: true, source: 'profile', value: valueToFill };
+            }
+        }
+    }
+}
+
+// STRATEGY D: Global Memory (Cross-Site Facts)
+if (window.GlobalMemory) {
+    const memRes = await window.GlobalMemory.resolveField(field);
+    if (memRes && memRes.value) {
+        if (this.fill(field.element, memRes.value)) {
+            return { filled: true, source: 'global_memory', value: memRes.value };
+        }
+    }
+}
+
+return { filled: false, source: 'pending_ai' };
+    }
+
+/**
+ * Map Entity Property to Field
+ * @private
+ */
+extractValueFromEntity(data, field) {
+    if (typeof data !== 'object' || data === null) return data;
+
+    // Use ML Label or Fallback
+    const key = field.ml_prediction?.label || field.short_label;
+    if (key && data[key] !== undefined) return data[key];
+
+    return null;
+}
+
+/**
+ * Universal Fill Method.
+ * Smartly handles various input types and value formats (Single vs Array).
+ * 
+ * @param {HTMLElement} element 
+ * @param {any} value - String or Array of Strings
+ * @returns {boolean} Success status
+ */
+fill(element, value) {
+    if (value === undefined || value === null) return false;
+
+    // Normalize value to Array for consistent processing
+    const values = Array.isArray(value) ? value : [value];
+    const type = (element.type || '').toLowerCase();
+    const tagName = element.tagName;
+
+    // 1. Checkbox Group
+    if (type === 'checkbox') {
+        return this.fillCheckboxGroup(element, values);
+    }
+
+    // 2. Multi-Select Dropdown
+    if (tagName === 'SELECT' && element.multiple) {
+        return this.fillMultiSelect(element, values);
+    }
+
+    // 3. Single Text Input / Textarea
+    if (values.length > 0) {
+        // If multiple values map to a single text input, join them.
+        // e.g., "Skills" text box -> "Java, Python, React"
+        return this.fillJoinedText(element, values);
+    }
+
+    return false;
+}
+
+// ============================================
+// 🔧 DOM MANIPULATION & MATCHING UTILITIES
+// ============================================
+
+fillSingleValue(element, value) {
+    try {
+        element.value = value;
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+        element.dispatchEvent(new Event('blur', { bubbles: true })); // Ensure validation trigger
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+fillCheckboxGroup(triggerElement, values) {
+    const name = triggerElement.name;
+
+    // Robust query: If name is missing, only target the element itself.
+    const checkboxes = name
+        ? document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(name)}"]`)
+        : [triggerElement];
+
+    let filledCount = 0;
+
+    checkboxes.forEach(box => {
+        const label = this.getLabelFor(box);
+        const boxVal = box.value;
+
+        // Fuzzy Match: Check against both the underlying value and user-visible label
+        const isMatch = values.some(target =>
+            this.fuzzyMatch(boxVal, target) || this.fuzzyMatch(label, target)
+        );
+
+        if (isMatch) {
+            if (!box.checked) {
+                box.click();
+                // Fallback force check if JS blocked click or framework state is stubborn
+                if (!box.checked) box.checked = true;
+                // Trigger change to notify React/Vue/Angular
+                box.dispatchEvent(new Event('change', { bubbles: true }));
+                filledCount++;
+            }
+        }
+    });
+
+    return filledCount > 0;
+}
+
+fillMultiSelect(select, values) {
+    let filledCount = 0;
+    Array.from(select.options).forEach(opt => {
+        const isMatch = values.some(target =>
+            this.fuzzyMatch(opt.value, target) || this.fuzzyMatch(opt.text, target)
+        );
+
+        if (isMatch && !opt.selected) {
+            opt.selected = true;
+            filledCount++;
+        }
+    });
+
+    if (filledCount > 0) {
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    return filledCount > 0;
+}
+
+fillJoinedText(element, values) {
+    const tagName = (element.tagName || '').toLowerCase();
+    // Use newlines for Textareas, commas for standard inputs
+    const separator = tagName === 'textarea' ? '\n' : ', ';
+
+    // Deduplicate values before joining
+    const uniqueValues = [...new Set(values)];
+
+    element.value = uniqueValues.join(separator);
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+    element.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+}
+
+getLabelFor(el) {
+    // 1. Explicit <label for="id">
+    if (el.labels && el.labels.length > 0) return el.labels[0].innerText;
+
+    // 2. Parent <label> wrapper
+    const parentLabel = el.closest('label');
+    if (parentLabel) return parentLabel.innerText;
+
+    // 3. Aria-Label
+    const aria = el.getAttribute('aria-label');
+    if (aria) return aria;
+
+    // 4. Title attribute
+    return el.title || '';
+}
+
+/**
+ * Advanced Fuzzy Matching Algorithm.
+ * Uses Tokenization + Jaccard Index + Levenshtein Distance (for short words).
+ * 
+ * @param {string} a - Candidate string (from DOM)
+ * @param {string} b - Target string (from Cache/Profile)
+ * @returns {boolean} True if match is confident
+ */
+fuzzyMatch(a, b) {
+    if (!a || !b) return false;
+    const strA = String(a).toLowerCase().trim();
+    const strB = String(b).toLowerCase().trim();
+
+    if (strA === strB) return true;
+
+    // 1. Direct Substring Match (High Confidence)
+    // e.g. "Reaction" vs "React" -> careful here, maybe too aggressive? 
+    // "Javascript" vs "script" is bad. "Javascript" vs "Java" is bad.
+    // Better: Word boundary check.
+
+    // 2. Token Jaccard (Robust for multi-word)
+    const normalize = (s) => s.replace(/[^\w\s+.]/g, '').split(/[\s,._-]+/).filter(Boolean);
+    const tokensA = new Set(normalize(strA));
+    const tokensB = new Set(normalize(strB));
+
+    if (tokensA.size === 0 || tokensB.size === 0) return false;
+
+    let intersection = 0;
+    tokensA.forEach(t => {
+        // Check exact token match OR Levenshtein for typos
+        if ([...tokensB].some(bt => bt === t || this.levenshteinDistance(t, bt) <= 1)) {
+            intersection++;
+        }
+    });
+
+    const union = new Set([...tokensA, ...tokensB]).size;
+    const jaccard = intersection / union;
+
+    // Threshold: 0.6 means vast majority of words match
+    if (jaccard >= 0.6) return true;
+
+    // 3. Fallback for Single Short Words (e.g. "Node" vs "Nodejs")
+    if (tokensA.size === 1 && tokensB.size === 1) {
+        const tA = [...tokensA][0];
+        const tB = [...tokensB][0];
+        if (tA.includes(tB) || tB.includes(tA)) return true;
+    }
+
+    return false;
+}
+
+/**
+ * Calculate Levenshtein Distance for typo tolerance
+ */
+levenshteinDistance(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+
+    const matrix = [];
+
+    for (let i = 0; i <= b.length; i++) {
+        matrix[i] = [i];
+    }
+
+    for (let j = 0; j <= a.length; j++) {
+        matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1, // substitution
+                    Math.min(
+                        matrix[i][j - 1] + 1, // insertion
+                        matrix[i - 1][j] + 1  // deletion
+                    )
+                );
+            }
+        }
+    }
+    return matrix[b.length][a.length];
+}
+
+/**
+ * Determine Field Type from Metadata
+ */
+groupFieldsBySection(fields) {
+    const groups = {};
+    fields.forEach(field => {
+        const type = this.determineType(field);
+        // Default index 0 if not present, but usually IndexingService provides it.
+        const index = this.indexer.getIndex(field, type);
+
+        const key = `${type}_${index}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(field);
+    });
+    return groups;
+}
+
+determineType(field) {
+    // Priority 1: Architecture V2 Route Flags (The Source of Truth)
+    if (field.instance_type === 'ATOMIC_MULTI') {
+        // Use Cache Label if available (e.g. "interests")
+        if (field.cache_label && !field.cache_label.includes('unknown')) return field.cache_label;
+
+        // Or infer from name/label
+        const label = (field.label || field.name || '').toLowerCase();
+        if (label.includes('interest')) return 'interests';
+
+        return 'skills';
+    }
+    if (field.instance_type === 'SECTIONAL_MULTI') {
+        // Distinguish Work vs Edu based on label keywords
+        // This is a sub-classification within the sectional type
+        const label = (field.label || '').toLowerCase();
+        if (/school|degree|major|education|university|college|gpa|institution/.test(label)) return 'education';
+        return 'work';
+    }
+
+    // Priority 2: ML Prediction (High Accuracy)
+    if (field.ml_prediction) {
+        const label = field.ml_prediction.label;
+
+        // Check centralized FieldTypes if available
+        if (window.FieldTypes && typeof window.FieldTypes.getCategoryForField === 'function') {
+            const category = window.FieldTypes.getCategoryForField(label);
+            if (category === 'work_experience') return 'work';
+            if (category === 'education') return 'education';
+            if (category === 'skills') return 'skills';
+        }
+
+        // Implicit Label Mapping
+        if (['job_title', 'company_name', 'job_description', 'employer_name'].includes(label)) return 'work';
+        if (['institution_name', 'degree_type', 'major', 'gpa', 'school_name'].includes(label)) return 'education';
+        if (label === 'skills') return 'skills';
+    }
+
+    // Priority 3: Heuristic Keyword Analysis (Fallback)
+    const label = (field.label || '').toLowerCase();
+    if (/skill|technology|programming|language|framework/.test(label)) return 'skills';
+    if (/school|degree|major|education|university/.test(label)) return 'education';
+    if (/employer|company|job title|work experience/.test(label)) return 'work';
+
+    // Default to 'work' if ambiguous but grouped? No, safer to return 'misc' or null.
+    return 'misc';
+}
+}
+
+// Export for Global Usage
 if (typeof window !== 'undefined') window.CompositeFieldManager = new CompositeFieldManager();
 if (typeof module !== 'undefined') module.exports = CompositeFieldManager;

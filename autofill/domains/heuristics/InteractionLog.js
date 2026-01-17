@@ -577,12 +577,23 @@ async function getCachedValue(fieldOrSelector, labelArg) {
             const sectionEntry = cache[parentSection];
 
             if (Array.isArray(sectionEntry.value) && sectionEntry.value[index]) {
-                const rowValue = sectionEntry.value[index][semanticType];
+                const canonicalKey = getCanonicalKey(semanticType);
+                const rowValue = sectionEntry.value[index][canonicalKey];
                 if (rowValue !== undefined) {
                     return {
                         value: rowValue,
                         confidence: 0.95,
                         source: 'section_row_cache',
+                        semanticType: canonicalKey
+                    };
+                }
+
+                // Optional: Check un-normalized key as backup (for legacy data)
+                if (sectionEntry.value[index][semanticType] !== undefined) {
+                    return {
+                        value: sectionEntry.value[index][semanticType],
+                        confidence: 0.95,
+                        source: 'section_row_cache_legacy',
                         semanticType: semanticType
                     };
                 }
@@ -681,8 +692,22 @@ function validateSingleOption(field, singleValue) {
 // Helper: Map semantic key to parent section
 function getSectionMapping(key) {
     if (/job|work|employer|company|title|position/.test(key)) return 'work_experience';
-    if (/school|university|degree|education|institution|gpa|major/.test(key)) return 'education';
+    if (/school|university|degree|education|institution|gpa|major|field_of_study|score|grade/.test(key)) return 'education';
     return null;
+}
+
+// Helper: Normalize key to canonical form (e.g. company_name -> employer_name)
+function getCanonicalKey(key) {
+    const normalized = key.toLowerCase();
+    // 1. Check if it's already a primary key
+    if (ALIAS_REGISTRY[normalized]) return normalized;
+
+    // 2. Check if it's an alias
+    for (const [primary, aliases] of Object.entries(ALIAS_REGISTRY)) {
+        if (aliases.includes(normalized)) return primary;
+    }
+
+    return normalized;
 }
 
 /**
@@ -721,8 +746,9 @@ async function cacheSelection(field, label, value) {
                 // Initialize Row at Index
                 if (!entry.value[index]) entry.value[index] = {};
 
-                // Write Value
-                entry.value[index][semanticType] = value;
+                // Write Value (Normalized Key)
+                const storageKey = getCanonicalKey(semanticType);
+                entry.value[index][storageKey] = value;
                 entry.lastUsed = Date.now();
 
                 // Update variants (on parent)
@@ -732,8 +758,9 @@ async function cacheSelection(field, label, value) {
                 }
             } else {
                 // Fallback: Legacy Column-Based
-                if (!cache[semanticType]) cache[semanticType] = { value: [], useCount: 0, confidence: 0.75, variants: [] };
-                const entry = cache[semanticType];
+                const storageKey = getCanonicalKey(semanticType);
+                if (!cache[storageKey]) cache[storageKey] = { value: [], useCount: 0, confidence: 0.75, variants: [] };
+                const entry = cache[storageKey];
                 if (!Array.isArray(entry.value)) entry.value = entry.value ? [entry.value] : [];
                 entry.value[index] = value;
                 entry.lastUsed = Date.now();
@@ -741,8 +768,9 @@ async function cacheSelection(field, label, value) {
         }
         // B. ATOMIC_MULTI: Merged Sets (Skills, Interests)
         else if (targetCacheKey === CACHE_KEYS.ATOMIC_MULTI) {
-            if (!cache[semanticType]) cache[semanticType] = { value: [], useCount: 0, confidence: 0.75, variants: [] };
-            const entry = cache[semanticType];
+            const storageKey = getCanonicalKey(semanticType);
+            if (!cache[storageKey]) cache[storageKey] = { value: [], useCount: 0, confidence: 0.75, variants: [] };
+            const entry = cache[storageKey];
 
             let inputPayload = value;
             if (typeof value === 'string' && value.includes(',')) {
@@ -765,8 +793,9 @@ async function cacheSelection(field, label, value) {
         }
         // C. ATOMIC_SINGLE: Scalar Values
         else {
-            if (!cache[semanticType]) cache[semanticType] = { value: null, useCount: 0, confidence: 0.75, variants: [] };
-            const entry = cache[semanticType];
+            const storageKey = getCanonicalKey(semanticType);
+            if (!cache[storageKey]) cache[storageKey] = { value: null, useCount: 0, confidence: 0.75, variants: [] };
+            const entry = cache[storageKey];
             entry.value = value;
             entry.lastUsed = Date.now();
 

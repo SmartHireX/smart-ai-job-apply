@@ -475,7 +475,18 @@ class PipelineOrchestrator {
         const section = [];
         const composite = [];
         fields.forEach(f => {
-            this.isSectionField(f) ? section.push(f) : composite.push(f);
+            // Priority: Architecture V2 (Instance Type)
+            if (f.instance_type === 'SECTIONAL_MULTI') {
+                section.push(f);
+            } else if (f.instance_type === 'ATOMIC_MULTI') {
+                composite.push(f);
+            }
+            // Fallback: Legacy Logic (if type missing)
+            else if (this.isSectionField(f)) {
+                section.push(f);
+            } else {
+                composite.push(f);
+            }
         });
         return { section, composite };
     }

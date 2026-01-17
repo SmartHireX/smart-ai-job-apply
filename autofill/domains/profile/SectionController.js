@@ -67,7 +67,10 @@ class SectionController extends window.Handler {
             // I should re-infer or trust field metadata.
 
             let type = 'work';
-            if (/school|education|degree|institution/i.test(f.ml_prediction?.label || '')) type = 'education';
+            // Critical Fix: Add 'major', 'field_of_study', 'gpa' to education detection
+            if (/school|education|degree|institution|major|field_of_study|gpa|score/i.test(f.ml_prediction?.label || '')) {
+                type = 'education';
+            }
 
             const index = f.field_index !== undefined ? f.field_index : 0;
             const key = `${type}_${index}`;
@@ -143,19 +146,25 @@ class SectionController extends window.Handler {
         // Schema Mapping
         // Simple mapping for now, can use HistoryManager.SCHEMA regex later
         // Map ML Label -> Entity Key
+        // Map ML Label -> Entity Key
         const map = {
-            'employer_name': ['name', 'company', 'employer'],
-            'job_title': ['position', 'title', 'role'],
-            'job_start_date': ['startDate', 'from'],
-            'job_end_date': ['endDate', 'to'],
+            'employer_name': ['name', 'company', 'employer', 'organization'],
+            'company_name': ['name', 'company', 'employer', 'organization'], // Alias
+            'job_title': ['position', 'title', 'role', 'jobTitle'],
+            'job_start_date': ['startDate', 'from', 'start'],
+            'job_end_date': ['endDate', 'to', 'end'],
             'work_description': ['summary', 'description', 'highlights'], // highlights is array
-            'job_location': ['location', 'city'],
-            'institution_name': ['institution', 'school', 'university'],
-            'degree_type': ['studyType', 'degree'],
-            'field_of_study': ['area', 'major'],
-            'education_start_date': ['startDate'],
-            'education_end_date': ['endDate'],
-            'gpa_score': ['score', 'gpa']
+            'job_location': ['location', 'city', 'address'],
+
+            'institution_name': ['institution', 'school', 'university', 'college', 'institution_name'],
+            'school_name': ['institution', 'school', 'university', 'college'], // Alias
+            'degree_type': ['studyType', 'degree', 'qualification', 'degree_type'],
+            'field_of_study': ['field_of_study', 'area', 'major', 'field', 'discipline', 'specialization', 'department'],
+            'major': ['area', 'major', 'field', 'discipline'], // Alias
+            'education_start_date': ['startDate', 'from', 'start'],
+            'education_end_date': ['endDate', 'to', 'end'],
+            'gpa_score': ['gpa', 'score', 'grade', 'average', 'gpa_score'],
+            'gpa': ['gpa', 'score', 'grade', 'average'] // Alias
         };
 
         const keys = map[label];
