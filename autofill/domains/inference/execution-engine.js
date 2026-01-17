@@ -284,15 +284,20 @@ class ExecutionEngine {
         } else {
             element.value = targetValue;
         }
-        console.log(`🔍 [SmartSelect] Target: "${targetValue}"`);
+
         // 2. Verify
-        if (element.value === targetValue) return;
+        if (element.value === targetValue) {
+            console.log(`✅ [SmartSelect] Direct Set Success: "${targetValue}"`);
+            return;
+        }
+
+        console.log(`🔍 [SmartSelect] Target (Fuzzy Search): "${targetValue}"`);
 
         // 3. Smart Fuzzy Match (Text, Value, Label, ID)
         const normalize = (str) => String(str || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
         const targetClean = normalize(targetValue);
         const targetNum = parseFloat(String(targetValue).replace(/[^0-9.]/g, ''));
-        console.log(`🔍 [SmartSelect] Target: "${targetValue}"`);
+
         // Find best option
         let bestMatch = null;
         let maxScore = 0;
@@ -334,7 +339,7 @@ class ExecutionEngine {
                 }
             }
 
-            // console.log(`🔍 [SmartSelect] Option: "${option.text}" (Val: ${option.value}) vs Target: "${targetValue}" -> Score: ${score}`);
+            console.log(`🔍 [SmartSelect] Option: "${option.text}" (Val: ${option.value}) vs Target: "${targetValue}" -> Score: ${score}`);
 
             if (score > maxScore) {
                 maxScore = score;
