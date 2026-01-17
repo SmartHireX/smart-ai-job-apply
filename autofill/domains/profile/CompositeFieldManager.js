@@ -265,12 +265,25 @@ class CompositeFieldManager {
             );
 
             if (isMatch && !opt.selected) {
+                // 1. Property Set
                 opt.selected = true;
+                // 2. Attribute Set (Force DOM update)
+                opt.setAttribute('selected', 'selected');
+
+                // 3. Dispatch Click (for custom listeners)
+                // opt.dispatchEvent(new Event('click', { bubbles: true })); 
+                // Careful: Click might toggle it OFF if logic exists. 
+                // Safe to just set property in Vanilla.
+
                 filledCount++;
             }
         });
 
         if (filledCount > 0) {
+            // Force redraw/focus potentially
+            // select.focus(); 
+            // select.blur();
+
             select.dispatchEvent(new Event('change', { bubbles: true }));
             // Some frameworks need 'input' too
             select.dispatchEvent(new Event('input', { bubbles: true }));
