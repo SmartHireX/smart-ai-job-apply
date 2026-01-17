@@ -404,9 +404,15 @@ class PipelineOrchestrator {
         const groups = { memory: [], heuristic: [], complex: [], general: [] };
 
         fields.forEach(field => {
-            const type = field.instance_type || 'ATOMIC_SINGLE';
+            let type = field.instance_type || 'ATOMIC_SINGLE';
             const scope = field.scope || 'GLOBAL';
             const inputType = (field.type || 'text').toLowerCase();
+
+            // SAFETY: Force select-multiple to ATOMIC_MULTI if not already set
+            if (inputType === 'select-multiple' && type !== 'ATOMIC_MULTI' && type !== 'SECTIONAL_MULTI') {
+                type = 'ATOMIC_MULTI';
+                field.instance_type = 'ATOMIC_MULTI'; // Fix in place
+            }
 
             // --- ROUTING LOGIC (The Truth Table) ---
 
@@ -433,16 +439,14 @@ class PipelineOrchestrator {
 
                 if (scope === 'SECTION' && isRadio) {
                     // Section-scoped radios (e.g. "Did you manage a team?" inside Job 1) 
-                    // must be isolated.
+                    // must be isolated in Heuristic group to avoid pollution.
                     this.assertAllowedResolver(type, scope, 'HeuristicEngine');
                     groups.heuristic.push(field);
                     return;
                 }
 
-                // Allow simple section text fields to go to memory? 
-                // Plan says: "ATOMIC_SINGLE (Text/Email/Date) -> groups.memory" 
-                // But we must respect scope. 
-                // For now, default ATOMIC_SINGLE to memory, but ensure downstream handles keys correctly.
+                // Default remaining ATOMIC_SINGLE to Memory
+                // (e.g. "Company Name" is text, in section, but routed to Memory/InteractionLog)
                 this.assertAllowedResolver(type, scope, 'GlobalMemory');
                 groups.memory.push(field);
                 return;
