@@ -416,29 +416,31 @@ class PipelineOrchestrator {
 
             // 2. MEMORY (Global Facts)
             // Route: ATOMIC_SINGLE (Text/Email/Date) -> groups.memory
-            // Special: ATOMIC_SINGLE + GLOBAL + radio -> groups.memory (Maximize Reuse)
             if (type === 'ATOMIC_SINGLE') {
                 const isRadio = inputType === 'radio';
+                const isSelect = inputType === 'select-one' || inputType === 'select';
 
-                if (scope === 'GLOBAL') {
-                    // Global single fields (including radios) go to Memory for cross-site persistence
-                    this.assertAllowedResolver(type, scope, 'GlobalMemory');
-                    groups.memory.push(field);
-                    return;
-                }
-
-                if (scope === 'SECTION' && isRadio) {
-                    // Section-scoped radios (e.g. "Did you manage a team?" inside Job 1) 
-                    // must be isolated.
+                // HEURISTIC SCOPE: All Radios and Selects (Global OR Section)
+                // We want all structured choices to go through HeuristicEngine (RuleEngine)
+                // This allows:
+                // 1. InteractionLog Check (Cache)
+                // 2. RuleEngine Check (Logic/Demographics)
+                // 3. ExecutionEngine Fuzzy Matching
+                if (isRadio || isSelect) {
                     this.assertAllowedResolver(type, scope, 'HeuristicEngine');
                     groups.heuristic.push(field);
                     return;
                 }
 
-                // Allow simple section text fields to go to memory? 
-                // Plan says: "ATOMIC_SINGLE (Text/Email/Date) -> groups.memory" 
-                // But we must respect scope. 
-                // For now, default ATOMIC_SINGLE to memory, but ensure downstream handles keys correctly.
+                if (scope === 'GLOBAL') {
+                    // Global single fields (Text/Email/etc) go to Memory for cross-site persistence
+                    this.assertAllowedResolver(type, scope, 'GlobalMemory');
+                    groups.memory.push(field);
+                    return;
+                }
+
+                // Allow simple section text fields to go to memory (e.g. Job Description, Company Name)
+                // These are legally routed to Memory/InteractionLog via the GlobalMemory adapter
                 this.assertAllowedResolver(type, scope, 'GlobalMemory');
                 groups.memory.push(field);
                 return;
