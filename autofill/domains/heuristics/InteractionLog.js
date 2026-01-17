@@ -224,7 +224,8 @@ const ALIAS_REGISTRY = {
     'degree_type': ['degree', 'qualification', 'education_level'],
     'salary_current': ['current_salary', 'currentsalary', 'current_ctc', 'ctc'],
     'salary_expected': ['expected_salary', 'expectedsalary', 'expected_ctc'],
-    'linkedin': ['linkedin_url', 'linkedinurl', 'linkedin_profile']
+    'linkedin': ['linkedin_url', 'linkedinurl', 'linkedin_profile'],
+    'notice_period': ['notice_period_in_days', 'availability_date', 'days_notice', 'notice_days']
 };
 
 // --- 3. WEIGHTED TOKENS (Higher = More Important) ---
