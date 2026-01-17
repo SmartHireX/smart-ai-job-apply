@@ -450,11 +450,15 @@ class PipelineOrchestrator {
 
         // Fallback (should typically be handled by centralized logic)
         const label = field.ml_prediction?.label || '';
-        return /job|employer|work|school|degree|education|institution|title/i.test(label);
+        // Restrict to strict section headers for the fallback
+        return /company_name|institution_name|degree_type|major|job_title/i.test(label);
     }
 
     getSectionType(label) {
-        return /school|degree|education|institution/.test(label || '') ? 'education' : 'work';
+        if (!label) return null;
+        if (/school|degree|education|institution/.test(label)) return 'education';
+        if (/company|employer|job|title|work/.test(label)) return 'work';
+        return null;
     }
 
     logGrouping(groups) {
