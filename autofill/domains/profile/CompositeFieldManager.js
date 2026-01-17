@@ -92,9 +92,8 @@ class CompositeFieldManager {
 
             // Special Routing for ATOMIC_MULTI / Grouped Fields
             if (field.instance_type === 'ATOMIC_MULTI') {
-                // Enterprise Grade: Use the specific cache_label if available (e.g. "interests", "tech_stack")
-                // Fallback to the 'type' (which should be "skills", "interests" etc.)
                 const lookupKey = field.cache_label || type || 'skills';
+                console.log(`[CompositeFieldManager] 🔍 ATOMIC_MULTI Lookup: "${lookupKey}" (CacheLabel: ${field.cache_label})`);
 
                 cached = await this.cache.getCachedValue({
                     label: lookupKey,
@@ -103,14 +102,53 @@ class CompositeFieldManager {
                     parentContext: lookupKey,
                     cache_label: lookupKey
                 });
+                console.log(`[CompositeFieldManager] 📦 Cache Result for "${lookupKey}":`, cached);
             } else {
                 // Standard Field Lookup
                 cached = await this.cache.getCachedValue(field);
             }
 
             if (cached && cached.value) {
+                console.log(`[CompositeFieldManager] ✅ Found Value:`, cached.value);
                 if (this.fill(field.element, cached.value)) {
                     return { filled: true, source: 'cache', value: cached.value };
+                }
+            } else {
+                console.log(`[CompositeFieldManager] ❌ No Cache Found/Value Empty`);
+            }
+        }
+
+
+
+        // STRATEGY B: Skill Matching (User Resume Data)
+        if (type === 'skills' && matchedSkills.length > 0) {
+            if (this.fill(field.element, matchedSkills)) {
+                // Auto-Cache successful user data mapping for future speed
+                if (this.cache) this.cache.cacheSelection(field, field.label, matchedSkills);
+                return { filled: true, source: 'user_skills', value: matchedSkills };
+            }
+        }
+
+        // STRATEGY C: Profile Entity (Work/Education)
+        if (this.store && (type === 'work' || type === 'education')) {
+            const data = groupEntity || this.store.getByIndex(type, index);
+            if (data) {
+                const valueToFill = this.extractValueFromEntity(data, field);
+                if (valueToFill) {
+                    if (this.fill(field.element, valueToFill)) {
+                        if (this.cache) this.cache.cacheSelection(field, field.label, valueToFill);
+                        return { filled: true, source: 'profile', value: valueToFill };
+                    }
+                }
+            }
+        }
+
+        // STRATEGY D: Global Memory (Cross-Site Facts)
+        if (window.GlobalMemory) {
+            const memRes = await window.GlobalMemory.resolveField(field);
+            if (memRes && memRes.value) {
+                if (this.fill(field.element, memRes.value)) {
+                    return { filled: true, source: 'global_memory', value: memRes.value };
                 }
             }
         }
@@ -118,341 +156,308 @@ class CompositeFieldManager {
         return { filled: false, source: 'pending_ai' };
     }
 
-    // STRATEGY B: Skill Matching (User Resume Data)
-    if(type === 'skills' && matchedSkills.length > 0) {
-    if (this.fill(field.element, matchedSkills)) {
-        // Auto-Cache successful user data mapping for future speed
-        if (this.cache) this.cache.cacheSelection(field, field.label, matchedSkills);
-        return { filled: true, source: 'user_skills', value: matchedSkills };
-    }
-}
+    /**
+     * Map Entity Property to Field
+     * @private
+     */
+    extractValueFromEntity(data, field) {
+        if (typeof data !== 'object' || data === null) return data;
 
-// STRATEGY C: Profile Entity (Work/Education)
-if (this.store && (type === 'work' || type === 'education')) {
-    const data = groupEntity || this.store.getByIndex(type, index);
-    if (data) {
-        const valueToFill = this.extractValueFromEntity(data, field);
-        if (valueToFill) {
-            if (this.fill(field.element, valueToFill)) {
-                if (this.cache) this.cache.cacheSelection(field, field.label, valueToFill);
-                return { filled: true, source: 'profile', value: valueToFill };
-            }
+        // Use ML Label or Fallback
+        const key = field.ml_prediction?.label || field.short_label;
+        if (key && data[key] !== undefined) return data[key];
+
+        return null;
+    }
+
+    /**
+     * Universal Fill Method.
+     * Smartly handles various input types and value formats (Single vs Array).
+     * 
+     * @param {HTMLElement} element 
+     * @param {any} value - String or Array of Strings
+     * @returns {boolean} Success status
+     */
+    fill(element, value) {
+        if (value === undefined || value === null) return false;
+
+        // Normalize value to Array for consistent processing
+        const values = Array.isArray(value) ? value : [value];
+        const type = (element.type || '').toLowerCase();
+        const tagName = element.tagName;
+
+        // 1. Checkbox Group
+        if (type === 'checkbox') {
+            return this.fillCheckboxGroup(element, values);
         }
-    }
-}
 
-// STRATEGY D: Global Memory (Cross-Site Facts)
-if (window.GlobalMemory) {
-    const memRes = await window.GlobalMemory.resolveField(field);
-    if (memRes && memRes.value) {
-        if (this.fill(field.element, memRes.value)) {
-            return { filled: true, source: 'global_memory', value: memRes.value };
+        // 2. Multi-Select Dropdown
+        if (tagName === 'SELECT' && element.multiple) {
+            return this.fillMultiSelect(element, values);
         }
-    }
-}
 
-return { filled: false, source: 'pending_ai' };
-    }
+        // 3. Single Text Input / Textarea
+        if (values.length > 0) {
+            // If multiple values map to a single text input, join them.
+            // e.g., "Skills" text box -> "Java, Python, React"
+            return this.fillJoinedText(element, values);
+        }
 
-/**
- * Map Entity Property to Field
- * @private
- */
-extractValueFromEntity(data, field) {
-    if (typeof data !== 'object' || data === null) return data;
-
-    // Use ML Label or Fallback
-    const key = field.ml_prediction?.label || field.short_label;
-    if (key && data[key] !== undefined) return data[key];
-
-    return null;
-}
-
-/**
- * Universal Fill Method.
- * Smartly handles various input types and value formats (Single vs Array).
- * 
- * @param {HTMLElement} element 
- * @param {any} value - String or Array of Strings
- * @returns {boolean} Success status
- */
-fill(element, value) {
-    if (value === undefined || value === null) return false;
-
-    // Normalize value to Array for consistent processing
-    const values = Array.isArray(value) ? value : [value];
-    const type = (element.type || '').toLowerCase();
-    const tagName = element.tagName;
-
-    // 1. Checkbox Group
-    if (type === 'checkbox') {
-        return this.fillCheckboxGroup(element, values);
-    }
-
-    // 2. Multi-Select Dropdown
-    if (tagName === 'SELECT' && element.multiple) {
-        return this.fillMultiSelect(element, values);
-    }
-
-    // 3. Single Text Input / Textarea
-    if (values.length > 0) {
-        // If multiple values map to a single text input, join them.
-        // e.g., "Skills" text box -> "Java, Python, React"
-        return this.fillJoinedText(element, values);
-    }
-
-    return false;
-}
-
-// ============================================
-// 🔧 DOM MANIPULATION & MATCHING UTILITIES
-// ============================================
-
-fillSingleValue(element, value) {
-    try {
-        element.value = value;
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-        element.dispatchEvent(new Event('change', { bubbles: true }));
-        element.dispatchEvent(new Event('blur', { bubbles: true })); // Ensure validation trigger
-        return true;
-    } catch (e) {
         return false;
     }
-}
 
-fillCheckboxGroup(triggerElement, values) {
-    const name = triggerElement.name;
+    // ============================================
+    // 🔧 DOM MANIPULATION & MATCHING UTILITIES
+    // ============================================
 
-    // Robust query: If name is missing, only target the element itself.
-    const checkboxes = name
-        ? document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(name)}"]`)
-        : [triggerElement];
+    fillSingleValue(element, value) {
+        try {
+            element.value = value;
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+            element.dispatchEvent(new Event('blur', { bubbles: true })); // Ensure validation trigger
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
 
-    let filledCount = 0;
+    fillCheckboxGroup(triggerElement, values) {
+        const name = triggerElement.name;
 
-    checkboxes.forEach(box => {
-        const label = this.getLabelFor(box);
-        const boxVal = box.value;
+        // Robust query: If name is missing, only target the element itself.
+        const checkboxes = name
+            ? document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(name)}"]`)
+            : [triggerElement];
 
-        // Fuzzy Match: Check against both the underlying value and user-visible label
-        const isMatch = values.some(target =>
-            this.fuzzyMatch(boxVal, target) || this.fuzzyMatch(label, target)
-        );
+        let filledCount = 0;
 
-        if (isMatch) {
-            if (!box.checked) {
-                box.click();
-                // Fallback force check if JS blocked click or framework state is stubborn
-                if (!box.checked) box.checked = true;
-                // Trigger change to notify React/Vue/Angular
-                box.dispatchEvent(new Event('change', { bubbles: true }));
+        checkboxes.forEach(box => {
+            const label = this.getLabelFor(box);
+            const boxVal = box.value;
+
+            // Fuzzy Match: Check against both the underlying value and user-visible label
+            const isMatch = values.some(target =>
+                this.fuzzyMatch(boxVal, target) || this.fuzzyMatch(label, target)
+            );
+
+            if (isMatch) {
+                if (!box.checked) {
+                    box.click();
+                    // Fallback force check if JS blocked click or framework state is stubborn
+                    if (!box.checked) box.checked = true;
+                    // Trigger change to notify React/Vue/Angular
+                    box.dispatchEvent(new Event('change', { bubbles: true }));
+                    box.dispatchEvent(new Event('input', { bubbles: true }));
+                    filledCount++;
+                }
+            }
+        });
+
+        return filledCount > 0;
+    }
+
+    fillMultiSelect(select, values) {
+        let filledCount = 0;
+        Array.from(select.options).forEach(opt => {
+            const isMatch = values.some(target =>
+                this.fuzzyMatch(opt.value, target) || this.fuzzyMatch(opt.text, target)
+            );
+
+            if (isMatch && !opt.selected) {
+                opt.selected = true;
                 filledCount++;
             }
+        });
+
+        if (filledCount > 0) {
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            // Some frameworks need 'input' too
+            select.dispatchEvent(new Event('input', { bubbles: true }));
         }
-    });
+        return filledCount > 0;
+    }
 
-    return filledCount > 0;
-}
+    fillJoinedText(element, values) {
+        const tagName = (element.tagName || '').toLowerCase();
+        // Use newlines for Textareas, commas for standard inputs
+        const separator = tagName === 'textarea' ? '\n' : ', ';
 
-fillMultiSelect(select, values) {
-    let filledCount = 0;
-    Array.from(select.options).forEach(opt => {
-        const isMatch = values.some(target =>
-            this.fuzzyMatch(opt.value, target) || this.fuzzyMatch(opt.text, target)
-        );
+        // Deduplicate values before joining
+        const uniqueValues = [...new Set(values)];
 
-        if (isMatch && !opt.selected) {
-            opt.selected = true;
-            filledCount++;
+        element.value = uniqueValues.join(separator);
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+    }
+
+    getLabelFor(el) {
+        // 1. Explicit <label for="id">
+        if (el.labels && el.labels.length > 0) return el.labels[0].innerText;
+
+        // 2. Parent <label> wrapper
+        const parentLabel = el.closest('label');
+        if (parentLabel) return parentLabel.innerText;
+
+        // 3. Aria-Label
+        const aria = el.getAttribute('aria-label');
+        if (aria) return aria;
+
+        // 4. Title attribute
+        return el.title || '';
+    }
+
+    /**
+     * Advanced Fuzzy Matching Algorithm.
+     * Uses Tokenization + Jaccard Index + Levenshtein Distance (for short words).
+     * 
+     * @param {string} a - Candidate string (from DOM)
+     * @param {string} b - Target string (from Cache/Profile)
+     * @returns {boolean} True if match is confident
+     */
+    fuzzyMatch(a, b) {
+        if (!a || !b) return false;
+        const strA = String(a).toLowerCase().trim();
+        const strB = String(b).toLowerCase().trim();
+
+        if (strA === strB) return true;
+
+        // 1. Direct Substring Match (High Confidence)
+        // e.g. "Reaction" vs "React" -> careful here, maybe too aggressive? 
+        // "Javascript" vs "script" is bad. "Javascript" vs "Java" is bad.
+        // Better: Word boundary check.
+
+        // 2. Token Jaccard (Robust for multi-word)
+        const normalize = (s) => s.replace(/[^\w\s+.]/g, '').split(/[\s,._-]+/).filter(Boolean);
+        const tokensA = new Set(normalize(strA));
+        const tokensB = new Set(normalize(strB));
+
+        if (tokensA.size === 0 || tokensB.size === 0) return false;
+
+        let intersection = 0;
+        tokensA.forEach(t => {
+            // Check exact token match OR Levenshtein for typos
+            if ([...tokensB].some(bt => bt === t || this.levenshteinDistance(t, bt) <= 1)) {
+                intersection++;
+            }
+        });
+
+        const union = new Set([...tokensA, ...tokensB]).size;
+        const jaccard = intersection / union;
+
+        // Threshold: 0.6 means vast majority of words match
+        if (jaccard >= 0.6) return true;
+
+        // 3. Fallback for Single Short Words (e.g. "Node" vs "Nodejs")
+        if (tokensA.size === 1 && tokensB.size === 1) {
+            const tA = [...tokensA][0];
+            const tB = [...tokensB][0];
+            if (tA.includes(tB) || tB.includes(tA)) return true;
         }
-    });
 
-    if (filledCount > 0) {
-        select.dispatchEvent(new Event('change', { bubbles: true }));
+        return false;
     }
-    return filledCount > 0;
-}
 
-fillJoinedText(element, values) {
-    const tagName = (element.tagName || '').toLowerCase();
-    // Use newlines for Textareas, commas for standard inputs
-    const separator = tagName === 'textarea' ? '\n' : ', ';
+    /**
+     * Calculate Levenshtein Distance for typo tolerance
+     */
+    levenshteinDistance(a, b) {
+        if (a.length === 0) return b.length;
+        if (b.length === 0) return a.length;
 
-    // Deduplicate values before joining
-    const uniqueValues = [...new Set(values)];
+        const matrix = [];
 
-    element.value = uniqueValues.join(separator);
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-    element.dispatchEvent(new Event('change', { bubbles: true }));
-    return true;
-}
-
-getLabelFor(el) {
-    // 1. Explicit <label for="id">
-    if (el.labels && el.labels.length > 0) return el.labels[0].innerText;
-
-    // 2. Parent <label> wrapper
-    const parentLabel = el.closest('label');
-    if (parentLabel) return parentLabel.innerText;
-
-    // 3. Aria-Label
-    const aria = el.getAttribute('aria-label');
-    if (aria) return aria;
-
-    // 4. Title attribute
-    return el.title || '';
-}
-
-/**
- * Advanced Fuzzy Matching Algorithm.
- * Uses Tokenization + Jaccard Index + Levenshtein Distance (for short words).
- * 
- * @param {string} a - Candidate string (from DOM)
- * @param {string} b - Target string (from Cache/Profile)
- * @returns {boolean} True if match is confident
- */
-fuzzyMatch(a, b) {
-    if (!a || !b) return false;
-    const strA = String(a).toLowerCase().trim();
-    const strB = String(b).toLowerCase().trim();
-
-    if (strA === strB) return true;
-
-    // 1. Direct Substring Match (High Confidence)
-    // e.g. "Reaction" vs "React" -> careful here, maybe too aggressive? 
-    // "Javascript" vs "script" is bad. "Javascript" vs "Java" is bad.
-    // Better: Word boundary check.
-
-    // 2. Token Jaccard (Robust for multi-word)
-    const normalize = (s) => s.replace(/[^\w\s+.]/g, '').split(/[\s,._-]+/).filter(Boolean);
-    const tokensA = new Set(normalize(strA));
-    const tokensB = new Set(normalize(strB));
-
-    if (tokensA.size === 0 || tokensB.size === 0) return false;
-
-    let intersection = 0;
-    tokensA.forEach(t => {
-        // Check exact token match OR Levenshtein for typos
-        if ([...tokensB].some(bt => bt === t || this.levenshteinDistance(t, bt) <= 1)) {
-            intersection++;
+        for (let i = 0; i <= b.length; i++) {
+            matrix[i] = [i];
         }
-    });
 
-    const union = new Set([...tokensA, ...tokensB]).size;
-    const jaccard = intersection / union;
+        for (let j = 0; j <= a.length; j++) {
+            matrix[0][j] = j;
+        }
 
-    // Threshold: 0.6 means vast majority of words match
-    if (jaccard >= 0.6) return true;
-
-    // 3. Fallback for Single Short Words (e.g. "Node" vs "Nodejs")
-    if (tokensA.size === 1 && tokensB.size === 1) {
-        const tA = [...tokensA][0];
-        const tB = [...tokensB][0];
-        if (tA.includes(tB) || tB.includes(tA)) return true;
-    }
-
-    return false;
-}
-
-/**
- * Calculate Levenshtein Distance for typo tolerance
- */
-levenshteinDistance(a, b) {
-    if (a.length === 0) return b.length;
-    if (b.length === 0) return a.length;
-
-    const matrix = [];
-
-    for (let i = 0; i <= b.length; i++) {
-        matrix[i] = [i];
-    }
-
-    for (let j = 0; j <= a.length; j++) {
-        matrix[0][j] = j;
-    }
-
-    for (let i = 1; i <= b.length; i++) {
-        for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                matrix[i][j] = matrix[i - 1][j - 1];
-            } else {
-                matrix[i][j] = Math.min(
-                    matrix[i - 1][j - 1] + 1, // substitution
-                    Math.min(
-                        matrix[i][j - 1] + 1, // insertion
-                        matrix[i - 1][j] + 1  // deletion
-                    )
-                );
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1, // substitution
+                        Math.min(
+                            matrix[i][j - 1] + 1, // insertion
+                            matrix[i - 1][j] + 1  // deletion
+                        )
+                    );
+                }
             }
         }
-    }
-    return matrix[b.length][a.length];
-}
-
-/**
- * Determine Field Type from Metadata
- */
-groupFieldsBySection(fields) {
-    const groups = {};
-    fields.forEach(field => {
-        const type = this.determineType(field);
-        // Default index 0 if not present, but usually IndexingService provides it.
-        const index = this.indexer.getIndex(field, type);
-
-        const key = `${type}_${index}`;
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(field);
-    });
-    return groups;
-}
-
-determineType(field) {
-    // Priority 1: Architecture V2 Route Flags (The Source of Truth)
-    if (field.instance_type === 'ATOMIC_MULTI') {
-        // Use Cache Label if available (e.g. "interests")
-        if (field.cache_label && !field.cache_label.includes('unknown')) return field.cache_label;
-
-        // Or infer from name/label
-        const label = (field.label || field.name || '').toLowerCase();
-        if (label.includes('interest')) return 'interests';
-
-        return 'skills';
-    }
-    if (field.instance_type === 'SECTIONAL_MULTI') {
-        // Distinguish Work vs Edu based on label keywords
-        // This is a sub-classification within the sectional type
-        const label = (field.label || '').toLowerCase();
-        if (/school|degree|major|education|university|college|gpa|institution/.test(label)) return 'education';
-        return 'work';
+        return matrix[b.length][a.length];
     }
 
-    // Priority 2: ML Prediction (High Accuracy)
-    if (field.ml_prediction) {
-        const label = field.ml_prediction.label;
+    /**
+     * Determine Field Type from Metadata
+     */
+    groupFieldsBySection(fields) {
+        const groups = {};
+        fields.forEach(field => {
+            const type = this.determineType(field);
+            // Default index 0 if not present, but usually IndexingService provides it.
+            const index = this.indexer.getIndex(field, type);
 
-        // Check centralized FieldTypes if available
-        if (window.FieldTypes && typeof window.FieldTypes.getCategoryForField === 'function') {
-            const category = window.FieldTypes.getCategoryForField(label);
-            if (category === 'work_experience') return 'work';
-            if (category === 'education') return 'education';
-            if (category === 'skills') return 'skills';
+            const key = `${type}_${index}`;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(field);
+        });
+        return groups;
+    }
+
+    determineType(field) {
+        // Priority 1: Architecture V2 Route Flags (The Source of Truth)
+        if (field.instance_type === 'ATOMIC_MULTI') {
+            // Use Cache Label if available (e.g. "interests")
+            if (field.cache_label && !field.cache_label.includes('unknown')) return field.cache_label;
+
+            // Or infer from name/label
+            const label = (field.label || field.name || '').toLowerCase();
+            if (label.includes('interest')) return 'interests';
+
+            return 'skills';
+        }
+        if (field.instance_type === 'SECTIONAL_MULTI') {
+            // Distinguish Work vs Edu based on label keywords
+            // This is a sub-classification within the sectional type
+            const label = (field.label || '').toLowerCase();
+            if (/school|degree|major|education|university|college|gpa|institution/.test(label)) return 'education';
+            return 'work';
         }
 
-        // Implicit Label Mapping
-        if (['job_title', 'company_name', 'job_description', 'employer_name'].includes(label)) return 'work';
-        if (['institution_name', 'degree_type', 'major', 'gpa', 'school_name'].includes(label)) return 'education';
-        if (label === 'skills') return 'skills';
+        // Priority 2: ML Prediction (High Accuracy)
+        if (field.ml_prediction) {
+            const label = field.ml_prediction.label;
+
+            // Check centralized FieldTypes if available
+            if (window.FieldTypes && typeof window.FieldTypes.getCategoryForField === 'function') {
+                const category = window.FieldTypes.getCategoryForField(label);
+                if (category === 'work_experience') return 'work';
+                if (category === 'education') return 'education';
+                if (category === 'skills') return 'skills';
+            }
+
+            // Implicit Label Mapping
+            if (['job_title', 'company_name', 'job_description', 'employer_name'].includes(label)) return 'work';
+            if (['institution_name', 'degree_type', 'major', 'gpa', 'school_name'].includes(label)) return 'education';
+            if (label === 'skills') return 'skills';
+        }
+
+        // Priority 3: Heuristic Keyword Analysis (Fallback)
+        const label = (field.label || '').toLowerCase();
+        if (/skill|technology|programming|language|framework/.test(label)) return 'skills';
+        if (/school|degree|major|education|university/.test(label)) return 'education';
+        if (/employer|company|job title|work experience/.test(label)) return 'work';
+
+        // Default to 'work' if ambiguous but grouped? No, safer to return 'misc' or null.
+        return 'misc';
     }
-
-    // Priority 3: Heuristic Keyword Analysis (Fallback)
-    const label = (field.label || '').toLowerCase();
-    if (/skill|technology|programming|language|framework/.test(label)) return 'skills';
-    if (/school|degree|major|education|university/.test(label)) return 'education';
-    if (/employer|company|job title|work experience/.test(label)) return 'work';
-
-    // Default to 'work' if ambiguous but grouped? No, safer to return 'misc' or null.
-    return 'misc';
-}
 }
 
 // Export for Global Usage
