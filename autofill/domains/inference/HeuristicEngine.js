@@ -677,7 +677,8 @@ class HeuristicEngine {
                 /\bhow[_\-\s]?many[_\-\s]?years\b/i
             ],
             confidence: 0.95,
-            category: 'work'
+            category: 'work',
+            negative: /\b(currently[_\-\s]?employed|are[_\-\s]?you[_\-\s]?employed)\b/i
         },
 
         job_type_preference: {

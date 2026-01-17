@@ -87,11 +87,40 @@ class CompositeFieldManager {
     }
 
     determineType(field) {
-        // Fallback if prediction missing (should use FieldRouter logic)
+        // 1. Use ML Prediction if available (Most Accurate)
+        if (field.ml_prediction) {
+            const label = field.ml_prediction.label;
+
+            // Check category via FieldTypes if available
+            if (window.FieldTypes && window.FieldTypes.getCategoryForField) {
+                const category = window.FieldTypes.getCategoryForField(label);
+                if (category === 'work_experience') return 'work';
+                if (category === 'education') return 'education';
+                if (category === 'skills') return 'skills';
+            }
+
+            // Fallback: Label-based check
+            if (label === 'years_experience') return 'work';
+            if (['job_title', 'company_name', 'job_description'].includes(label)) return 'work';
+            if (['institution_name', 'degree_type', 'major', 'gpa'].includes(label)) return 'education';
+            if (label === 'skills') return 'skills';
+        }
+
+        // 2. Heuristic Rules (Fallback)
         const label = (field.label || '').toLowerCase();
-        if (/school|degree|major|education/i.test(label)) return 'education';
-        if (/skill/i.test(label)) return 'skills';
-        return 'work'; // Default
+
+        // Strict Education check
+        if (/school|degree|major|education|university|college|gpa/.test(label)) return 'education';
+
+        // Strict Skills check
+        if (/skill|technology/i.test(label)) return 'skills';
+
+        // Strict Work check (Only if explicitly work-related)
+        if (/employer|company|job title|work experience|employment history/.test(label)) return 'work';
+
+        // 3. Default: Return NULL or 'misc' to avoid grouping unrelated fields
+        // defaulting to 'work' was causing "Notice Period" etc to be grouped into work_0
+        return null;
     }
 
     /**
