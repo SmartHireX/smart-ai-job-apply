@@ -94,6 +94,12 @@ class FieldRoutingPatterns {
         const ctx = context.toLowerCase();
         const t = (type || 'text').toLowerCase();
 
+        // 0. Explicit Structural Indexing (Strongest Signal)
+        // e.g. "work_0_description", "job-1-title", "school_2_name"
+        if (/[\b_.-](work|job|edu|school|proj|vol|cert)[\b_.-]?\d+[\b_.-]/i.test(ctx)) {
+            return true;
+        }
+
         // 1. Explicit Multi-Value Types
         if (t === 'checkbox' || t === 'select-multiple') {
             return true;
@@ -119,7 +125,10 @@ class FieldRoutingPatterns {
             'job', 'employment', 'employer', 'work experience', 'position',
             'education', 'school', 'university', 'college', 'degree', 'institution',
             'project', 'volunteer', 'certification', 'training',
-            'description', 'summary', 'responsibilities', 'duties'
+            // Specific compound terms only - avoids "description" capture
+            'job description', 'work description', 'project description',
+            'summary of responsibilities', 'duties and responsibilities',
+            'job_description', 'work_description'
         ];
 
         // Check for presence of any section keyword
