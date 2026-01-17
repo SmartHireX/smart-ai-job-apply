@@ -305,6 +305,38 @@ class FieldUtils {
 
         return null;
     }
+    /**
+     * Parse a numeric value from a string (handles ranges like "3-5", "5+", etc.)
+     * @param {string|number} value - Input value
+     * @returns {number|null} Parsed number or null
+     */
+    static parseNumericValue(value) {
+        if (value === null || value === undefined || value === '') return null;
+        if (typeof value === 'number') return value;
+
+        const str = String(value).trim();
+
+        // 1. Check for Range "3-5"
+        const rangeMatch = str.match(/^(\d+)\s*-\s*(\d+)$/);
+        if (rangeMatch) {
+            const min = parseInt(rangeMatch[1], 10);
+            const max = parseInt(rangeMatch[2], 10);
+            return Math.round((min + max) / 2); // Return Average
+        }
+
+        // 2. Check for "5+" or "10 plus" or ">5"
+        const plusMatch = str.match(/^(\d+)\s*(\+|plus|more)|^[><]\s*=?\s*(\d+)$/i);
+        if (plusMatch) {
+            return parseInt(plusMatch[1] || plusMatch[3], 10);
+        }
+
+        // 3. Check for specific text cases
+        if (/less than|under/i.test(str)) return 0;
+
+        // 4. Try parsing standard float
+        const parsed = parseFloat(str.replace(/[^0-9.-]/g, ''));
+        return isNaN(parsed) ? null : parsed;
+    }
 }
 
 // Legacy compatibility - expose globally

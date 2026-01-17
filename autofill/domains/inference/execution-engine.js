@@ -245,6 +245,22 @@ class ExecutionEngine {
                 console.warn(`[ExecutionEngine] Skipping value set for file input: ${element.id || element.name}`);
                 return;
             }
+
+            // SMART NUMBER PARSING (Fix for "3-5" -> Number)
+            if (type === 'number') {
+                if (window.FieldUtils && window.FieldUtils.parseNumericValue) {
+                    const parsed = window.FieldUtils.parseNumericValue(value);
+                    if (parsed !== null) {
+                        // console.log(`🔢 [SmartNumber] Converted "${value}" -> ${parsed}`);
+                        value = parsed;
+                    } else if (isNaN(Number(value))) {
+                        console.warn(`⚠️ [SmartNumber] Failed to parse numeric value: "${value}"`);
+                        // Don't set incompatible value to avoid crash
+                        return;
+                    }
+                }
+            }
+
             console.log(`⚙️ [SetValue] type="${type}", tagName="${tagName}", value="${value}"`);
             this.nativeValueSetter.call(element, value);
         } else if (tagName === 'textarea' && this.nativeTextAreaSetter) {
