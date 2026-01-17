@@ -446,8 +446,10 @@ class PipelineOrchestrator {
                     return;
                 }
 
-                if (scope === 'SECTION' && isRadio) {
-                    // Section-scoped radios (e.g. "Did you manage a team?" inside Job 1) 
+                // SECTION SCOPE: Isolated Logic
+                // Route: ATOMIC_SINGLE (Radio OR Select) inside Section -> groups.heuristic
+                if (scope === 'SECTION' && (isRadio || isSelect)) {
+                    // Section-scoped structured inputs (e.g. "Did you manage a team?" or "Notice Period")
                     // must be isolated in Heuristic group to avoid pollution.
                     this.assertAllowedResolver(type, scope, 'HeuristicEngine');
                     groups.heuristic.push(field);
