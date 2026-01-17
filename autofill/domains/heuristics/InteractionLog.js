@@ -378,6 +378,16 @@ function findBestKeyMatch(fieldKey, cache, threshold = 0.7, context = {}) {
         return { matchedKey: fieldKey, similarity: 1.0, value: cache[fieldKey], source: 'exact' };
     }
 
+    // 1.5 STRICT LABEL MATCH (User Suggestion)
+    // Sometimes the generated key is complex, but the simple label strictly matches a cache key.
+    // e.g. Label="Notice Period" -> Key="notice_period"
+    if (context.label) {
+        const simpleLabelKey = context.label.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
+        if (cache[simpleLabelKey]) {
+            return { matchedKey: simpleLabelKey, similarity: 0.99, value: cache[simpleLabelKey], source: 'exact_label' };
+        }
+    }
+
     // 2. ALIAS REGISTRY (Known mappings - 95% confidence)
     const aliasMatch = checkAliasRegistry(fieldKey, cache);
     if (aliasMatch) {
