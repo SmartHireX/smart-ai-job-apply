@@ -259,6 +259,9 @@ class CompositeFieldManager {
 
     fillMultiSelect(select, values) {
         let filledCount = 0;
+        // Keep track of first match to scroll to
+        let firstMatchOption = null;
+
         Array.from(select.options).forEach(opt => {
             const isMatch = values.some(target =>
                 this.fuzzyMatch(opt.value, target) || this.fuzzyMatch(opt.text, target)
@@ -270,19 +273,24 @@ class CompositeFieldManager {
                 // 2. Attribute Set (Force DOM update)
                 opt.setAttribute('selected', 'selected');
 
-                // 3. Dispatch Click (for custom listeners)
-                // opt.dispatchEvent(new Event('click', { bubbles: true })); 
-                // Careful: Click might toggle it OFF if logic exists. 
-                // Safe to just set property in Vanilla.
-
+                if (!firstMatchOption) firstMatchOption = opt;
                 filledCount++;
             }
         });
 
         if (filledCount > 0) {
             // Force redraw/focus potentially
-            // select.focus(); 
-            // select.blur();
+            try {
+                // select.focus();
+                // select.blur();
+
+                // 3. Scroll to first match (Forces layout calc)
+                if (firstMatchOption) {
+                    select.scrollTop = firstMatchOption.offsetTop;
+                }
+            } catch (e) {
+                // ignore
+            }
 
             select.dispatchEvent(new Event('change', { bubbles: true }));
             // Some frameworks need 'input' too
