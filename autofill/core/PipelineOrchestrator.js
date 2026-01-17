@@ -11,7 +11,7 @@ class PipelineOrchestrator {
     constructor() {
         // Use HybridClassifier for ensemble classification (Heuristic + Neural)
         // HybridClassifier handles its own dependencies (HeuristicEngine/NeuralClassifierV8) internally
-        this.classifier = window.HybridClassifier ? new window.HybridClassifier({ debug: false }) : null;
+        this.classifier = window.HybridClassifier ? new window.HybridClassifier({ debug: true }) : null;
 
         // Pipeline Stages
         this.pipeline = {
