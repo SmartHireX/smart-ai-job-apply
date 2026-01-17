@@ -152,7 +152,7 @@ class HybridClassifier {
         }
 
         // Ensure weights are loaded (Lazy Load Pattern)
-        if (!classifier.isReady && !this._modelLoadingPromise) {
+        if (typeof chrome !== 'undefined' && !classifier.isReady && !this._modelLoadingPromise) {
             this._modelLoadingPromise = (async () => {
                 try {
                     const url = chrome.runtime.getURL('autofill/domains/inference/model_v8.json');
@@ -497,7 +497,7 @@ class HybridClassifier {
     }
 
     _log(msg) {
-        if (this._debug) console.log(`[HybridClassifier] ${msg}`);
+        // if (this._debug) console.log(`[HybridClassifier] ${msg}`);
     }
 
     _logError(msg, err) {

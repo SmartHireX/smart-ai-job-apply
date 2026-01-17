@@ -74,6 +74,10 @@ class NeuralClassifierV8 {
         this._log('NeuralClassifier V8 (Multi-Label) initialized');
     }
 
+    get isReady() {
+        return this._W1 !== null;
+    }
+
     // ========================================================================
     // WEIGHT INITIALIZATION (He Normal)
     // ========================================================================
