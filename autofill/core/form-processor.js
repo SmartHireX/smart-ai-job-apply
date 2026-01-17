@@ -53,11 +53,7 @@ class FormProcessor {
     static async executeFieldRouterPipeline() {
         // console.log('🚀 [FormProcessor] Starting FANG-Level Pipeline (Stealth Mode)...');
 
-        // Initialize neural classifier
-        if (!window.neuralClassifier) {
-            window.neuralClassifier = new window.NeuralClassifier();
-            await window.neuralClassifier.init();
-        }
+
 
         // Get context
         const [resumeData, smartMemory] = await Promise.all([
@@ -266,7 +262,7 @@ class FormProcessor {
             ready: this.isReady(),
             formAnalyzer: window.FormAnalyzer !== undefined,
             resumeManager: window.ResumeManager !== undefined,
-            neuralClassifier: window.neuralClassifier !== undefined,
+            neuralClassifier: window.HybridClassifier !== undefined,
             batchProcessor: window.BatchProcessor !== undefined,
             phase0: window.Phase0Classification !== undefined,
             phase1: window.Phase1InstantFill !== undefined,
