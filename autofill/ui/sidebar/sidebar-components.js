@@ -1553,9 +1553,21 @@ function attachSelfCorrectionTrigger(element) {
 
         let handledByInteractionLog = false;
 
+        // Create rich field object to pass architectural metadata (instance_type)
+        const fieldObj = {
+            id: element.id,
+            name: element.name,
+            tagName: element.tagName,
+            type: element.type,
+            cache_label: cacheLabel,
+            instance_type: element.getAttribute('instance_type'), // CRITICAL: Read from DOM
+            scope: element.getAttribute('scope') || 'GLOBAL',
+            element: element
+        };
+
         // Strategy A: Non-Text Inputs (always explicit selection)
         if (isNonTextInput && window.SelectionCache) {
-            await window.SelectionCache.cacheSelection(element, label, newValue);
+            await window.SelectionCache.cacheSelection(fieldObj, label, newValue);
             // console.log(`💾 [SelectionCache] Learned: "${label}" → ${newValue} (Non-Text)`);
             handledByInteractionLog = true;
         }
