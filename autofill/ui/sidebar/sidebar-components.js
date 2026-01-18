@@ -1818,41 +1818,43 @@ function toggleChatInterface() {
     header.id = 'smarthirex-chat-header';
     header.style.cssText = `
         padding: 16px 20px;
-        background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+        background: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
         color: white;
         display: flex;
         justify-content: space-between;
         align-items: center;
         cursor: grab;
         user-select: none;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     `;
     header.innerHTML = `
         <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.15); border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);">
-                <div style="position: absolute; inset: -4px; background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%); border-radius: 50%; opacity: 0.6; animation: iconGlow 3s infinite alternate;"></div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: white; filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));">
+            <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <div style="position: absolute; inset: -4px; background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%); border-radius: 50%; opacity: 0.8; animation: iconGlow 3s infinite alternate;"></div>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: white; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
                     <path d="M12 2L2 7L12 12L22 7L12 2Z" />
                     <path d="M2 17L12 22L22 17" />
                     <path d="M2 12L12 17L22 12" />
                 </svg>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 2px;">
-                <span style="font-weight: 800; font-size: 16px; letter-spacing: -0.01em; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Nova AI</span>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+                <span style="font-weight: 800; font-size: 17px; letter-spacing: -0.02em; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">Nova Assistant</span>
                 <div style="display: flex; align-items: center; gap: 6px;">
-                    <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px rgba(16, 185, 129, 0.8), 0 0 16px rgba(16, 185, 129, 0.4); animation: statusPulse 2s infinite;"></div>
-                    <span style="font-size: 11px; font-weight: 600; opacity: 0.9; letter-spacing: 0.02em;">Online & Ready</span>
+                    <div style="width: 8px; height: 8px; background: #34D399; border-radius: 50%; box-shadow: 0 0 8px rgba(52, 211, 153, 0.8); animation: statusPulse 2s infinite;"></div>
+                    <span style="font-size: 12px; font-weight: 600; opacity: 0.95; letter-spacing: 0.02em;">Online & Ready</span>
                 </div>
             </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-            <button id="smarthirex-chat-close" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.1); color: white; cursor: pointer; width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; hover: background: rgba(255,255,255,0.25);">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            <button id="smarthirex-chat-close" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); color: white; cursor: pointer; width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; backdrop-filter: blur(4px);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
         </div>
         <style>
             @keyframes iconGlow { 0% { opacity: 0.4; transform: scale(0.9); } 100% { opacity: 0.8; transform: scale(1.1); } }
-            @keyframes statusPulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
-            #smarthirex-chat-close:hover { background: rgba(255,255,255,0.25) !important; transform: translateY(-1px); }
+            @keyframes statusPulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+            #smarthirex-chat-close:hover { background: rgba(255,255,255,0.35) !important; transform: scale(1.05); }
+            #smarthirex-chat-close:active { transform: scale(0.95); }
         </style>
     `;
 
