@@ -123,7 +123,7 @@ class GlobalMemory {
             const updatedMemory = { ...currentMemory, ...newEntries };
 
             await chrome.storage.local.set({ smartMemory: updatedMemory });
-            // console.log(`💾 [SmartMemory] Updated cache keys:`, Object.keys(newEntries));
+            console.log(`💾 [GlobalMemory] Saved:`, newEntries);
             // console.log(`💾 [SmartMemory] Updated cache keys:`, newEntries);
         } catch (error) {
             console.warn('Failed to update smart memory:', error);
