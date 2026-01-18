@@ -434,18 +434,17 @@ function showAccordionSidebar(allFields) {
     allFields.forEach(item => {
         let element;
         try {
-            element = document.querySelector(item.selector);
+            // Use global safe selector helper
+            element = safeQuerySelector(item.selector);
         } catch (e) {
-            // Try escaping if it's an ID that starts with a digit
-            if (item.selector.startsWith('#')) {
-                try {
-                    const id = item.selector.substring(1);
-                    element = document.querySelector('#' + CSS.escape(id));
-                } catch (e2) { }
-            }
+            // Fallback just in case
         }
 
-        if (!element || !isFieldVisible(element)) return;
+        const fieldType = item.fieldData?.field_type || (element ? element.type : 'text');
+        const isFileUpload = fieldType === 'file' || (element && element.type === 'file');
+
+        // Allow file uploads to show even if hidden (often styled with custom buttons)
+        if (!element || (!isFieldVisible(element) && !isFileUpload)) return;
 
         // Smart Label Logic
         let label = item.fieldData?.label || getFieldLabel(element);
@@ -473,8 +472,9 @@ function showAccordionSidebar(allFields) {
         // Index stored separately for badge display
         const index = item.fieldData?.field_index ?? item.field_index ?? 0;
         const indexBadge = index > 0 ? index + 1 : null;
-        const fieldType = item.fieldData?.field_type || element.type || 'text';
-        const isFileUpload = fieldType === 'file' || element.type === 'file';
+
+        // REMOVED duplicate fieldType/isFileUpload declarations here
+        // Using values calculated above (lines 443-444)
 
         const value = item.value || element.value;
         const hasValue = value && String(value).trim().length > 0;

@@ -337,6 +337,111 @@ class FieldUtils {
         const parsed = parseFloat(str.replace(/[^0-9.-]/g, ''));
         return isNaN(parsed) ? null : parsed;
     }
+    /**
+     * Enhanced Value Setter for all field types (Radio, Checkbox, Date, Select)
+     * Derived from ExecutionEngine and sidebar-components logic.
+     */
+    static setFieldValue(element, value) {
+        if (!element) return;
+        const tagName = element.tagName.toLowerCase();
+        const type = (element.type || '').toLowerCase();
+
+        // 1. Radio Buttons (Complex Group Handling)
+        if (type === 'radio') {
+            const name = element.name;
+            if (name) {
+                const group = document.querySelectorAll(`input[name="${CSS.escape(name)}"]`);
+                const targetValue = String(value).toLowerCase().trim();
+                let bestMatch = null;
+
+                // Priority 1: Exact Value Match
+                for (const radio of group) {
+                    if (radio.value.toLowerCase().trim() === targetValue) {
+                        bestMatch = radio;
+                        break;
+                    }
+                }
+
+                // Priority 2: Label Match (Fuzzy)
+                if (!bestMatch) {
+                    for (const radio of group) {
+                        const label = this.getFieldLabel(radio).toLowerCase();
+                        if (label === targetValue || label.includes(targetValue) || targetValue.includes(label)) {
+                            bestMatch = radio;
+                            break;
+                        }
+                    }
+                }
+
+                if (bestMatch && !bestMatch.checked) {
+                    bestMatch.click();
+                    this.dispatchChangeEvents(bestMatch);
+                }
+            }
+            return;
+        }
+
+        // 2. Checkboxes
+        if (type === 'checkbox') {
+            const shouldBeChecked = value === true || value === 'true' || String(value).toLowerCase() === 'yes' || value === element.value;
+            if (element.checked !== shouldBeChecked) {
+                element.click();
+                this.dispatchChangeEvents(element);
+            }
+            return;
+        }
+
+        // 3. Dates (Smart Parsing)
+        if (type === 'date' || type === 'month') {
+            // Simplified date logic re-used from ExecutionEngine
+            let formattedValue = String(value).trim();
+            // Simple ISO check or pass-through
+            if (!/^\d{4}-\d{2}/.test(formattedValue)) {
+                const date = new Date(formattedValue);
+                if (!isNaN(date.getTime())) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    formattedValue = type === 'month' ? `${year}-${month}` : `${year}-${month}-${day}`;
+                }
+            }
+            this.setNativeValue(element, formattedValue);
+            this.dispatchChangeEvents(element);
+            return;
+        }
+
+        // 4. Select Dropdowns (Native Setter + Fuzzy Match)
+        if (tagName === 'select') {
+            // Try setting directly first
+            this.setNativeValue(element, value);
+
+            // Verify if it stuck (if value was text instead of ID)
+            if (!element.value || element.value === '') {
+                // Try Text Match
+                const targetText = String(value).toLowerCase().trim();
+                let bestOption = Array.from(element.options).find(opt =>
+                    opt.text.toLowerCase().trim() === targetText
+                );
+
+                // Fuzzy Fallback
+                if (!bestOption) {
+                    bestOption = Array.from(element.options).find(opt =>
+                        opt.text.toLowerCase().includes(targetText)
+                    );
+                }
+
+                if (bestOption) {
+                    this.setNativeValue(element, bestOption.value);
+                }
+            }
+            this.dispatchChangeEvents(element);
+            return;
+        }
+
+        // 5. Standard Text/Number Inputs
+        this.setNativeValue(element, value);
+        this.dispatchChangeEvents(element);
+    }
 }
 
 // Legacy compatibility - expose globally
@@ -344,6 +449,7 @@ window.isFieldVisible = FieldUtils.isFieldVisible.bind(FieldUtils);
 window.getFieldLabel = FieldUtils.getFieldLabel.bind(FieldUtils);
 window.captureFieldState = FieldUtils.captureFieldState.bind(FieldUtils);
 window.setNativeValue = FieldUtils.setNativeValue.bind(FieldUtils);
+window.setFieldValue = FieldUtils.setFieldValue.bind(FieldUtils); // Global Export
 window.dispatchChangeEvents = FieldUtils.dispatchChangeEvents.bind(FieldUtils);
 
 // Export class to global scope
