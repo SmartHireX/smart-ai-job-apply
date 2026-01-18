@@ -1046,9 +1046,9 @@ function showAccordionSidebar(allFields) {
                         <div class="field-header">
                             <div class="field-label">
                                 ${item.isFileUpload ? '📁 ' : ''}
-                                ${item.cache_label ? `<span style="font-family: monospace; opacity: 0.8;">[${item.cache_label}]</span> ` : ''}
-                                ${item.parentContext ? `<span style="opacity: 0.7;">${item.parentContext} > </span>` : ''}
                                 ${item.label}
+                                ${item.parentContext ? `<span style="opacity: 0.7; margin-left: 4px;">(${item.parentContext})</span>` : ''}
+                                ${item.cache_label ? `<span style="font-family: monospace; opacity: 0.8; font-size: 0.85em; color: #888; margin-left: 4px;">[${item.cache_label}]</span> ` : ''}
                                 ${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}
                             </div>
                         </div>
