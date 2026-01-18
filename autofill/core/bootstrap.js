@@ -169,24 +169,27 @@ async function loadAllScripts() {
  * Handle activation message
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    // Quick form detection (works before full load)
+    // Quick form detection
     if (message.type === 'DETECT_FORMS') {
-        const forms = document.querySelectorAll('form');
-        const inputs = document.querySelectorAll('input:not([type="hidden"]), textarea, select');
-
-        // Count forms with actual input fields
         let formCount = 0;
-        forms.forEach(form => {
-            const formInputs = form.querySelectorAll('input:not([type="hidden"]), textarea, select');
-            if (formInputs.length > 0) {
-                formCount++;
-            }
-        });
 
-        // Also count standalone inputs not in forms
-        const standaloneInputs = Array.from(inputs).filter(input => !input.closest('form'));
-        if (standaloneInputs.length > 3) {
-            formCount += 1; // Count as one "virtual form"
+        // Use advanced detector if available
+        if (typeof window.detectForms === 'function') {
+            const forms = window.detectForms();
+            formCount = forms.length;
+        } else {
+            // Fallback: Simple scan
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                if (form.querySelectorAll('input:not([type="hidden"]), select, textarea').length > 0) formCount++;
+            });
+        }
+
+        // Standalone input check (Virtual Form) fallback
+        if (formCount === 0 && !window.detectForms) {
+            const inputs = document.querySelectorAll('input:not([type="hidden"]), textarea, select');
+            const standalone = Array.from(inputs).filter(i => !i.closest('form'));
+            if (standalone.length > 3) formCount = 1;
         }
 
         sendResponse({ formCount });

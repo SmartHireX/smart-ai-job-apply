@@ -647,7 +647,7 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     // 3. Match Logic
     const match = findBestKeyMatch(semanticType, cache, 0.6, { mlLabel: isML ? semanticType : null, label });
 
-    console.log(`🔍 [InteractionLog] Lookup: "${semanticType}" -> Bucket: ${targetBucket} -> Found:`, match ? match.matchedKey : 'NULL');
+    // console.log(`🔍 [InteractionLog] Lookup: "${semanticType}" -> Bucket: ${targetBucket} -> Found:`, match ? match.matchedKey : 'NULL');
 
     if (match) {
         return {
@@ -695,7 +695,7 @@ async function getCachedValue(fieldOrSelector, labelArg) {
         if (targetBucket === CACHE_KEYS.ATOMIC_SINGLE && window.GlobalMemory) {
             const memoryResult = await window.GlobalMemory.resolveField(field);
             if (memoryResult) {
-                console.log(`🔍 [InteractionLog] Delegated to GlobalMemory -> Found: "${memoryResult.value.substring(0, 20)}..."`);
+                console.log(`🔍 [InteractionLog] Delegated to GlobalMemory -> Found: "${(memoryResult.value || '').substring(0, 20)}..."`);
                 return {
                     value: memoryResult.value,
                     confidence: memoryResult.confidence,

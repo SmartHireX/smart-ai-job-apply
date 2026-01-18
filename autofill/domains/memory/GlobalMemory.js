@@ -51,7 +51,7 @@ class GlobalMemory {
         const primaryKey = field.cache_label || this.normalizeKey(field.label || field.name);
         const fallbackKey = this.generateFallbackKey(field);
 
-        console.log(`🔍 [GlobalMemory] Lookup: "${primaryKey}" (fallback: "${fallbackKey}")`);
+        // console.log(`🔍 [GlobalMemory] Lookup: "${primaryKey}" (fallback: "${fallbackKey}")`);
 
         // 1. EXACT MATCH on primary key
         if (cache[primaryKey]) {

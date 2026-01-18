@@ -3,6 +3,21 @@
  * Handles UI construction, chat interface, and native field manipulation helpers.
  */
 
+// Helper for safe querying (handles numeric IDs)
+const safeQuerySelector = (sel) => {
+    if (!sel) return null;
+    try {
+        return document.querySelector(sel);
+    } catch (e) {
+        if (sel.startsWith('#')) {
+            try {
+                return document.querySelector('#' + CSS.escape(sel.substring(1)));
+            } catch (e2) { }
+        }
+        return null; // Fail gracefully
+    }
+};
+
 function updateSidebarWithState(allMappings) {
     const sidebar = document.getElementById('smarthirex-accordion-sidebar');
     // Prepare mappings even if sidebar isn't open yet
@@ -412,7 +427,8 @@ function showAccordionSidebar(allFields) {
     const otherFieldsRaw = [];
 
     allFields.forEach(item => {
-        const element = document.querySelector(item.selector);
+        let element = safeQuerySelector(item.selector);
+
         if (!element || !isFieldVisible(element)) return;
 
         // Smart Label Logic
@@ -554,7 +570,7 @@ function showAccordionSidebar(allFields) {
                     // Use CSS.escape for safety
                     try {
                         const selector = `input[name="${CSS.escape(r.field.name)}"][value="${CSS.escape(r.field.value)}"]`;
-                        const live = document.querySelector(selector);
+                        const live = safeQuerySelector(selector);
                         if (live) return live.checked;
                     } catch (e) { /* ignore invalid selector */ }
                 }
@@ -565,7 +581,8 @@ function showAccordionSidebar(allFields) {
             // ROBUSTNESS: If iteration failed, try Query Selector for the entire group
             if (!selectedRadio && name) {
                 try {
-                    const liveChecked = document.querySelector(`input[name="${CSS.escape(name)}"]:checked`);
+                    const selector = `input[name="${CSS.escape(name)}"]:checked`;
+                    const liveChecked = safeQuerySelector(selector);
                     if (liveChecked) {
                         // Found a checked radio in the DOM!
                         // Try to correspond it to one of our known fields
@@ -581,7 +598,7 @@ function showAccordionSidebar(allFields) {
                             // mimicking the structure so it displays correctly
                             selectedRadio = {
                                 field: liveChecked,
-                                selector: `input[name="${CSS.escape(name)}"]:checked`,
+                                selector: selector,
                                 label: liveChecked.nextElementSibling?.textContent || liveChecked.value,
                                 value: liveChecked.value
                             };
@@ -648,7 +665,7 @@ function showAccordionSidebar(allFields) {
                 if (c.field.name && (c.field.value !== undefined)) {
                     try {
                         const selector = `input[name="${CSS.escape(c.field.name)}"][value="${CSS.escape(c.field.value)}"]`;
-                        const live = document.querySelector(selector);
+                        const live = safeQuerySelector(selector);
                         if (live) return live.checked;
                     } catch (e) { }
                 }
@@ -1228,7 +1245,7 @@ function showAccordionSidebar(allFields) {
 
             // Get current value from the field
             try {
-                const element = document.querySelector(selector);
+                const element = safeQuerySelector(selector);
                 const currentValue = element?.value || element?.textContent || '';
 
                 // Open Nova Chat tab with regeneration context
@@ -1250,73 +1267,63 @@ function showAccordionSidebar(allFields) {
 
         // Click to scroll to field
         item.addEventListener('click', () => {
-            try {
-                const element = document.querySelector(selector);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    element.focus();
-                }
-            } catch (e) {
-                console.warn('Skipping invalid selector click:', selector, 'Error:', e.message);
-                // console.log('Field info:', { label: item.textContent, selector: selector, length: selector?.length });
+            const element = safeQuerySelector(selector);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.focus();
+            } else {
+                console.warn('Skipping invalid selector click:', selector);
                 showErrorToast('Could not scroll to field (Invalid Selector)');
             }
         });
 
         // Hover to show connection beam
         item.addEventListener('mouseenter', () => {
-            try {
-                if (!selector) return;
-                const element = document.querySelector(selector);
-                // console.log(`[Sidebar Debug] Hovering "${selector}". Found?`, !!element);
+            if (!selector) return;
+            const element = safeQuerySelector(selector);
+            // console.log(`[Sidebar Debug] Hovering "${selector}". Found?`, !!element);
 
-                if (element) {
-                    // Smart Highlight: If radio/checkbox, prefer the entire Group Container over the individual option
-                    let target = element;
-                    if (element.type === 'radio' || element.type === 'checkbox') {
-                        // 1. Try to find the container of the whole question (fieldset or form-group)
-                        const groupContainer = element.closest('fieldset, .form-group, .question-block, .card');
+            if (element) {
+                // Smart Highlight: If radio/checkbox, prefer the entire Group Container over the individual option
+                let target = element;
+                if (element.type === 'radio' || element.type === 'checkbox') {
+                    // 1. Try to find the container of the whole question (fieldset or form-group)
+                    const groupContainer = element.closest('fieldset, .form-group, .question-block, .card');
 
-                        // 2. If valid and reasonably close (don't highlight the whole body), use it
-                        if (groupContainer && groupContainer.contains(element)) {
-                            // Heuristic: Check size. If it's the whole page, ignore.
-                            if (groupContainer.offsetHeight < window.innerHeight * 0.7) { // Increased to 0.7
-                                target = groupContainer;
-                            }
-                        }
-
-                        // 3. Fallback to Option Container if no Group found
-                        if (target === element) {
-                            const parentOption = element.closest('label, .checkbox-option, .radio-option');
-                            if (parentOption) target = parentOption;
+                    // 2. If valid and reasonably close (don't highlight the whole body), use it
+                    if (groupContainer && groupContainer.contains(element)) {
+                        // Heuristic: Check size. If it's the whole page, ignore.
+                        if (groupContainer.offsetHeight < window.innerHeight * 0.7) { // Increased to 0.7
+                            target = groupContainer;
                         }
                     }
 
-                    // console.log(`[Sidebar Debug] Highlight Target:`, target.tagName, target.className);
-                    target.classList.add('smarthirex-spotlight');
-                    showConnectionBeam(item, target);
-                    item._highlightedElement = target; // Store for cleanup
+                    // 3. Fallback to Option Container if no Group found
+                    if (target === element) {
+                        const parentOption = element.closest('label, .checkbox-option, .radio-option');
+                        if (parentOption) target = parentOption;
+                    }
                 }
-            } catch (e) {
-                // Invalid selector ignored to prevent crash
-                console.warn('Skipping invalid selector highlight:', selector);
+
+                // console.log(`[Sidebar Debug] Highlight Target:`, target.tagName, target.className);
+                target.classList.add('smarthirex-spotlight');
+                showConnectionBeam(item, target);
+                item._highlightedElement = target; // Store for cleanup
+            } else {
+                // console.warn('Skipping invalid selector highlight:', selector);
             }
         });
 
         item.addEventListener('mouseleave', () => {
-            try {
-                if (item._highlightedElement) {
-                    item._highlightedElement.classList.remove('smarthirex-spotlight');
-                    item._highlightedElement = null;
-                    hideConnectionBeam();
-                } else {
-                    // Fallback cleanup
-                    const element = document.querySelector(selector);
-                    if (element) element.classList.remove('smarthirex-spotlight');
-                    hideConnectionBeam();
-                }
-            } catch (e) {
-                // Ignore
+            if (item._highlightedElement) {
+                item._highlightedElement.classList.remove('smarthirex-spotlight');
+                item._highlightedElement = null;
+                hideConnectionBeam();
+            } else {
+                // Fallback cleanup
+                const element = safeQuerySelector(selector);
+                if (element) element.classList.remove('smarthirex-spotlight');
+                hideConnectionBeam();
             }
         });
     });
@@ -2181,9 +2188,6 @@ function renderNovaChatForField(selector, label, currentValue) {
     }, 100);
 }
 
-/**
- * Get context-aware quick actions based on field label
- */
 function getQuickActionsForField(label) {
     const labelLower = label.toLowerCase();
 

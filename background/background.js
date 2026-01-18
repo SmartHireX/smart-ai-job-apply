@@ -108,7 +108,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 // Inject scripts sequentially to maintain dependencies
                 for (const file of CONTENT_SCRIPTS) {
                     await chrome.scripting.executeScript({
-                        target: { tabId: tabId },
+                        target: {
+                            tabId: tabId,
+                            frameIds: [sender.frameId] // Target only the requesting frame
+                        },
                         files: [file]
                     });
                 }

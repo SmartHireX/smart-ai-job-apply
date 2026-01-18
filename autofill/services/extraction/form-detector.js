@@ -155,7 +155,7 @@ function detectForms() {
     const candidates = document.querySelectorAll(selectors.join(', '));
 
     // Filter out obvious false positives (search bars, nav forms)
-    return Array.from(candidates).filter(el => {
+    const filtered = Array.from(candidates).filter(el => {
         // Exclude if it looks like a search bar
         const isSearch = el.getAttribute('role') === 'search' ||
             el.classList.contains('search-form') ||
@@ -165,6 +165,105 @@ function detectForms() {
         const hasInputs = el.querySelectorAll('input, select, textarea').length > 0;
 
         return !isSearch && hasInputs;
+    });
+
+    // FALLBACK: Density Scan
+    // If no forms found via selectors (or all filtered out), find the "densest" div
+    if (filtered.length === 0) {
+        // console.log('⚠️ [FormDetector] No standard forms found. Running Density Scan...');
+        const inputContainers = new Map();
+        const allInputs = document.querySelectorAll('input:not([type="hidden"]), select, textarea');
+
+        allInputs.forEach(input => {
+            // Traverse up 5 levels to find a suitable container
+            let parent = input.parentElement;
+            for (let i = 0; i < 5; i++) {
+                if (!parent || parent.tagName === 'BODY' || parent.tagName === 'HTML') break;
+
+                // Score containers based on depth (favor deeper/closer containers)
+                // But we mainly want the one with the MOST inputs.
+                if (!inputContainers.has(parent)) {
+                    inputContainers.set(parent, 0);
+                }
+                inputContainers.set(parent, inputContainers.get(parent) + 1);
+                parent = parent.parentElement;
+            }
+        });
+
+        // Find winner
+        let winner = null;
+        let maxCount = 0;
+        for (const [container, count] of inputContainers.entries()) {
+            if (count > maxCount && count > 3) { // Threshold: at least 3 inputs
+                // Filter out likely footers/navs based on tag/class if needed
+                // For now, raw density wins
+                winner = container;
+                maxCount = count;
+            }
+        }
+
+        if (winner) {
+            // console.log('✅ [FormDetector] Density Scan Winner:', winner, `(${maxCount} inputs)`);
+            filtered.push(winner);
+        }
+    }
+
+    // ===============================================
+    // SMART DEDUPLICATION (Enterprise Fix)
+    // ===============================================
+    // Prevent concatenating a Form AND its Wrapper (which doubles fields).
+    // Rule: Discard Candidate B if:
+    // 1. A contains B AND
+    // 2. A captures all fields of B (Signature Subset)
+
+    // Helper: Generate Field Signature
+    const getContainerSignature = (el) => {
+        const inputs = el.querySelectorAll('input, select, textarea');
+        const sig = new Set();
+        inputs.forEach(i => {
+            if (i.type === 'hidden') return;
+            // Use Name or ID or Type+Index as signature
+            const key = i.name || i.id || `${i.type}::${i.className}`;
+            sig.add(key);
+        });
+        return sig;
+    };
+
+    // Helper: Check if Set B is subset of Set A
+    const isSubset = (setA, setB) => {
+        for (const elem of setB) {
+            if (!setA.has(elem)) return false;
+        }
+        return true;
+    };
+
+    // Pre-calculate signatures
+    const candidatesWithSig = filtered.map(el => ({
+        element: el,
+        signature: getContainerSignature(el),
+        uid: Math.random().toString(36).substring(2, 9) // Assign UID for tagging
+    }));
+
+    const finalCandidates = candidatesWithSig.filter(c => {
+        // Check if ANY other candidate contains this one AND is a superset
+        const isRedundant = candidatesWithSig.some(other => {
+            if (other === c) return false;
+
+            const contains = other.element.contains(c.element);
+            if (!contains) return false;
+
+            // If other contains current, check signatures
+            // If other has ALL of current's fields, current is redundant.
+            return isSubset(other.signature, c.signature);
+        });
+
+        return !isRedundant;
+    });
+
+    return finalCandidates.map(c => {
+        // Attach UID to element for Analyzer to pick up (via data attribute or property)
+        c.element.dataset.sourceContainerId = c.uid;
+        return c.element;
     });
 }
 

@@ -325,15 +325,40 @@ function extractFieldsFromDOM(source) {
 
     const fields = [];
     const processedGroups = new Map(); // Map<name, groupObject>
+    const seenFields = new Set(); // DEDUPLICATION SET
 
     // Select all inputs except hidden/submit/button
     const inputs = root.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]), select, textarea');
 
     inputs.forEach(input => {
+        // DEDUPLICATION CHECK
+        // Strategy: "Semantic Identity with Group Awareness"
+        // Radio/Checkbox: name::type::value (to allow options)
+        // Others: id (if robust) OR name::type::selector
+        const type = (input.type || 'text').toLowerCase();
+        let dedupKey = '';
+
+        if (type === 'radio' || type === 'checkbox') {
+            // Must include value to allow different options of same group
+            dedupKey = `name:${input.name}::type:${type}::val:${input.value}`;
+        } else if (input.id && input.id.length > 3 && !/\d{5,}/.test(input.id)) {
+            // Robust ID
+            dedupKey = `id:${input.id}`;
+        } else {
+            // Fallback
+            dedupKey = `name:${input.name}::type:${type}`;
+        }
+
+        if (seenFields.has(dedupKey)) {
+            // console.log(`♻️ [FormAnalyzer] Skipping duplicate field: ${dedupKey}`);
+            return;
+        }
+        seenFields.add(dedupKey);
+
         const safeName = input.name ? CSS.escape(input.name) : '';
         const safeValue = CSS.escape(input.value || '');
         const tagName = input.tagName;
-        const type = (input.type || 'text').toLowerCase();
+        // determine label...
 
         // Determine Label
         let label = '';
