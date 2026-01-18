@@ -109,9 +109,22 @@ class CompositeFieldManager {
             }
 
             if (cached && cached.value) {
-                console.log(`[CompositeFieldManager] ✅ Found Value:`, cached.value);
-                if (this.fill(field.element, cached.value)) {
-                    return { filled: true, source: 'cache', value: cached.value };
+                // DEFENSIVE: Filter out boolean "true" which comes from bugged checkbox captures
+                let cleanValue = cached.value;
+                if (Array.isArray(cleanValue)) {
+                    cleanValue = cleanValue.filter(v => v !== true && v !== 'true');
+                    if (cleanValue.length === 0) cleanValue = null;
+                } else if (cleanValue === true || cleanValue === 'true') {
+                    cleanValue = null;
+                }
+
+                if (cleanValue) {
+                    console.log(`[CompositeFieldManager] ✅ Found Value:`, cleanValue);
+                    if (this.fill(field.element, cleanValue)) {
+                        return { filled: true, source: 'cache', value: cleanValue };
+                    }
+                } else {
+                    console.log(`[CompositeFieldManager] ⚠️ Cache contained only invalid values (e.g. 'true'). Ignored.`);
                 }
             } else {
                 console.log(`[CompositeFieldManager] ❌ No Cache Found/Value Empty`);

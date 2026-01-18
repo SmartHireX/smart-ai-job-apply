@@ -147,7 +147,9 @@ function detectForms() {
         '#application_form',
         '.application-form',
         '[id*="job-application"]',
-        '[class*="job-application"]'
+        '[class*="job-application"]',
+        '.ashby-application-form-container', // AshbyHQ specific
+        '[class*="ashby-application-form"]'   // AshbyHQ generic
     ];
 
     const candidates = document.querySelectorAll(selectors.join(', '));

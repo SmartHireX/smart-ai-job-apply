@@ -108,7 +108,39 @@ class ExecutionEngine {
     _handleUserEdit(element, fieldMetadata) {
         if (!fieldMetadata) return;
 
-        const newValue = element.type === 'checkbox' ? element.checked : element.value;
+        // FIXED: Correctly capture value vs boolean state
+        let newValue;
+        const type = (element.type || '').toLowerCase();
+
+        if (type === 'checkbox') {
+            // Validate "True" Value: If checked, use the value attribute (e.g. "Java"), else "true" if value is missing/on
+            if (element.checked) {
+                // If value is generic "on" or empty, treat as boolean true, else use the semantic value
+                const rawVal = element.value;
+                if (!rawVal || rawVal === 'on') {
+                    newValue = true;
+                } else {
+                    newValue = rawVal;
+                }
+            } else {
+                // Unchecked = null/false (usually we don't cache unchecked, but for updates we might need to remove)
+                // For now, let's just ignore unchecked triggers unless it's a forced "false"
+                return;
+            }
+        } else if (type === 'radio') {
+            if (!element.checked) return; // Only cache the selected radio
+            const rawVal = element.value;
+            // If value is generic "on", try to find a label
+            if (!rawVal || rawVal === 'on') {
+                newValue = element.labels?.[0]?.innerText?.trim() || "true";
+            } else {
+                newValue = rawVal;
+            }
+        } else {
+            // Text / Select / Etc
+            newValue = element.value;
+        }
+
         const fieldType = (fieldMetadata.type || element.type || '').toLowerCase();
         const isStructuredInput = ['radio', 'checkbox', 'select', 'select-one', 'select-multiple'].includes(fieldType);
 
