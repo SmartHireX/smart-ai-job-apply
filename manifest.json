@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
-    "name": "Smart AI Job Apply",
-    "version": "2.0.0",
+    "name": "Nova Apply",
+    "version": "1.0",
     "description": "AI-powered job application form filler. Uses your Gemini API key to intelligently fill forms with your resume data.",
     "permissions": [
         "activeTab",
