@@ -688,7 +688,24 @@ async function getCachedValue(fieldOrSelector, labelArg) {
         }
     }
 
-    if (!cached) return null;
+    if (!cached) {
+        // D. GLOBAL MEMORY FALLBACK (Unified View)
+        // If InteractionLog (Atomic Choices) misses, check GlobalMemory (Atomic Text)
+        // This satisfies the "Atomic Single" contract for text fields like Cover Letter.
+        if (targetBucket === CACHE_KEYS.ATOMIC_SINGLE && window.GlobalMemory) {
+            const memoryResult = await window.GlobalMemory.resolveField(field);
+            if (memoryResult) {
+                console.log(`🔍 [InteractionLog] Delegated to GlobalMemory -> Found: "${memoryResult.value.substring(0, 20)}..."`);
+                return {
+                    value: memoryResult.value,
+                    confidence: memoryResult.confidence,
+                    source: 'global_memory_fallback',
+                    semanticType: semanticType
+                };
+            }
+        }
+        return null;
+    }
 
     let resultValue = cached.value;
     // ... (rest of array unpacking logic) ...
