@@ -68,6 +68,7 @@ class FormObserver {
             value: element.value,
             // Try to recover attributes set by Pipeline
             cache_label: element.getAttribute('cache_label'),
+            instance_type: element.getAttribute('instance_type'),
             field_index: this.getFieldIndex(element)
         };
 

@@ -72,6 +72,9 @@ class PipelineOrchestrator {
 
                     // 1. Store on DOM for fast access (Primary)
                     field.element.setAttribute('cache_label', cacheLabel);
+                    if (field.instance_type) {
+                        field.element.setAttribute('instance_type', field.instance_type);
+                    }
 
                     // 2. Store in Global Cache for persistence (GlobalStore)
                     if (!window.NovaCache) window.NovaCache = {};

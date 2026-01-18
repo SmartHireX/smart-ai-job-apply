@@ -104,10 +104,6 @@ function determineCacheStrategy(semanticKey, field = null) {
     // 1. FALLBACK INFERENCE (Legacy/Heuristic)
     // Check for Sectional Keywords
     if (/job|employer|institution|degree|education|work|school|title|position/.test(semanticKey)) {
-        // EXCEPTION: Global Facts shouldn't be Sectional even if they sound like it
-        if (/education_level|degree_type|years_experience|notice_period/.test(semanticKey)) {
-            return CACHE_KEYS.ATOMIC_SINGLE;
-        }
         return CACHE_KEYS.SECTIONAL_MULTI;
     }
 
