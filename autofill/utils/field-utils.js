@@ -439,6 +439,12 @@ class FieldUtils {
         }
 
         // 5. Standard Text/Number Inputs
+        // CRITICAL: File inputs are read-only for security. Setting value throws InvalidStateError.
+        if (type === 'file') {
+            // console.warn('Skipping value set for file input (security restriction).');
+            return;
+        }
+
         this.setNativeValue(element, value);
         this.dispatchChangeEvents(element);
     }
