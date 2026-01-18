@@ -79,11 +79,18 @@ class PipelineOrchestrator {
                     // 2. Store in Global Cache for persistence (GlobalStore)
                     if (!window.NovaCache) window.NovaCache = {};
 
+                    // Store rich metadata object for robust routing
+                    const cacheEntry = {
+                        label: cacheLabel,
+                        type: field.instance_type || 'ATOMIC_SINGLE',
+                        scope: field.scope || 'GLOBAL'
+                    };
+
                     if (field.element.id) {
-                        window.NovaCache[field.element.id] = cacheLabel;
+                        window.NovaCache[field.element.id] = cacheEntry;
                     }
                     if (field.element.name) {
-                        window.NovaCache[field.element.name] = cacheLabel;
+                        window.NovaCache[field.element.name] = cacheEntry;
                     }
 
                     // console.log(`🏷️ [Pipeline] Cache Label Assigned: "${field.label}" -> "${cacheLabel}" (ML Conf: ${field.ml_prediction.confidence})`);

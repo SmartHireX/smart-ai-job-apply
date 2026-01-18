@@ -1533,19 +1533,34 @@ function attachSelfCorrectionTrigger(element) {
 
         // 0. Pre-Flight: Ensure Authoritative Cache Key
         // Resurrect Authoritative Cache Key (from Pipeline/GlobalStore)
+        // 0. Pre-Flight: Ensure Authoritative Cache Key
+        // Resurrect Authoritative Cache Key (from Pipeline/GlobalStore)
         let cacheLabel = element.getAttribute('cache_label');
+        let instanceType = element.getAttribute('instance_type'); // From DOM
+        let scope = element.getAttribute('scope') || 'GLOBAL';
+
         if (!cacheLabel && window.NovaCache) {
-            cacheLabel = window.NovaCache[element.id] || window.NovaCache[element.name];
-            if (cacheLabel) {
-                // Force cache_label onto element (for InteractionLog robustness)
-                element.setAttribute('cache_label', cacheLabel);
+            const entry = window.NovaCache[element.id] || window.NovaCache[element.name];
+            if (entry) {
+                // Handle new Object structure or legacy string
+                cacheLabel = (typeof entry === 'object') ? entry.label : entry;
+
+                // If DOM was missing metadata, recover it from NovaCache
+                if (typeof entry === 'object') {
+                    if (!instanceType) instanceType = entry.type;
+                    if (element.getAttribute('scope') === null) scope = entry.scope;
+                }
+
+                // Force attributes onto element for consistency
+                if (cacheLabel) element.setAttribute('cache_label', cacheLabel);
+                if (instanceType) element.setAttribute('instance_type', instanceType);
+
             } else {
                 console.warn(`⚠️ [CacheDebug] Lookup Failed for [${element.id}, ${element.name}]. Available Keys:`, Object.keys(window.NovaCache));
             }
-        } else if (!window.NovaCache) {
-            console.warn(`⚠️ [CacheDebug] window.NovaCache is Missing/Empty!`);
         }
-        console.log(`🔍 [CacheDebug] Cache Label: ${cacheLabel} and element : `, element);
+
+        console.log(`🔍 [CacheDebug] Cache Label: ${cacheLabel}, Type: ${instanceType}`);
 
         // 1. Determine Cache Strategy
         // We use InteractionLog (SelectionCache) for "Known Profile Fields" and "Structured Inputs" (Select/Radio).
@@ -1560,8 +1575,8 @@ function attachSelfCorrectionTrigger(element) {
             tagName: element.tagName,
             type: element.type,
             cache_label: cacheLabel,
-            instance_type: element.getAttribute('instance_type'), // CRITICAL: Read from DOM
-            scope: element.getAttribute('scope') || 'GLOBAL',
+            instance_type: instanceType, // From DOM or Cache
+            scope: scope,
             element: element
         };
 

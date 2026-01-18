@@ -504,16 +504,36 @@ function generateSemanticKey(fieldOrElement, label) {
 
     // A. CENTRALIZED: Pre-Calculated Cache Key (from Pipeline/GlobalStore)
     let preCalculatedKey = null;
+    let cachedMeta = null;
+
     if (typeof HTMLElement !== 'undefined' && fieldOrElement instanceof HTMLElement) {
+        // 1. Try DOM Attribute
         preCalculatedKey = fieldOrElement.getAttribute('cache_label');
+
+        // 2. Try NovaCache
         if (!preCalculatedKey && window.NovaCache) {
-            preCalculatedKey = window.NovaCache[fieldOrElement.id] || window.NovaCache[fieldOrElement.name];
+            const entry = window.NovaCache[fieldOrElement.id] || window.NovaCache[fieldOrElement.name];
+            if (entry) {
+                preCalculatedKey = (typeof entry === 'object') ? entry.label : entry;
+                cachedMeta = (typeof entry === 'object') ? entry : null;
+            }
         }
     } else if (field) {
         preCalculatedKey = field.cache_label;
         if (!preCalculatedKey && window.NovaCache && (field.id || field.name)) {
-            preCalculatedKey = window.NovaCache[field.id] || window.NovaCache[field.name];
+            const entry = window.NovaCache[field.id] || window.NovaCache[field.name];
+            if (entry) {
+                preCalculatedKey = (typeof entry === 'object') ? entry.label : entry;
+                cachedMeta = (typeof entry === 'object') ? entry : null;
+            }
         }
+    }
+
+    // ENHANCEMENT: Inject cached metadata into field object if missing
+    if (cachedMeta && field && !field.instance_type) {
+        field.instance_type = cachedMeta.type;
+        field.scope = cachedMeta.scope;
+        // console.log(`[InteractionLog] 🧠 Injected Metadata from NovaCache:`, cachedMeta);
     }
 
     if (preCalculatedKey) {
