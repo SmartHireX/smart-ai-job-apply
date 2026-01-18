@@ -139,7 +139,10 @@ class PipelineOrchestrator {
         if (unresolved.length > 0) {
             // console.log(`🤖 [Pipeline] Global Inference Fallback for ${unresolved.length} fields...`);
             const aiResults = await this.strategyGlobalInference(unresolved, context);
-            await this.applyResults(aiResults);
+
+            // FIX: Pass 'unresolved' (sourceFields) so executeBatchFills has metadata for auto-caching
+            await this.executeBatchFills(aiResults, unresolved);
+
             Object.assign(results, aiResults);
         }
 
