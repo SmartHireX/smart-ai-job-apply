@@ -954,6 +954,13 @@ function showAccordionSidebar(allFields) {
                 <span>Form Review</span>
             </div>
             <div class="header-actions">
+                <button class="header-icon-btn" id="smarthirex-refresh-forms" title="Refresh/Re-detect Forms" style="background: transparent; border: none; cursor: pointer; color: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; padding: 4px; margin-right: 4px; transition: color 0.2s;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 4v6h-6"></path>
+                        <path d="M1 20v-6h6"></path>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                </button>
                 <!-- Removed Clear Highlights Button -->
                 <button class="header-text-btn" id="smarthirex-undo-fill" data-tooltip="Undo all the filled field">
                     Undo all
@@ -1122,6 +1129,34 @@ function showAccordionSidebar(allFields) {
         });
     }
     */
+
+    // Refresh Forms Button
+    const refreshBtn = panel.querySelector('#smarthirex-refresh-forms');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            // Add rotation animation
+            const svg = refreshBtn.querySelector('svg');
+            if (svg) svg.style.animation = 'spin 1s linear infinite';
+
+            // Add keyframes if not exists
+            if (!document.getElementById('sh-spin-style')) {
+                const style = document.createElement('style');
+                style.id = 'sh-spin-style';
+                style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+                document.head.appendChild(style);
+            }
+
+            // Trigger re-processing
+            if (window.FormProcessor && window.FormProcessor.process) {
+                // Short timeout to allow animation to start
+                setTimeout(() => {
+                    window.FormProcessor.process();
+                }, 100);
+            } else {
+                console.warn('FormProcessor not available for refresh');
+            }
+        });
+    }
 
     // Undo Fill button
     const undoFillBtn = panel.querySelector('#smarthirex-undo-fill');

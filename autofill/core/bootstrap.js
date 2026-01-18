@@ -208,4 +208,44 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
+// ==========================================
+// AUTO-DETECTION TRIGGERS (SPA Support)
+// ==========================================
+
+let lastUrl = window.location.href;
+let autoDetectTimer = null;
+
+function triggerAutoDetect() {
+    if (autoDetectTimer) clearTimeout(autoDetectTimer);
+    autoDetectTimer = setTimeout(() => {
+        // Only run if we have the detector loaded
+        if (typeof window.ScoreBasedFormDetector !== 'undefined') {
+            const detector = new window.ScoreBasedFormDetector();
+            detector.detect().then(result => {
+                if (result.primary) {
+                    // console.log('🎯 [AutoDetect] Form found via background check');
+                    // Optional: Send message to background to update badge?
+                    // For now, we just ensure the detector is ready.
+                }
+            });
+        }
+    }, 2000); // 2s debounce to let page settle
+}
+
+// 1. URL Change Listener
+new MutationObserver(() => {
+    if (window.location.href !== lastUrl) {
+        lastUrl = window.location.href;
+        // console.log('🌐 [Bootstrap] URL Changed, triggering detection...');
+        triggerAutoDetect();
+    }
+}).observe(document, { subtree: true, childList: true });
+
+// 2. Initial Trigger
+if (document.readyState === 'complete') {
+    triggerAutoDetect();
+} else {
+    window.addEventListener('load', triggerAutoDetect);
+}
+
 // console.log('🎯 Nova AI Bootstrap loaded (lazy loading enabled)');
