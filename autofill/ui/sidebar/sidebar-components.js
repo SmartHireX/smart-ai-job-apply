@@ -530,25 +530,41 @@ function showAccordionSidebar(allFields) {
 
         // Process radio groups
         Object.entries(radioGroups).forEach(([name, radios]) => {
-            const selectedRadio = radios.find(r => r.field.checked);
+            // FIX: Re-query live DOM to check status because 'radios' might contain stale element references
+            const selectedRadio = radios.find(r => {
+                // 1. Try Live Element Check
+                if (r.field instanceof HTMLElement && r.field.isConnected) {
+                    return r.field.checked;
+                }
+                // 2. Try ID Lookup
+                if (r.field.id) {
+                    const live = document.getElementById(r.field.id);
+                    if (live) return live.checked;
+                }
+                // 3. Try Name + Value Lookup
+                if (r.field.name && (r.field.value !== undefined)) {
+                    // Use CSS.escape for safety
+                    try {
+                        const selector = `input[name="${CSS.escape(r.field.name)}"][value="${CSS.escape(r.field.value)}"]`;
+                        const live = document.querySelector(selector);
+                        if (live) return live.checked;
+                    } catch (e) { /* ignore invalid selector */ }
+                }
+                // 4. Fallback to object property
+                return r.field.checked;
+            });
 
             if (selectedRadio) {
-                // Get the SPECIFIC option label (not the group question)
-                // Use label[for="id"] or adjacent text, NOT getFieldLabel which returns group question
                 let selectedValue = selectedRadio.value || selectedRadio.field.value;
 
-                // Try to get the option's specific label text
+                // Try to get label text for display
                 if (selectedRadio.field.id) {
-                    const optionLabel = document.querySelector(`label[for="${selectedRadio.field.id}"]`);
-                    if (optionLabel) {
-                        selectedValue = optionLabel.textContent.trim();
-                    }
-                } else {
-                    // No id - check if input is inside a label
-                    const parentLabel = selectedRadio.field.closest('label');
-                    if (parentLabel) {
-                        selectedValue = parentLabel.textContent.trim();
-                    }
+                    const label = document.querySelector(`label[for="${selectedRadio.field.id}"]`);
+                    if (label) selectedValue = label.textContent.trim();
+                }
+                // If no label, look for parent label text
+                if (selectedRadio.field.parentElement && selectedRadio.field.parentElement.tagName === 'LABEL') {
+                    selectedValue = selectedRadio.field.parentElement.textContent.trim();
                 }
 
                 // Get the GROUP label from field name (capitalized and formatted)
@@ -581,7 +597,27 @@ function showAccordionSidebar(allFields) {
 
         // Process checkbox groups
         Object.entries(checkboxGroups).forEach(([name, checkboxes]) => {
-            const checkedBoxes = checkboxes.filter(c => c.field.checked);
+            // FIX: Re-query live DOM for Checkboxes too
+            const checkedBoxes = checkboxes.filter(c => {
+                // 1. Try Live Element Check
+                if (c.field instanceof HTMLElement && c.field.isConnected) {
+                    return c.field.checked;
+                }
+                // 2. Try ID Lookup
+                if (c.field.id) {
+                    const live = document.getElementById(c.field.id);
+                    if (live) return live.checked;
+                }
+                // 3. Try Name + Value Lookup
+                if (c.field.name && (c.field.value !== undefined)) {
+                    try {
+                        const selector = `input[name="${CSS.escape(c.field.name)}"][value="${CSS.escape(c.field.value)}"]`;
+                        const live = document.querySelector(selector);
+                        if (live) return live.checked;
+                    } catch (e) { }
+                }
+                return c.field.checked;
+            });
 
             if (checkedBoxes.length > 0) {
                 // Get SPECIFIC checkbox option labels, not group question
@@ -981,7 +1017,11 @@ function showAccordionSidebar(allFields) {
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
                             <div class="field-label">
-                                ${item.isFileUpload ? '📁 ' : ''}${item.label}${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}
+                                ${item.isFileUpload ? '📁 ' : ''}
+                                ${item.cache_label ? `<span style="font-family: monospace; opacity: 0.8;">[${item.cache_label}]</span> ` : ''}
+                                ${item.parentContext ? `<span style="opacity: 0.7;">${item.parentContext} > </span>` : ''}
+                                ${item.label}
+                                ${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}
                             </div>
                         </div>
                         ${item.isFileUpload ? '<div class="field-note">File upload required</div>' : '<div class="field-note">Not filled</div>'}
