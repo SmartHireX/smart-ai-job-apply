@@ -51,13 +51,19 @@ class GlobalMemory {
         const primaryKey = field.cache_label || this.normalizeKey(field.label || field.name);
         const fallbackKey = this.generateFallbackKey(field);
 
-        // console.log(`🔍 [GlobalMemory] Lookup Key: "${primaryKey}" (fallback: "${fallbackKey}")`);
+        console.log(`🔍 [GlobalMemory] Lookup: "${primaryKey}" (fallback: "${fallbackKey}")`);
 
         // 1. EXACT MATCH on primary key
-        if (cache[primaryKey]) return { value: cache[primaryKey].answer, confidence: 0.9 };
+        if (cache[primaryKey]) {
+            console.log(`✅ [GlobalMemory] HIT (Primary): "${primaryKey}"`);
+            return { value: cache[primaryKey].answer, confidence: 0.9 };
+        }
 
         // 2. EXACT MATCH on fallback key
-        if (cache[fallbackKey]) return { value: cache[fallbackKey].answer, confidence: 0.7 };
+        if (cache[fallbackKey]) {
+            console.log(`✅ [GlobalMemory] HIT (Fallback): "${fallbackKey}"`);
+            return { value: cache[fallbackKey].answer, confidence: 0.7 };
+        }
 
         // 3. JACCARD SIMILARITY FALLBACK (using KeyMatcher)
         if (window.KeyMatcher && window.KeyMatcher.findBestKeyMatch) {

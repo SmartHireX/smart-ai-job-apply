@@ -104,19 +104,6 @@ function determineCacheStrategy(semanticKey, field = null) {
     // 1. FALLBACK INFERENCE (Legacy/Heuristic)
     // Check for Sectional Keywords
     if (/job|employer|institution|degree|education|work|school|title|position/.test(semanticKey)) {
-        // EXCEPTION: Global Facts shouldn't be Sectional even if they sound like it.
-        // These are fields that might appear in a section but logically belong to the User Profile (Global).
-        const globalFacts = [
-            'education_level', 'degree_type', 'highest_degree',
-            'years_experience', 'total_experience', 'experience_years',
-            'notice_period', 'availability',
-            'visa', 'sponsorship', 'work_auth', 'citizenship', 'clearance',
-            'current_employment', 'employment_status', 'currently_employed'
-        ];
-
-        if (globalFacts.some(fact => semanticKey.includes(fact))) {
-            return CACHE_KEYS.ATOMIC_SINGLE;
-        }
         return CACHE_KEYS.SECTIONAL_MULTI;
     }
 
