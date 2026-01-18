@@ -442,9 +442,10 @@ function showAccordionSidebar(allFields) {
 
         const fieldType = item.fieldData?.field_type || (element ? element.type : 'text');
         const isFileUpload = fieldType === 'file' || (element && element.type === 'file');
+        const isCheckable = fieldType === 'radio' || fieldType === 'checkbox' || (element && (element.type === 'radio' || element.type === 'checkbox'));
 
-        // Allow file uploads to show even if hidden (often styled with custom buttons)
-        if (!element || (!isFieldVisible(element) && !isFileUpload)) return;
+        // Allow file uploads and checkable inputs (often hidden by custom UI) to show even if "invisible"
+        if (!element || (!isFieldVisible(element) && !isFileUpload && !isCheckable)) return;
 
         // Smart Label Logic
         let label = item.fieldData?.label || getFieldLabel(element);
