@@ -41,9 +41,26 @@ class FormHandler {
      * @returns {boolean} True if async response
      */
     static handleDetectForms(message, sender, sendResponse) {
-        const forms = this.detectForms();
-        sendResponse({ formCount: forms.length || 0 });
-        return true;
+        // Detect forms (async or sync)
+        const result = this.detectForms();
+
+        // Handle Promise (Async Detection)
+        if (result && typeof result.then === 'function') {
+            result.then(forms => {
+                const count = Array.isArray(forms) ? forms.length : (forms ? 1 : 0);
+                sendResponse({ formCount: count });
+            }).catch(err => {
+                console.error('Detection failed:', err);
+                sendResponse({ formCount: 0 });
+            });
+            return true; // Keep channel open
+        }
+
+        // Handle Synchronous Result (Legacy)
+        const count = Array.isArray(result) ? result.length : 0;
+        sendResponse({ formCount: count });
+        return true; // Keep channel open for consistency? No, sync returning true is fine if we sendResponse immediately.
+        // Actually, for sync we can just return true and sendResponse.
     }
 
     /**
