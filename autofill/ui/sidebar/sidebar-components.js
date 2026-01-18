@@ -1065,8 +1065,6 @@ function showAccordionSidebar(allFields) {
                             <div class="field-label">
                                 ${item.isFileUpload ? '📁 ' : ''}
                                 ${displayLabel}
-                                ${displayContext}
-                                ${item.cache_label ? `<span style="font-family: monospace; opacity: 0.8; font-size: 0.85em; color: #888; margin-left: 4px;">[${item.cache_label}]</span> ` : ''}
                                 ${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}
                             </div>
                         </div>
