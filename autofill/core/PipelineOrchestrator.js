@@ -364,7 +364,7 @@ class PipelineOrchestrator {
             const field = sourceFields ? sourceFields.find(f => f.selector === selector) : null;
 
             // Pass field to executor for change listener attachment
-            const success = await this.executor.fill(selector, res.value, res.confidence, field);
+            const success = await this.executor.fill(selector, res.value, res.confidence, field, res.source);
             if (!success) {
                 console.warn(`⚠️ [Pipeline] Execution Failure: Could not fill element`, selector);
             } else {

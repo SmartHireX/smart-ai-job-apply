@@ -447,7 +447,8 @@ function showAccordionSidebar(allFields) {
         const value = item.value || element.value;
         const hasValue = value && String(value).trim().length > 0;
         // Prioritize explicit source from fieldData (set by FormProcessor)
-        const source = item.source || item.fieldData?.source || 'heuristic';
+        // Fallback to DOM attribute if source is missing on object (Robust)
+        const source = item.source || item.fieldData?.source || element.getAttribute('data-autofill-source') || 'heuristic';
 
         const fieldInfo = {
             field: element,
@@ -839,7 +840,8 @@ function showAccordionSidebar(allFields) {
 
     // ========== CATEGORIZE ALL FIELDS INTO TABS ==========
     const finalAppFillFields = [];
-    const finalCacheFields = [];
+    // Cache fields are now merged into App Fill
+    // const finalCacheFields = [];
     const finalAiFields = [];
     const finalManualFields = [];
 
@@ -867,9 +869,9 @@ function showAccordionSidebar(allFields) {
         // 2. Classify by Source
         const source = (field.source || '').toLowerCase();
 
-        // CACHE: Explicit cache sources
-        if (source.includes('smart-memory') || source.includes('selection_cache') || source.includes('cache')) {
-            finalCacheFields.push(field);
+        // CACHE: Explicit cache sources - NOW MERGED INTO APP FILL
+        if (source.includes('smart-memory') || source.includes('selection_cache') || source.includes('cache') || source.includes('global_memory')) {
+            finalAppFillFields.push(field);
             return;
         }
 
@@ -889,9 +891,20 @@ function showAccordionSidebar(allFields) {
     groupedSelects.forEach(categorizeField);
     otherFieldsRaw.forEach(categorizeField);
 
-    // console.log(`📄 After Grouping & Re-routing - App Fill: ${finalAppFillFields.length}, Cache: ${finalCacheFields.length}, AI: ${finalAiFields.length}, Manual: ${finalManualFields.length}`);
+    // SORT FIELDS ALPHABETICALLY BY LABEL (User Request)
+    const labelSorter = (a, b) => {
+        const labelA = (a.mlLabel || a.label || '').toLowerCase();
+        const labelB = (b.mlLabel || b.label || '').toLowerCase();
+        return labelA.localeCompare(labelB);
+    };
 
-    if (finalAppFillFields.length === 0 && finalCacheFields.length === 0 && finalAiFields.length === 0) {
+    finalAppFillFields.sort(labelSorter);
+    finalAiFields.sort(labelSorter);
+    finalManualFields.sort(labelSorter);
+
+    // console.log(`📄 After Grouping & Re-routing - App Fill: ${finalAppFillFields.length}, AI: ${finalAiFields.length}, Manual: ${finalManualFields.length}`);
+
+    if (finalAppFillFields.length === 0 && finalAiFields.length === 0) {
         // console.log('No fields to show in sidebar');
         return;
     }
@@ -955,9 +968,6 @@ function showAccordionSidebar(allFields) {
             <button class="tab active" data-tab="app">
                 📄 App Fill <span class="tab-count">(0)</span>
             </button>
-            <button class="tab" data-tab="cache">
-                🧠 Cache <span class="tab-count">(0)</span>
-            </button>
             <button class="tab" data-tab="ai">
                 🤖 AI <span class="tab-count">(0)</span>
             </button>
@@ -972,33 +982,22 @@ function showAccordionSidebar(allFields) {
         <div class="sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
             <!-- App Fill Tab (Read-only, name only) -->
             <div class="tab-content active" data-tab="app">
-                ${finalAppFillFields.map(item => `
-                    <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
-                        <div class="field-label">${item.label}${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
-                    </div>
-                `).join('')}
-                ${finalAppFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
-            </div>
-
-            <!-- Cache Tab (Name only, with recalculate for text fields only) -->
-            <div class="tab-content" data-tab="cache" style="display: none;">
-                ${finalCacheFields.map(item => {
-        // Robust check for text-only fields (Exclude select, number, date, etc.)
+                ${finalAppFillFields.map(item => {
+        // Shared Logic for text-based field detection
         const type = (item.type || '').toLowerCase();
         const tagName = (item.tagName || '').toUpperCase();
         const isSelect = item.isSelectGroup || type.includes('select') || tagName === 'SELECT';
         const excludedTypes = ['number', 'date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'reset', 'button', 'image', 'file', 'checkbox', 'radio'];
 
-        // Strict: Must not be excluded type, must not be select, and if type is present it typically defaults to text
         const isSafeText = !excludedTypes.includes(type) && !isSelect;
-        const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isFileUpload && isSafeText && item.source !== 'selection_cache';
+        const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isFileUpload && isSafeText;
 
         return `
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
-                            <div class="field-label">${item.label}${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
-                            
-                            <div style="display: flex; align-items: center; gap: 8px;">
+                             <div class="field-label">${item.label}${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
+                             
+                             <div style="display: flex; align-items: center; gap: 8px;">
                                 ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
                                 </button>` : ''}
@@ -1006,7 +1005,7 @@ function showAccordionSidebar(allFields) {
                         </div>
                     </div>
                 `}).join('')}
-                ${finalCacheFields.length === 0 ? '<div class="empty-state">No cached fields</div>' : ''}
+                ${finalAppFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
             </div>
 
             <!-- AI Tab (Name + confidence, with recalculate for text fields only) -->
@@ -1090,7 +1089,7 @@ function showAccordionSidebar(allFields) {
 
     // Update tab counts
     panel.querySelector('[data-tab="app"] .tab-count').textContent = `(${finalAppFillFields.length})`;
-    panel.querySelector('[data-tab="cache"] .tab-count').textContent = `(${finalCacheFields.length})`;
+    // panel.querySelector('[data-tab="cache"] .tab-count').textContent = `(${finalCacheFields.length})`;
     panel.querySelector('[data-tab="ai"] .tab-count').textContent = `(${finalAiFields.length})`;
     panel.querySelector('[data-tab="manual"] .tab-count').textContent = `(${finalManualFields.length})`;
 

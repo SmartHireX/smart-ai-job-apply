@@ -24,7 +24,7 @@ class ExecutionEngine {
      * @param {number} confidence 
      * @param {Object} fieldMetadata - Optional field object for caching
      */
-    async fill(selectorOrElement, value, confidence = 1.0, fieldMetadata = null) {
+    async fill(selectorOrElement, value, confidence = 1.0, fieldMetadata = null, source = null) {
         let element = selectorOrElement;
         if (typeof selectorOrElement === 'string') {
             try {
@@ -42,6 +42,11 @@ class ExecutionEngine {
         // Attach ML prediction to DOM element for sidebar cache access
         if (fieldMetadata && fieldMetadata.ml_prediction) {
             element.__ml_prediction = fieldMetadata.ml_prediction;
+        }
+
+        // Stamp Source for Sidebar/UI tracking
+        if (source) {
+            element.setAttribute('data-autofill-source', source);
         }
 
         // Capture State for Undo (CRITICAL FIX)
