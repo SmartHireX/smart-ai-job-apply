@@ -59,11 +59,16 @@ class ExecutionEngine {
         element.dispatchEvent(new Event('focus', { bubbles: true }));
         element.focus();
 
-        // 3. Set Value (React Hack)
-        await this.setValueRobust(element, value);
-
-        // 4. Dispatch Input/Change Events
-        this.dispatchEvents(element);
+        // 3. Set Value (Visual / Human Speed)
+        if (window.showGhostingAnimation) {
+            // Use the "Human Speed" animation requested by the user
+            // This function handles typing simulation, focus, and visual feedback internally
+            await window.showGhostingAnimation(element, value, confidence);
+        } else {
+            // Fallback to instant fill if visual module is missing
+            await this.setValueRobust(element, value);
+            this.dispatchEvents(element);
+        }
 
         // 5. Blur
         element.blur();
