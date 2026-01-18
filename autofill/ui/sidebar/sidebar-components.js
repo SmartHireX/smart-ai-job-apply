@@ -425,11 +425,13 @@ function showAccordionSidebar(allFields) {
             // Capitalize first letter
             label = label.charAt(0).toUpperCase() + label.slice(1).replace(/_/g, ' ');
         } else {
-            // Low confidence or No ML: Use DOM Label + Context
-            const context = item.fieldData?.parentContext || item.parentContext || '';
-            if (context) {
-                label = `${label} (${context})`;
-            }
+            // Low confidence or No ML: Use DOM Label
+            // FIX: Do NOT append context here. Keep label clean to match Cache Tab strategy.
+            // derived from user request: "check in cache tab... use the same strategy"
+            // const context = item.fieldData?.parentContext || item.parentContext || '';
+            // if (context) {
+            //    label = `${label} (${context})`;
+            // }
         }
 
         // Index stored separately for badge display
