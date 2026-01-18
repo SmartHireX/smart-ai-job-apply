@@ -1858,7 +1858,7 @@ function toggleChatInterface() {
 
     // Iframe for Chat Interface
     const iframe = document.createElement('iframe');
-    iframe.src = chrome.runtime.getURL('chat/chat.html');
+    iframe.src = chrome.runtime.getURL('chatbot/ui/chat.html');
     iframe.style.cssText = `
         width: 100%;
         flex: 1;
