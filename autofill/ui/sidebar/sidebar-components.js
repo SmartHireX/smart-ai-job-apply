@@ -1043,18 +1043,36 @@ function showAccordionSidebar(allFields) {
 
             <!-- Manual Tab (Unfilled and file uploads) -->
             <div class="tab-content" data-tab="manual" style="display: none;">
-                ${finalManualFields.map(item => `
+                ${finalManualFields.map(item => {
+                // Robust check for text-only fields (Exclude select, number, date, etc.)
+                const type = (item.type || '').toLowerCase();
+                const tagName = (item.tagName || '').toUpperCase();
+                const isSelect = item.isSelectGroup || type.includes('select') || tagName === 'SELECT';
+                const excludedTypes = ['number', 'date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'reset', 'button', 'image', 'file', 'checkbox', 'radio'];
+
+                // Strict: Must not be excluded type, must not be select, and if type is present it typically defaults to text
+                const isSafeText = !excludedTypes.includes(type) && !isSelect;
+                const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isFileUpload && isSafeText && item.source !== 'selection_cache';
+
+                return `
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
                             <div class="field-label">
                                 ${item.isFileUpload ? '📁 ' : ''}
                                 ${item.label}
                                 ${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}
+                                ${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+                                </button>` : ''}
                             </div>
                         </div>
                         ${item.isFileUpload ? '<div class="field-note">File upload required</div>' : '<div class="field-note">Not filled</div>'}
                     </div>
-                `).join('')}
+                `}).join('')}
                 ${finalManualFields.length === 0 ? '<div class="empty-state">All fields filled!</div>' : ''}
             </div>
 
