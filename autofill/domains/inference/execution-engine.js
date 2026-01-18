@@ -122,14 +122,22 @@ class ExecutionEngine {
 
 
 
-        if (isStructuredInput && window.InteractionLog) {
-            // Structured inputs go to SelectionCache
+        // Read instance_type if missing (from DOM or NovaCache)
+        if (!fieldMetadata.instance_type && element) {
+            fieldMetadata.instance_type = element.getAttribute('instance_type');
+        }
+
+        const isAtomicSingle = fieldMetadata.instance_type === 'ATOMIC_SINGLE';
+
+        if ((isStructuredInput || isAtomicSingle) && window.InteractionLog) {
+            // Structured inputs AND Atomic Single text fields go to SelectionCache (InteractionLog)
+            // This ensures "Cover Letter" (ATOMIC_SINGLE) is stored in the primary cache.
             window.InteractionLog.cacheSelection(fieldMetadata, fieldMetadata.label, newValue);
         } else if (isMultiCacheEligible && window.InteractionLog) {
             // MultiCache-eligible text fields go to InteractionLog (which routes to multiCache)
             window.InteractionLog.cacheSelection(fieldMetadata, fieldMetadata.label, newValue);
-        } else if (!isStructuredInput && !isMultiCacheEligible && window.GlobalMemory) {
-            // Generic text fields go to SmartMemory using cache_label
+        } else if (window.GlobalMemory) {
+            // Generic text fields (fallback) go to SmartMemory using cache_label
             const key = cacheLabel || (window.GlobalMemory.normalizeKey ? window.GlobalMemory.normalizeKey(fieldMetadata.label) : fieldMetadata.label);
             window.GlobalMemory.updateCache({
                 [key]: { answer: newValue, timestamp: Date.now() }
