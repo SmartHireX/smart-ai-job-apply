@@ -531,7 +531,7 @@ function showAccordionSidebar(allFields) {
         // Process radio groups
         Object.entries(radioGroups).forEach(([name, radios]) => {
             // FIX: Re-query live DOM to check status because 'radios' might contain stale element references
-            const selectedRadio = radios.find(r => {
+            let selectedRadio = radios.find(r => {
                 // 1. Try Live Element Check
                 if (r.field instanceof HTMLElement && r.field.isConnected) {
                     return r.field.checked;
@@ -554,6 +554,34 @@ function showAccordionSidebar(allFields) {
                 return r.field.checked;
             });
 
+            // ROBUSTNESS: If iteration failed, try Query Selector for the entire group
+            if (!selectedRadio && name) {
+                try {
+                    const liveChecked = document.querySelector(`input[name="${CSS.escape(name)}"]:checked`);
+                    if (liveChecked) {
+                        // Found a checked radio in the DOM!
+                        // Try to correspond it to one of our known fields
+                        const matchingField = radios.find(r =>
+                            r.field.id === liveChecked.id ||
+                            r.field.value === liveChecked.value
+                        );
+
+                        if (matchingField) {
+                            selectedRadio = matchingField;
+                        } else {
+                            // If we can't match it (dynamicaly added?), create a proxy wrapper
+                            // mimicking the structure so it displays correctly
+                            selectedRadio = {
+                                field: liveChecked,
+                                selector: `input[name="${CSS.escape(name)}"]:checked`,
+                                label: liveChecked.nextElementSibling?.textContent || liveChecked.value,
+                                value: liveChecked.value
+                            };
+                        }
+                    }
+                } catch (e) { /* naming error */ }
+            }
+
             if (selectedRadio) {
                 let selectedValue = selectedRadio.value || selectedRadio.field.value;
 
@@ -568,7 +596,7 @@ function showAccordionSidebar(allFields) {
                 }
 
                 // Get the GROUP label from field name (capitalized and formatted)
-                const fieldName = radios[0].field.name || 'Radio';
+                const fieldName = (radios[0] && radios[0].field.name) || name || 'Radio';
                 let groupLabel = fieldName.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').trim();
                 groupLabel = groupLabel.charAt(0).toUpperCase() + groupLabel.slice(1);
 
