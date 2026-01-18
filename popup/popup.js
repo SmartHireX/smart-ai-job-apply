@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     undoBtn = document.getElementById('undo-btn');
     settingsBtn = document.getElementById('settings-btn');
     openSettingsBtn = document.getElementById('open-settings-btn');
+    const refreshBtn = document.getElementById('refresh-btn');
 
     formStatus = document.getElementById('form-status');
     statusIcon = document.getElementById('status-icon');
@@ -42,6 +43,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     undoBtn.addEventListener('click', handleUndo);
     settingsBtn.addEventListener('click', openSettings);
     openSettingsBtn.addEventListener('click', openSettings);
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+            // Spin animation
+            const svg = refreshBtn.querySelector('svg');
+            if (svg) {
+                svg.style.transition = 'transform 0.5s ease';
+                svg.style.transform = 'rotate(360deg)';
+                setTimeout(() => svg.style.transform = '', 500);
+            }
+            await detectForms();
+        });
+    }
 
     // Check setup status
     await checkSetup();
