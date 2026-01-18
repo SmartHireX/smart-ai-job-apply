@@ -419,11 +419,15 @@ function showAccordionSidebar(allFields) {
         let label = item.fieldData?.label || getFieldLabel(element);
         const ml = item.fieldData?.ml_prediction || item.ml_prediction;
 
-        if (ml && ml.confidence > 0.8 && ml.label) {
+        // Prepare ML Label (formatted) for potential use in Manual/Fallback
+        let formattedMlLabel = null;
+        if (ml && ml.label && ml.label.toLowerCase() !== 'unknown') {
+            formattedMlLabel = ml.label.charAt(0).toUpperCase() + ml.label.slice(1).replace(/_/g, ' ');
+        }
+
+        if (ml && ml.confidence > 0.8 && formattedMlLabel) {
             // High confidence: Use ML Label (Clean)
-            label = ml.label;
-            // Capitalize first letter
-            label = label.charAt(0).toUpperCase() + label.slice(1).replace(/_/g, ' ');
+            label = formattedMlLabel;
         } else {
             // Low confidence or No ML: Use DOM Label
             // FIX: Do NOT append context here. Keep label clean to match Cache Tab strategy.
@@ -449,6 +453,7 @@ function showAccordionSidebar(allFields) {
             field: element,
             selector: item.selector,
             label,
+            mlLabel: formattedMlLabel,
             confidence: item.confidence,
             fieldType: fieldType,
             source: source,
@@ -1059,7 +1064,7 @@ function showAccordionSidebar(allFields) {
                         <div class="field-header">
                             <div class="field-label">
                                 ${item.isFileUpload ? '📁 ' : ''}
-                                ${item.label}
+                                ${item.mlLabel || item.label}
                                 ${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}
                                 ${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}
                             </div>
