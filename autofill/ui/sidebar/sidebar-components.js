@@ -1041,20 +1041,38 @@ function showAccordionSidebar(allFields) {
 
             <!-- Manual Tab (Unfilled and file uploads) -->
             <div class="tab-content" data-tab="manual" style="display: none;">
-                ${finalManualFields.map(item => `
+                ${finalManualFields.map(item => {
+                // Logic: Prioritize ML Prediction Label if > 80%
+                let displayLabel = item.label;
+                let displayContext = '';
+
+                const ml = item.ml_prediction || (item.element && item.element.__ml_prediction);
+
+                if (ml && ml.confidence >= 0.8 && ml.label) {
+                    displayLabel = ml.label; // Use ML Label
+                    // Optional: Show original label as context check?? User didn't ask, but let's keep it clean as per request.
+                    // "if not then show the lable ( parent ocntext )" -> implies mutually exclusive formats.
+                } else {
+                    // Fallback: Label (Parent Context)
+                    if (item.parentContext) {
+                        displayContext = `<span style="opacity: 0.7; margin-left: 4px;">(${item.parentContext})</span>`;
+                    }
+                }
+
+                return `
                     <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="field-header">
                             <div class="field-label">
                                 ${item.isFileUpload ? '📁 ' : ''}
-                                ${item.label}
-                                ${item.parentContext ? `<span style="opacity: 0.7; margin-left: 4px;">(${item.parentContext})</span>` : ''}
+                                ${displayLabel}
+                                ${displayContext}
                                 ${item.cache_label ? `<span style="font-family: monospace; opacity: 0.8; font-size: 0.85em; color: #888; margin-left: 4px;">[${item.cache_label}]</span> ` : ''}
                                 ${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}
                             </div>
                         </div>
                         ${item.isFileUpload ? '<div class="field-note">File upload required</div>' : '<div class="field-note">Not filled</div>'}
                     </div>
-                `).join('')}
+                `}).join('')}
                 ${finalManualFields.length === 0 ? '<div class="empty-state">All fields filled!</div>' : ''}
             </div>
 
