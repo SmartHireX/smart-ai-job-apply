@@ -1454,57 +1454,60 @@ function setTelValue(element, value) {
     let cleanValue = String(value).replace(/[^\d+]/g, '');
 
     // 2. Check if it's a US number with country code (e.g., +1 or 1)
-    // Many masked inputs break if you paste "+1" or "1" prefix
     if (cleanValue.length === 11 && cleanValue.startsWith('1')) {
-        cleanValue = cleanValue.substring(1); // Strip leading '1'
+        cleanValue = cleanValue.substring(1);
     } else if (cleanValue.length === 12 && cleanValue.startsWith('+1')) {
-        cleanValue = cleanValue.substring(2); // Strip leading '+1'
+        cleanValue = cleanValue.substring(2);
     }
 
     // 3. Format if it looks like US number (10 digits) -> (123) 456-7890
-    // This helps masked inputs recognize the patterns
     let formattedValue = cleanValue;
     if (cleanValue.length === 10) {
         formattedValue = `(${cleanValue.substring(0, 3)}) ${cleanValue.substring(3, 6)}-${cleanValue.substring(6)}`;
     }
 
-    // First try normal approach with formatted value
+    // Attempt 1: Direct Set (Standard)
     setNativeValue(element, formattedValue);
     dispatchChangeEvents(element);
 
-    // Check if value stuck (fuzzy check because of formatting)
-    const currentValClean = element.value.replace(/\D/g, '');
-    const expectedValClean = cleanValue.replace(/\D/g, '');
+    // Verify if it stuck
+    const currentClean = element.value.replace(/\D/g, '');
+    const expectedClean = cleanValue.replace(/\D/g, '');
 
-    if (currentValClean === expectedValClean || element.value === formattedValue) return;
+    if (currentClean === expectedClean || element.value === formattedValue) return;
 
-    // Fallback: Clear and simulate keystrokes
-    // Using the raw digits is usually safer for keystroke simulation on masked inputs
+    // Attempt 2: Slow Typing (The Fix)
+    // We use a small delay between keystrokes to satisfy input masks
     element.focus();
     element.value = '';
 
-    const inputToType = cleanValue; // Type raw digits
+    const inputToType = cleanValue; // Raw digits are safer for masks
+    let i = 0;
 
-    for (let i = 0; i < inputToType.length; i++) {
+    // Using setInterval for non-blocking slow typing
+    const typeInterval = setInterval(() => {
+        if (i >= inputToType.length) {
+            clearInterval(typeInterval);
+            dispatchChangeEvents(element);
+            element.blur();
+            return;
+        }
+
         const char = inputToType[i];
 
+        // Detailed Event Sequence: keydown -> keypress -> input -> keyup
         element.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true }));
         element.dispatchEvent(new KeyboardEvent('keypress', { key: char, bubbles: true }));
 
-        // Input event
+        // Append char to value (React workaround)
         const valSoFar = inputToType.substring(0, i + 1);
-
-        // React Hack: changing value property descriptor if possible
-        // But for masked inputs, we often just want to dispatch the event and let the mask handle the value
-        element.value = valSoFar;
+        setNativeValue(element, valSoFar);
 
         element.dispatchEvent(new InputEvent('input', { data: char, bubbles: true, inputType: 'insertText' }));
         element.dispatchEvent(new KeyboardEvent('keyup', { key: char, bubbles: true }));
-    }
 
-    // Final change event
-    dispatchChangeEvents(element);
-    element.blur();
+        i++;
+    }, 20); // 20ms delay per char
 }
 
 function setRadioValue(element, value) {
