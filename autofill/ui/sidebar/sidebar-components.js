@@ -450,6 +450,7 @@ function showAccordionSidebar(allFields) {
         // Smart Label Logic
         let label = item.fieldData?.label || getFieldLabel(element);
         const ml = item.fieldData?.ml_prediction || item.ml_prediction;
+        const parentContext = item.fieldData?.parentContext || item.parentContext || '';
 
         // Prepare ML Label (formatted) for potential use in Manual/Fallback
         let formattedMlLabel = null;
@@ -457,18 +458,26 @@ function showAccordionSidebar(allFields) {
             formattedMlLabel = ml.label.charAt(0).toUpperCase() + ml.label.slice(1).replace(/_/g, ' ');
         }
 
+        // Helper: Check if label is generic/bad
+        const isGenericLabel = (lbl) => {
+            if (!lbl) return true;
+            const lower = lbl.toLowerCase();
+            // Generic patterns: field_1, field_2, unknown field, placeholder text, UUIDs
+            if (/^field[_\-]?\d*$/i.test(lbl)) return true;
+            if (lower === 'unknown field' || lower === 'unknown') return true;
+            if (/^[a-f0-9-]{20,}$/i.test(lbl)) return true; // UUID
+            if (lower.includes('start typing') || lower.includes('type here')) return true; // Placeholder text
+            return false;
+        };
+
+        // Priority: 1. ML Label (conf > 80%) → 2. parentContext (if label is generic) → 3. DOM Label
         if (ml && ml.confidence > 0.8 && formattedMlLabel) {
-            // High confidence: Use ML Label (Clean)
             label = formattedMlLabel;
-        } else {
-            // Low confidence or No ML: Use DOM Label
-            // FIX: Do NOT append context here. Keep label clean to match Cache Tab strategy.
-            // derived from user request: "check in cache tab... use the same strategy"
-            // const context = item.fieldData?.parentContext || item.parentContext || '';
-            // if (context) {
-            //    label = `${label} (${context})`;
-            // }
+        } else if (isGenericLabel(label) && parentContext && parentContext.length > 5) {
+            // Use parentContext when label is generic (field_1, UUID, etc.)
+            label = parentContext;
         }
+        // else: keep the DOM label as-is
 
         // Index stored separately for badge display
         const index = item.fieldData?.field_index ?? item.field_index ?? 0;
