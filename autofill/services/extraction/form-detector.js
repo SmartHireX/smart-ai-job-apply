@@ -475,9 +475,9 @@ function getFieldLabel(element) {
     // 7. Name/ID Fallback (Last Resort) - but only if looks like a real label
     const fallback = element.name || element.id;
     if (fallback) {
-        // Skip UUIDs and random-looking strings
-        if (/^[a-f0-9-]{20,}$/i.test(fallback)) {
-            return 'Unknown Field'; // Don't use UUID as label
+        // Skip UUIDs and random-looking strings or array-like names (cards[...])
+        if (/^[a-f0-9-]{20,}$/i.test(fallback) || /\[.*\]/.test(fallback)) {
+            return 'Unknown Field'; // Don't use UUID or array syntax as label
         }
         return clean(fallback.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1')); // camelCase -> camel Case
     }
@@ -535,20 +535,37 @@ function getElementSelector(element) {
     }
 
     // 3. Fallback: Stable Hierarchical Path
-    // Go up 2 levels
-    let path = element.tagName.toLowerCase();
+    // Build path upwards until unique or hit limit
+    let path = '';
     let current = element;
 
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 4; i++) { // Increased depth to 4
         const parent = current.parentElement;
-        if (!parent || parent.tagName === 'BODY' || parent.tagName === 'HTML') break;
+        if (!parent || parent.tagName === 'HTML') break;
+
+        let tag = current.tagName.toLowerCase();
+
+        // Add ID if present
+        if (current.id && !current.id.match(/\d/)) { // simple alpha IDs only
+            path = `#${CSS.escape(current.id)}` + (path ? ' > ' + path : '');
+            if (document.querySelectorAll(path).length === 1) return path;
+        }
 
         const siblings = Array.from(parent.children).filter(c => c.tagName === current.tagName);
         const idx = siblings.indexOf(current) + 1;
 
-        path = `${parent.tagName.toLowerCase()} > ${path}:nth-of-type(${idx})`;
+        const part = `${tag}:nth-of-type(${idx})`;
+        path = part + (path ? ' > ' + path : '');
+
+        if (document.querySelectorAll(path).length === 1) return path;
+
         current = parent;
     }
+
+    // If we're here, path is still ambiguous or too generic
+    // Only return if it's better than just "input"
+    if (path === 'input' || path === 'select' || path === 'textarea') return null; // Fail gracefully instead of returning generic tag
+    return path;
 
     return path;
 }
@@ -563,7 +580,8 @@ function isFieldVisible(element) {
             style.visibility !== 'hidden' &&
             style.opacity !== '0' &&
             element.offsetWidth > 0 &&
-            element.offsetHeight > 0
+            element.offsetHeight > 0 &&
+            !element.closest('[aria-hidden="true"]') // Prevent focus on hidden elements
         );
     } catch { return false; }
 }

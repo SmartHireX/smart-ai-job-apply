@@ -227,7 +227,8 @@ function detectFormsFallback() {
         return el.offsetParent !== null &&
             style.visibility !== 'hidden' &&
             style.display !== 'none' &&
-            style.opacity !== '0';
+            style.opacity !== '0' &&
+            !el.closest('[aria-hidden="true"]');
     };
 
     const submitButtons = Array.from(document.querySelectorAll('button, input[type="submit"], [role="button"]'))
