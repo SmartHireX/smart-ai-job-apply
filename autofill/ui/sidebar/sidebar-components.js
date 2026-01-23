@@ -1477,37 +1477,22 @@ function setTelValue(element, value) {
     if (currentClean === expectedClean || element.value === formattedValue) return;
 
     // Attempt 2: Slow Typing (The Fix)
-    // We use a small delay between keystrokes to satisfy input masks
-    element.focus();
-    element.value = '';
-
-    const inputToType = cleanValue; // Raw digits are safer for masks
-    let i = 0;
-
-    // Using setInterval for non-blocking slow typing
-    const typeInterval = setInterval(() => {
-        if (i >= inputToType.length) {
-            clearInterval(typeInterval);
-            dispatchChangeEvents(element);
+    // Reuse the ghosting animation logic which handles delayed typing perfectly
+    if (window.showGhostingAnimation) {
+        element.focus();
+        element.value = '';
+        // "Ghost type" the raw digits
+        // We use 'await' if we're in an async context, but setTelValue is sync.
+        // That's fine, showGhostingAnimation returns a promise and runs independently.
+        window.showGhostingAnimation(element, cleanValue, 1.0).then(() => {
             element.blur();
-            return;
-        }
-
-        const char = inputToType[i];
-
-        // Detailed Event Sequence: keydown -> keypress -> input -> keyup
-        element.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true }));
-        element.dispatchEvent(new KeyboardEvent('keypress', { key: char, bubbles: true }));
-
-        // Append char to value (React workaround)
-        const valSoFar = inputToType.substring(0, i + 1);
-        setNativeValue(element, valSoFar);
-
-        element.dispatchEvent(new InputEvent('input', { data: char, bubbles: true, inputType: 'insertText' }));
-        element.dispatchEvent(new KeyboardEvent('keyup', { key: char, bubbles: true }));
-
-        i++;
-    }, 20); // 20ms delay per char
+        });
+    } else {
+        // Fallback if visual module missing (rare)
+        element.focus();
+        element.value = cleanValue;
+        dispatchChangeEvents(element);
+    }
 }
 
 function setRadioValue(element, value) {
