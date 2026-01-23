@@ -25,6 +25,24 @@ class ExecutionEngine {
      * @param {Object} fieldMetadata - Optional field object for caching
      */
     async fill(selectorOrElement, value, confidence = 1.0, fieldMetadata = null, source = null) {
+        // Normalize value: extract string from cache objects
+        if (value && typeof value === 'object') {
+            if ('value' in value) {
+                value = value.value;
+            } else if (Array.isArray(value)) {
+                value = value.map(v => typeof v === 'object' && v.value ? v.value : v).filter(Boolean).join(', ');
+            }
+        }
+
+        // Skip if value is empty/null/undefined
+        if (value === null || value === undefined || value === '') {
+            console.warn('[ExecutionEngine] Skipping empty value for:', selectorOrElement);
+            return false;
+        }
+
+        // Ensure value is a string
+        value = String(value);
+
         let element = selectorOrElement;
         if (typeof selectorOrElement === 'string') {
             try {
