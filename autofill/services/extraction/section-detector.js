@@ -338,12 +338,21 @@ function getNearestHeadingText(field) {
     const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|drag.*drop|browse.*file|supported.*format|pdf|docx|button|submit|cancel|back|next|previous|step \d|page \d/i;
 
     // Question-like patterns (prioritize these)
-    const QUESTION_PATTERNS = /\?$|what|where|when|why|how|which|who|are you|do you|have you|can you|will you|would you|please|enter|provide|describe|select|choose/i;
+    const QUESTION_PATTERNS = /\?|what|where|when|why|how|which|who|are you|do you|have you|can you|will you|would you|please|enter|provide|describe|select|choose|years.*experience/i;
 
     // Helper to validate heading text
-    const isValidHeading = (text) => {
+    const isValidHeading = (text, element = null) => {
         if (!text || text.length < 3 || text.length > 200) return false;
         if (EXCLUSION_PATTERNS.test(text)) return false;
+
+        // If element is provided, check if it's a generic container rather than a label
+        if (element) {
+            const cls = (element.className || "").toLowerCase();
+            // Ignore field containers that might contain labels of multiple fields or the previous field
+            if (cls.includes('field-entry') || cls.includes('form-group') || cls.includes('section-container') || cls.includes('row')) {
+                return false;
+            }
+        }
         return true;
     };
 
@@ -397,10 +406,16 @@ function getNearestHeadingText(field) {
         let siblingCount = 0;
 
         while (sibling && siblingCount < MAX_SIBLINGS) {
-            // Check if sibling IS a Header
+            const text = sibling.innerText ? sibling.innerText.trim() : "";
+
+            // Priority 1: Sibling is a LABEL tag
+            if (sibling.tagName === 'LABEL' && isValidHeading(text, sibling)) {
+                return text;
+            }
+
+            // Priority 2: Sibling IS a Header
             if (/^H[1-6]$/.test(sibling.tagName)) {
-                const text = sibling.innerText.trim();
-                if (isValidHeading(text)) {
+                if (isValidHeading(text, sibling)) {
                     if (QUESTION_PATTERNS.test(text)) {
                         return text; // Immediate return for question-like headings
                     }
@@ -408,32 +423,38 @@ function getNearestHeadingText(field) {
                 }
             }
 
-            // Check if sibling CONTAINS a Header
+            // Priority 3: Sibling CONTAINS a Header
             const nestedHeader = sibling.querySelector('h1, h2, h3, h4, h5, h6');
             if (nestedHeader) {
-                const text = nestedHeader.innerText.trim();
-                if (isValidHeading(text)) {
-                    if (QUESTION_PATTERNS.test(text)) {
-                        return text; // Immediate return for question-like headings
+                const hText = nestedHeader.innerText.trim();
+                if (isValidHeading(hText, nestedHeader)) {
+                    if (QUESTION_PATTERNS.test(hText)) {
+                        return hText; // Immediate return for question-like headings
                     }
-                    if (!regularCandidate) regularCandidate = text;
+                    if (!regularCandidate) regularCandidate = hText;
                 }
             }
 
-            // Special Case: "Label-like" divs - MORE SPECIFIC matching
-            // Only match if class contains form-specific patterns
+            // Priority 4: "Label-like" divs - MORE SPECIFIC matching
             if (sibling.className && typeof sibling.className === 'string') {
                 const cls = sibling.className.toLowerCase();
-                // More specific: "form-label", "field-label", "question-label" NOT just "label"
                 if (cls.includes('form-label') || cls.includes('field-label') ||
                     cls.includes('question') || cls.includes('form-title')) {
-                    const text = sibling.innerText.trim();
-                    if (isValidHeading(text) && text.length < 150) {
+                    if (isValidHeading(text, sibling)) {
                         if (QUESTION_PATTERNS.test(text)) {
                             return text;
                         }
                         if (!regularCandidate) regularCandidate = text;
                     }
+                }
+            }
+
+            // Emergency Break: If we encounter a sibling that is a known field entry container, 
+            // STOP walking siblings. We are entering the territory of another field.
+            if (sibling.className && typeof sibling.className === 'string') {
+                const cls = sibling.className.toLowerCase();
+                if (cls.includes('field-entry') || cls.includes('form-group')) {
+                    break;
                 }
             }
 
