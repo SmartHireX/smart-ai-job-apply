@@ -294,6 +294,12 @@ function getFieldLabel(element) {
     const type = element.type;
     const isGroup = type === 'radio' || type === 'checkbox';
 
+    // 0. Platform-Specific Adapter Strategy (Highest Priority)
+    if (window.LeverAdapter && window.LeverAdapter.isMatch && window.LeverAdapter.isMatch()) {
+        const leverLabel = window.LeverAdapter.findLabel(element);
+        if (leverLabel) return leverLabel;
+    }
+
     // Helper: Clean text
     const clean = (txt) => (txt || '').replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
 
