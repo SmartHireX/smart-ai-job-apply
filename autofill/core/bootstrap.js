@@ -79,6 +79,7 @@ const SCRIPT_QUEUE = [
     'autofill/workflows/instant-fill-workflow.js',
     'autofill/workflows/ai-fill-workflow.js',
     'autofill/domains/inference/execution-engine.js',
+    'autofill/services/handlers/typeahead-handler.js',
     'autofill/core/form-processor.js',
 
     // Chatbot (4 files)

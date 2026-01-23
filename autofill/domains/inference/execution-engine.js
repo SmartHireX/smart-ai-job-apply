@@ -82,7 +82,18 @@ class ExecutionEngine {
         element.dispatchEvent(new Event('focus', { bubbles: true }));
         element.focus();
 
-        // 3. Set Value (Visual / Human Speed)
+        // 3. Check for Typeahead/Autocomplete inputs
+        if (window.TypeaheadHandler && window.TypeaheadHandler.isTypeahead(element)) {
+            console.log(`🔍 [ExecutionEngine] Detected typeahead input, using TypeaheadHandler`);
+            const success = await window.TypeaheadHandler.fill(element, value, confidence);
+            if (success) {
+                this.attachChangeListener(element, fieldMetadata);
+                return true;
+            }
+            // Fall through to normal handling if typeahead failed
+        }
+
+        // 4. Set Value (Visual / Human Speed)
         if (window.showGhostingAnimation) {
             // Use the "Human Speed" animation requested by the user
             // This function handles typing simulation, focus, and visual feedback internally
