@@ -41,35 +41,35 @@ class GlobalMemory {
     }
 
     /**
-     * Resolve a single field against Global Memory
+     * Resolve a single field against Global Memory (ATOMIC_SINGLE)
      */
     static async resolveField(field) {
         const cache = await this.getCache();
 
-        // CENTRALIZED KEY: Use field.cache_label as the primary lookup key
-        // This is THE source of truth set by PipelineOrchestrator
+        // CENTRALIZED KEY matching
         const primaryKey = field.cache_label || this.normalizeKey(field.label || field.name);
         const fallbackKey = this.generateFallbackKey(field);
-
-        // console.log(`🔍 [GlobalMemory] Lookup: "${primaryKey}" (fallback: "${fallbackKey}")`);
 
         // 1. EXACT MATCH on primary key
         if (cache[primaryKey]) {
             console.log(`✅ [GlobalMemory] HIT (Primary): "${primaryKey}"`);
-            return { value: cache[primaryKey].answer, confidence: 0.9 };
+            const val = cache[primaryKey].value || cache[primaryKey].answer;
+            return { value: val, confidence: 0.9 };
         }
 
         // 2. EXACT MATCH on fallback key
         if (cache[fallbackKey]) {
             console.log(`✅ [GlobalMemory] HIT (Fallback): "${fallbackKey}"`);
-            return { value: cache[fallbackKey].answer, confidence: 0.7 };
+            const val = cache[fallbackKey].value || cache[fallbackKey].answer;
+            return { value: val, confidence: 0.7 };
         }
 
-        // 3. JACCARD SIMILARITY FALLBACK (using KeyMatcher)
+        // 3. JACCARD SIMILARITY FALLBACK
         if (window.KeyMatcher && window.KeyMatcher.findBestKeyMatch) {
             const match = window.KeyMatcher.findBestKeyMatch(primaryKey, cache, 0.6);
-            if (match && match.value && match.value.answer) {
-                return { value: match.value.answer, confidence: match.similarity * 0.8 };
+            if (match && (match.value.value || match.value.answer)) {
+                const val = match.value.value || match.value.answer;
+                return { value: val, confidence: match.similarity * 0.8 };
             }
         }
 
@@ -98,48 +98,62 @@ class GlobalMemory {
     }
 
     /**
-     * Fetch Smart Memory cache
+     * Fetch Smart Memory cache (Now maps to ATOMIC_SINGLE bucket)
      * @returns {Promise<Object>} Smart memory cache
      */
     static async getCache() {
         try {
-            const result = await chrome.storage.local.get('smartMemory');
-            return result.smartMemory || {};
+            const result = await chrome.storage.local.get('ATOMIC_SINGLE');
+            return result.ATOMIC_SINGLE || {};
         } catch (error) {
-            console.warn('Failed to load smart memory:', error);
+            console.warn('Failed to load ATOMIC_SINGLE for GlobalMemory:', error);
             return {};
         }
     }
 
     /**
-     * Update Smart Memory cache with new entries
+     * Update Smart Memory cache (Maps to ATOMIC_SINGLE)
      * @param {Object} newEntries - New cache entries to add
      * @returns {Promise<void>}
      */
     static async updateCache(newEntries) {
         try {
-            const result = await chrome.storage.local.get('smartMemory');
-            const currentMemory = result.smartMemory || {};
-            const updatedMemory = { ...currentMemory, ...newEntries };
+            const result = await chrome.storage.local.get('ATOMIC_SINGLE');
+            const currentMemory = result.ATOMIC_SINGLE || {};
 
-            await chrome.storage.local.set({ smartMemory: updatedMemory });
-            console.log(`💾 [GlobalMemory] Saved:`, newEntries);
-            // console.log(`💾 [SmartMemory] Updated cache keys:`, newEntries);
+            // Format alignment: GlobalMemory uses {answer, timestamp}
+            // InteractionLog uses {value, lastUsed, useCount, source}
+            const alignedEntries = {};
+            Object.entries(newEntries).forEach(([k, v]) => {
+                const val = v.answer || v.value;
+                alignedEntries[k] = {
+                    value: val,
+                    lastUsed: Date.now(),
+                    useCount: (currentMemory[k]?.useCount || 0) + 1,
+                    source: 'global_memory',
+                    variants: currentMemory[k]?.variants || []
+                };
+            });
+
+            const updatedMemory = { ...currentMemory, ...alignedEntries };
+
+            await chrome.storage.local.set({ ATOMIC_SINGLE: updatedMemory });
+            console.log(`💾 [GlobalMemory] Saved to ATOMIC_SINGLE:`, Object.keys(alignedEntries));
+
         } catch (error) {
-            console.warn('Failed to update smart memory:', error);
+            console.warn('Failed to update ATOMIC_SINGLE:', error);
         }
     }
 
     /**
-     * Clear Smart Memory cache
-     * @returns {Promise<void>}
+     * Clear Smart Memory cache (Maps to ATOMIC_SINGLE)
+     * @returns {Promise<Object>} Smart memory cache
      */
     static async clearCache() {
         try {
-            await chrome.storage.local.remove('smartMemory');
-            // console.log('🗑️ Smart Memory cache cleared');
+            await chrome.storage.local.remove('ATOMIC_SINGLE');
         } catch (error) {
-            console.warn('Failed to clear smart memory:', error);
+            console.warn('Failed to clear ATOMIC_SINGLE:', error);
         }
     }
 
