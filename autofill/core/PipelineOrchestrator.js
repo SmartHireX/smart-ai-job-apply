@@ -296,7 +296,11 @@ class PipelineOrchestrator {
         for (const field of fields) {
             // Pass the FULL field object to allow ML-based lookup
             const cached = await window.InteractionLog.getCachedValue(field);
-            if (cached && cached.confidence > 0.6) { // Lowered from 0.9 to trust user history more
+
+            // CRITICAL FIX: Ignore empty values from Selection Cache
+            // An empty string usually means "skipped" or "missed", not "explicitly delete".
+            // If we accept empty string, we block GlobalMemory/RuleEngine from providing the real value.
+            if (cached && cached.confidence > 0.6 && cached.value !== '' && cached.value !== null && cached.value !== undefined) {
                 results[field.selector] = cached;
             }
         }
