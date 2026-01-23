@@ -445,6 +445,29 @@ function getNearestHeadingText(field) {
         depth++;
     }
 
+    // 4. Aggressive Sibling Search (Fallback for div-based questions)
+    if (!questionCandidate && !regularCandidate) {
+        let curr = field;
+        for (let i = 0; i < 3; i++) {
+            if (!curr || curr.tagName === 'BODY') break;
+
+            // Check all previous siblings for raw text that looks like a question
+            let sib = curr.previousElementSibling;
+            while (sib) {
+                const text = sib.innerText.trim();
+                // If it looks strongly like a question, take it even if it's a DIV/SPAN
+                if (text.length > 5 && text.length < 200 && QUESTION_PATTERNS.test(text)) {
+                    // Ignore buttons/navs
+                    if (!EXCLUSION_PATTERNS.test(text)) {
+                        return text;
+                    }
+                }
+                sib = sib.previousElementSibling;
+            }
+            curr = curr.parentElement;
+        }
+    }
+
     // Return best candidate (question-like preferred)
     return questionCandidate || regularCandidate || null;
 }
