@@ -440,13 +440,18 @@ class ExecutionEngine {
 
 
     dispatchEvents(element) {
-        const bubbles = { bubbles: true, cancelable: true, view: window };
-        element.dispatchEvent(new Event('input', bubbles));
-        element.dispatchEvent(new Event('change', bubbles));
+        const opts = { bubbles: true, cancelable: true, view: window };
 
-        // Simulating key events for completeness
-        element.dispatchEvent(new KeyboardEvent('keydown', bubbles));
-        element.dispatchEvent(new KeyboardEvent('keyup', bubbles));
+        // Correct order for React Hook Form / Angular Forms compatibility
+        // Order: keydown → input → keyup → change
+        element.dispatchEvent(new KeyboardEvent('keydown', opts));
+        element.dispatchEvent(new InputEvent('input', {
+            ...opts,
+            inputType: 'insertText',
+            data: element.value
+        }));
+        element.dispatchEvent(new KeyboardEvent('keyup', opts));
+        element.dispatchEvent(new Event('change', opts));
     }
 
     flashField(element, confidence) {
