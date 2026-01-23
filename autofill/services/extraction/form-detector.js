@@ -387,31 +387,71 @@ function getFieldLabel(element) {
         if (labelEl) return clean(labelEl.textContent);
     }
 
-    // 4. Nearby Text Strategy (Visual Adjacency) - Higher Priority than Placeholder now
+    // 3b. ARIA DescribedBy (Secondary label/description)
+    if (element.hasAttribute('aria-describedby')) {
+        const id = element.getAttribute('aria-describedby');
+        const descEl = document.getElementById(id);
+        if (descEl) {
+            const text = clean(descEl.textContent);
+            if (text.length > 5 && text.length < 150) return text;
+        }
+    }
+
+    // 4. Deep Parent Search for SPA/React Forms
+    // Look for question text in parent containers (common in Ashby, Lever, etc.)
+    let parent = element.parentElement;
+    const QUESTION_PATTERNS = /\?$|what|where|when|why|how|which|who|are you|do you|have you|please|enter your|provide your/i;
+    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|button|submit|cancel/i;
+
+    for (let i = 0; i < 6 && parent && parent.tagName !== 'FORM' && parent.tagName !== 'BODY'; i++) {
+        // Look for question-like headers in this parent
+        const headers = parent.querySelectorAll('h1, h2, h3, h4, h5, h6, legend, label, .form-label, .field-label, .question');
+
+        for (const header of headers) {
+            // Must be BEFORE the element in DOM order
+            if (header.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING) {
+                const text = clean(header.innerText);
+                if (text.length > 5 && text.length < 200 && !EXCLUSION_PATTERNS.test(text)) {
+                    return text;
+                }
+            }
+        }
+
+        // Check for text directly in parent (for simple structures)
+        const directText = Array.from(parent.childNodes)
+            .filter(n => n.nodeType === Node.TEXT_NODE)
+            .map(n => n.textContent.trim())
+            .filter(t => t.length > 5 && t.length < 150 && !EXCLUSION_PATTERNS.test(t))
+            .find(t => QUESTION_PATTERNS.test(t));
+
+        if (directText) return clean(directText);
+
+        parent = parent.parentElement;
+    }
+
+    // 5. Nearby Text Strategy (Visual Adjacency)
     // Check previous sibling directly
     let prev = element.previousElementSibling;
-    if (prev && clean(prev.innerText).length > 0 && clean(prev.innerText).length < 50) {
-        return clean(prev.innerText);
+    if (prev) {
+        const prevText = clean(prev.innerText);
+        if (prevText.length > 0 && prevText.length < 150 && !EXCLUSION_PATTERNS.test(prevText)) {
+            return prevText;
+        }
     }
 
-    // Check parent text (minus input value)
-    if (element.parentElement) {
-        const parentText = element.parentElement.innerText || '';
-        // Remove own value to avoid "Name Name"
-        const val = element.value || '';
-        const textWithoutVal = parentText.replace(val, '').trim();
-        if (textWithoutVal.length > 2 && textWithoutVal.length < 50) return clean(textWithoutVal);
-    }
-
-    // 5. Placeholder (Fallback for Text Inputs)
+    // 6. Placeholder (Fallback for Text Inputs)
     if (!isGroup && element.placeholder) {
         return clean(element.placeholder);
     }
 
-    // 6. Name/ID Fallback (Last Resort)
+    // 7. Name/ID Fallback (Last Resort) - but only if looks like a real label
     const fallback = element.name || element.id;
     if (fallback) {
-        return clean(fallback.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1')); // camelCaese -> camel Case
+        // Skip UUIDs and random-looking strings
+        if (/^[a-f0-9-]{20,}$/i.test(fallback)) {
+            return 'Unknown Field'; // Don't use UUID as label
+        }
+        return clean(fallback.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1')); // camelCase -> camel Case
     }
 
     if (element.type === 'radio' || element.type === 'checkbox') {

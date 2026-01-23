@@ -334,11 +334,27 @@ function detectFieldSectionContext(field, allFields = []) {
 function getNearestHeadingText(field) {
     if (!field) return null;
 
+    // Exclusion patterns - common UI elements that are NOT form questions
+    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|drag.*drop|browse.*file|supported.*format|pdf|docx|button|submit|cancel|back|next|previous|step \d|page \d/i;
+
+    // Question-like patterns (prioritize these)
+    const QUESTION_PATTERNS = /\?$|what|where|when|why|how|which|who|are you|do you|have you|can you|will you|would you|please|enter|provide|describe|select|choose/i;
+
+    // Helper to validate heading text
+    const isValidHeading = (text) => {
+        if (!text || text.length < 3 || text.length > 200) return false;
+        if (EXCLUSION_PATTERNS.test(text)) return false;
+        return true;
+    };
+
     // 1. Fieldset Legend (Strongest Grouping)
     const fieldset = field.closest('fieldset');
     if (fieldset) {
         const legend = fieldset.querySelector('legend');
-        if (legend && legend.innerText.trim()) return legend.innerText.trim();
+        if (legend && legend.innerText.trim()) {
+            const text = legend.innerText.trim();
+            if (isValidHeading(text)) return text;
+        }
     }
 
     // 2. Table Context
@@ -348,14 +364,20 @@ function getNearestHeadingText(field) {
         const row = cell.parentElement;
         if (row && row.tagName === 'TR') {
             const header = row.querySelector('th');
-            if (header && header.innerText.trim()) return header.innerText.trim();
+            if (header && header.innerText.trim()) {
+                const text = header.innerText.trim();
+                if (isValidHeading(text)) return text;
+            }
         }
 
         // Try Table Caption
         const table = field.closest('table');
         if (table) {
             const caption = table.querySelector('caption');
-            if (caption && caption.innerText.trim()) return caption.innerText.trim();
+            if (caption && caption.innerText.trim()) {
+                const text = caption.innerText.trim();
+                if (isValidHeading(text)) return text;
+            }
         }
     }
 
@@ -363,8 +385,12 @@ function getNearestHeadingText(field) {
     // Walk up parents, and for each parent, scan previous siblings for H1-H6
     let current = field;
     let depth = 0;
-    const MAX_DEPTH = 5; // Don't look at whole page
-    const MAX_SIBLINGS = 15; // Scan generous amount of siblings
+    const MAX_DEPTH = 5;
+    const MAX_SIBLINGS = 10; // Reduced to avoid picking up unrelated UI
+
+    // Track candidates - prioritize question-like text
+    let questionCandidate = null;
+    let regularCandidate = null;
 
     while (current && current.tagName !== 'BODY' && depth < MAX_DEPTH) {
         let sibling = current.previousElementSibling;
@@ -373,21 +399,42 @@ function getNearestHeadingText(field) {
         while (sibling && siblingCount < MAX_SIBLINGS) {
             // Check if sibling IS a Header
             if (/^H[1-6]$/.test(sibling.tagName)) {
-                return sibling.innerText.trim();
+                const text = sibling.innerText.trim();
+                if (isValidHeading(text)) {
+                    if (QUESTION_PATTERNS.test(text)) {
+                        return text; // Immediate return for question-like headings
+                    }
+                    if (!regularCandidate) regularCandidate = text;
+                }
             }
 
-            // Check if sibling CONTAINS a Header (e.g., <div class="header"><h3>Title</h3></div>)
-            // Limit query to direct children or shallow depth to be fast
+            // Check if sibling CONTAINS a Header
             const nestedHeader = sibling.querySelector('h1, h2, h3, h4, h5, h6');
             if (nestedHeader) {
-                return nestedHeader.innerText.trim();
+                const text = nestedHeader.innerText.trim();
+                if (isValidHeading(text)) {
+                    if (QUESTION_PATTERNS.test(text)) {
+                        return text; // Immediate return for question-like headings
+                    }
+                    if (!regularCandidate) regularCandidate = text;
+                }
             }
 
-            // Special Case: "Label-like" divs (common in modern frameworks)
-            // <div class="section-label">Job Preferences</div>
-            if (sibling.className && typeof sibling.className === 'string' &&
-                (sibling.className.includes('label') || sibling.className.includes('title') || sibling.className.includes('header'))) {
-                if (sibling.innerText.length < 50) return sibling.innerText.trim();
+            // Special Case: "Label-like" divs - MORE SPECIFIC matching
+            // Only match if class contains form-specific patterns
+            if (sibling.className && typeof sibling.className === 'string') {
+                const cls = sibling.className.toLowerCase();
+                // More specific: "form-label", "field-label", "question-label" NOT just "label"
+                if (cls.includes('form-label') || cls.includes('field-label') ||
+                    cls.includes('question') || cls.includes('form-title')) {
+                    const text = sibling.innerText.trim();
+                    if (isValidHeading(text) && text.length < 150) {
+                        if (QUESTION_PATTERNS.test(text)) {
+                            return text;
+                        }
+                        if (!regularCandidate) regularCandidate = text;
+                    }
+                }
             }
 
             sibling = sibling.previousElementSibling;
@@ -398,7 +445,8 @@ function getNearestHeadingText(field) {
         depth++;
     }
 
-    return null;
+    // Return best candidate (question-like preferred)
+    return questionCandidate || regularCandidate || null;
 }
 
 // Export to window
