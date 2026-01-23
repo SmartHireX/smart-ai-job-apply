@@ -636,21 +636,21 @@ function showAccordionSidebar(allFields) {
                     selectedValue = selectedRadio.field.parentElement.textContent.trim();
                 }
 
-                // Get the GROUP label with ML prediction logic
-                // Priority: ML label (if conf > 80%) > DOM label + parent context
+                // Get the GROUP label with smart priority
+                // Priority: 1. ML label (conf > 80%) → 2. parentContext → 3. DOM label
                 let groupLabel;
                 const firstRadio = radios[0];
+                const parentContext = firstRadio.parentContext;
 
                 if (firstRadio.mlLabel && firstRadio.mlConfidence > 0.8) {
                     // High confidence ML: Use ML label
                     groupLabel = firstRadio.mlLabel;
+                } else if (parentContext && parentContext.length > 5) {
+                    // Use parentContext directly as label (it's the actual question)
+                    groupLabel = parentContext;
                 } else {
-                    // Low confidence or no ML: Use DOM label + parent context
+                    // Fallback to DOM label extraction
                     groupLabel = getGroupQuestionLabel(firstRadio.field);
-                    const parentContext = firstRadio.parentContext;
-                    if (parentContext && parentContext.length > 0) {
-                        groupLabel = `${groupLabel} (${parentContext})`;
-                    }
                 }
 
                 groupedFields.push({
@@ -663,17 +663,17 @@ function showAccordionSidebar(allFields) {
                 });
             } else {
                 const firstRadio = radios[0];
+                const parentContext = firstRadio.parentContext;
 
-                // Apply same ML prediction logic for unfilled groups
+                // Apply same smart priority logic for unfilled groups
                 let groupLabel;
                 if (firstRadio.mlLabel && firstRadio.mlConfidence > 0.8) {
                     groupLabel = firstRadio.mlLabel;
+                } else if (parentContext && parentContext.length > 5) {
+                    // Use parentContext directly as label
+                    groupLabel = parentContext;
                 } else {
                     groupLabel = getGroupQuestionLabel(firstRadio.field);
-                    const parentContext = firstRadio.parentContext;
-                    if (parentContext && parentContext.length > 0) {
-                        groupLabel = `${groupLabel} (${parentContext})`;
-                    }
                 }
 
                 groupedFields.push({
