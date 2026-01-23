@@ -40,7 +40,7 @@ function detectFieldsetLegend(field) {
     const legend = fieldset.querySelector('legend');
     if (!legend) return null;
 
-    const text = legend.innerText.toLowerCase();
+    const text = (legend.innerText || legend.textContent || "").toLowerCase();
 
     if (/education|school|academic|college|university/i.test(text)) {
         return { context: 'education', confidence: 10, method: 'fieldset' };
@@ -66,7 +66,7 @@ function detectTableCaption(field) {
     const caption = table.querySelector('caption');
     if (!caption) return null;
 
-    const text = caption.innerText.toLowerCase();
+    const text = (caption.innerText || caption.textContent || "").toLowerCase();
 
     if (/education|school|academic/i.test(text)) {
         return { context: 'education', confidence: 9, method: 'table-caption' };
@@ -89,7 +89,7 @@ function detectTableHeaders(field) {
     if (!thead) return null;
 
     const headers = Array.from(thead.querySelectorAll('th'))
-        .map(th => th.innerText.toLowerCase())
+        .map(th => (th.innerText || th.textContent || "").toLowerCase())
         .join(' ');
 
     // Weighted scoring
@@ -131,7 +131,7 @@ function detectSectionHeader(field) {
         let sibling = current.previousElementSibling;
         while (sibling && distance < maxDistance) {
             if (/^H[1-6]$/.test(sibling.tagName)) {
-                const text = sibling.innerText.toLowerCase();
+                const text = (sibling.innerText || sibling.textContent || "").toLowerCase();
 
                 // Calculate confidence with distance decay
                 const baseConfidence = 7;
@@ -179,7 +179,7 @@ function detectSemanticContainer(field) {
     // Check for heading within section
     const heading = section.querySelector(':scope > h1, :scope > h2, :scope > h3, :scope > h4');
     if (heading) {
-        const text = heading.innerText.toLowerCase();
+        const text = (heading.innerText || heading.textContent || "").toLowerCase();
 
         if (/education|school|academic/i.test(text)) {
             return { context: 'education', confidence: 6, method: 'section-element' };
@@ -359,10 +359,9 @@ function getNearestHeadingText(field) {
     // 1. Fieldset Legend (Strongest Grouping)
     const fieldset = field.closest('fieldset');
     if (fieldset) {
-        const legend = fieldset.querySelector('legend');
-        if (legend && legend.innerText.trim()) {
-            const text = legend.innerText.trim();
-            if (isValidHeading(text)) return text;
+        const text = (legend.innerText || legend.textContent || "").trim();
+        if (text) {
+            if (isValidHeading(text, legend)) return text;
         }
     }
 
@@ -373,9 +372,9 @@ function getNearestHeadingText(field) {
         const row = cell.parentElement;
         if (row && row.tagName === 'TR') {
             const header = row.querySelector('th');
-            if (header && header.innerText.trim()) {
-                const text = header.innerText.trim();
-                if (isValidHeading(text)) return text;
+            const hText = (header ? (header.innerText || header.textContent || "") : "").trim();
+            if (hText) {
+                if (isValidHeading(hText, header)) return hText;
             }
         }
 
@@ -383,9 +382,9 @@ function getNearestHeadingText(field) {
         const table = field.closest('table');
         if (table) {
             const caption = table.querySelector('caption');
-            if (caption && caption.innerText.trim()) {
-                const text = caption.innerText.trim();
-                if (isValidHeading(text)) return text;
+            const cText = (caption ? (caption.innerText || caption.textContent || "") : "").trim();
+            if (cText) {
+                if (isValidHeading(cText, caption)) return cText;
             }
         }
     }
@@ -406,7 +405,7 @@ function getNearestHeadingText(field) {
         let siblingCount = 0;
 
         while (sibling && siblingCount < MAX_SIBLINGS) {
-            const text = sibling.innerText ? sibling.innerText.trim() : "";
+            const text = (sibling.innerText || sibling.textContent || "").trim();
 
             // Priority 1: Sibling is a LABEL tag
             if (sibling.tagName === 'LABEL' && isValidHeading(text, sibling)) {
@@ -426,7 +425,7 @@ function getNearestHeadingText(field) {
             // Priority 3: Sibling CONTAINS a Header
             const nestedHeader = sibling.querySelector('h1, h2, h3, h4, h5, h6');
             if (nestedHeader) {
-                const hText = nestedHeader.innerText.trim();
+                const hText = (nestedHeader.innerText || nestedHeader.textContent || "").trim();
                 if (isValidHeading(hText, nestedHeader)) {
                     if (QUESTION_PATTERNS.test(hText)) {
                         return hText; // Immediate return for question-like headings
@@ -475,7 +474,7 @@ function getNearestHeadingText(field) {
             // Check all previous siblings for raw text that looks like a question
             let sib = curr.previousElementSibling;
             while (sib) {
-                const text = sib.innerText.trim();
+                const text = (sib.innerText || sib.textContent || "").trim();
                 // If it looks strongly like a question, take it even if it's a DIV/SPAN
                 if (text.length > 5 && text.length < 200 && QUESTION_PATTERNS.test(text)) {
                     // Ignore buttons/navs
