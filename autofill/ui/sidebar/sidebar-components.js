@@ -330,18 +330,18 @@ async function showRegenerateModal(selector, label) {
     modal.id = 'smarthirex-regenerate-modal';
 
     modal.innerHTML = `
-        <div class="modal-overlay"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">
+        <div class="sh-nova-9x-modal-overlay"></div>
+        <div class="sh-nova-9x-modal">
+            <div class="sh-nova-9x-modal-header">
+                <div class="sh-nova-9x-modal-title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
                     </svg>
                     <span>Regenerate Field</span>
                 </div>
-                <button class="modal-close-btn" id="regen-close">×</button>
+                <button class="sh-nova-9x-modal-close-btn" id="regen-close">×</button>
             </div>
-            <div class="modal-body">
+            <div class="sh-nova-9x-dialog-content">
                 <div class="field-preview">
                     <label>Field:</label>
                     <div class="field-name">${label}</div>
@@ -355,9 +355,9 @@ async function showRegenerateModal(selector, label) {
                     ></textarea>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="regen-cancel">Cancel</button>
-                <button class="btn-primary" id="regen-submit">
+            <div class="sh-nova-9x-dialog-footer">
+                <button class="sh-nova-9x-btn sh-nova-9x-btn-secondary" id="regen-cancel">Cancel</button>
+                <button class="sh-nova-9x-btn sh-nova-9x-btn-primary" id="regen-submit">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
                     </svg>
@@ -977,7 +977,7 @@ function showAccordionSidebar(allFields) {
     panel.id = 'smarthirex-accordion-sidebar';
     panel.innerHTML = `
         <style>
-            .index-badge {
+            .sh-nova-9x-index-badge {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
@@ -996,24 +996,24 @@ function showAccordionSidebar(allFields) {
                 letter-spacing: -0.01em;
             }
         </style>
-        <div class="resize-handle top"></div>
-        <div class="resize-handle right"></div>
-        <div class="resize-handle bottom"></div>
-        <div class="resize-handle left"></div>
-        <div class="resize-handle top-left"></div>
-        <div class="resize-handle top-right"></div>
-        <div class="resize-handle bottom-left"></div>
-        <div class="resize-handle bottom-right"></div>
+        <div class="sh-nova-9x-resize-handle top"></div>
+        <div class="sh-nova-9x-resize-handle right"></div>
+        <div class="sh-nova-9x-resize-handle bottom"></div>
+        <div class="sh-nova-9x-resize-handle left"></div>
+        <div class="sh-nova-9x-resize-handle top-left"></div>
+        <div class="sh-nova-9x-resize-handle top-right"></div>
+        <div class="sh-nova-9x-resize-handle bottom-left"></div>
+        <div class="sh-nova-9x-resize-handle bottom-right"></div>
 
-        <div class="sidebar-header">
-            <div class="header-title">
+        <div class="sh-nova-9x-sidebar-header">
+            <div class="sh-nova-9x-header-title">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
                     <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                 </svg>
                 <span>Form Review</span>
             </div>
-            <div class="header-actions">
-                <button class="header-icon-btn" id="smarthirex-refresh-forms" title="Refresh/Re-detect Forms" style="background: transparent; border: none; cursor: pointer; color: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; padding: 4px; margin-right: 4px; transition: color 0.2s;">
+            <div class="sh-nova-9x-header-actions">
+                <button class="sh-nova-9x-header-icon-btn" id="smarthirex-refresh-forms" title="Refresh/Re-detect Forms" style="background: transparent; border: none; cursor: pointer; color: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; padding: 4px; margin-right: 4px; transition: color 0.2s;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M23 4v6h-6"></path>
                         <path d="M1 20v-6h6"></path>
@@ -1021,33 +1021,33 @@ function showAccordionSidebar(allFields) {
                     </svg>
                 </button>
                 <!-- Removed Clear Highlights Button -->
-                <button class="header-text-btn" id="smarthirex-undo-fill" data-tooltip="Undo all the filled field">
+                <button class="sh-nova-9x-header-text-btn" id="smarthirex-undo-fill" data-tooltip="Undo all the filled field">
                     Undo all
                 </button>
-                <button class="close-btn-x" id="smarthirex-sidebar-close" aria-label="Close Sidebar">
+                <button class="sh-nova-9x-close-btn-x" id="smarthirex-sidebar-close" aria-label="Close Sidebar">
                     ✕
                 </button>
             </div>
         </div>
         
-        <div class="tab-navigation">
-            <button class="tab active" data-tab="app">
-                📄 App Fill <span class="tab-count">(0)</span>
+        <div class="sh-nova-9x-tab-navigation">
+            <button class="sh-nova-9x-tab active" data-tab="app">
+                📄 App Fill <span class="sh-nova-9x-tab-count">(0)</span>
             </button>
-            <button class="tab" data-tab="ai">
-                🤖 AI <span class="tab-count">(0)</span>
+            <button class="sh-nova-9x-tab" data-tab="ai">
+                🤖 AI <span class="sh-nova-9x-tab-count">(0)</span>
             </button>
-            <button class="tab" data-tab="manual">
-                ✋ Manual <span class="tab-count">(0)</span>
+            <button class="sh-nova-9x-tab" data-tab="manual">
+                ✋ Manual <span class="sh-nova-9x-tab-count">(0)</span>
             </button>
-            <button class="tab nova-tab" data-tab="nova" style="display: none;">
+            <button class="sh-nova-9x-tab nova-tab" data-tab="nova" style="display: none;">
                 💬 Nova
             </button>
         </div>
         
-        <div class="sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
+        <div class="sh-nova-9x-sidebar-content-scroll" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
             <!-- App Fill Tab (Read-only, name only) -->
-            <div class="tab-content active" data-tab="app">
+            <div class="sh-nova-9x-tab-content active" data-tab="app">
                 ${finalAppFillFields.map(item => {
         // Shared Logic for text-based field detection
         const type = (item.type || '').toLowerCase();
@@ -1059,9 +1059,9 @@ function showAccordionSidebar(allFields) {
         const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isFileUpload && isSafeText;
 
         return `
-                    <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
-                        <div class="field-header">
-                             <div class="field-label">${item.label}${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
+                    <div class="sh-nova-9x-field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
+                        <div class="sh-nova-9x-field-header">
+                             <div class="sh-nova-9x-field-label">${item.label}${item.indexBadge ? `<span class="sh-nova-9x-index-badge">#${item.indexBadge}</span>` : ''}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
                              
                              <div style="display: flex; align-items: center; gap: 8px;">
                                 ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
@@ -1071,11 +1071,11 @@ function showAccordionSidebar(allFields) {
                         </div>
                     </div>
                 `}).join('')}
-                ${finalAppFillFields.length === 0 ? '<div class="empty-state">No app-filled fields</div>' : ''}
+                ${finalAppFillFields.length === 0 ? '<div class="sh-nova-9x-empty-state">No app-filled fields</div>' : ''}
             </div>
 
             <!-- AI Tab (Name + confidence, with recalculate for text fields only) -->
-            <div class="tab-content" data-tab="ai" style="display: none;">
+            <div class="sh-nova-9x-tab-content" data-tab="ai" style="display: none;">
                 ${finalAiFields.map(item => {
             // Enterprise Logic: Exclude selects explicitly + other non-text types
             const type = (item.type || '').toLowerCase();
@@ -1092,9 +1092,9 @@ function showAccordionSidebar(allFields) {
             const statusIcon = confidence >= 80 ? '●' : '○';
 
             return `
-                    <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
-                        <div class="field-header">
-                            <div class="field-label">${item.label}${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}${(!isTextBased && item.displayValue) ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
+                    <div class="sh-nova-9x-field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
+                        <div class="sh-nova-9x-field-header">
+                            <div class="sh-nova-9x-field-label">${item.label}${item.indexBadge ? `<span class="sh-nova-9x-index-badge">#${item.indexBadge}</span>` : ''}${(!isTextBased && item.displayValue) ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
                             
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div class="${confClass}" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
@@ -1108,11 +1108,11 @@ function showAccordionSidebar(allFields) {
                         </div>
                     </div>
                 `}).join('')}
-                ${finalAiFields.length === 0 ? '<div class="empty-state">No AI-generated fields</div>' : ''}
+                ${finalAiFields.length === 0 ? '<div class="sh-nova-9x-empty-state">No AI-generated fields</div>' : ''}
             </div>
 
             <!-- Manual Tab (Unfilled and file uploads) -->
-            <div class="tab-content" data-tab="manual" style="display: none;">
+            <div class="sh-nova-9x-tab-content" data-tab="manual" style="display: none;">
                 ${finalManualFields.map(item => {
                 // Robust check for text-only fields (Exclude select, number, date, etc.)
                 const type = (item.type || '').toLowerCase();
@@ -1125,12 +1125,12 @@ function showAccordionSidebar(allFields) {
                 const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isFileUpload && isSafeText && item.source !== 'selection_cache';
 
                 return `
-                    <div class="field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
-                        <div class="field-header">
-                            <div class="field-label">
+                    <div class="sh-nova-9x-field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
+                        <div class="sh-nova-9x-field-header">
+                            <div class="sh-nova-9x-field-label">
                                 ${item.isFileUpload ? '📁 ' : ''}
                                 ${item.mlLabel || item.label}
-                                ${item.indexBadge ? `<span class="index-badge">#${item.indexBadge}</span>` : ''}
+                                ${item.indexBadge ? `<span class="sh-nova-9x-index-badge">#${item.indexBadge}</span>` : ''}
                                 ${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}
                             </div>
                             
@@ -1140,24 +1140,24 @@ function showAccordionSidebar(allFields) {
                                 </button>` : ''}
                             </div>
                         </div>
-                        ${item.isFileUpload ? '<div class="field-note">File upload required</div>' : '<div class="field-note">Not filled</div>'}
+                        ${item.isFileUpload ? '<div class="sh-nova-9x-field-note">File upload required</div>' : '<div class="sh-nova-9x-field-note">Not filled</div>'}
                     </div>
                 `}).join('')}
-                ${finalManualFields.length === 0 ? '<div class="empty-state">All fields filled!</div>' : ''}
+                ${finalManualFields.length === 0 ? '<div class="sh-nova-9x-empty-state">All fields filled!</div>' : ''}
             </div>
 
             <!-- Nova Chat Tab (Hidden by default, shown when regenerate is clicked) -->
-            <div class="tab-content" data-tab="nova" style="display: none;">
+            <div class="sh-nova-9x-tab-content" data-tab="nova" style="display: none;">
                 <div id="nova-chat-container"></div>
             </div>
         </div>
     `;
 
     // Update tab counts
-    panel.querySelector('[data-tab="app"] .tab-count').textContent = `(${finalAppFillFields.length})`;
+    panel.querySelector('[data-tab="app"] .sh-nova-9x-tab-count').textContent = `(${finalAppFillFields.length})`;
     // panel.querySelector('[data-tab="cache"] .tab-count').textContent = `(${finalCacheFields.length})`;
-    panel.querySelector('[data-tab="ai"] .tab-count').textContent = `(${finalAiFields.length})`;
-    panel.querySelector('[data-tab="manual"] .tab-count').textContent = `(${finalManualFields.length})`;
+    panel.querySelector('[data-tab="ai"] .sh-nova-9x-tab-count').textContent = `(${finalAiFields.length})`;
+    panel.querySelector('[data-tab="manual"] .sh-nova-9x-tab-count').textContent = `(${finalManualFields.length})`;
 
     document.body.appendChild(panel);
 
@@ -1228,9 +1228,9 @@ function showAccordionSidebar(allFields) {
                 <div id="smarthirex-undo-modal" role="dialog" aria-modal="true">
                     <h3>Confirm Undo</h3>
                     <p>Are you sure you want to undo all filled fields? This action cannot be reversed.</p>
-                    <div class="modal-actions">
-                        <button class="btn btn-cancel" id="smarthirex-modal-cancel">Cancel</button>
-                        <button class="btn btn-confirm" id="smarthirex-modal-confirm">Yes, Undo All</button>
+                    <div class="sh-nova-9x-modal-actions">
+                        <button class="sh-nova-9x-btn sh-nova-9x-btn-cancel" id="smarthirex-modal-cancel">Cancel</button>
+                        <button class="sh-nova-9x-btn sh-nova-9x-btn-confirm" id="smarthirex-modal-confirm">Yes, Undo All</button>
                     </div>
                 </div>
             `;
@@ -1260,7 +1260,7 @@ function showAccordionSidebar(allFields) {
     }
 
     // Tab switching
-    const tabs = panel.querySelectorAll('.tab');
+    const tabs = panel.querySelectorAll('.sh-nova-9x-tab');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const tabName = tab.dataset.tab;
@@ -1270,7 +1270,7 @@ function showAccordionSidebar(allFields) {
             tab.classList.add('active');
 
             // Show corresponding content
-            const tabContents = panel.querySelectorAll('.tab-content');
+            const tabContents = panel.querySelectorAll('.sh-nova-9x-tab-content');
             tabContents.forEach(content => {
                 content.style.display = content.dataset.tab === tabName ? 'block' : 'none';
             });
@@ -1302,7 +1302,7 @@ function showAccordionSidebar(allFields) {
     // Recalculate All buttons removed - individual regenerate only
 
     // Field click handlers for scrolling and highlighting
-    const fieldItems = panel.querySelectorAll('.field-item');
+    const fieldItems = panel.querySelectorAll('.sh-nova-9x-field-item');
     fieldItems.forEach(item => {
         const selector = item.dataset.selector;
         if (!selector) return;
@@ -2225,14 +2225,14 @@ function initNovaTabForRegeneration(selector, label, currentValue) {
     }
 
     // Switch to Nova tab
-    const allTabs = panel.querySelectorAll('.tab');
+    const allTabs = panel.querySelectorAll('.sh-nova-9x-tab');
     allTabs.forEach(t => t.classList.remove('active'));
     novaTabBtn?.classList.add('active');
 
-    const allContents = panel.querySelectorAll('.tab-content');
+    const allContents = panel.querySelectorAll('.sh-nova-9x-tab-content');
     allContents.forEach(c => c.style.display = 'none');
 
-    const novaContent = panel.querySelector('.tab-content[data-tab="nova"]');
+    const novaContent = panel.querySelector('.sh-nova-9x-tab-content[data-tab="nova"]');
     if (novaContent) {
         novaContent.style.display = 'block';
     }
@@ -2412,10 +2412,10 @@ function closeNovaTab() {
         appTabBtn.classList.add('active');
     }
 
-    const allContents = panel.querySelectorAll('.tab-content');
+    const allContents = panel.querySelectorAll('.sh-nova-9x-tab-content');
     allContents.forEach(c => c.style.display = 'none');
 
-    const appContent = panel.querySelector('.tab-content[data-tab="app"]');
+    const appContent = panel.querySelector('.sh-nova-9x-tab-content[data-tab="app"]');
     if (appContent) {
         appContent.style.display = 'block';
     }

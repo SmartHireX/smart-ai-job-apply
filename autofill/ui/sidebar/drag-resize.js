@@ -7,8 +7,8 @@
  * Setup dragging and resizing for the sidebar
  */
 function setupSidebarInteractivity(panel) {
-    const header = panel.querySelector('.sidebar-header');
-    const handles = panel.querySelectorAll('.resize-handle');
+    const header = panel.querySelector('.sh-nova-9x-sidebar-header');
+    const handles = panel.querySelectorAll('.sh-nova-9x-resize-handle');
 
     let isDragging = false;
     let isResizing = false;
@@ -33,7 +33,7 @@ function setupSidebarInteractivity(panel) {
 
     // DRAG LOGIC
     header.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.header-actions') || e.target.closest('.close-btn')) return;
+        if (e.target.closest('.sh-nova-9x-header-actions') || e.target.closest('.sh-nova-9x-close-btn-x')) return;
 
         isDragging = true;
         startX = e.clientX - panel.offsetLeft;

@@ -28,7 +28,7 @@ function showProcessingWidget(text, step, batchInfo = null) {
         `;
 
         // Insert after header
-        const header = panel.querySelector('.sidebar-header');
+        const header = panel.querySelector('.sh-nova-9x-sidebar-header');
         if (header && header.nextSibling) {
             panel.insertBefore(widget, header.nextSibling);
         } else {

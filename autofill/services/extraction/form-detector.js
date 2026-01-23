@@ -273,7 +273,20 @@ function detectForms() {
 
 function extractFormHTML() {
     const forms = detectForms();
-    return Array.from(forms).map(f => f.innerHTML).join('\n');
+
+    // 1. Standard Case: Specific forms found
+    if (forms.length > 0) {
+        return Array.from(forms).map(f => f.outerHTML).join('\n');
+    }
+
+    // 2. Fallback: No distinct forms, but inputs exist (SPA/Modern Web)
+    const allInputs = document.querySelectorAll('input:not([type="hidden"]), select, textarea');
+    if (allInputs.length > 0) {
+        // console.log('⚠️ [FormDetector] No distinct form containers found. Using full body content.');
+        return document.body.innerHTML;
+    }
+
+    return null;
 }
 
 function getFieldLabel(element) {

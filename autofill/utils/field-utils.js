@@ -121,10 +121,16 @@ class FieldUtils {
             'value'
         ).set;
 
-        if (element.tagName === 'TEXTAREA') {
-            nativeTextAreaValueSetter.call(element, value);
-        } else {
-            nativeInputValueSetter.call(element, value);
+        try {
+            if (element.tagName === 'TEXTAREA') {
+                nativeTextAreaValueSetter.call(element, value);
+            } else {
+                nativeInputValueSetter.call(element, value);
+            }
+        } catch (error) {
+            // Fallback for proxies, shadow DOM, or non-standard inputs
+            // console.warn('Native setter failed, falling back to direct assignment:', error);
+            element.value = value;
         }
     }
 

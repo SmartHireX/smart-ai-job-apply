@@ -142,7 +142,7 @@ async function checkSetupStatus() {
  */
 async function callGemini(prompt, systemInstruction = '', options = {}) {
     const {
-        maxTokens = 2048,
+        maxTokens = 8192,
         temperature = 0.7,
         jsonMode = false,
         fileData = null // { mimeType: string, data: string (base64) }
@@ -308,77 +308,63 @@ function parseAIJson(text) {
         try {
             return JSON.parse(jsonStr);
         } catch (parseError) {
-            // 5. Final attempt: Aggressive Repair
-            let fixedJson = jsonStr.trim();
-            try {
-                // Remove trailing garbage that isn't part of JSON
-                fixedJson = fixedJson.replace(/[:,\s]+$/, '');
+            // 5. Final attempt: Aggressive Repair with Backtracking
+            // Strategy: 
+            // 1. Try simple balancing (append quotes/braces)
+            // 2. If valid JSON isn't found, find the last comma, cut it off, and retry (discarding the partial last entry)
 
-                // Fix a very specific but common AI error: missing '}' before ', {' in an array
-                // Example: ... "achievements": [...] , { "company": ...
-                // This replaces any '] ,' with '] } ,' if it looks like an object was open.
-                // We only do this if we can't parse it normally.
-                if (fixedJson.includes('],')) {
-                    // This is a heuristic: if we see '],' and the last open brace hasn't been closed, 
-                    // it might be a missing '}'. We'll try to be more robust by balancing.
-                }
+            let currentAttempt = jsonStr.trim();
+            const MAX_BACKTRACKS = 5; // Don't loop forever
 
-                // Fix unterminated strings
-                const quotes = fixedJson.match(/(?<!\\)"/g) || [];
-                if (quotes.length % 2 !== 0) {
-                    fixedJson += '"';
-                }
+            for (let attempt = 0; attempt <= MAX_BACKTRACKS; attempt++) {
+                try {
+                    let fixedJson = currentAttempt;
 
-                // Balance braces and brackets
-                const stack = [];
-                let repaired = '';
-                for (let i = 0; i < fixedJson.length; i++) {
-                    const char = fixedJson[i];
+                    // 1. Remove trailing garbage/separators
+                    fixedJson = fixedJson.replace(/[:,\s]+$/, '');
 
-                    // Inside string handling
-                    if (char === '"' && (i === 0 || fixedJson[i - 1] !== '\\')) {
-                        repaired += char;
-                        let j = i + 1;
-                        while (j < fixedJson.length && (fixedJson[j] !== '"' || fixedJson[j - 1] === '\\')) {
-                            repaired += fixedJson[j];
-                            j++;
-                        }
-                        if (j < fixedJson.length) repaired += fixedJson[j];
-                        else repaired += '"'; // Close unterminated string
-                        i = j;
-                        continue;
+                    // 2. Fix unterminated strings
+                    const quotes = fixedJson.match(/(?<!\\)"/g) || [];
+                    if (quotes.length % 2 !== 0) {
+                        fixedJson += '"';
                     }
 
-                    if (char === '{' || char === '[') {
-                        stack.push(char === '{' ? '}' : ']');
-                    } else if (char === '}' || char === ']') {
-                        // If it's the wrong closer, it might be a missing closer before this one
-                        if (stack.length > 0 && stack[stack.length - 1] !== char) {
-                            // If we expected '}' but got ']', add the '}' first
-                            if (stack[stack.length - 1] === '}' && char === ']') {
-                                repaired += '}';
-                                stack.pop();
-                            }
-                        }
-                        if (stack.length > 0 && stack[stack.length - 1] === char) {
-                            stack.pop();
+                    // 3. Balance braces and brackets
+                    const stack = [];
+                    for (let i = 0; i < fixedJson.length; i++) {
+                        const char = fixedJson[i];
+                        if (char === '"' && (i === 0 || fixedJson[i - 1] !== '\\')) {
+                            let j = i + 1;
+                            while (j < fixedJson.length && (fixedJson[j] !== '"' || fixedJson[j - 1] === '\\')) j++;
+                            i = j; // Skip string content
+                        } else if (char === '{' || char === '[') {
+                            stack.push(char === '{' ? '}' : ']');
+                        } else if (char === '}' || char === ']') {
+                            if (stack.length > 0 && stack[stack.length - 1] === char) stack.pop();
                         }
                     }
-                    repaired += char;
+                    while (stack.length > 0) fixedJson += stack.pop();
+
+                    // 4. Try parsing
+                    return JSON.parse(fixedJson);
+
+                } catch (parseError) {
+                    if (attempt === MAX_BACKTRACKS) {
+                        console.error('Failed to repair truncated JSON after backtracks:', parseError);
+                        console.error('Raw text:', text);
+                        break;
+                    }
+
+                    // Backtrack: Find last comma and truncate
+                    const lastComma = currentAttempt.lastIndexOf(',');
+                    if (lastComma !== -1) {
+                        // console.log('⚠️ JSON Parse failed, backtracking to last comma...');
+                        currentAttempt = currentAttempt.substring(0, lastComma);
+                    } else {
+                        // No more commas to backtrack to
+                        break;
+                    }
                 }
-
-                fixedJson = repaired;
-
-                // Append missing closers
-                while (stack.length > 0) {
-                    fixedJson += stack.pop();
-                }
-
-                return JSON.parse(fixedJson);
-            } catch (fixError) {
-                console.error('Failed to repair truncated JSON:', fixError);
-                console.error('Raw text:', text);
-                console.error('Attempted fix:', fixedJson);
             }
         }
 

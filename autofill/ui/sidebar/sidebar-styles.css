@@ -29,13 +29,13 @@
     touch-action: none;
 }
 
-#smarthirex-accordion-sidebar .resize-handle {
+#smarthirex-accordion-sidebar .sh-nova-9x-resize-handle {
     position: absolute;
     background: transparent;
     z-index: 10;
 }
 
-#smarthirex-accordion-sidebar .resize-handle.left {
+#smarthirex-accordion-sidebar .sh-nova-9x-resize-handle.left {
     left: 0;
     top: 0;
     width: 6px;
@@ -43,7 +43,7 @@
     cursor: w-resize;
 }
 
-#smarthirex-accordion-sidebar .resize-handle.right {
+#smarthirex-accordion-sidebar .sh-nova-9x-resize-handle.right {
     right: 0;
     top: 0;
     width: 6px;
@@ -51,7 +51,7 @@
     cursor: e-resize;
 }
 
-#smarthirex-accordion-sidebar .resize-handle.top {
+#smarthirex-accordion-sidebar .sh-nova-9x-resize-handle.top {
     top: 0;
     left: 0;
     width: 100%;
@@ -59,7 +59,7 @@
     cursor: n-resize;
 }
 
-#smarthirex-accordion-sidebar .resize-handle.bottom {
+#smarthirex-accordion-sidebar .sh-nova-9x-resize-handle.bottom {
     bottom: 0;
     left: 0;
     width: 100%;
@@ -67,7 +67,7 @@
     cursor: s-resize;
 }
 
-#smarthirex-accordion-sidebar .resize-handle.top-left {
+#smarthirex-accordion-sidebar .sh-nova-9x-resize-handle.top-left {
     top: 0;
     left: 0;
     width: 12px;
@@ -76,7 +76,7 @@
     z-index: 11;
 }
 
-#smarthirex-accordion-sidebar .resize-handle.top-right {
+#smarthirex-accordion-sidebar .sh-nova-9x-resize-handle.top-right {
     top: 0;
     right: 0;
     width: 12px;
@@ -85,7 +85,7 @@
     z-index: 11;
 }
 
-#smarthirex-accordion-sidebar .resize-handle.bottom-left {
+#smarthirex-accordion-sidebar .sh-nova-9x-resize-handle.bottom-left {
     bottom: 0;
     left: 0;
     width: 12px;
@@ -94,7 +94,7 @@
     z-index: 11;
 }
 
-#smarthirex-accordion-sidebar .resize-handle.bottom-right {
+#smarthirex-accordion-sidebar .sh-nova-9x-resize-handle.bottom-right {
     bottom: 0;
     right: 0;
     width: 12px;
@@ -146,7 +146,7 @@
     }
 }
 
-#smarthirex-accordion-sidebar .sidebar-header {
+#smarthirex-accordion-sidebar .sh-nova-9x-sidebar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -159,11 +159,11 @@
     cursor: grab;
 }
 
-#smarthirex-accordion-sidebar .sidebar-header:active {
+#smarthirex-accordion-sidebar .sh-nova-9x-sidebar-header:active {
     cursor: grabbing;
 }
 
-#smarthirex-accordion-sidebar .header-title {
+#smarthirex-accordion-sidebar .sh-nova-9x-header-title {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -174,7 +174,7 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-#smarthirex-accordion-sidebar .header-title svg {
+#smarthirex-accordion-sidebar .sh-nova-9x-header-title svg {
     color: white;
     opacity: 0.9;
 }
@@ -205,7 +205,7 @@
     border-color: rgba(255, 255, 255, 0.4);
 }
 
-#smarthirex-accordion-sidebar .header-actions {
+#smarthirex-accordion-sidebar .sh-nova-9x-header-actions {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -234,7 +234,7 @@
 }
 
 /* Header Text Button (Undo All) */
-#smarthirex-accordion-sidebar .header-text-btn {
+#smarthirex-accordion-sidebar .sh-nova-9x-header-text-btn {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
@@ -247,7 +247,7 @@
     font-family: inherit;
 }
 
-#smarthirex-accordion-sidebar .header-text-btn:hover {
+#smarthirex-accordion-sidebar .sh-nova-9x-header-text-btn:hover {
     background: rgba(255, 255, 255, 0.25);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -267,7 +267,7 @@
 }
 
 /* Close button (X) */
-#smarthirex-accordion-sidebar .close-btn-x {
+#smarthirex-accordion-sidebar .sh-nova-9x-close-btn-x {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
@@ -283,7 +283,7 @@
     transition: all 0.2s;
 }
 
-#smarthirex-accordion-sidebar .close-btn-x:hover {
+#smarthirex-accordion-sidebar .sh-nova-9x-close-btn-x:hover {
     background: rgba(255, 255, 255, 0.25);
     transform: scale(1.05);
 }
@@ -330,7 +330,7 @@
 }
 
 /* Tab Navigation */
-#smarthirex-accordion-sidebar .tab-navigation {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab-navigation {
     display: flex;
     gap: 4px;
     padding: 8px 12px;
@@ -343,24 +343,24 @@
     scrollbar-color: #cbd5e1 #f8f9fa;
 }
 
-#smarthirex-accordion-sidebar .tab-navigation::-webkit-scrollbar {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab-navigation::-webkit-scrollbar {
     height: 4px;
 }
 
-#smarthirex-accordion-sidebar .tab-navigation::-webkit-scrollbar-track {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab-navigation::-webkit-scrollbar-track {
     background: #f8f9fa;
 }
 
-#smarthirex-accordion-sidebar .tab-navigation::-webkit-scrollbar-thumb {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab-navigation::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 2px;
 }
 
-#smarthirex-accordion-sidebar .tab-navigation::-webkit-scrollbar-thumb:hover {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab-navigation::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
 
-#smarthirex-accordion-sidebar .tab {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab {
     padding: 6px 14px;
     border-radius: 6px;
     background: transparent;
@@ -373,25 +373,25 @@
     white-space: nowrap;
 }
 
-#smarthirex-accordion-sidebar .tab.active {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab.active {
     background: white;
     color: #0a66c2;
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-#smarthirex-accordion-sidebar .tab:hover:not(.active) {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab:hover:not(.active) {
     background: rgba(255, 255, 255, 0.5);
     color: #0a66c2;
 }
 
-#smarthirex-accordion-sidebar .tab-count {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab-count {
     opacity: 0.7;
     font-size: 13px;
 }
 
 /* Tab Content */
-#smarthirex-accordion-sidebar .tab-content {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab-content {
     padding: 0;
 }
 
@@ -406,7 +406,7 @@
 
 
 /* Field Items - Premium Design */
-#smarthirex-accordion-sidebar .field-item {
+#smarthirex-accordion-sidebar .sh-nova-9x-field-item {
     padding: 16px 20px;
     border-bottom: 1px solid #f1f5f9;
     background: white;
@@ -415,24 +415,24 @@
     cursor: pointer;
 }
 
-#smarthirex-accordion-sidebar .field-item:hover {
+#smarthirex-accordion-sidebar .sh-nova-9x-field-item:hover {
     background: #f8fafc;
     border-left: 3px solid #0a66c2;
     padding-left: 17px;
     /* Compensate for border */
 }
 
-#smarthirex-accordion-sidebar .field-item:last-child {
+#smarthirex-accordion-sidebar .sh-nova-9x-field-item:last-child {
     border-bottom: none;
 }
 
-#smarthirex-accordion-sidebar .field-header {
+#smarthirex-accordion-sidebar .sh-nova-9x-field-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-#smarthirex-accordion-sidebar .field-label {
+#smarthirex-accordion-sidebar .sh-nova-9x-field-label {
     font-weight: 600;
     font-size: 14px;
     color: #111827;
@@ -454,7 +454,7 @@
     border-radius: 12px;
 }
 
-#smarthirex-accordion-sidebar .field-note {
+#smarthirex-accordion-sidebar .sh-nova-9x-field-note {
     font-size: 11px;
     color: #f59e0b;
     margin-top: 6px;
@@ -462,19 +462,19 @@
 }
 
 /* Manual tab field styling - Attention State */
-#smarthirex-accordion-sidebar .tab-content[data-tab="manual"] .field-item {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab-content[data-tab="manual"] .sh-nova-9x-field-item {
     border-left: 3px solid #f43f5e;
     background: #fff1f2;
 }
 
-#smarthirex-accordion-sidebar .tab-content[data-tab="manual"] .field-item:hover {
+#smarthirex-accordion-sidebar .sh-nova-9x-tab-content[data-tab="manual"] .sh-nova-9x-field-item:hover {
     background: #ffe4e6;
     border-left-color: #e11d48;
 }
 
 
 
-#smarthirex-accordion-sidebar .empty-state {
+#smarthirex-accordion-sidebar .sh-nova-9x-empty-state {
     padding: 60px 24px;
     text-align: center;
     color: #9ca3af;
@@ -1225,13 +1225,13 @@
     line-height: 1.5;
 }
 
-#smarthirex-undo-modal .modal-actions {
+#smarthirex-undo-modal .sh-nova-9x-modal-actions {
     display: flex;
     gap: 12px;
     justify-content: center;
 }
 
-#smarthirex-undo-modal .btn {
+#smarthirex-undo-modal .sh-nova-9x-btn {
     padding: 10px 20px;
     border-radius: 8px;
     font-size: 14px;
@@ -1242,23 +1242,23 @@
     flex: 1;
 }
 
-#smarthirex-undo-modal .btn-cancel {
+#smarthirex-undo-modal .sh-nova-9x-btn-cancel {
     background: #f1f5f9;
     color: #64748b;
 }
 
-#smarthirex-undo-modal .btn-cancel:hover {
+#smarthirex-undo-modal .sh-nova-9x-btn-cancel:hover {
     background: #e2e8f0;
     color: #475569;
 }
 
-#smarthirex-undo-modal .btn-confirm {
+#smarthirex-undo-modal .sh-nova-9x-btn-confirm {
     background: #dc2626;
     color: white;
     box-shadow: 0 1px 2px rgba(220, 38, 38, 0.1);
 }
 
-#smarthirex-undo-modal .btn-confirm:hover {
+#smarthirex-undo-modal .sh-nova-9x-btn-confirm:hover {
     background: #b91c1c;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.25);

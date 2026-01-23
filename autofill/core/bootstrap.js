@@ -220,6 +220,16 @@ function detectFormsFallback() {
         return false;
     };
 
+    // Helper: Check visibility
+    const isFieldVisible = (el) => {
+        if (!el) return false;
+        const style = window.getComputedStyle(el);
+        return el.offsetParent !== null &&
+            style.visibility !== 'hidden' &&
+            style.display !== 'none' &&
+            style.opacity !== '0';
+    };
+
     const submitButtons = Array.from(document.querySelectorAll('button, input[type="submit"], [role="button"]'))
         .filter(btn => isSubmitButton(btn) && isFieldVisible(btn));
 
