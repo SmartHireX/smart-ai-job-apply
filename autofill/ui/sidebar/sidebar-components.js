@@ -1869,35 +1869,17 @@ function attachSelfCorrectionTrigger(element) {
         // (Moved cacheLabel logic up)
         // console.log(`🔍 [CacheDebug] Cache Label: ${cacheLabel} and element : `, element);
 
-        if (!handledByInteractionLog && isMultiCacheEligible && window.InteractionLog) {
+        // UNIFIED CACHING STRATEGY (Consolidated)
+        // All interactions flow into InteractionLog -> 3-Bucket System
+        if (window.InteractionLog && newValue !== null && newValue !== undefined) {
+            // Always route to InteractionLog.
+            // It handles Text vs Select routing via instance_type internally.
             await window.InteractionLog.cacheSelection(element, label, newValue);
-            // console.log(`📚 [MultiCache] Learned: "${label}" → ${newValue}`);
+            // console.log(`📚 [UnifiedCache] Learned: "${label}" → ${newValue}`);
+
             handledByInteractionLog = true;
-        }
-
-        // Strategy C: Fallback to Smart Memory (Generic Text)
-        // If not handled by InteractionLog, and it's a valid text string
-        if (!handledByInteractionLog && newValue && String(newValue).length > 1) {
-            // Use authoritative cacheLabel if available, otherwise normalize label
-            const key = cacheLabel || (window.GlobalMemory ? window.GlobalMemory.normalizeKey(label) : label);
-
-            if (window.GlobalMemory) {
-                await window.GlobalMemory.updateCache({
-                    [key]: {
-                        answer: newValue,
-                        timestamp: Date.now()
-                    }
-                });
-            } else if (window.updateSmartMemoryCache) {
-                // Formatting for legacy bridge if needed
-                await window.updateSmartMemoryCache({
-                    [key]: {
-                        answer: newValue,
-                        timestamp: Date.now()
-                    }
-                });
-            }
-            // console.log(`🧠 [SmartMemory] Learned: "${label}" → ${newValue}`);
+        } else {
+            console.warn('[Sidebar] InteractionLog missing, cannot save field.');
         }
     };
 

@@ -374,26 +374,16 @@ class PipelineOrchestrator {
             } else {
                 // Auto-Cache: If filled successfully and NOT from cache, save it!
                 if (res.source !== 'selection_cache' && res.source !== 'cache' && field) {
-                    const fieldType = (field.type || '').toLowerCase();
-                    const isStructuredInput = ['radio', 'checkbox', 'select', 'select-one', 'select-multiple'].includes(fieldType);
 
-                    // Check if this is a multiCache-eligible field (job/education/skills)
-                    // Use centralized routing logic
-                    const fieldContext = [field.label, field.name, field.parentContext].filter(Boolean).join(' ').toLowerCase();
-                    const isMultiCacheEligible = window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, fieldType);
+                    // UNIFIED CACHING ARCHITECTURE (Consolidated)
+                    // All fields flow into InteractionLog, which routes them to:
+                    // 1. ATOMIC_SINGLE (Text, Phone, Email, Single-Select, Radio)
+                    // 2. ATOMIC_MULTI (Skills, Interests)
+                    // 3. SECTIONAL_MULTI (Jobs, Education)
 
-                    if (isStructuredInput && window.InteractionLog) {
-                        // Structured inputs go to SelectionCache
+                    if (window.InteractionLog) {
+                        // Pass label, value, and the full field object (vital for instance_type routing)
                         window.InteractionLog.cacheSelection(field, field.label, res.value);
-                    } else if (isMultiCacheEligible && window.InteractionLog) {
-                        // MultiCache-eligible text fields go to InteractionLog (which routes to multiCache)
-                        window.InteractionLog.cacheSelection(field, field.label, res.value);
-                    } else if (!isStructuredInput && !isMultiCacheEligible && window.GlobalMemory) {
-                        // Generic text fields go to SmartMemory using cache_label
-                        const key = field.cache_label || (window.GlobalMemory.normalizeKey ? window.GlobalMemory.normalizeKey(field.label) : field.label);
-                        window.GlobalMemory.updateCache({
-                            [key]: { answer: res.value, timestamp: Date.now() }
-                        });
                     }
                 }
             }

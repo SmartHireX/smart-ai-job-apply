@@ -689,9 +689,9 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     }
 
     if (!cached) {
-        // D. GLOBAL MEMORY FALLBACK (Unified View)
-        // If InteractionLog (Atomic Choices) misses, check GlobalMemory (Atomic Text)
-        // This satisfies the "Atomic Single" contract for text fields like Cover Letter.
+        // D. GLOBAL MEMORY FALLBACK (REMOVED)
+        // Unified Architecture: We strictly use ATOMIC_SINGLE bucket within InteractionLog.
+        /*
         if (targetBucket === CACHE_KEYS.ATOMIC_SINGLE && window.GlobalMemory) {
             const memoryResult = await window.GlobalMemory.resolveField(field);
             if (memoryResult) {
@@ -704,6 +704,8 @@ async function getCachedValue(fieldOrSelector, labelArg) {
                 };
             }
         }
+        */
+
         return null;
     }
 
