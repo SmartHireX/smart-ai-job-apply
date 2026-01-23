@@ -459,7 +459,14 @@ function extractFieldsFromDOM(source) {
                     const rawContext = window.SectionDetector.getNearestHeadingText(element);
                     if (rawContext) {
                         field.parentContext = rawContext;
-                        // console.log(`🎯 [ParentContext] "${field.label}" → "${rawContext}"`);
+                        // Smart Label Promotion:
+                        // If current label is technical (cards[...], field_1, UUID) or "Unknown Field",
+                        // but we found a valid human-readable context/header, USE IT as the label.
+                        const isTechnical = /cards\[|\[.*\]|^field[-_]?\d|unknown field|[0-9a-f-]{20,}/i.test(field.label);
+                        if (isTechnical && rawContext.length > 5 && rawContext.length < 150) {
+                            // console.log(`✨ [SmartLabel] Promoted context to label: "${rawContext}" (was "${field.label}")`);
+                            field.label = rawContext;
+                        }
                     }
                 }
             }
