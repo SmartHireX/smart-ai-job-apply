@@ -1420,7 +1420,42 @@ function setFieldValue(element, value) {
     else if (type === 'checkbox') setCheckboxValue(element, value);
     else if (type === 'date' || type === 'time' || type === 'datetime-local') setDateTimeValue(element, value);
     else if (tag === 'select') setSelectValue(element, value);
+    else if (type === 'tel') setTelValue(element, value); // Special handling for phone inputs
     else setTextValue(element, value);
+}
+
+/**
+ * Special handler for tel/phone inputs in React apps
+ * Simulates typing to ensure React properly registers input
+ */
+function setTelValue(element, value) {
+    if (!value) return;
+
+    // First try normal approach
+    setNativeValue(element, value);
+    dispatchChangeEvents(element);
+
+    // Check if value was set correctly
+    if (element.value === value) return;
+
+    // Fallback: Clear and simulate keystrokes for React/masked inputs
+    element.focus();
+    element.value = '';
+
+    // Dispatch input events for each character
+    const valueStr = String(value);
+    for (let i = 0; i < valueStr.length; i++) {
+        const char = valueStr[i];
+
+        // Simulate keystroke
+        element.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true }));
+        element.value = valueStr.substring(0, i + 1);
+        element.dispatchEvent(new InputEvent('input', { data: char, bubbles: true, inputType: 'insertText' }));
+        element.dispatchEvent(new KeyboardEvent('keyup', { key: char, bubbles: true }));
+    }
+
+    // Final change event
+    dispatchChangeEvents(element);
 }
 
 function setRadioValue(element, value) {
