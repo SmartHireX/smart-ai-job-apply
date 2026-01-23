@@ -65,10 +65,11 @@ class LeverAdapter {
             if (parent.classList.contains('custom-question') ||
                 parent.classList.contains('application-question') ||
                 parent.classList.contains('application-label') ||
+                parent.classList.contains('card-field') || // Added card-field support
                 parent.className.includes('question')) {
 
                 // 1. Look for explicit .application-label
-                const label = parent.querySelector('.application-label, .text, .question-text, label');
+                const label = parent.querySelector('.application-label, .card-field-label, .text, .question-text, label');
                 if (label) return label.innerText.trim();
 
                 // 2. Look for the text node directly in this container (common in Lever)
@@ -80,14 +81,21 @@ class LeverAdapter {
 
                 // 3. Look for previous sibling of the inputs wrapper
                 // Structure: <div class="text">Question</div> <div class="fields"><input></div>
-                if (parent.classList.contains('fields') || parent.tagName === 'LABEL') {
+                if (parent.classList.contains('fields') || parent.tagName === 'LABEL' || parent.classList.contains('card-field-input-container')) {
                     const grandParent = parent.parentElement;
                     if (grandParent) {
-                        const questionSibling = grandParent.querySelector('.text, .application-label');
+                        const questionSibling = grandParent.querySelector('.text, .application-label, .card-field-label');
                         if (questionSibling) return questionSibling.innerText.trim();
                     }
                 }
             }
+
+            // Generic fallback for Lever Cards: If we are in a 'card' and didn't find specific classes
+            if (parent.className.includes('card')) {
+                const text = parent.innerText.split('\n')[0]; // Often the first line is the label
+                if (text && text.length > 5 && text.length < 150) return text.trim();
+            }
+
             parent = parent.parentElement;
         }
         return null;
