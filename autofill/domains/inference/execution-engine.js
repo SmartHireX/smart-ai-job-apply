@@ -263,14 +263,16 @@ class ExecutionEngine {
             return;
         }
 
-        // Date Format Handling
-        // Different input types require different date formats
-        // Using valueAsDate is more reliable than string-based value setting
-        if (type === 'date' || type === 'month') {
+        // Date Format Handling (ENHANCED)
+        // Detect expected format from placeholder/pattern and format accordingly
+        const isDateType = type === 'date' || type === 'month';
+        const hasDatePlaceholder = element.placeholder && /[md]{2}[\/-][md]{2}|yyyy|dd|mm/i.test(element.placeholder);
+
+        if (isDateType || hasDatePlaceholder) {
             let parsedDate = null;
             let formattedValue = String(value).trim();
 
-            // Try to parse the date from various formats
+            // Parse date from various input formats
             if (/^\d{4}-\d{2}-\d{2}$/.test(formattedValue)) {
                 // Already in yyyy-MM-dd format
                 parsedDate = new Date(formattedValue + 'T00:00:00');
@@ -280,29 +282,53 @@ class ExecutionEngine {
             } else if (/^\d{4}$/.test(formattedValue)) {
                 // yyyy format -> January 1st
                 parsedDate = new Date(`${formattedValue}-01-01T00:00:00`);
+            } else if (/^\d{2}[-\/]\d{2}[-\/]\d{4}$/.test(formattedValue)) {
+                // MM/DD/YYYY or DD/MM/YYYY - ambiguous, assume MM/DD/YYYY (US format)
+                const parts = formattedValue.split(/[-\/]/);
+                parsedDate = new Date(`${parts[2]}-${parts[0]}-${parts[1]}T00:00:00`);
             } else if (/^[A-Za-z]+ \d{4}$/.test(formattedValue)) {
                 // "July 2025" format
+                parsedDate = new Date(formattedValue);
+            } else if (/^[A-Za-z]+ \d{1,2},? \d{4}$/.test(formattedValue)) {
+                // "July 15, 2025" or "July 15 2025"
                 parsedDate = new Date(formattedValue);
             } else {
                 // Try generic parsing
                 parsedDate = new Date(formattedValue);
             }
 
-            // If we have a valid date, format it correctly for the input type
+            // If we have a valid date, format based on target expectations
             if (parsedDate && !isNaN(parsedDate.getTime())) {
+                const year = parsedDate.getFullYear();
+                const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(parsedDate.getDate()).padStart(2, '0');
+
                 if (type === 'date') {
-                    // Format as yyyy-MM-dd
-                    const year = parsedDate.getFullYear();
-                    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
-                    const day = String(parsedDate.getDate()).padStart(2, '0');
+                    // Native date input always uses yyyy-MM-dd
                     value = `${year}-${month}-${day}`;
                 } else if (type === 'month') {
-                    // Format as yyyy-MM
-                    const year = parsedDate.getFullYear();
-                    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                    // Native month input uses yyyy-MM
                     value = `${year}-${month}`;
+                } else if (hasDatePlaceholder) {
+                    // Text input - detect expected format from placeholder
+                    const ph = element.placeholder.toLowerCase();
+
+                    if (ph.includes('mm/dd/yyyy') || ph.includes('mm-dd-yyyy')) {
+                        value = `${month}/${day}/${year}`;
+                    } else if (ph.includes('dd/mm/yyyy') || ph.includes('dd-mm-yyyy')) {
+                        value = `${day}/${month}/${year}`;
+                    } else if (ph.includes('yyyy-mm-dd')) {
+                        value = `${year}-${month}-${day}`;
+                    } else if (ph.includes('mm/dd') || ph.includes('mm-dd')) {
+                        value = `${month}/${day}/${year}`;
+                    } else if (ph.includes('dd/mm') || ph.includes('dd-mm')) {
+                        value = `${day}/${month}/${year}`;
+                    } else {
+                        // Default to ISO format
+                        value = `${year}-${month}-${day}`;
+                    }
+                    console.log(`📅 [DateFormat] Placeholder: "${element.placeholder}" -> Output: "${value}"`);
                 }
-                // console.log(`📅 [DateFormat] Type: ${type}, Original: "${formattedValue}" -> Formatted: "${value}"`);
             } else {
                 console.warn(`⚠️ [DateFormat] Could not parse date: "${formattedValue}"`);
             }
