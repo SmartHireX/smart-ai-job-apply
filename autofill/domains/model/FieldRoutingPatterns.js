@@ -105,36 +105,70 @@ class FieldRoutingPatterns {
             return true;
         }
 
-        // 2. EXCLUSIONS (Single-Value Fields that might contain section keywords)
-        // These fields should NEVER be treated as repeating section fields
+        // 2. EXCLUSIONS (Single-Value Fields that contain section keywords but ARE NOT repeating sections)
+        // These fields must be excluded BEFORE checking section keywords
+
+        // 2a. Profile Questions (demographics, legal)
         if (this.PROFILE_QUESTIONS.test(ctx)) {
             return false;
         }
 
-        const exclusionKeywords = [
+        // 2b. Survey/Sourcing Questions (contain "job" but are single-value)
+        const surveyExclusions = [
+            'how did you hear',           // "How did you hear about this job?"
+            'where did you hear',         // "Where did you hear about this job?"
+            'referral source',            // Source tracking
+            'hear about this',            // General sourcing
+            'learn about this',           // General sourcing
+            'find this job',              // General sourcing
+            'find out about',             // General sourcing
+            'job board',                  // Sourcing question
+            'job posting',                // Sourcing reference
+            'apply for this job',         // Motivation question
+            'why this job',               // Motivation question
+            'interested in this job'      // Motivation question
+        ];
+        if (surveyExclusions.some(excl => ctx.includes(excl))) {
+            return false;
+        }
+
+        // 2c. Other Single-Value Questions
+        const singleValueExclusions = [
             'currently employed', 'are you employed', 'notice period',
             'authorized to work', 'require sponsorship', 'relocate',
             'education level', 'highest degree', 'degree type',
-            'years of experience', 'total experience'
+            'years of experience', 'total experience', 'years experience',
+            'total years', 'how many years', 'experience level',
+            'open to relocat', 'willing to relocat'
         ];
         // CRITICAL: Only exclude if there is NO explicit index in the name
         // (e.g. "school_0_degree" should still be allowed, but "degree_level" should be excluded)
         if (!/[\b_.-]\d+[\b_.-]/.test(ctx)) {
-            if (exclusionKeywords.some(kw => ctx.includes(kw))) {
+            if (singleValueExclusions.some(kw => ctx.includes(kw))) {
                 return false;
             }
         }
 
-        // 3. Section Keywords (Job/Education)
+        // 3. Section Keywords (Job/Education) - More specific patterns
         // These fields belong to repeated sections and must be handled by SectionController
         const sectionKeywords = [
-            'job', 'employment', 'employer', 'work experience', 'position',
-            'education', 'school', 'university', 'college', 'degree', 'institution',
-            'project', 'volunteer', 'certification', 'training',
-            // Specific compound terms only - avoids "description" capture
-            'job description', 'work description', 'project description',
-            'summary of responsibilities', 'duties and responsibilities',
-            'job_description', 'work_description'
+            // Work Experience - require compound terms or specific patterns
+            'job title', 'job role', 'job history', 'job details',
+            'employer name', 'employer address', 'company name',
+            'work experience', 'work history', 'employment history',
+            'position title', 'position held', 'current position', 'previous position',
+            'job description', 'work description', 'duties', 'responsibilities',
+
+            // Education - specific compound terms
+            'school name', 'university name', 'college name', 'institution name',
+            'education history', 'educational background',
+            'degree name', 'degree earned', 'field of study', 'major', 'minor',
+            'graduation date', 'graduation year', 'start date', 'end date',
+
+            // Other repeating sections
+            'project name', 'project title', 'project description',
+            'volunteer experience', 'volunteering',
+            'certification name', 'certificate', 'training'
         ];
 
         // Check for presence of any section keyword
