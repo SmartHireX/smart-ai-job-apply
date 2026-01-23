@@ -338,7 +338,7 @@ function getNearestHeadingText(field) {
     const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|drag.*drop|browse.*file|supported.*format|pdf|docx|button|submit|cancel|back|next|previous|step \d|page \d/i;
 
     // Question-like patterns (prioritize these)
-    const QUESTION_PATTERNS = /\?|what|where|when|why|how|which|who|are you|do you|have you|can you|will you|would you|please|enter|provide|describe|select|choose|years.*experience/i;
+    const QUESTION_PATTERNS = /\?|what|where|when|why|how|which|who|are you|do you|have you|can you|will you|would you|please|enter|provide|describe|select|choose|years.*experience|tell.*us/i;
 
     // Helper to validate heading text
     const isValidHeading = (text, element = null) => {
@@ -349,7 +349,7 @@ function getNearestHeadingText(field) {
         if (element) {
             const cls = (element.className || "").toLowerCase();
             // Ignore field containers that might contain labels of multiple fields or the previous field
-            if (cls.includes('field-entry') || cls.includes('form-group') || cls.includes('section-container') || cls.includes('row')) {
+            if (cls.includes('field-entry') || cls.includes('form-group') || cls.includes('section-container') || cls.includes('row') || cls.includes('ashby-application-form-field-entry')) {
                 return false;
             }
         }
@@ -452,7 +452,7 @@ function getNearestHeadingText(field) {
             // STOP walking siblings. We are entering the territory of another field.
             if (sibling.className && typeof sibling.className === 'string') {
                 const cls = sibling.className.toLowerCase();
-                if (cls.includes('field-entry') || cls.includes('form-group')) {
+                if (cls.includes('field-entry') || cls.includes('form-group') || cls.includes('ashby-application-form-field-entry')) {
                     break;
                 }
             }
@@ -474,6 +474,11 @@ function getNearestHeadingText(field) {
             // Check all previous siblings for raw text that looks like a question
             let sib = curr.previousElementSibling;
             while (sib) {
+                // EMERGENCY BREAK: Don't walk into neighboring field entries
+                if (sib.classList && sib.classList.contains('ashby-application-form-field-entry')) {
+                    break;
+                }
+
                 const text = (sib.innerText || sib.textContent || "").trim();
                 // If it looks strongly like a question, take it even if it's a DIV/SPAN
                 if (text.length > 5 && text.length < 200 && QUESTION_PATTERNS.test(text)) {

@@ -470,12 +470,13 @@ function showAccordionSidebar(allFields) {
             return false;
         };
 
-        // Priority: 1. ML Label (conf > 80%) → 2. parentContext (if label is generic) → 3. DOM Label
-        if (ml && ml.confidence > 0.8 && formattedMlLabel) {
-            label = formattedMlLabel;
-        } else if (isGenericLabel(label) && parentContext && parentContext.length > 5) {
-            // Use parentContext when label is generic (field_1, UUID, etc.)
-            label = parentContext;
+        // Priority: 1. DOM Label (if descriptive) → 2. ML Label (if conf > 80%) → 3. parentContext (fallback)
+        if (isGenericLabel(label)) {
+            if (ml && ml.confidence > 0.8 && formattedMlLabel) {
+                label = formattedMlLabel;
+            } else if (parentContext && parentContext.length > 5) {
+                label = parentContext;
+            }
         }
         // else: keep the DOM label as-is
 
@@ -771,12 +772,19 @@ function showAccordionSidebar(allFields) {
         function extractPrefix(name) {
             if (!name) return null;
 
+            // NEW: Do NOT group Ashby Custom Fields (UUIDs or cards[...] pattern)
+            // Grouping these unrelated personal questions creates "missing fields" in preview
+            if (name.includes('cards[') || name.includes('[field')) {
+                return null;
+            }
+
             // Try underscore delimiter: education_level -> education
             if (name.includes('_')) {
                 return name.split('_')[0];
             }
 
             // Try dash delimiter: work-experience -> work
+            // Ashby UUIDs contain dashes - we exclude them above to avoid over-grouping
             if (name.includes('-')) {
                 return name.split('-')[0];
             }
@@ -1011,6 +1019,9 @@ function showAccordionSidebar(allFields) {
                     <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                 </svg>
                 <span>Form Review</span>
+                <span style="font-size: 11px; opacity: 0.6; margin-left: 6px; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 10px; font-weight: 500;">
+                    ${allFields.length} Fields
+                </span>
             </div>
             <div class="sh-nova-9x-header-actions">
                 <button class="sh-nova-9x-header-icon-btn" id="smarthirex-refresh-forms" title="Refresh/Re-detect Forms" style="background: transparent; border: none; cursor: pointer; color: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; padding: 4px; margin-right: 4px; transition: color 0.2s;">
