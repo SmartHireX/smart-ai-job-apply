@@ -122,7 +122,7 @@ class Phase1InstantFill {
                     // Fallback: Direct lookup
                     for (const [cachedLabel, cachedData] of Object.entries(smartMemory)) {
                         if (cachedLabel === fieldLabel) {
-                            foundAnswer = cachedData.answer;
+                            foundAnswer = cachedData.value || cachedData.answer;
                             break;
                         }
                     }

@@ -252,10 +252,10 @@ class GlobalMemory {
     static async import(jsonString) {
         try {
             const cache = JSON.parse(jsonString);
-            await chrome.storage.local.set({ smartMemory: cache });
-            // console.log('✅ Smart Memory imported successfully');
+            await chrome.storage.local.set({ ATOMIC_SINGLE: cache });
+            // console.log('✅ Global Memory imported successfully to ATOMIC_SINGLE');
         } catch (error) {
-            console.error('❌ Failed to import smart memory:', error);
+            console.error('❌ Failed to import global memory:', error);
             throw error;
         }
     }
