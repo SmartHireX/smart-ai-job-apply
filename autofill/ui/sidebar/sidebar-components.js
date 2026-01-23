@@ -1443,6 +1443,21 @@ function setFieldValue(element, value) {
 }
 
 /**
+ * Sets text value using ghost typing animation for consistency
+ */
+function setTextValue(element, value) {
+    if (window.showGhostingAnimation) {
+        // Use ghost typing for all text fields
+        // This ensures React/Angular compatibility and consistent user experience
+        window.showGhostingAnimation(element, value, 1.0);
+    } else {
+        // Fallback
+        setNativeValue(element, value);
+        dispatchChangeEvents(element);
+    }
+}
+
+/**
  * Special handler for tel/phone inputs in React apps
  * Simulates typing to ensure React properly registers input
  */
