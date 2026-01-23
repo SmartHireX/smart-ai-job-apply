@@ -488,11 +488,11 @@ function showAccordionSidebar(allFields) {
             selector: item.selector,
             label,
             mlLabel: formattedMlLabel,
+            mlConfidence: ml?.confidence || 0,
+            parentContext: item.fieldData?.parentContext || item.parentContext || '',
             confidence: item.confidence,
             fieldType: fieldType,
             source: source,
-            value: value,
-            filled: hasValue,
             value: value,
             filled: hasValue,
             isFileUpload,
@@ -636,8 +636,22 @@ function showAccordionSidebar(allFields) {
                     selectedValue = selectedRadio.field.parentElement.textContent.trim();
                 }
 
-                // Get the GROUP label from DOM (question text, not name attribute)
-                const groupLabel = getGroupQuestionLabel(radios[0].field);
+                // Get the GROUP label with ML prediction logic
+                // Priority: ML label (if conf > 80%) > DOM label + parent context
+                let groupLabel;
+                const firstRadio = radios[0];
+
+                if (firstRadio.mlLabel && firstRadio.mlConfidence > 0.8) {
+                    // High confidence ML: Use ML label
+                    groupLabel = firstRadio.mlLabel;
+                } else {
+                    // Low confidence or no ML: Use DOM label + parent context
+                    groupLabel = getGroupQuestionLabel(firstRadio.field);
+                    const parentContext = firstRadio.parentContext;
+                    if (parentContext && parentContext.length > 0) {
+                        groupLabel = `${groupLabel} (${parentContext})`;
+                    }
+                }
 
                 groupedFields.push({
                     ...selectedRadio,
@@ -649,7 +663,18 @@ function showAccordionSidebar(allFields) {
                 });
             } else {
                 const firstRadio = radios[0];
-                let groupLabel = getGroupQuestionLabel(firstRadio.field);
+
+                // Apply same ML prediction logic for unfilled groups
+                let groupLabel;
+                if (firstRadio.mlLabel && firstRadio.mlConfidence > 0.8) {
+                    groupLabel = firstRadio.mlLabel;
+                } else {
+                    groupLabel = getGroupQuestionLabel(firstRadio.field);
+                    const parentContext = firstRadio.parentContext;
+                    if (parentContext && parentContext.length > 0) {
+                        groupLabel = `${groupLabel} (${parentContext})`;
+                    }
+                }
 
                 groupedFields.push({
                     ...firstRadio,
