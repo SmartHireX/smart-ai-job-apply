@@ -148,8 +148,12 @@ function detectForms() {
         '.application-form',
         '[id*="job-application"]',
         '[class*="job-application"]',
-        '.ashby-application-form-container', // AshbyHQ specific
-        '[class*="ashby-application-form"]'   // AshbyHQ generic
+        '.ashby-application-form-container', // AshbyHQ specific container
+        '[class*="ashby-application-form"]',   // AshbyHQ generic class
+        '[data-testid="application-form"]',    // AshbyHQ test ID
+        'div[class*="ApplicationForm"]',       // AshbyHQ React component class
+        '[class*="_applicationForm"]',         // AshbyHQ CSS modules pattern
+        'main [class*="application"]'          // Ashby main content area
     ];
 
     const candidates = document.querySelectorAll(selectors.join(', '));

@@ -95,6 +95,202 @@ const SCRIPT_QUEUE = [
     'autofill/core/autofill-orchestrator.js'
 ];
 
+// ==========================================
+// ROBUST SPA-AWARE FORM DETECTION
+// ==========================================
+
+/**
+ * Platform-specific selectors for job application forms
+ * These target common ATS platforms and ensure consistent detection
+ */
+const FORM_SELECTORS = [
+    // Standard
+    'form',
+    '[role="form"]',
+
+    // AshbyHQ (React SPA - primary target for this fix)
+    '.ashby-application-form-container',
+    '[class*="ashby-application-form"]',
+    '[data-testid="application-form"]',
+    'div[class*="ApplicationForm"]',
+
+    // Greenhouse
+    '#application_form',
+    '.application-form',
+    '[id*="job-application"]',
+
+    // Lever
+    '.application-page',
+    '[class*="application-form"]',
+
+    // Workday
+    '[data-automation-id="form-container"]',
+    '[data-automation-id="applicationForm"]',
+
+    // Generic patterns
+    '[class*="job-application"]',
+    '[id*="apply"]',
+    'main form',
+    'section form'
+];
+
+/**
+ * Check if an element is a valid form container
+ * @param {Element} el - Element to check
+ * @returns {boolean}
+ */
+function isValidFormContainer(el) {
+    if (!el) return false;
+
+    // Must have input fields
+    const inputCount = el.querySelectorAll('input:not([type="hidden"]), select, textarea').length;
+    if (inputCount === 0) return false;
+
+    // Exclude search forms and nav elements
+    const isSearch = el.getAttribute('role') === 'search' ||
+        el.classList.contains('search-form') ||
+        (el.id && el.id.toLowerCase().includes('search')) ||
+        (el.className && el.className.toLowerCase().includes('search'));
+
+    if (isSearch) return false;
+
+    // Exclude tiny forms (likely login/subscribe widgets)
+    if (inputCount < 2 && !el.closest('main, article, [role="main"]')) return false;
+
+    return true;
+}
+
+/**
+ * Detect forms using robust selector matching
+ * @returns {number} Form count
+ */
+function detectFormsFallback() {
+    // Try platform-specific selectors
+    const candidates = document.querySelectorAll(FORM_SELECTORS.join(', '));
+    const validForms = Array.from(candidates).filter(isValidFormContainer);
+
+    if (validForms.length > 0) {
+        return validForms.length;
+    }
+
+    // Fallback: Density Scan for virtual forms (SPA without form tags)
+    const allInputs = document.querySelectorAll('input:not([type="hidden"]), select, textarea');
+    if (allInputs.length >= 3) {
+        // Check if inputs are clustered (likely a form)
+        const inputContainers = new Map();
+
+        allInputs.forEach(input => {
+            let parent = input.parentElement;
+            for (let i = 0; i < 5; i++) {
+                if (!parent || parent.tagName === 'BODY' || parent.tagName === 'HTML') break;
+                inputContainers.set(parent, (inputContainers.get(parent) || 0) + 1);
+                parent = parent.parentElement;
+            }
+        });
+
+        // Find container with most inputs
+        for (const [container, count] of inputContainers.entries()) {
+            if (count >= 3 && isValidFormContainer(container)) {
+                return 1; // Virtual form found
+            }
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Detect forms with retry logic for SPAs
+ * Handles dynamically loaded content (React, Vue, Angular)
+ * @returns {Promise<number>} Form count
+ */
+async function detectFormsWithRetry() {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAYS = [0, 500, 1500]; // Immediate, 500ms, 1.5s
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        // Wait before retry (except first attempt)
+        if (attempt > 0) {
+            await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
+        }
+
+        // Use advanced detector if loaded
+        if (typeof window.detectForms === 'function') {
+            try {
+                const forms = window.detectForms();
+                if (forms && forms.length > 0) {
+                    return forms.length;
+                }
+            } catch (e) {
+                console.warn('detectForms error:', e);
+            }
+        }
+
+        // Use robust fallback
+        const count = detectFormsFallback();
+        if (count > 0) {
+            return count;
+        }
+
+        // On last attempt, try waiting for DOM mutations
+        if (attempt === MAX_RETRIES - 1) {
+            const mutationResult = await waitForFormMutation(1500);
+            if (mutationResult > 0) return mutationResult;
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Wait for potential form mutation (lazy loading)
+ * @param {number} timeout - Max wait time in ms
+ * @returns {Promise<number>} Form count after mutation
+ */
+function waitForFormMutation(timeout) {
+    return new Promise(resolve => {
+        let resolved = false;
+
+        const observer = new MutationObserver((mutations) => {
+            // Check if any mutation added form elements
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const hasInputs = node.querySelector &&
+                            node.querySelector('input, select, textarea');
+                        if (hasInputs || FORM_SELECTORS.some(sel => {
+                            try { return node.matches && node.matches(sel); } catch { return false; }
+                        })) {
+                            // Form-like content added, check full page
+                            const count = detectFormsFallback();
+                            if (count > 0 && !resolved) {
+                                resolved = true;
+                                observer.disconnect();
+                                resolve(count);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // Timeout fallback
+        setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                observer.disconnect();
+                resolve(detectFormsFallback());
+            }
+        }, timeout);
+    });
+}
+
 /**
  * Dynamically inject a script
  * @param {string} src - Script path
@@ -169,31 +365,13 @@ async function loadAllScripts() {
  * Handle activation message
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    // Quick form detection
+    // Robust form detection with SPA support
     if (message.type === 'DETECT_FORMS') {
-        let formCount = 0;
-
-        // Use advanced detector if available
-        if (typeof window.detectForms === 'function') {
-            const forms = window.detectForms();
-            formCount = forms.length;
-        } else {
-            // Fallback: Simple scan
-            const forms = document.querySelectorAll('form');
-            forms.forEach(form => {
-                if (form.querySelectorAll('input:not([type="hidden"]), select, textarea').length > 0) formCount++;
-            });
-        }
-
-        // Standalone input check (Virtual Form) fallback
-        if (formCount === 0 && !window.detectForms) {
-            const inputs = document.querySelectorAll('input:not([type="hidden"]), textarea, select');
-            const standalone = Array.from(inputs).filter(i => !i.closest('form'));
-            if (standalone.length > 3) formCount = 1;
-        }
-
-        sendResponse({ formCount });
-        return true;
+        // Use async detection with retry for SPAs
+        detectFormsWithRetry().then(formCount => {
+            sendResponse({ formCount });
+        });
+        return true; // Keep channel open for async
     }
 
     // Extension activation
