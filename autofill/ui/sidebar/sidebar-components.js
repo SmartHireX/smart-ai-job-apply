@@ -1449,31 +1449,62 @@ function setFieldValue(element, value) {
 function setTelValue(element, value) {
     if (!value) return;
 
-    // First try normal approach
-    setNativeValue(element, value);
+    // Smart Phone Logic:
+    // 1. Clean the value
+    let cleanValue = String(value).replace(/[^\d+]/g, '');
+
+    // 2. Check if it's a US number with country code (e.g., +1 or 1)
+    // Many masked inputs break if you paste "+1" or "1" prefix
+    if (cleanValue.length === 11 && cleanValue.startsWith('1')) {
+        cleanValue = cleanValue.substring(1); // Strip leading '1'
+    } else if (cleanValue.length === 12 && cleanValue.startsWith('+1')) {
+        cleanValue = cleanValue.substring(2); // Strip leading '+1'
+    }
+
+    // 3. Format if it looks like US number (10 digits) -> (123) 456-7890
+    // This helps masked inputs recognize the patterns
+    let formattedValue = cleanValue;
+    if (cleanValue.length === 10) {
+        formattedValue = `(${cleanValue.substring(0, 3)}) ${cleanValue.substring(3, 6)}-${cleanValue.substring(6)}`;
+    }
+
+    // First try normal approach with formatted value
+    setNativeValue(element, formattedValue);
     dispatchChangeEvents(element);
 
-    // Check if value was set correctly
-    if (element.value === value) return;
+    // Check if value stuck (fuzzy check because of formatting)
+    const currentValClean = element.value.replace(/\D/g, '');
+    const expectedValClean = cleanValue.replace(/\D/g, '');
 
-    // Fallback: Clear and simulate keystrokes for React/masked inputs
+    if (currentValClean === expectedValClean || element.value === formattedValue) return;
+
+    // Fallback: Clear and simulate keystrokes
+    // Using the raw digits is usually safer for keystroke simulation on masked inputs
     element.focus();
     element.value = '';
 
-    // Dispatch input events for each character
-    const valueStr = String(value);
-    for (let i = 0; i < valueStr.length; i++) {
-        const char = valueStr[i];
+    const inputToType = cleanValue; // Type raw digits
 
-        // Simulate keystroke
+    for (let i = 0; i < inputToType.length; i++) {
+        const char = inputToType[i];
+
         element.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true }));
-        element.value = valueStr.substring(0, i + 1);
+        element.dispatchEvent(new KeyboardEvent('keypress', { key: char, bubbles: true }));
+
+        // Input event
+        const valSoFar = inputToType.substring(0, i + 1);
+
+        // React Hack: changing value property descriptor if possible
+        // But for masked inputs, we often just want to dispatch the event and let the mask handle the value
+        element.value = valSoFar;
+
         element.dispatchEvent(new InputEvent('input', { data: char, bubbles: true, inputType: 'insertText' }));
         element.dispatchEvent(new KeyboardEvent('keyup', { key: char, bubbles: true }));
     }
 
     // Final change event
     dispatchChangeEvents(element);
+    element.blur();
 }
 
 function setRadioValue(element, value) {
