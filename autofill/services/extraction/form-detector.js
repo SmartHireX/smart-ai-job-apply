@@ -289,6 +289,88 @@ function extractFormHTML() {
     return null;
 }
 
+/**
+ * VISUAL LABEL ALGORITHM (The "Human Eye" Strategy)
+ * Mimics how a user visually scans for a label.
+ * 1. Look at immediate previous sibling (Left/Above)
+ * 2. Walk up to parent, look at parent's previous sibling (Container Label)
+ * 3. Walk up to grandparent, etc.
+ * 4. Score candidates based on "Question Likeness" (?, :)
+ */
+function getVisualLabel(element) {
+    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|button|submit|cancel/i;
+    const QUESTION_PATTERNS = /\?$|what|where|when|why|how|which|who|are you|do you|have you|please|enter your|provide your|:$|expected/i;
+
+    let current = element;
+    let bestCandidate = null;
+    let bestScore = 0;
+
+    // Walk up 5 levels maximum
+    for (let depth = 0; depth < 5; depth++) {
+        if (!current || current.tagName === 'BODY' || current.tagName === 'HTML' || current.tagName === 'FORM') break;
+
+        // Check Previous Siblings at this level
+        let sibling = current.previousElementSibling;
+        let siblingCount = 0;
+
+        while (sibling && siblingCount < 3) { // Limit sibling lookback
+            const text = (sibling.innerText || '').trim();
+            const cleanText = text.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
+
+            if (isValidLabel(cleanText)) {
+                let score = 10 - (depth * 2) - siblingCount; // Base score (Distance decay)
+
+                // Content Bonuses
+                if (QUESTION_PATTERNS.test(cleanText)) score += 20; // It's a question!
+                if (/H[1-6]|LABEL|LEGEND/.test(sibling.tagName)) score += 5; // It's a semantic header
+                if (sibling.className.includes('label') || sibling.className.includes('question')) score += 5; // CSS hint
+
+                // Length Penalties
+                if (cleanText.length > 100) score -= 5;
+
+                // Exclusion Update
+                if (EXCLUSION_PATTERNS.test(cleanText)) score = -100;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestCandidate = cleanText;
+                }
+            }
+            sibling = sibling.previousElementSibling;
+            siblingCount++;
+        }
+
+        // Also check if the Parent itself has text (e.g. <label>Question <input></label>)
+        if (depth > 0) { // Don't check self
+            const parentText = Array.from(current.childNodes)
+                .filter(n => n.nodeType === Node.TEXT_NODE)
+                .map(n => n.textContent.trim())
+                .join(' ');
+
+            if (isValidLabel(parentText)) {
+                let score = 10 - (depth * 2) + 2; // Direct parent text is good
+                if (QUESTION_PATTERNS.test(parentText)) score += 20;
+                if (current.tagName === 'LABEL') score += 10;
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestCandidate = parentText;
+                }
+            }
+        }
+
+        current = current.parentElement;
+    }
+
+    return bestScore > 5 ? bestCandidate : null;
+}
+
+function isValidLabel(text) {
+    if (!text) return false;
+    if (text.length < 2 || text.length > 300) return false;
+    if (/^[0-9]+$/.test(text)) return false; // Ignore pure numbers
+    return true;
+}
+
 function getFieldLabel(element) {
     let label = '';
     const type = element.type;
@@ -298,6 +380,15 @@ function getFieldLabel(element) {
     if (window.LeverAdapter && window.LeverAdapter.isMatch && window.LeverAdapter.isMatch()) {
         const leverLabel = window.LeverAdapter.findLabel(element);
         if (leverLabel) return leverLabel;
+    }
+
+    // 0.5. Visual Label Strategy (The "Human Eye" / Heuristic Accessibility Mapper)
+    // Overrides standard labels if they are missing or likely generic
+    const visualLabel = getVisualLabel(element);
+    if (visualLabel) {
+        // Only accept if we don't have a strong explicit label, OR if the visual label is extremely high confidence (question)
+        // Actually, let's treat it as high priority because standard labels failing is the root cause here.
+        return clean(visualLabel);
     }
 
     // Helper: Clean text
