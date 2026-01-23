@@ -359,9 +359,12 @@ function getNearestHeadingText(field) {
     // 1. Fieldset Legend (Strongest Grouping)
     const fieldset = field.closest('fieldset');
     if (fieldset) {
-        const text = (legend.innerText || legend.textContent || "").trim();
-        if (text) {
-            if (isValidHeading(text, legend)) return text;
+        const legend = fieldset.querySelector('legend');
+        if (legend) {
+            const text = (legend.innerText || legend.textContent || "").trim();
+            if (text) {
+                if (isValidHeading(text, legend)) return text;
+            }
         }
     }
 
