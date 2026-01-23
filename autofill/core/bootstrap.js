@@ -179,6 +179,24 @@ function detectFormsFallback() {
         }
     }
 
+    if (window.GreenhouseAdapter && window.GreenhouseAdapter.isMatch()) {
+        console.log('🔌 [Platform] Greenhouse Adapter Detected');
+        const ghForm = window.GreenhouseAdapter.getForm();
+        if (ghForm) {
+            ghForm.dataset.novaPlatform = 'Greenhouse';
+            return 1;
+        }
+    }
+
+    if (window.WorkdayAdapter && window.WorkdayAdapter.isMatch()) {
+        console.log('🔌 [Platform] Workday Adapter Detected');
+        const wdForm = window.WorkdayAdapter.getForm();
+        if (wdForm) {
+            wdForm.dataset.novaPlatform = 'Workday';
+            return 1;
+        }
+    }
+
     if (validForms.length > 0) {
         return validForms.length;
     }
