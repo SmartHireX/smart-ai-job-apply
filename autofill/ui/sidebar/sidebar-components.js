@@ -571,112 +571,84 @@ function showAccordionSidebar(allFields) {
 
         // Process radio groups
         Object.entries(radioGroups).forEach(([name, radios]) => {
-            // FIX: Re-query live DOM to check status because 'radios' might contain stale element references
-            let selectedRadio = radios.find(r => {
-                // 1. Try Live Element Check
-                if (r.field instanceof HTMLElement && r.field.isConnected) {
-                    return r.field.checked;
-                }
-                // 2. Try ID Lookup
-                if (r.field.id) {
-                    const live = document.getElementById(r.field.id);
-                    if (live) return live.checked;
-                }
-                // 3. Try Name + Value Lookup
-                if (r.field.name && (r.field.value !== undefined)) {
-                    // Use CSS.escape for safety
-                    try {
-                        const selector = `input[name="${CSS.escape(r.field.name)}"][value="${CSS.escape(r.field.value)}"]`;
-                        const live = document.querySelector(selector);
-                        if (live) return live.checked;
-                    } catch (e) { /* ignore invalid selector */ }
-                }
-                // 4. Fallback to object property
-                return r.field.checked;
-            });
+            // CRITICAL FIX: Always query live DOM first, NOT cached data
+            let liveChecked = null;
+            let selectedValue = null;
 
-            // ROBUSTNESS: If iteration failed, try Query Selector for the entire group
-            if (!selectedRadio && name) {
-                try {
-                    const liveChecked = document.querySelector(`input[name="${CSS.escape(name)}"]:checked`);
-                    if (liveChecked) {
-                        // Found a checked radio in the DOM!
-                        // Try to correspond it to one of our known fields
-                        const matchingField = radios.find(r =>
-                            r.field.id === liveChecked.id ||
-                            r.field.value === liveChecked.value
-                        );
-
-                        if (matchingField) {
-                            selectedRadio = matchingField;
-                        } else {
-                            // If we can't match it (dynamicaly added?), create a proxy wrapper
-                            // mimicking the structure so it displays correctly
-                            selectedRadio = {
-                                field: liveChecked,
-                                selector: `input[name="${CSS.escape(name)}"]:checked`,
-                                label: liveChecked.nextElementSibling?.textContent || liveChecked.value,
-                                value: liveChecked.value
-                            };
+            try {
+                // Query the actually checked radio from DOM
+                liveChecked = document.querySelector(`input[name="${CSS.escape(name)}"]:checked`);
+            } catch (e) {
+                // Invalid selector, try ID-based lookup
+                for (const r of radios) {
+                    if (r.field && r.field.id) {
+                        const live = document.getElementById(r.field.id);
+                        if (live && live.checked) {
+                            liveChecked = live;
+                            break;
                         }
                     }
-                } catch (e) { /* naming error */ }
+                }
             }
 
-            if (selectedRadio) {
-                // ALWAYS read from live DOM element, not cached data
-                let liveElement = selectedRadio.field;
+            if (liveChecked) {
+                // Get the label text for this LIVE checked element
+                selectedValue = liveChecked.value;
 
-                // Ensure we have the live element from DOM
-                if (!(liveElement instanceof HTMLElement) || !liveElement.isConnected) {
-                    // Try to find the live element
-                    if (selectedRadio.field.id) {
-                        liveElement = document.getElementById(selectedRadio.field.id) || liveElement;
-                    } else if (name) {
-                        const checked = document.querySelector(`input[name="${CSS.escape(name)}"]:checked`);
-                        if (checked) liveElement = checked;
-                    }
+                // Method 1: Explicit label[for="id"]
+                if (liveChecked.id) {
+                    try {
+                        const label = document.querySelector(`label[for="${CSS.escape(liveChecked.id)}"]`);
+                        if (label) selectedValue = label.textContent.trim();
+                    } catch (e) { }
                 }
 
-                // Get the actual value from the live checked element
-                let selectedValue = liveElement.value;
+                // Method 2: Parent is a label
+                if (selectedValue === liveChecked.value && liveChecked.parentElement?.tagName === 'LABEL') {
+                    selectedValue = liveChecked.parentElement.textContent.trim();
+                }
 
-                // Try to get label text for display (from the LIVE element)
-                if (liveElement.id) {
-                    const label = document.querySelector(`label[for="${CSS.escape(liveElement.id)}"]`);
-                    if (label) selectedValue = label.textContent.trim();
-                }
-                // If no explicit label, check parent label
-                if (selectedValue === liveElement.value && liveElement.parentElement && liveElement.parentElement.tagName === 'LABEL') {
-                    selectedValue = liveElement.parentElement.textContent.trim();
-                }
-                // Try nextElementSibling for inline labels (common pattern)
-                if (selectedValue === liveElement.value && liveElement.nextElementSibling) {
-                    const siblingText = liveElement.nextElementSibling.textContent.trim();
-                    if (siblingText && siblingText.length < 100) {
+                // Method 3: Next sibling is label/span (common React pattern)
+                if (selectedValue === liveChecked.value && liveChecked.nextElementSibling) {
+                    const siblingText = liveChecked.nextElementSibling.textContent?.trim();
+                    if (siblingText && siblingText.length > 0 && siblingText.length < 150) {
                         selectedValue = siblingText;
                     }
                 }
 
-                // Get the GROUP label with smart priority
-                // Priority: 1. ML label (conf > 80%) → 2. parentContext → 3. DOM label
-                let groupLabel;
-                const firstRadio = radios[0];
-                const parentContext = firstRadio.parentContext;
-
-                if (firstRadio.mlLabel && firstRadio.mlConfidence > 0.8) {
-                    // High confidence ML: Use ML label
-                    groupLabel = firstRadio.mlLabel;
-                } else if (parentContext && parentContext.length > 5) {
-                    // Use parentContext directly as label (it's the actual question)
-                    groupLabel = parentContext;
-                } else {
-                    // Fallback to DOM label extraction
-                    groupLabel = getGroupQuestionLabel(firstRadio.field);
+                // Method 4: Previous sibling (some forms put label before input)
+                if (selectedValue === liveChecked.value && liveChecked.previousElementSibling) {
+                    const prevText = liveChecked.previousElementSibling.textContent?.trim();
+                    if (prevText && prevText.length > 0 && prevText.length < 150) {
+                        selectedValue = prevText;
+                    }
                 }
+            }
+
+            // Get metadata from first radio in our cached array (for group label, parentContext, etc.)
+            const firstRadio = radios[0];
+            const parentContext = firstRadio?.parentContext;
+
+            // Determine group label
+            let groupLabel;
+            if (firstRadio?.mlLabel && firstRadio?.mlConfidence > 0.8) {
+                groupLabel = firstRadio.mlLabel;
+            } else if (parentContext && parentContext.length > 5) {
+                groupLabel = parentContext;
+            } else {
+                groupLabel = getGroupQuestionLabel(firstRadio?.field);
+            }
+
+            if (liveChecked && selectedValue) {
+                // Find matching fieldInfo or create a wrapper
+                const matchingField = radios.find(r =>
+                    r.field?.id === liveChecked.id ||
+                    r.field?.value === liveChecked.value
+                ) || firstRadio;
 
                 groupedFields.push({
-                    ...selectedRadio,
+                    ...matchingField,
+                    field: liveChecked,
                     label: groupLabel,
                     displayValue: selectedValue,
                     isRadioGroup: true,
