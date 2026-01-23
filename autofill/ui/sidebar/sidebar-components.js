@@ -1416,12 +1416,30 @@ function setFieldValue(element, value) {
     const type = element.type;
     const tag = element.tagName.toLowerCase();
 
-    if (type === 'radio') setRadioValue(element, value);
-    else if (type === 'checkbox') setCheckboxValue(element, value);
-    else if (type === 'date' || type === 'time' || type === 'datetime-local') setDateTimeValue(element, value);
-    else if (tag === 'select') setSelectValue(element, value);
-    else if (type === 'tel') setTelValue(element, value); // Special handling for phone inputs
-    else setTextValue(element, value);
+    // Normalize value: extract string from cache objects
+    let normalizedValue = value;
+    if (value && typeof value === 'object') {
+        // Cache object: {value: '', confidence: 0.75, ...}
+        if ('value' in value) {
+            normalizedValue = value.value;
+        } else if (Array.isArray(value)) {
+            // Array of values - join them
+            normalizedValue = value.map(v => typeof v === 'object' && v.value ? v.value : v).join(', ');
+        }
+    }
+
+    // Skip if value is still not a valid string
+    if (normalizedValue === null || normalizedValue === undefined || normalizedValue === '') {
+        console.warn('[setFieldValue] Skipping empty/null value for:', element);
+        return;
+    }
+
+    if (type === 'radio') setRadioValue(element, normalizedValue);
+    else if (type === 'checkbox') setCheckboxValue(element, normalizedValue);
+    else if (type === 'date' || type === 'time' || type === 'datetime-local') setDateTimeValue(element, normalizedValue);
+    else if (tag === 'select') setSelectValue(element, normalizedValue);
+    else if (type === 'tel') setTelValue(element, normalizedValue); // Special handling for phone inputs
+    else setTextValue(element, normalizedValue);
 }
 
 /**
