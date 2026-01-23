@@ -1061,7 +1061,11 @@ function showAccordionSidebar(allFields) {
         return `
                     <div class="sh-nova-9x-field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="sh-nova-9x-field-header">
-                             <div class="sh-nova-9x-field-label">${item.label}${item.indexBadge ? `<span class="sh-nova-9x-index-badge">#${item.indexBadge}</span>` : ''}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
+                             <div class="sh-nova-9x-field-label">${(() => {
+                // Smart Label Display: Use parentContext if label is technical
+                const isTechnical = /cards\[|\[.*\]|^field[-_]?\d|unknown field|[0-9a-f-]{20,}/i.test(item.label);
+                return (isTechnical && item.parentContext) ? item.parentContext : item.label;
+            })()}${item.indexBadge ? `<span class="sh-nova-9x-index-badge">#${item.indexBadge}</span>` : ''}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
                              
                              <div style="display: flex; align-items: center; gap: 8px;">
                                 ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
@@ -1077,24 +1081,27 @@ function showAccordionSidebar(allFields) {
             <!-- AI Tab (Name + confidence, with recalculate for text fields only) -->
             <div class="sh-nova-9x-tab-content" data-tab="ai" style="display: none;">
                 ${finalAiFields.map(item => {
-            // Enterprise Logic: Exclude selects explicitly + other non-text types
-            const type = (item.type || '').toLowerCase();
-            const tagName = (item.tagName || '').toUpperCase();
-            const isSelect = item.isSelectGroup || type.includes('select') || tagName === 'SELECT';
-            const excludedTypes = ['number', 'date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'reset', 'button', 'image', 'file', 'checkbox', 'radio'];
+                // Enterprise Logic: Exclude selects explicitly + other non-text types
+                const type = (item.type || '').toLowerCase();
+                const tagName = (item.tagName || '').toUpperCase();
+                const isSelect = item.isSelectGroup || type.includes('select') || tagName === 'SELECT';
+                const excludedTypes = ['number', 'date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'reset', 'button', 'image', 'file', 'checkbox', 'radio'];
 
-            const isSafeText = !excludedTypes.includes(type) && !isSelect;
-            const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isFileUpload && isSafeText;
+                const isSafeText = !excludedTypes.includes(type) && !isSelect;
+                const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isFileUpload && isSafeText;
 
-            // Enterprise Confidence Display
-            const confidence = Math.round(item.confidence * 100);
-            const confClass = confidence >= 80 ? 'sh-conf-high' : 'sh-conf-med';
-            const statusIcon = confidence >= 80 ? '●' : '○';
+                // Enterprise Confidence Display
+                const confidence = Math.round(item.confidence * 100);
+                const confClass = confidence >= 80 ? 'sh-conf-high' : 'sh-conf-med';
+                const statusIcon = confidence >= 80 ? '●' : '○';
 
-            return `
+                return `
                     <div class="sh-nova-9x-field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="sh-nova-9x-field-header">
-                            <div class="sh-nova-9x-field-label">${item.label}${item.indexBadge ? `<span class="sh-nova-9x-index-badge">#${item.indexBadge}</span>` : ''}${(!isTextBased && item.displayValue) ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
+                            <div class="sh-nova-9x-field-label">${(() => {
+                        const isTechnical = /cards\[|\[.*\]|^field[-_]?\d|unknown field|[0-9a-f-]{20,}/i.test(item.label);
+                        return (isTechnical && item.parentContext) ? item.parentContext : item.label;
+                    })()}${item.indexBadge ? `<span class="sh-nova-9x-index-badge">#${item.indexBadge}</span>` : ''}${(!isTextBased && item.displayValue) ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}</div>
                             
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div class="${confClass}" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
@@ -1114,22 +1121,26 @@ function showAccordionSidebar(allFields) {
             <!-- Manual Tab (Unfilled and file uploads) -->
             <div class="sh-nova-9x-tab-content" data-tab="manual" style="display: none;">
                 ${finalManualFields.map(item => {
-                // Robust check for text-only fields (Exclude select, number, date, etc.)
-                const type = (item.type || '').toLowerCase();
-                const tagName = (item.tagName || '').toUpperCase();
-                const isSelect = item.isSelectGroup || type.includes('select') || tagName === 'SELECT';
-                const excludedTypes = ['number', 'date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'reset', 'button', 'image', 'file', 'checkbox', 'radio'];
+                        // Robust check for text-only fields (Exclude select, number, date, etc.)
+                        const type = (item.type || '').toLowerCase();
+                        const tagName = (item.tagName || '').toUpperCase();
+                        const isSelect = item.isSelectGroup || type.includes('select') || tagName === 'SELECT';
+                        const excludedTypes = ['number', 'date', 'month', 'week', 'time', 'datetime-local', 'color', 'range', 'hidden', 'submit', 'reset', 'button', 'image', 'file', 'checkbox', 'radio'];
 
-                // Strict: Must not be excluded type, must not be select, and if type is present it typically defaults to text
-                const isSafeText = !excludedTypes.includes(type) && !isSelect;
-                const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isFileUpload && isSafeText && item.source !== 'selection_cache';
+                        // Strict: Must not be excluded type, must not be select, and if type is present it typically defaults to text
+                        const isSafeText = !excludedTypes.includes(type) && !isSelect;
+                        const isTextBased = !item.isRadioGroup && !item.isCheckboxGroup && !item.isFileUpload && isSafeText && item.source !== 'selection_cache';
 
-                return `
+                        return `
                     <div class="sh-nova-9x-field-item" data-selector="${item.selector.replace(/"/g, '&quot;')}">
                         <div class="sh-nova-9x-field-header">
                             <div class="sh-nova-9x-field-label">
                                 ${item.isFileUpload ? '📁 ' : ''}
-                                ${item.mlLabel || item.label}
+                                ${(() => {
+                                const label = item.mlLabel || item.label;
+                                const isTechnical = /cards\[|\[.*\]|^field[-_]?\d|unknown field|[0-9a-f-]{20,}/i.test(label);
+                                return (isTechnical && item.parentContext) ? item.parentContext : label;
+                            })()}
                                 ${item.indexBadge ? `<span class="sh-nova-9x-index-badge">#${item.indexBadge}</span>` : ''}
                                 ${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981;">${item.displayValue}</span>` : ''}
                             </div>
