@@ -79,7 +79,6 @@ const SCRIPT_QUEUE = [
     'autofill/workflows/instant-fill-workflow.js',
     'autofill/workflows/ai-fill-workflow.js',
     'autofill/domains/inference/execution-engine.js',
-    'autofill/services/handlers/typeahead-handler.js',
     'autofill/core/form-processor.js',
 
     // Chatbot (4 files)
@@ -172,6 +171,53 @@ function detectFormsFallback() {
 
     if (validForms.length > 0) {
         return validForms.length;
+    }
+
+    // NEW: Submission Anchor Detection (Backtracking)
+    // Find "Submit" or "Next" buttons and walk up to find the form container
+    const isSubmitButton = (el) => {
+        if (!el) return false;
+        const text = el.innerText?.toLowerCase() || el.value?.toLowerCase() || '';
+        const type = el.getAttribute('type');
+        const role = el.getAttribute('role');
+
+        // Exact matches
+        if (type === 'submit') return true;
+
+        // Text matches
+        if (/(apply|submit|next|continue|review|save)/i.test(text)) {
+            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT') return true;
+            if (role === 'button' || el.classList.contains('btn') || el.classList.contains('button')) return true;
+        }
+        return false;
+    };
+
+    const submitButtons = Array.from(document.querySelectorAll('button, input[type="submit"], [role="button"]'))
+        .filter(btn => isSubmitButton(btn) && isFieldVisible(btn));
+
+    for (const btn of submitButtons) {
+        let current = btn.parentElement;
+        let depth = 0;
+        // Walk up to 10 levels to find a container with enough inputs
+        while (current && current !== document.body && depth < 10) {
+            // Stop at semantic boundaries
+            if (current.tagName === 'FORM' || current.getAttribute('role') === 'form') {
+                // Already caught by standard selectors usually, but check validity
+                if (isValidFormContainer(current)) return 1; // Found it!
+            }
+
+            // Check input density in this container
+            const inputs = current.querySelectorAll('input:not([type="hidden"]), select, textarea');
+            if (inputs.length >= 2) {
+                // Found a likely form container!
+                // Mark it so other modules can find it
+                current.dataset.novaForm = "detected-via-anchor";
+                console.log('⚓ [AnchorDetection] Found form via submit button:', btn, '->', current);
+                return 1;
+            }
+            current = current.parentElement;
+            depth++;
+        }
     }
 
     // Fallback: Density Scan for virtual forms (SPA without form tags)
