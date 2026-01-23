@@ -12,41 +12,19 @@ console.log('Smart AI Job Apply background service worker started');
 
 // Script injection order for lazy loading
 const CONTENT_SCRIPTS = [
+    // THE BRAIN (Visual Label Extraction) - MUST BE FIRST
+    'autofill/services/extraction/form-detector.js',
+
     // Shared Utils
     'shared/utils/ai-client.js',
     'shared/utils/resume-manager.js',
     'shared/utils/form-extractor.js',
     'shared/utils/form-analyzer.js',
-
-    // Autofill Core & Domains (FANG Architecture)
+    'autofill/utils/field-utils.js',
     'autofill/utils/key-generator.js',
-    'autofill/domains/heuristics/InteractionLog.js',
-    'autofill/domains/heuristics/RuleEngine.js',
-    'autofill/domains/profile/EntityStore.js',
-    'autofill/services/indexing/field-indexing-service.js',
-    'autofill/domains/model/FieldRoutingPatterns.js',
-    'autofill/core/PipelineOrchestrator.js',
 
-    // Extraction Services
-    'autofill/services/extraction/section-detector.js',
-    'autofill/services/extraction/sibling-cluster.js',
-    'autofill/services/extraction/form-detector.js',
-
-    // Domain Logic
-    'autofill/domains/profile/CompositeFieldManager.js',
-    'autofill/services/ai/AIBatchProcessor.js',
-    'autofill/domains/inference/prefetch-engine.js',
-
-    // UI
-    'autofill/ui/animations/form-visuals.js',
-    'autofill/ui/sidebar/drag-resize.js',
-    'autofill/ui/sidebar/sidebar-components.js',
-    'autofill/ui/premium-inputs/premium-input-renderer.js',
-
-    // Legacy / Shared Handlers
+    // Base Classes & Infrastructure
     'autofill/handlers/handler.js',
-    'autofill/domains/profile/SectionController.js',
-    'autofill/domains/inference/CopilotClient.js',
 
     // Shared State
     'shared/state/state-manager.js',
@@ -60,29 +38,47 @@ const CONTENT_SCRIPTS = [
     'autofill/domains/inference/neural-classifier-v8.js',
     'autofill/domains/inference/HybridClassifier.js',
     'autofill/domains/inference/execution-engine.js',
+    'autofill/domains/inference/CopilotClient.js',
+
+    // Core Features
+    'autofill/domains/memory/GlobalMemory.js',
+    'autofill/features/undo-manager.js',
+    'autofill/features/self-healing.js',
+    'autofill/features/ai-field-regeneration.js',
+    'autofill/features/form-observer.js',
 
     // Infrastructure
     'common/infrastructure/config.js',
     'common/infrastructure/lifecycle.js',
 
-    // Core Features
-    'autofill/domains/memory/GlobalMemory.js',
-    'autofill/utils/field-utils.js',
-    'autofill/features/undo-manager.js',
-    'autofill/features/self-healing.js',
-    'autofill/features/ai-field-regeneration.js',
+    // Remaining Logic & Services
+    'autofill/services/extraction/section-detector.js',
+    'autofill/services/extraction/sibling-cluster.js',
+    'autofill/domains/heuristics/InteractionLog.js',
+    'autofill/domains/heuristics/RuleEngine.js',
+    'autofill/domains/profile/EntityStore.js',
+    'autofill/services/indexing/field-indexing-service.js',
+    'autofill/domains/model/FieldRoutingPatterns.js',
+    'autofill/core/PipelineOrchestrator.js',
+    'autofill/domains/profile/CompositeFieldManager.js',
+    'autofill/services/ai/AIBatchProcessor.js',
+    'autofill/domains/inference/prefetch-engine.js',
 
-    // Workflows
+    // UI
+    'autofill/ui/animations/form-visuals.js',
+    'autofill/ui/sidebar/drag-resize.js',
+    'autofill/ui/sidebar/widget-overlay.js',
+    'autofill/ui/sidebar/sidebar-components.js',
+    'autofill/ui/premium-inputs/premium-input-renderer.js',
+
+    // Workflows & Handlers
     'autofill/workflows/classification-workflow.js',
     'autofill/workflows/instant-fill-workflow.js',
     'autofill/workflows/ai-fill-workflow.js',
     'autofill/core/form-processor.js',
-
-    // Chatbot
     'chatbot/handlers/context-handler.js',
     'chatbot/services/ai/context-classifier.js',
-
-    // Messaging & Orchestration
+    'autofill/domains/profile/SectionController.js',
     'autofill/handlers/autofill-message-handler.js',
     'autofill/handlers/undo-handler.js',
     'chatbot/handlers/chat-message-handler.js',

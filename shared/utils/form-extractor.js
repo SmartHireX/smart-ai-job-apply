@@ -154,6 +154,17 @@ class FormExtractor {
      * Extract label for field
      */
     extractLabel(element, container = document) {
+        // Method 0: Centralized FANG Logic (Priority Override)
+        if (typeof window.getFieldLabel === 'function') {
+            console.log(`[FormExtractor] Calling window.getFieldLabel for element:`, element);
+            const visualLabel = window.getFieldLabel(element);
+            if (visualLabel && visualLabel !== 'Unknown Field') {
+                return visualLabel;
+            }
+        } else {
+            console.warn(`[FormExtractor] window.getFieldLabel is NOT a function! (Type: ${typeof window.getFieldLabel})`);
+        }
+
         // Method 1: Group Context (Specifically for Radios/Checkboxes) - HIGH PRIORITY
         // We want "Are you over 18?" instead of "Yes"
         if (['radio', 'checkbox'].includes(element.type) && element.name) {

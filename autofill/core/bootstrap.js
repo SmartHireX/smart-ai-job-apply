@@ -12,85 +12,74 @@ window.__NOVA_LOADING = false;
 
 // Script loading queue (in dependency order)
 const SCRIPT_QUEUE = [
-    // Core Constants (MUST LOAD FIRST)
-    'autofill/core/constants.js',
+    // THE BRAIN (Visual Label Extraction) - Must be first for all extractors
+    'autofill/services/extraction/form-detector.js',
 
-    // Shared Utils (4 files)
+    // Metadata & Data Managers
     'shared/utils/ai-client.js',
     'shared/utils/resume-manager.js',
     'shared/utils/form-extractor.js',
     'shared/utils/form-analyzer.js',
-
-    // Autofill Services (18 files)
+    'autofill/utils/field-utils.js',
     'autofill/utils/key-generator.js',
-    'autofill/domains/heuristics/InteractionLog.js',
-    'autofill/domains/heuristics/RuleEngine.js',
-    'autofill/domains/profile/EntityStore.js',
 
-    'autofill/services/indexing/field-indexing-service.js',
-    'autofill/domains/model/FieldRoutingPatterns.js', // Logic for field grouping
-    'autofill/core/PipelineOrchestrator.js',
-    'autofill/services/extraction/section-detector.js',
-    'autofill/services/extraction/sibling-cluster.js',
-    'autofill/services/extraction/form-detector.js',
-    'autofill/domains/profile/CompositeFieldManager.js',
-    'autofill/services/ai/AIBatchProcessor.js',
-    'autofill/domains/inference/prefetch-engine.js',
-    'autofill/ui/animations/form-visuals.js',
-    'autofill/ui/sidebar/drag-resize.js',
-    'autofill/ui/sidebar/widget-overlay.js', // Loaded before sidebar for widget utility
-    'autofill/ui/sidebar/sidebar-components.js',
-    'autofill/ui/premium-inputs/premium-input-renderer.js',
-    'autofill/handlers/handler.js',
+    // Base Classes & Infrastructure
+    'autofill/handlers/handler.js', // Loaded before subclasses like CopilotClient
 
-
-    // Autofill Handlers (5 more)
-
-    'autofill/domains/profile/SectionController.js',
-    'autofill/domains/inference/CopilotClient.js',
-
-    // Shared State (3 files)
+    // Shared State
     'shared/state/state-manager.js',
     'shared/state/action-queue.js',
 
-
-    // Common Infrastructure (2 more - constants already loaded)
+    // Infrastructure & Services (Core Logic)
     'autofill/domains/inference/feature-extractor.js',
     'autofill/domains/inference/FieldTypes.js',
     'autofill/domains/inference/HeuristicEngine.js',
     'autofill/domains/inference/OptimizedMathKernel.js',
-
     'autofill/domains/inference/neural-classifier-v8.js',
     'autofill/domains/inference/HybridClassifier.js',
-    'common/infrastructure/config.js',
-    'common/infrastructure/lifecycle.js',
+    'autofill/domains/inference/CopilotClient.js',
 
-    // Autofill Core Features (6 files)
+    // Primary Features (Must load before Lifecycle init)
     'autofill/domains/memory/GlobalMemory.js',
-    'autofill/utils/field-utils.js',
     'autofill/features/undo-manager.js',
-    'autofill/features/self-healing.js',
     'autofill/features/self-healing.js',
     'autofill/features/ai-field-regeneration.js',
     'autofill/features/form-observer.js',
 
-    // Autofill Workflows (3 files)
+    // Lifecycle & Orchestration
+    'common/infrastructure/config.js',
+    'common/infrastructure/lifecycle.js',
+
+    // Remaining Logic & Services
+    'autofill/domains/heuristics/InteractionLog.js',
+    'autofill/domains/heuristics/RuleEngine.js',
+    'autofill/domains/profile/EntityStore.js',
+    'autofill/domains/profile/SectionController.js',
+    'autofill/services/indexing/field-indexing-service.js',
+    'autofill/domains/model/FieldRoutingPatterns.js',
+    'autofill/core/PipelineOrchestrator.js',
+    'autofill/services/extraction/section-detector.js',
+    'autofill/services/extraction/sibling-cluster.js',
+    'autofill/domains/profile/CompositeFieldManager.js',
+    'autofill/services/ai/AIBatchProcessor.js',
+    'autofill/domains/inference/prefetch-engine.js',
+    'autofill/domains/inference/execution-engine.js',
+    'autofill/core/form-processor.js',
+    'autofill/ui/animations/form-visuals.js',
+    'autofill/ui/sidebar/drag-resize.js',
+    'autofill/ui/sidebar/widget-overlay.js',
+    'autofill/ui/sidebar/sidebar-components.js',
+    'autofill/ui/premium-inputs/premium-input-renderer.js',
     'autofill/workflows/classification-workflow.js',
     'autofill/workflows/instant-fill-workflow.js',
     'autofill/workflows/ai-fill-workflow.js',
-    'autofill/domains/inference/execution-engine.js',
-    'autofill/core/form-processor.js',
-
-    // Chatbot (4 files)
     'chatbot/handlers/context-handler.js',
     'chatbot/services/ai/context-classifier.js',
-
-    // Message Handlers (3 files)
     'autofill/handlers/autofill-message-handler.js',
     'autofill/handlers/undo-handler.js',
     'chatbot/handlers/chat-message-handler.js',
 
-    // Message Router & Orchestrator (2 files - LAST)
+    // Message Router & Orchestrator (LAST)
     'common/messaging/message-router.js',
     'autofill/core/autofill-orchestrator.js'
 ];
@@ -169,33 +158,7 @@ function detectFormsFallback() {
     const candidates = document.querySelectorAll(FORM_SELECTORS.join(', '));
     const validForms = Array.from(candidates).filter(isValidFormContainer);
 
-    // Platform Adapter Hook
-    if (window.LeverAdapter && window.LeverAdapter.isMatch()) {
-        console.log('🔌 [Platform] Lever Adapter Detected');
-        const leverForm = window.LeverAdapter.getForm();
-        if (leverForm) {
-            leverForm.dataset.novaPlatform = 'Lever';
-            return 1;
-        }
-    }
 
-    if (window.GreenhouseAdapter && window.GreenhouseAdapter.isMatch()) {
-        console.log('🔌 [Platform] Greenhouse Adapter Detected');
-        const ghForm = window.GreenhouseAdapter.getForm();
-        if (ghForm) {
-            ghForm.dataset.novaPlatform = 'Greenhouse';
-            return 1;
-        }
-    }
-
-    if (window.WorkdayAdapter && window.WorkdayAdapter.isMatch()) {
-        console.log('🔌 [Platform] Workday Adapter Detected');
-        const wdForm = window.WorkdayAdapter.getForm();
-        if (wdForm) {
-            wdForm.dataset.novaPlatform = 'Workday';
-            return 1;
-        }
-    }
 
     if (validForms.length > 0) {
         return validForms.length;
@@ -306,6 +269,16 @@ async function detectFormsWithRetry() {
                 const forms = window.detectForms();
                 if (forms && forms.length > 0) {
                     return forms.length;
+                }
+
+                // OPTIMIZATION: If the first attempt found ZERO inputs on the whole page,
+                // it's highly unlikely a form will appear in 500ms without a major mutation.
+                // We've already logged a suppressed warn in FormDetector.
+                if (attempt === 0) {
+                    const hasAnyInputs = document.querySelectorAll('input:not([type="hidden"]), select, textarea').length > 0;
+                    if (!hasAnyInputs) {
+                        return 0; // Exit early to avoid noise
+                    }
                 }
             } catch (e) {
                 console.warn('detectForms error:', e);

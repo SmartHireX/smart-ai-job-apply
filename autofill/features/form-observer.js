@@ -106,4 +106,5 @@ class FormObserver {
 // Global Export
 if (typeof window !== 'undefined') {
     window.FormObserver = new FormObserver();
+    console.log('👁️ [FormObserver] Instance created and exposed to window');
 }

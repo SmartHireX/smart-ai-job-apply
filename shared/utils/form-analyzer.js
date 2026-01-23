@@ -284,6 +284,7 @@ const HEURISTIC_PATTERNS = {
 function extractFieldsFromDOM(source) {
     // Priority: Use FormExtractor if available (Phase 1 Refactor)
     if (window.FormExtractor) {
+        console.log('[FormAnalyzer] FormExtractor found. Delegating extraction...');
         const extractor = new window.FormExtractor();
         const fields = extractor.extract(source);
 
@@ -363,8 +364,10 @@ function extractFieldsFromDOM(source) {
         // Determine Label
         let label = '';
         if (typeof window.getFieldLabel === 'function') {
+            console.log(`[FormAnalyzer-Fallback] Calling window.getFieldLabel for input:`, input);
             label = window.getFieldLabel(input);
         } else {
+            console.warn(`[FormAnalyzer-Fallback] window.getFieldLabel NOT available!`);
             const safeId = input.id ? CSS.escape(input.id) : '';
             if (safeId) {
                 const labelTag = root.querySelector(`label[for="${safeId}"]`);

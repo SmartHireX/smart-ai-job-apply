@@ -458,7 +458,9 @@ class FieldUtils {
 
 // Legacy compatibility - expose globally
 window.isFieldVisible = FieldUtils.isFieldVisible.bind(FieldUtils);
-window.getFieldLabel = FieldUtils.getFieldLabel.bind(FieldUtils);
+if (!window.getFieldLabel) {
+    window.getFieldLabel = FieldUtils.getFieldLabel.bind(FieldUtils);
+}
 window.captureFieldState = FieldUtils.captureFieldState.bind(FieldUtils);
 window.setNativeValue = FieldUtils.setNativeValue.bind(FieldUtils);
 window.setFieldValue = FieldUtils.setFieldValue.bind(FieldUtils); // Global Export

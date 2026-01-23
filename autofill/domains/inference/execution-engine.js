@@ -25,6 +25,34 @@ class ExecutionEngine {
      * @param {Object} fieldMetadata - Optional field object for caching
      */
     async fill(selectorOrElement, value, confidence = 1.0, fieldMetadata = null, source = null) {
+        let element = selectorOrElement;
+        if (typeof selectorOrElement === 'string') {
+            try {
+                element = document.querySelector(selectorOrElement);
+            } catch (e) {
+                // If querySelector failed, it might be an unescaped ID
+                if (selectorOrElement.startsWith('#')) {
+                    element = document.getElementById(selectorOrElement.substring(1));
+                }
+            }
+        }
+
+        if (!element) return false;
+
+        // Special Handling for File Inputs (Security Restricted)
+        // We do this BEFORE value check because file inputs often have no value passed from memory
+        // but we still want to Highlight/Flash them to prompt the user.
+        if (element.type === 'file') {
+            console.log(`📂 [ExecutionEngine] File Input Detected: "${element.id || element.name}". Highlighting for user manual upload.`);
+            this.flashField(element, 1.0); // Flash green/yellow to draw attention
+
+            // Scroll into view so user sees it
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Return TRUE to signal "Handled" to the Pipeline (suppresses "Execution Failure" noise)
+            return true;
+        }
+
         // Normalize value: extract string from cache objects
         if (value && typeof value === 'object') {
             if ('value' in value) {
@@ -42,20 +70,6 @@ class ExecutionEngine {
 
         // Ensure value is a string
         value = String(value);
-
-        let element = selectorOrElement;
-        if (typeof selectorOrElement === 'string') {
-            try {
-                element = document.querySelector(selectorOrElement);
-            } catch (e) {
-                // If querySelector failed, it might be an unescaped ID
-                if (selectorOrElement.startsWith('#')) {
-                    element = document.getElementById(selectorOrElement.substring(1));
-                }
-            }
-        }
-
-        if (!element) return false;
 
         // Attach ML prediction to DOM element for sidebar cache access
         if (fieldMetadata && fieldMetadata.ml_prediction) {
@@ -339,8 +353,10 @@ class ExecutionEngine {
         if (tagName === 'input' && this.nativeValueSetter) {
             // Safety check for file inputs - they are read-only
             if (type === 'file') {
-                console.warn(`[ExecutionEngine] Skipping value set for file input: ${element.id || element.name}`);
-                return;
+                console.log(`📂 [ExecutionEngine] File Input Detected: "${element.id || element.name}". Highlighting for user manual upload.`);
+                this.flashField(element, 1.0); // Flash green/yellow to draw attention
+                // Return TRUE to signal "Handled" to the Pipeline (suppresses "Execution Failure" noise)
+                return true;
             }
 
             // SMART NUMBER PARSING (Fix for "3-5" -> Number)

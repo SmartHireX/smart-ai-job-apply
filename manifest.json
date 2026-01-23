@@ -96,6 +96,7 @@
                 "autofill/features/undo-manager.js",
                 "autofill/features/self-healing.js",
                 "autofill/features/ai-field-regeneration.js",
+                "autofill/features/form-observer.js",
                 "autofill/workflows/classification-workflow.js",
                 "autofill/workflows/instant-fill-workflow.js",
                 "autofill/workflows/ai-fill-workflow.js",

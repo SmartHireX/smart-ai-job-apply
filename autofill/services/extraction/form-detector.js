@@ -146,6 +146,7 @@ function detectForms() {
         '[data-automation-id="form-container"]',
         '#application_form',
         '.application-form',
+        '#form',                              // AshbyHQ primary form ID
         '[id*="job-application"]',
         '[class*="job-application"]',
         '.ashby-application-form-container', // AshbyHQ specific container
@@ -198,17 +199,39 @@ function detectForms() {
         let winner = null;
         let maxCount = 0;
         for (const [container, count] of inputContainers.entries()) {
-            if (count > maxCount && count > 3) { // Threshold: at least 3 inputs
-                // Filter out likely footers/navs based on tag/class if needed
-                // For now, raw density wins
+            // Lowered threshold to 1 to catch single-question wizard steps (e.g. "What is your salary?")
+            if (count > maxCount && count >= 1) {
+                // Enhanced Filter: Reject if it looks like a header/nav/footer search bar
+                const tagName = container.tagName;
+                const cls = (container.className || '').toLowerCase();
+                const role = container.getAttribute('role');
+
+                // DEBUG: Log candidate
+                // console.log(`[FormDetector] Checking candidate: <${tagName} class="${cls}"> (${count} inputs)`);
+
+                if (tagName === 'NAV' || tagName === 'HEADER' || tagName === 'FOOTER') {
+                    console.log(`[FormDetector] Rejected candidate (Semantic Tag):`, container);
+                    continue;
+                }
+                if (cls.includes('search') || cls.includes('navbar') || cls.includes('menu')) {
+                    console.log(`[FormDetector] Rejected candidate (Class Name):`, container);
+                    continue;
+                }
+                if (role === 'navigation' || role === 'banner' || role === 'contentinfo') {
+                    console.log(`[FormDetector] Rejected candidate (Role):`, container);
+                    continue;
+                }
+
                 winner = container;
                 maxCount = count;
             }
         }
 
         if (winner) {
-            // console.log('✅ [FormDetector] Density Scan Winner:', winner, `(${maxCount} inputs)`);
+            console.log('✅ [FormDetector] Density Scan Winner:', winner, `(${maxCount} inputs)`);
             filtered.push(winner);
+        } else if (maxCount > 0) {
+            console.log('[FormDetector] Density Scan: Found candidates but they were filtered out.', `(Max inputs: ${maxCount})`);
         }
     }
 
@@ -274,86 +297,132 @@ function detectForms() {
 function extractFormHTML() {
     const forms = detectForms();
 
-    // 1. Standard Case: Specific forms found
-    if (forms.length > 0) {
-        return Array.from(forms).map(f => f.outerHTML).join('\n');
+    // 1. Single form found - standard case
+    if (forms.length === 1) {
+        // console.log(`[FormDetector] extractFormHTML: Found 1 primary form.`);
+        return forms[0];
     }
 
-    // 2. Fallback: No distinct forms, but inputs exist (SPA/Modern Web)
+    // 2. Multiple forms found (common on Ashby/Modern SPAs)
+    if (forms.length > 1) {
+        console.log(`[FormDetector] extractFormHTML: Found ${forms.length} distinct form containers. Finding common ancestor...`);
+
+        // Strategy: Find the common parent that contains ALL forms
+        let parent = forms[0].parentElement;
+        while (parent && parent !== document.body) {
+            const allContained = forms.every(f => parent.contains(f));
+            if (allContained) {
+                console.log(`[FormDetector] Merged ${forms.length} forms into common ancestor:`, parent.tagName, parent.className);
+                return parent;
+            }
+            parent = parent.parentElement;
+        }
+
+        // Fallback: If no tight common parent, return body
+        return document.body;
+    }
+
+    // 3. Fallback: No distinct forms, but inputs exist
     const allInputs = document.querySelectorAll('input:not([type="hidden"]), select, textarea');
     if (allInputs.length > 0) {
-        // console.log('⚠️ [FormDetector] No distinct form containers found. Using full body content.');
-        return document.body.innerHTML;
+        console.log(`[FormDetector] extractFormHTML: No forms. Returning body for total context (${allInputs.length} inputs).`);
+        return document.body;
     }
 
     return null;
 }
 
+
+
 /**
- * VISUAL LABEL ALGORITHM (The "Human Eye" Strategy)
- * Mimics how a user visually scans for a label.
- * 1. Look at immediate previous sibling (Left/Above)
- * 2. Walk up to parent, look at parent's previous sibling (Container Label)
- * 3. Walk up to grandparent, etc.
- * 4. Score candidates based on "Question Likeness" (?, :)
+ * FANG-STYLE VISUAL LABEL ALGORITHM
+ * Aggressive recursive search for "Human Readable Questions"
+ * 1. Deep scan (up to 8 levels)
+ * 2. Wide scan (all previous siblings)
+ * 3. Content Analysis (Question marks, Colons, Keywords)
  */
 function getVisualLabel(element) {
     const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|button|submit|cancel/i;
-    const QUESTION_PATTERNS = /\?$|what|where|when|why|how|which|who|are you|do you|have you|please|enter your|provide your|:$|expected/i;
+    // Expanded Question Patterns
+    const QUESTION_PATTERNS = /\?$|:$|what|where|when|why|how|which|who|are you|do you|have you|please|enter|provide|select|choose|describe|indicate/i;
 
+    // Strict Stop Patterns (Don't cross these boundaries)
+    const BOUNDARY_TAGS = new Set(['FORM', 'BODY', 'HTML', 'SECTION', 'ARTICLE']);
+    console.log("element", element)
     let current = element;
     let bestCandidate = null;
-    let bestScore = 0;
+    let bestScore = -100;
 
-    // Walk up 5 levels maximum
-    for (let depth = 0; depth < 5; depth++) {
-        if (!current || current.tagName === 'BODY' || current.tagName === 'HTML' || current.tagName === 'FORM') break;
+    // Walk up 8 levels (Standard is 5, but FANG needs more for complex layouts)
+    for (let depth = 0; depth < 8; depth++) {
+        if (!current || BOUNDARY_TAGS.has(current.tagName)) break;
 
-        // Check Previous Siblings at this level
+        // 1. Scan Previous Siblings (Reverse Order - closest first)
         let sibling = current.previousElementSibling;
-        let siblingCount = 0;
+        let siblingDistance = 0;
 
-        while (sibling && siblingCount < 3) { // Limit sibling lookback
-            const text = (sibling.innerText || '').trim();
-            const cleanText = text.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
+        while (sibling && siblingDistance < 10) { // Look at last 10 siblings
+            // CRITICAL IMPROVEMENT: Stop at Field Boundary
+            // If the sibling IS an input or CONTAINS an input, it's a separate field group.
+            const hasInput = sibling.tagName === 'INPUT' ||
+                sibling.tagName === 'SELECT' ||
+                sibling.tagName === 'TEXTAREA' ||
+                (sibling.querySelector && sibling.querySelector('input:not([type="hidden"]), select, textarea'));
 
-            if (isValidLabel(cleanText)) {
-                let score = 10 - (depth * 2) - siblingCount; // Base score (Distance decay)
+            if (hasInput) {
+                // We reached another field. Stop horizontal scanning to prevent "Label Bleed".
+                break;
+            }
+
+            // Deep text extraction from this sibling
+            let candidates = [];
+            try {
+                candidates = extractTextCandidates(sibling);
+            } catch (e) { candidates = [(sibling.innerText || '').trim()]; }
+
+            for (const text of candidates) {
+                if (!isValidLabel(text) || EXCLUSION_PATTERNS.test(text)) continue;
+
+                // SCORING ALGORITHM
+                let score = 50; // Base score
+                score -= (depth * 5); // Penalty for vertical distance
+                score -= (siblingDistance * 2); // Penalty for horizontal distance
 
                 // Content Bonuses
-                if (QUESTION_PATTERNS.test(cleanText)) score += 20; // It's a question!
-                if (/H[1-6]|LABEL|LEGEND/.test(sibling.tagName)) score += 5; // It's a semantic header
-                if (sibling.className.includes('label') || sibling.className.includes('question')) score += 5; // CSS hint
+                if (QUESTION_PATTERNS.test(text)) score += 40; // High confidence question
+                if (text.endsWith('?')) score += 30; // Very high confidence
+                if (text.endsWith(':')) score += 15;
+                if (/H[1-6]|LABEL|LEGEND/.test(sibling.tagName)) score += 10;
+                if (sibling.className.includes('label') || sibling.className.includes('question')) score += 10;
 
-                // Length Penalties
-                if (cleanText.length > 100) score -= 5;
+                // Length Penalties (Prefer short questions)
+                if (text.length > 80) score -= 10;
+                if (text.length > 150) score -= 20;
 
-                // Exclusion Update
-                if (EXCLUSION_PATTERNS.test(cleanText)) score = -100;
-
+                // Update Winner
                 if (score > bestScore) {
                     bestScore = score;
-                    bestCandidate = cleanText;
+                    bestCandidate = text;
                 }
             }
             sibling = sibling.previousElementSibling;
-            siblingCount++;
+            siblingDistance++;
         }
 
-        // Also check if the Parent itself has text (e.g. <label>Question <input></label>)
-        if (depth > 0) { // Don't check self
-            const parentText = Array.from(current.childNodes)
+        // 2. Parent Text Check (Direct text nodes in parent)
+        if (depth > 0) {
+            const parentTexts = Array.from(current.childNodes)
                 .filter(n => n.nodeType === Node.TEXT_NODE)
                 .map(n => n.textContent.trim())
-                .join(' ');
+                .filter(t => t.length > 0);
 
-            if (isValidLabel(parentText)) {
-                let score = 10 - (depth * 2) + 2; // Direct parent text is good
-                if (QUESTION_PATTERNS.test(parentText)) score += 20;
-                if (current.tagName === 'LABEL') score += 10;
+            for (const text of parentTexts) {
+                if (!isValidLabel(text) || EXCLUSION_PATTERNS.test(text)) continue;
+                let score = 60 - (depth * 5); // High base for direct visual parent
+                if (QUESTION_PATTERNS.test(text)) score += 30;
                 if (score > bestScore) {
                     bestScore = score;
-                    bestCandidate = parentText;
+                    bestCandidate = text;
                 }
             }
         }
@@ -361,7 +430,27 @@ function getVisualLabel(element) {
         current = current.parentElement;
     }
 
-    return bestScore > 5 ? bestCandidate : null;
+    // Threshold: Only return if we found something decent
+    return bestScore > 10 ? bestCandidate : null;
+}
+
+/**
+ * Recursively extract valid text strings from an element tree
+ */
+function extractTextCandidates(root) {
+    const results = [];
+    const walk = (node) => {
+        if (!node) return;
+        if (node.nodeType === Node.TEXT_NODE) {
+            const t = node.textContent.trim();
+            if (t.length > 2) results.push(t);
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (['SCRIPT', 'STYLE', 'BUTTON', 'NAV', 'FOOTER'].includes(node.tagName)) return;
+            node.childNodes.forEach(walk);
+        }
+    };
+    walk(root);
+    return results;
 }
 
 function isValidLabel(text) {
@@ -372,17 +461,16 @@ function isValidLabel(text) {
 }
 
 function getFieldLabel(element) {
+    // Helper: Clean text
+    const clean = (txt) => (txt || '').replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+
+    // DEBUG: Trace execution with Frame Context
+    console.log(`[FormDetector] getFieldLabel called in frame: ${window.location.host} (Input: ${element.name || element.id})`, element);
     let label = '';
     const type = element.type;
     const isGroup = type === 'radio' || type === 'checkbox';
 
-    // 0. Platform-Specific Adapter Strategy (Highest Priority)
-    if (window.LeverAdapter && window.LeverAdapter.isMatch && window.LeverAdapter.isMatch()) {
-        const leverLabel = window.LeverAdapter.findLabel(element);
-        if (leverLabel) return leverLabel;
-    }
-
-    // 0.5. Visual Label Strategy (The "Human Eye" / Heuristic Accessibility Mapper)
+    // 0. Visual Label Strategy (The "Human Eye" / Heuristic Accessibility Mapper)
     // Overrides standard labels if they are missing or likely generic
     const visualLabel = getVisualLabel(element);
     if (visualLabel) {
@@ -390,9 +478,6 @@ function getFieldLabel(element) {
         // Actually, let's treat it as high priority because standard labels failing is the root cause here.
         return clean(visualLabel);
     }
-
-    // Helper: Clean text
-    const clean = (txt) => (txt || '').replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
 
     // 0. Group Label Strategy (Highest Priority for Radios/Checkboxes)
     if (isGroup) {
@@ -572,9 +657,9 @@ function getFieldLabel(element) {
     // 7. Name/ID Fallback (Last Resort) - but only if looks like a real label
     const fallback = element.name || element.id;
     if (fallback) {
-        // Skip UUIDs and random-looking strings or array-like names (cards[...])
-        if (/^[a-f0-9-]{20,}$/i.test(fallback) || /\[.*\]/.test(fallback)) {
-            return 'Unknown Field'; // Don't use UUID or array syntax as label
+        // Skip UUIDs AND bracket syntax (common in technical names like cards[UUID][field])
+        if (/^[a-f0-9-]{20,}$/i.test(fallback) || /\[.*\]/.test(fallback) || fallback.includes('cards[')) {
+            return 'Unknown Field'; // Forced rejection of technical names
         }
         return clean(fallback.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1')); // camelCase -> camel Case
     }
@@ -700,4 +785,10 @@ if (typeof window !== 'undefined') {
     window.getFieldLabel = getFieldLabel;
     window.getElementSelector = getElementSelector;
     window.isFieldVisible = isFieldVisible;
+}
+
+// Trace logging for label extraction debugging
+if (typeof window !== 'undefined') {
+    // Check if FormDetector loaded
+    console.log('[DEBUG] FormDetector loaded. getFieldLabel exists?', typeof window.getFieldLabel);
 }

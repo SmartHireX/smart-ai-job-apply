@@ -74,12 +74,14 @@ window.isFieldVisible = function (element) {
     return false;
 };
 
-window.getFieldLabel = function (element) {
-    if (window.FieldUtils) {
-        return window.FieldUtils.getFieldLabel(element);
-    }
-    return '';
-};
+if (!window.getFieldLabel) {
+    window.getFieldLabel = function (element) {
+        if (window.FieldUtils) {
+            return window.FieldUtils.getFieldLabel(element);
+        }
+        return '';
+    };
+}
 
 window.captureFieldState = function (element) {
     if (window.FieldUtils) {

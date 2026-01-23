@@ -29,6 +29,11 @@ class FormProcessor {
             // console.log('✅ [FormProcessor] Processing complete');
 
         } catch (error) {
+            if (error.message === 'No form found') {
+                console.warn('⚠️ [FormProcessor] No form found in this frame (common for top-level frames in iframed sites). Skipping.');
+                // Do not show user-facing error toast for this common case
+                return;
+            }
             console.error('❌ [FormProcessor] Processing failed:', error);
             // ...
         } finally {
@@ -72,7 +77,7 @@ class FormProcessor {
 
         // Use FormAnalyzer to get fields
         const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
-        // console.log(`📊 [FormProcessor] Extracted ${fields.length} fields for Pipeline.`);
+        console.log(`📊 [FormProcessor] Extracted ${fields.length} fields. First field label: ${fields[0]?.label}`);
 
         // new pipeline execution
         if (window.PipelineOrchestrator) {
