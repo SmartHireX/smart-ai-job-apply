@@ -624,16 +624,38 @@ function showAccordionSidebar(allFields) {
             }
 
             if (selectedRadio) {
-                let selectedValue = selectedRadio.value || selectedRadio.field.value;
+                // ALWAYS read from live DOM element, not cached data
+                let liveElement = selectedRadio.field;
 
-                // Try to get label text for display
-                if (selectedRadio.field.id) {
-                    const label = document.querySelector(`label[for="${selectedRadio.field.id}"]`);
+                // Ensure we have the live element from DOM
+                if (!(liveElement instanceof HTMLElement) || !liveElement.isConnected) {
+                    // Try to find the live element
+                    if (selectedRadio.field.id) {
+                        liveElement = document.getElementById(selectedRadio.field.id) || liveElement;
+                    } else if (name) {
+                        const checked = document.querySelector(`input[name="${CSS.escape(name)}"]:checked`);
+                        if (checked) liveElement = checked;
+                    }
+                }
+
+                // Get the actual value from the live checked element
+                let selectedValue = liveElement.value;
+
+                // Try to get label text for display (from the LIVE element)
+                if (liveElement.id) {
+                    const label = document.querySelector(`label[for="${CSS.escape(liveElement.id)}"]`);
                     if (label) selectedValue = label.textContent.trim();
                 }
-                // If no label, look for parent label text
-                if (selectedRadio.field.parentElement && selectedRadio.field.parentElement.tagName === 'LABEL') {
-                    selectedValue = selectedRadio.field.parentElement.textContent.trim();
+                // If no explicit label, check parent label
+                if (selectedValue === liveElement.value && liveElement.parentElement && liveElement.parentElement.tagName === 'LABEL') {
+                    selectedValue = liveElement.parentElement.textContent.trim();
+                }
+                // Try nextElementSibling for inline labels (common pattern)
+                if (selectedValue === liveElement.value && liveElement.nextElementSibling) {
+                    const siblingText = liveElement.nextElementSibling.textContent.trim();
+                    if (siblingText && siblingText.length < 100) {
+                        selectedValue = siblingText;
+                    }
                 }
 
                 // Get the GROUP label with smart priority
