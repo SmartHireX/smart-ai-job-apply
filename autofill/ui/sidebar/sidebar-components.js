@@ -636,10 +636,8 @@ function showAccordionSidebar(allFields) {
                     selectedValue = selectedRadio.field.parentElement.textContent.trim();
                 }
 
-                // Get the GROUP label from field name (capitalized and formatted)
-                const fieldName = (radios[0] && radios[0].field.name) || name || 'Radio';
-                let groupLabel = fieldName.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').trim();
-                groupLabel = groupLabel.charAt(0).toUpperCase() + groupLabel.slice(1);
+                // Get the GROUP label from DOM (question text, not name attribute)
+                const groupLabel = getGroupQuestionLabel(radios[0].field);
 
                 groupedFields.push({
                     ...selectedRadio,
