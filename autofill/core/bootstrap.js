@@ -169,6 +169,16 @@ function detectFormsFallback() {
     const candidates = document.querySelectorAll(FORM_SELECTORS.join(', '));
     const validForms = Array.from(candidates).filter(isValidFormContainer);
 
+    // Platform Adapter Hook
+    if (window.LeverAdapter && window.LeverAdapter.isMatch()) {
+        console.log('🔌 [Platform] Lever Adapter Detected');
+        const leverForm = window.LeverAdapter.getForm();
+        if (leverForm) {
+            leverForm.dataset.novaPlatform = 'Lever';
+            return 1;
+        }
+    }
+
     if (validForms.length > 0) {
         return validForms.length;
     }
