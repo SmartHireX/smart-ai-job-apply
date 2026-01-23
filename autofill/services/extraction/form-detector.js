@@ -397,6 +397,21 @@ function getFieldLabel(element) {
         }
     }
 
+    // 3c. Data Attributes (React/Testing hooks)
+    const dataAttrs = ['data-label', 'data-field-name', 'data-testid', 'data-cy'];
+    for (const attr of dataAttrs) {
+        if (element.hasAttribute(attr)) {
+            const val = element.getAttribute(attr);
+            if (val && val.length > 3 && val.length < 100) {
+                // Return cleaned value: "first-name-input" -> "First Name Input"
+                // Avoid returning raw UUIDs or selectors
+                if (!/^[a-f0-9-]{20,}$/i.test(val)) {
+                    return clean(val.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1'));
+                }
+            }
+        }
+    }
+
     // 4. Deep Parent Search for SPA/React Forms
     // Look for question text in parent containers (common in Ashby, Lever, etc.)
     let parent = element.parentElement;
