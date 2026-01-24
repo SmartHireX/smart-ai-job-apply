@@ -95,7 +95,7 @@ class ExecutionEngine {
         if (window.showGhostingAnimation) {
             await window.showGhostingAnimation(element, value, confidence);
         } else {
-            await this.setValueRobust(element, value);
+            await this.setValueRobust(element, value, fieldMetadata);
             this.dispatchEvents(element);
         }
 
@@ -210,14 +210,14 @@ class ExecutionEngine {
     /**
      * Robust Value Setter (Bypasses Virtual DOM locking)
      */
-    async setValueRobust(element, value) {
+    async setValueRobust(element, value, fieldMetadata = null) {
         const tagName = element.tagName.toLowerCase();
         const type = (element.type || '').toLowerCase();
 
         // 1. Delegate to shared FieldUtils for Radio/Checkbox (Robust Group Handling)
         if (type === 'radio' || type === 'checkbox') {
             if (window.FieldUtils && typeof window.FieldUtils.setFieldValue === 'function') {
-                window.FieldUtils.setFieldValue(element, value);
+                window.FieldUtils.setFieldValue(element, value, fieldMetadata);
             } else if (typeof window.setFieldValue === 'function') {
                 window.setFieldValue(element, value);
             } else {

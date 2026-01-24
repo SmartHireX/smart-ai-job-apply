@@ -418,7 +418,7 @@ class FieldUtils {
      * Enhanced Value Setter for all field types (Radio, Checkbox, Date, Select)
      * Derived from ExecutionEngine and sidebar-components logic.
      */
-    static setFieldValue(element, value) {
+    static setFieldValue(element, value, fieldMetadata = null) {
         if (!element) return;
         const tagName = element.tagName.toLowerCase();
         const type = (element.type || '').toLowerCase();
@@ -429,8 +429,17 @@ class FieldUtils {
         if (type === 'radio') {
             let targetRadio = element;
 
-            // 0. Group Lookup: Scan nearby context for the correct option
-            if (element.name) {
+            // 0. Metadata-based lookup (Priority)
+            if (fieldMetadata && fieldMetadata.options) {
+                const targetOption = fieldMetadata.options.find(opt => opt.value === value || opt.text === value);
+                if (targetOption && targetOption.selector) {
+                    const found = document.querySelector(targetOption.selector);
+                    if (found) targetRadio = found;
+                }
+            }
+
+            // Group Lookup: Scan nearby context for the correct option
+            if (targetRadio === element && element.name) {
                 const container = element.closest('form') || element.closest('.form-group') || element.closest('fieldset') || document;
                 const group = container.querySelectorAll(`input[name="${CSS.escape(element.name)}"]`);
                 let bestMatch = null;
@@ -507,6 +516,29 @@ class FieldUtils {
             const valuesArray = Array.isArray(targetValues) ? targetValues : [targetValues];
             const isSingleBoolean = valuesArray.length === 1 && (valuesArray[0] === true || valuesArray[0] === 'true' || valuesArray[0] === 'on');
 
+            // 0. Metadata-based toggle (Highest Priority for logical groups)
+            if (fieldMetadata && fieldMetadata.options) {
+                fieldMetadata.options.forEach(opt => {
+                    const cb = document.querySelector(opt.selector);
+                    if (!cb) return;
+
+                    const isMatch = valuesArray.some(tv => {
+                        const targetStr = String(tv).toLowerCase().trim();
+                        return (opt.value || '').toLowerCase().trim() === targetStr ||
+                            (opt.text || '').toLowerCase().trim() === targetStr ||
+                            this.calculateJaccardSimilarity(opt.text, tv) > 0.6;
+                    });
+
+                    const shouldBeChecked = isMatch || (isSingleBoolean && opt.selector.includes(element.id));
+                    if (cb.checked !== shouldBeChecked) {
+                        cb.click();
+                        this.dispatchChangeEvents(cb);
+                    }
+                });
+                return element;
+            }
+
+            // 1. Name-based fallback (Legacy/Standard)
             if (element.name) {
                 const group = document.querySelectorAll(`input[name="${CSS.escape(element.name)}"]`);
                 group.forEach(cb => {

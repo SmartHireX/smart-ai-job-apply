@@ -45,7 +45,8 @@ class FormExtractor {
     extractInputs(container) {
         const inputs = container.querySelectorAll('input');
         const fields = [];
-        const processedGroups = new Set();
+        const processedGroups = new Set(); // For name-based grouping
+        const processedWrappers = new Set(); // For context-based grouping (anonymous groups)
 
         inputs.forEach(input => {
             // Skip hidden, submit, button
@@ -53,10 +54,22 @@ class FormExtractor {
                 return;
             }
 
-            // Deduplicate radio/checkbox groups
-            if (['radio', 'checkbox'].includes(input.type) && input.name) {
+            const type = (input.type || '').toLowerCase();
+            const isStructured = ['radio', 'checkbox'].includes(type);
+
+            // 1. Standard Name-Based Grouping
+            if (isStructured && input.name) {
                 if (processedGroups.has(input.name)) return;
                 processedGroups.add(input.name);
+            }
+            // 2. Context-Based Grouping (for unique/missing names)
+            else if (isStructured) {
+                const wrapper = input.closest('.form-group, fieldset, tr, .radio-group, .checkbox-group, div[role="group"]');
+                if (wrapper) {
+                    // If we've already processed a group from this specific wrapper, skip
+                    if (processedWrappers.has(wrapper)) return;
+                    processedWrappers.add(wrapper);
+                }
             }
 
             const field = this.buildFieldObject(input, container);
@@ -117,8 +130,17 @@ class FormExtractor {
         }
 
         // Special handling for radio/checkbox groups
-        if (['radio', 'checkbox'].includes(type) && element.name) {
-            selector = `input[name="${element.name}"]`;
+        if (['radio', 'checkbox'].includes(type)) {
+            if (element.name) {
+                selector = `input[name="${CSS.escape(element.name)}"]`;
+            } else {
+                // Anonymous Group (Shared Wrapper)
+                const wrapper = element.closest('.form-group, fieldset, tr, .radio-group, .checkbox-group, div[role="group"]');
+                if (wrapper) {
+                    // Use the wrapper as a scope or a data-id if possible
+                    selector = `input[type="${type}"]`; // FieldUtils will scope this to the wrapper
+                }
+            }
         }
 
         // Extract label
@@ -257,10 +279,24 @@ class FormExtractor {
      * Extract options for radio/checkbox groups
      */
     extractRadioCheckboxOptions(element, container = document) {
+        const type = element.type;
         const name = element.name;
-        if (!name) return [];
 
-        const group = container.querySelectorAll(`input[name="${name}"]`);
+        let group = [];
+
+        // Strategy A: Name-based group (Standard)
+        if (name) {
+            group = Array.from(container.querySelectorAll(`input[type="${type}"][name="${CSS.escape(name)}"]`));
+        }
+
+        // Strategy B: Context-based group (for unique names or missing names)
+        if (group.length <= 1) {
+            const wrapper = element.closest('.form-group, fieldset, tr, .radio-group, .checkbox-group, div[role="group"]');
+            if (wrapper) {
+                group = Array.from(wrapper.querySelectorAll(`input[type="${type}"]`));
+            }
+        }
+
         const options = [];
 
         group.forEach(input => {
@@ -274,9 +310,20 @@ class FormExtractor {
                 val = label || val;
             }
 
+            // Capture individual selector for this specific option
+            let optionSelector = '';
+            if (input.id) {
+                optionSelector = `#${CSS.escape(input.id)}`;
+            } else if (input.name && input.value) {
+                optionSelector = `input[name="${CSS.escape(input.name)}"][value="${CSS.escape(input.value)}"]`;
+            } else if (input.name) {
+                optionSelector = `input[name="${CSS.escape(input.name)}"]`;
+            }
+
             options.push({
                 value: val,
-                text: label || input.value
+                text: label || input.value,
+                selector: optionSelector // ESSENTIAL for targeted multi-fill
             });
         });
 

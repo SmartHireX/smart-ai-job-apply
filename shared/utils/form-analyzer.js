@@ -381,35 +381,35 @@ function extractFieldsFromDOM(source) {
         label = (label || '').trim();
 
         // GROUPING LOGIC for Radios and Checkboxes
-        if ((type === 'radio' || type === 'checkbox') && input.name) {
-            if (processedGroups.has(input.name)) {
+        if (type === 'radio' || type === 'checkbox') {
+            const wrapper = input.closest('.form-group, fieldset, tr, .radio-group, .checkbox-group, div[role="group"]');
+            const groupKey = input.name || (wrapper ? `wrapper_${Array.from(root.querySelectorAll('*')).indexOf(wrapper)}` : null);
+
+            if (groupKey && processedGroups.has(groupKey)) {
                 // Add option to existing group
-                const group = processedGroups.get(input.name);
+                const group = processedGroups.get(groupKey);
                 group.options.push({
                     label: label,
                     value: input.value,
                     selector: input.id ? `#${CSS.escape(input.id)}` : `input[name="${safeName}"][value="${safeValue}"]`
                 });
-                // Update group label if current is better/longer (heuristic) or if group has generic label?
-                // Actually keep the first label found or try to find a common legend? 
-                // Ideally we'd find the fieldset legend. For now, keep first.
                 return;
-            } else {
+            } else if (groupKey) {
                 // Create new Group
                 const groupObj = {
                     type: type, // 'radio' or 'checkbox' (implies group)
-                    name: input.name,
+                    name: input.name || '',
                     id: input.id || '', // First ID
                     label: label, // Initial label
                     value: '', // No default value for group
-                    selector: `input[name="${safeName}"]`, // selector points to the group (name)
+                    selector: input.name ? `input[name="${safeName}"]` : `input[type="${type}"]`,
                     options: [{
                         label: label,
                         value: input.value,
                         selector: input.id ? `#${CSS.escape(input.id)}` : `input[name="${safeName}"][value="${safeValue}"]`
                     }]
                 };
-                processedGroups.set(input.name, groupObj);
+                processedGroups.set(groupKey, groupObj);
                 fields.push(groupObj);
                 return;
             }
