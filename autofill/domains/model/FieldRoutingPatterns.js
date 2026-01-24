@@ -61,7 +61,7 @@ class FieldRoutingPatterns {
 
         // Signal 1: Hardened Keyword Signal (+1)
         // Require word boundaries and compound terms for weaker words to avoid "employer" in survey triggers
-        const sectionKeywords = /\b(job.*title|role|position|employer.*name|company.*name|work.*experience|employment.*history|school.*name|university.*name|degree.*earned|graduation.*year|field.*of.*study)\b/i;
+        const sectionKeywords = /\b(job.*title|role|position|employer.*name|company.*name|work.*experience|employment.*history|school.*name|university|degree|graduation.*year|study|start.*date|end.*date|description|responsibilities|summary|gpa|major|minor)\b/i;
         if (sectionKeywords.test(ctx)) score += 1;
 
         // Signal 2: Hardened Index Signal (+1)
@@ -75,8 +75,10 @@ class FieldRoutingPatterns {
         if (hasRealIndex) score += 1;
 
         // Signal 3: Structural Signal (+1) (Capped)
-        // Capping index at 50; values like 4199 are usually DOM walk errors or flat list overflow
-        if (field.field_index > 0 && field.field_index < 50) score += 1;
+        // Boost if index > 0 OR if it's index 0 but explicitly structural (e.g. "edu_0_degree")
+        if ((field.field_index > 0 && field.field_index < 50) || (field.field_index === 0 && hasRealIndex)) {
+            score += 1;
+        }
 
         // Signal 4: Container Signal (+1)
         if (field.element) {

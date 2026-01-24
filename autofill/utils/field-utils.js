@@ -457,7 +457,7 @@ class FieldUtils {
         const tagName = element.tagName.toLowerCase();
         const type = (element.type || '').toLowerCase();
 
-        console.log(`[FieldUtils] setFieldValue called for ${tagName} (type: ${type}) with value: ${value}`);
+        //console.log(`[FieldUtils] setFieldValue called for ${tagName} (type: ${type}) with value: ${value}`);
 
         // 1. Radio Buttons (Complex Group Handling)
         if (type === 'radio') {
@@ -579,8 +579,6 @@ class FieldUtils {
             }
             const valuesArray = Array.isArray(targetValues) ? targetValues : [targetValues];
             const isSingleBoolean = valuesArray.length === 1 && (valuesArray[0] === true || valuesArray[0] === 'true' || valuesArray[0] === 'on');
-            console.log("valuesarray", valuesArray)
-            console.log("fieldMetadata", fieldMetadata)
             // 0. Metadata-based toggle (Highest Priority for logical groups)
             if (fieldMetadata && fieldMetadata.options) {
                 fieldMetadata.options.forEach(opt => {

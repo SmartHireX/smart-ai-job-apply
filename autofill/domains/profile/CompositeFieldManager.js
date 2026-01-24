@@ -82,8 +82,6 @@ class CompositeFieldManager {
     async resolveAndFill(field, type, groupEntity = null, matchedSkills = []) {
         if (!field || !field.element) return { filled: false, source: 'error' };
 
-        console.log(`[CompositeFieldManager] 🎯 resolveAndFill candidate:`, field);
-
         // Ensure index is set
         const index = field.index !== undefined ? field.index : this.indexer.getIndex(field, type);
         field.field_index = index;
@@ -95,7 +93,7 @@ class CompositeFieldManager {
             // Special Routing for ATOMIC_MULTI / Grouped Fields
             if (field.instance_type === 'ATOMIC_MULTI') {
                 const lookupKey = field.cache_label || type || 'skills';
-                console.log(`[CompositeFieldManager] 🔍 ATOMIC_MULTI Lookup: "${lookupKey}" (CacheLabel: ${field.cache_label})`);
+
 
                 cached = await this.cache.getCachedValue({
                     label: lookupKey,
@@ -104,7 +102,7 @@ class CompositeFieldManager {
                     parentContext: lookupKey,
                     cache_label: lookupKey
                 });
-                console.log(`[CompositeFieldManager] 📦 Cache Result for "${lookupKey}":`, cached);
+                //console.log(`[CompositeFieldManager] 📦 Cache Result for "${lookupKey}":`, cached);
             } else {
                 // Standard Field Lookup
                 cached = await this.cache.getCachedValue(field);
@@ -121,15 +119,15 @@ class CompositeFieldManager {
                 }
 
                 if (cleanValue) {
-                    console.log(`[CompositeFieldManager] ✅ Found Value:`, cleanValue);
+                    //console.log(`[CompositeFieldManager] ✅ Found Value:`, cleanValue);
                     if (await this.fill(field.element, cleanValue, field)) {
                         return { filled: true, source: 'cache', value: cleanValue };
                     }
                 } else {
-                    console.log(`[CompositeFieldManager] ⚠️ Cache contained only invalid values (e.g. 'true'). Ignored.`);
+                    //console.log(`[CompositeFieldManager] ⚠️ Cache contained only invalid values (e.g. 'true'). Ignored.`);
                 }
             } else {
-                console.log(`[CompositeFieldManager] ❌ No Cache Found/Value Empty`);
+                //console.log(`[CompositeFieldManager] ❌ No Cache Found/Value Empty`);
             }
         }
 

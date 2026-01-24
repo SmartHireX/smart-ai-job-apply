@@ -237,7 +237,12 @@ const ALIAS_REGISTRY = {
     'salary_current': ['current_salary', 'currentsalary', 'current_ctc', 'ctc'],
     'salary_expected': ['expected_salary', 'expectedsalary', 'expected_ctc'],
     'linkedin': ['linkedin_url', 'linkedinurl', 'linkedin_profile'],
-    'notice_period_in_days': ['notice_period', 'notice_period_days', 'notice_period_select', 'availability_date', 'days_notice', 'notice_days']
+    'notice_period_in_days': ['notice_period', 'notice_period_days', 'notice_period_select', 'availability_date', 'days_notice', 'notice_days'],
+    'field_of_study': ['major', 'concentration', 'discipline', 'education_major', 'study_field'],
+    'gpa': ['gpa_score', 'grade_point_average', 'score', 'grade'],
+    'work_description': ['description', 'summary', 'job_description', 'responsibilities'],
+    'start_date': ['job_start_date', 'education_start_date', 'start_year', 'from'],
+    'end_date': ['job_end_date', 'education_end_date', 'end_year', 'to']
 };
 
 // --- 3. WEIGHTED TOKENS (Higher = More Important) ---
@@ -650,6 +655,21 @@ async function getCachedValue(fieldOrSelector, labelArg) {
                         confidence: 0.95,
                         source: 'section_row_cache_legacy',
                         semanticType: semanticType
+                    };
+                }
+
+                // 3. Fuzzy/Loose Matching (Restore for robustness)
+                // Iterate keys in the row to find a match
+                const rowKeys = Object.keys(sectionEntry.value[index]);
+                const match = rowKeys.find(k => k.includes(semanticType) || semanticType.includes(k) || (canonicalKey && k.includes(canonicalKey)));
+
+                if (match && sectionEntry.value[index][match]) {
+                    // console.log(`[InteractionLog] ✅ Found via Fuzzy Match: ${match} = "${sectionEntry.value[index][match]}"`);
+                    return {
+                        value: sectionEntry.value[index][match],
+                        confidence: 0.85,
+                        source: 'section_row_cache_fuzzy',
+                        semanticType: match
                     };
                 }
             }

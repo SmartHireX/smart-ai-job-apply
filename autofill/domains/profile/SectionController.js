@@ -16,41 +16,33 @@ class SectionController extends window.Handler {
     }
 
     async handle(fields, context) {
+        console.log("🚀 ~ SectionController ~ handle ~ fields:", fields)
         const results = {};
         const { resumeData } = context;
 
         // 1. Group fields by Section Index (e.g. "Job 0", "Job 1")
         const sections = this.groupFieldsBySection(fields);
-
+        console.log("🚀 ~ SectionController ~ handle ~ sections:", sections)
         for (const [sectionKey, sectionFields] of Object.entries(sections)) {
             const { type, index } = this.parseSectionKey(sectionKey);
             // console.log(`📜 [SectionController] Processing Transactional Section: ${type} #${index} (${sectionFields.length} fields)`);
-
+            console.log("🚀 ~ SectionController ~ handle ~ type:", type)
+            console.log("🚀 ~ SectionController ~ handle ~ index:", index)
             // 2. Fetch Source Entity (Transactional Unit)
             // Fallback to Resume Data
-            let entity = this.getEntityFromResume(resumeData, type, index);
+            let entity = this.getEntityFromResume(resumeData, type, index) || {};
             let source = 'resume_data';
 
-            if (!entity) {
-                // console.log(`ℹ️ [SectionController] No data found for ${type} #${index}. Skipping section.`);
-                // Return empty trace? OR let AI handle it?
-                // Plan says: Cache -> User -> AI.
-                // If we return nothing here, FieldRouter (Tier 3) will send to AI.
-                continue;
-            }
+            // REMOVED: if (!entity) continue;
+            // We MUST proceed to mapSection to allow Cache Lookups even if Resume Data is missing.
 
             // 3. Map Fields to Entity Properties
-            const sectionResults = await this.mapSection(sectionFields, entity, source);
+            const sectionResults = await this.mapSection(sectionFields, entity, source, type, index);
 
             // 4. Transactional Integrity Check
             // Verify if critical fields are mapped
             // if (this.verifyIntegrity(sectionResults, type)) {
             Object.assign(results, sectionResults);
-            // } else {
-            //    console.warn(`⚠️ [HistoryHandler] Integrity Check Failed for ${type} #${index}. Partial data.`);
-            // We might still fill partials, or block. Plan said "Mark as Needs Review".
-            // For now, we fill what we have, but append a flag to trace.
-            // }
         }
 
         return results;
@@ -96,9 +88,13 @@ class SectionController extends window.Handler {
         return null; // Skills?
     }
 
-    async mapSection(fields, entity, source) {
+    async mapSection(fields, entity, source, type, index) {
+        console.log("🚀 ~ SectionController ~ mapSection ~ fields:", fields)
+        console.log("🚀 ~ SectionController ~ mapSection ~ entity:", entity)
+        console.log("🚀 ~ SectionController ~ mapSection ~ source:", source)
+        console.log("🚀 ~ SectionController ~ mapSection ~ type:", type)
+        console.log("🚀 ~ SectionController ~ mapSection ~ index:", index)
         const mapped = {};
-
         for (const field of fields) {
             // 1. Check InteractionLog (Cache) Priority
             if (window.InteractionLog) {

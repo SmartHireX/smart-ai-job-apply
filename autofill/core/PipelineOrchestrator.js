@@ -270,9 +270,11 @@ class PipelineOrchestrator {
      * Logic: SectionController vs CompositeFieldManager
      */
     async processMultiSelect(fields, context) {
+        console.log('processMultiSelect', fields);
         const results = {};
         const { section, composite } = this.partitionProfileFields(fields);
-
+        console.log('section', section);
+        console.log('composite', composite);
         // 1. Section Fields (Jobs/Edu) -> SectionController (Transactional)
         if (section.length > 0 && this.controllers.section) {
             const sRes = await this.controllers.section.handle(section, context);
@@ -299,6 +301,7 @@ class PipelineOrchestrator {
     async strategyInteractionLog(fields) {
         if (!window.InteractionLog) return {};
         const results = {};
+        console.log('strategyInteractionLog', fields);
         for (const field of fields) {
             // Pass the FULL field object to allow ML-based lookup
             const cached = await window.InteractionLog.getCachedValue(field);
@@ -557,8 +560,15 @@ class PipelineOrchestrator {
 
     getSectionType(label) {
         if (!label) return null;
-        if (/school|degree|education|institution/.test(label)) return 'education';
-        if (/company|employer|job|title|work/.test(label)) return 'work';
+        // Education Signals
+        if (/school|degree|education|institution|gpa|major|minor|study|grade|score/.test(label) || label.includes('edu')) return 'education';
+
+        // Work Signals
+        if (/company|employer|job|title|work|description|responsibilities|summary/.test(label)) return 'work';
+
+        // Date Signals (Default to Work if not caught by Edu above)
+        if (/start.*date|end.*date/.test(label)) return 'work';
+
         return null;
     }
 
