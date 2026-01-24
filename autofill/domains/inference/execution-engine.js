@@ -259,9 +259,20 @@ class ExecutionEngine {
                     }
                 }
 
-                if (targetRadio && !targetRadio.checked) {
-                    // console.log(`[ExecutionEngine] 📻 Selecting radio: "${targetRadio.value}" in group "${name}"`);
-                    targetRadio.click();
+                if (targetRadio) {
+                    // Always click to ensure UI state sync
+                    // For hidden radios, prioritize clicking the label
+                    const isHidden = window.getComputedStyle(targetRadio).opacity === '0' ||
+                        window.getComputedStyle(targetRadio).display === 'none' ||
+                        window.getComputedStyle(targetRadio).visibility === 'hidden';
+
+                    const label = targetRadio.labels?.[0] || document.querySelector(`label[for="${CSS.escape(targetRadio.id)}"]`);
+
+                    if (isHidden && label) {
+                        label.click();
+                    } else {
+                        targetRadio.click();
+                    }
                     this.dispatchEvents(targetRadio);
                 }
             }

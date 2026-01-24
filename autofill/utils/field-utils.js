@@ -379,8 +379,17 @@ class FieldUtils {
                     }
                 }
 
-                if (bestMatch && !bestMatch.checked) {
-                    bestMatch.click();
+                if (bestMatch) {
+                    // Always click to ensure UI state sync, regardless of checked property
+                    // For hidden radios (like on Ashby), clicking the label is often more robust
+                    const isHidden = !this.isFieldVisible(bestMatch);
+                    const label = bestMatch.labels?.[0] || document.querySelector(`label[for="${CSS.escape(bestMatch.id)}"]`);
+
+                    if (isHidden && label) {
+                        label.click();
+                    } else {
+                        bestMatch.click();
+                    }
                     this.dispatchChangeEvents(bestMatch);
                 }
             }
