@@ -299,7 +299,43 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
     } else {
         // For non-text fields, show brief animation then fill
         await new Promise(r => setTimeout(r, 200));
-        setFieldValue(element, value);
+
+        console.log(`[FormVisuals] calling setFieldValue for ${element.type} with value: ${value}`);
+
+        // SPECIAL HANDLING FOR RADIOS (Visual Click)
+        if (element.type === 'radio') {
+            // 1. Direct Input Click (Failsafe)
+            try {
+                // console.log('[FormVisuals] 🟢 Direct Click on Radio Input');
+                element.click();
+            } catch (e) { console.warn('[FormVisuals] Direct click failed', e); }
+
+            // 2. Find and Click Label (Ashby/React Requirement)
+            // Copy of robust logic from FieldUtils/ExecutionEngine
+            let label = element.labels?.[0];
+            if (!label && element.id) {
+                label = document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
+            }
+            if (!label && element.parentElement && element.parentElement.nextElementSibling?.tagName === 'LABEL') {
+                label = element.parentElement.nextElementSibling;
+            }
+
+            if (label) {
+                try {
+                    // console.log('[FormVisuals] 🟢 Direct Click on Radio Label', label);
+                    label.click();
+                } catch (e) { console.warn('[FormVisuals] Label click failed', e); }
+            }
+
+            // 3. Ensure State Sync via FieldUtils (for React trackers)
+            if (window.FieldUtils && typeof window.FieldUtils.setFieldValue === 'function') {
+                window.FieldUtils.setFieldValue(element, value);
+            } else if (typeof setFieldValue === 'function') {
+                setFieldValue(element, value);
+            }
+        } else {
+            setFieldValue(element, value);
+        }
     }
 
     element.classList.remove('smarthirex-typing');
