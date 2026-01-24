@@ -231,95 +231,18 @@ class ExecutionEngine {
         console.log(`🛠️ [SetValueRobust] Tag: "${tagName}", Type: "${type}", Target: "${value}"`);
 
         // Special Radio Button Handling
-        // For radio groups, we need to find the specific radio button matching the value
+        // HISTORICAL RESTORATION: Keep it simple.
         if (type === 'radio') {
-            const name = element.name;
-            if (name) {
-                // Find all radio buttons in the group
-                const group = document.querySelectorAll(`input[name="${CSS.escape(name)}"]`);
-                let targetRadio = null;
-
-                // Ashby-specific: Inputs often have value="on" and rely on React state
-                // If the input value is generic ('on', 'true'), we MUST rely on the label text (Fuzzy Match)
-
-                const targetValue = String(value).toLowerCase().trim();
-
-                // Priority 1: Exact Value Match (only if value is meaningful)
-                if (targetValue === 'on' || targetValue === 'true' || targetValue === 'yes') {
-                    // If value is generic "True", assume specific element passed to function IS the target
-                    targetRadio = element.type === 'radio' ? element : null;
-                } else {
-                    for (const radio of group) {
-                        const radioValue = String(radio.value).toLowerCase().trim();
-                        if (radioValue === targetValue) {
-                            targetRadio = radio;
-                            break;
-                        }
-                    }
+            try {
+                // Just click it. Trust the element.
+                if (!element.checked) {
+                    console.log(`[ExecutionEngine] Clicking radio...`);
+                    element.click();
                 }
-
-                // Priority 2: Label Match (Fuzzy) - Critical for Ashby
-                if (!targetRadio) {
-                    for (const radio of group) {
-                        // Standard Label Check
-                        let labelText = radio.labels?.[0]?.textContent?.toLowerCase().trim();
-
-                        // Sibling Label Check (Fallback)
-                        if (!labelText && radio.parentElement && radio.parentElement.nextElementSibling?.tagName === 'LABEL') {
-                            labelText = radio.parentElement.nextElementSibling.innerText.trim().toLowerCase();
-                        }
-
-                        if (labelText && (labelText === targetValue || labelText.includes(targetValue) || targetValue.includes(labelText))) {
-                            targetRadio = radio;
-                            break;
-                        }
-                    }
-                }
-
-                if (targetRadio) {
-                    console.log(`[ExecutionEngine] Found target radio:`, targetRadio);
-
-                    // Robust label finding (Id, Labels property, or Sibling)
-                    let label = targetRadio.labels?.[0] || document.querySelector(`label[for="${CSS.escape(targetRadio.id)}"]`);
-
-                    if (!label && targetRadio.parentElement && targetRadio.parentElement.nextElementSibling?.tagName === 'LABEL') {
-                        label = targetRadio.parentElement.nextElementSibling;
-                    }
-
-                    // SIMPLIFIED STRATEGY: Click everything relevant
-                    // 1. Click the input itself
-                    try {
-                        console.log(`[ExecutionEngine] Clicking radio input...`);
-                        targetRadio.click();
-
-                        // Force check using Native Setter (React Bypass)
-                        const nativeLast = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked').set;
-                        if (nativeLast) { nativeLast.call(targetRadio, true); }
-                        else { targetRadio.checked = true; }
-
-                    } catch (e) {
-                        console.error(`[ExecutionEngine] Input click failed`, e);
-                    }
-
-                    // 2. Click the label
-                    if (label) {
-                        try {
-                            console.log(`[ExecutionEngine] Clicking radio label...`);
-                            label.click();
-                        } catch (e) {
-                            console.error(`[ExecutionEngine] Label click failed`, e);
-                        }
-                    }
-
-                    // 3. React/Ashby State Sync: Native Setter
-                    try {
-                        const nativeLast = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked')?.set;
-                        if (nativeLast) { nativeLast.call(targetRadio, true); }
-                    } catch (e) { }
-
-                    this.dispatchEvents(targetRadio);
-                }
+            } catch (e) {
+                console.error(`[ExecutionEngine] Radio click failed`, e);
             }
+            this.dispatchEvents(element);
             return;
         }
 

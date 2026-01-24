@@ -383,84 +383,21 @@ class FieldUtils {
 
         // 1. Radio Buttons (Complex Group Handling)
         if (type === 'radio') {
-            const name = element.name;
-            if (name) {
-                const group = document.querySelectorAll(`input[name="${CSS.escape(name)}"]`);
-                const targetValue = String(value).toLowerCase().trim();
-                let bestMatch = null;
+            // HISTORICAL RESTORATION: Keep it simple.
+            // If we have the element, just click it.
+            // The upstream logic (FormAnalyzer) has already identified this as the target choice.
+            // We don't need to re-search the DOM or find labels. 
+            // Programmatic click() on an input triggers 'change' events even if hidden.
 
-                // Ashby-specific: Inputs often have value="on" and rely on React state
-                // If the input value is generic ('on', 'true'), we MUST rely on the label text (Fuzzy Match)
-
-                // Priority 1: Exact Value Match (only if value is meaningful)
-                if (targetValue === 'on' || targetValue === 'true' || targetValue === 'yes') {
-                    // If value is generic "True", assume specific element passed to function IS the target
-                    // This handles cases where we resolved a specific selector (e.g. #male) but passed value="on"
-                    bestMatch = element;
-                } else {
-                    for (const radio of group) {
-                        if (radio.value.toLowerCase().trim() === targetValue) {
-                            bestMatch = radio;
-                            break;
-                        }
-                    }
+            try {
+                if (!element.checked) {
+                    element.click();
                 }
-
-                // Priority 2: Label Match (Fuzzy) - Critical for Ashby
-                if (!bestMatch) {
-                    for (const radio of group) {
-                        const label = this.getFieldLabel(radio).toLowerCase();
-                        if (label === targetValue || label.includes(targetValue) || targetValue.includes(label)) {
-                            bestMatch = radio;
-                            break;
-                        }
-                    }
-                }
-
-                if (bestMatch) {
-                    console.log(`[FieldUtils] Found best match for radio:`, bestMatch);
-
-                    // robust label finding (Id, Labels property, or Sibling)
-                    let label = bestMatch.labels?.[0] || document.querySelector(`label[for="${CSS.escape(bestMatch.id)}"]`);
-
-                    if (!label && bestMatch.parentElement && bestMatch.parentElement.nextElementSibling?.tagName === 'LABEL') {
-                        label = bestMatch.parentElement.nextElementSibling;
-                    }
-
-                    // SIMPLIFIED STRATEGY: Click everything relevant
-                    // 1. Click the input itself (standard behavior)
-                    try {
-                        console.log(`[FieldUtils] Clicking radio input...`);
-                        bestMatch.click();
-                        // Force check using Native Setter (React Bypass)
-                        this.setNativeChecked(bestMatch, true);
-                    } catch (e) {
-                        console.error(`[FieldUtils] Input click failed`, e);
-                    }
-
-                    // 2. Click the label (Required for Ashby/React)
-                    if (label) {
-                        try {
-                            console.log(`[FieldUtils] Clicking radio label...`);
-                            label.click();
-                        } catch (e) {
-                            console.error(`[FieldUtils] Label click failed`, e);
-                        }
-                    }
-
-                    // 3. React/Ashby State Sync: Native Setter
-                    try {
-                        const nativeSettter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked')?.set;
-                        if (nativeSettter) {
-                            nativeSettter.call(bestMatch, true);
-                        }
-                    } catch (e) { }
-
-                    this.dispatchChangeEvents(bestMatch);
-
-                    this.dispatchChangeEvents(bestMatch);
-                }
+            } catch (e) {
+                console.warn('[FieldUtils] Radio click failed', e);
             }
+
+            this.dispatchChangeEvents(element);
             return;
         }
 

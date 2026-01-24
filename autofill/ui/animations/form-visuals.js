@@ -300,7 +300,11 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
         // For non-text fields, show brief animation then fill
         await new Promise(r => setTimeout(r, 200));
 
-        // SPECIAL HANDLING FOR RADIOS (Visual Click)
+        // Delegate entirely to FieldUtils (Simplicity Restoration)
+        setFieldValue(element, value);
+
+        /*
+        // SPECIAL HANDLING FOR RADIOS (Removed for Simplicity)
         if (element.type === 'radio') {
             // 1. Direct Input Click
             try {
@@ -336,6 +340,7 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
         } else {
             setFieldValue(element, value);
         }
+        */
     }
 
     element.classList.remove('smarthirex-typing');
