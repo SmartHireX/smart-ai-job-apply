@@ -260,15 +260,11 @@ class ExecutionEngine {
                 }
 
                 if (targetRadio) {
-                    // Always click to ensure UI state sync
-                    // For hidden radios, prioritize clicking the label
-                    const isHidden = window.getComputedStyle(targetRadio).opacity === '0' ||
-                        window.getComputedStyle(targetRadio).display === 'none' ||
-                        window.getComputedStyle(targetRadio).visibility === 'hidden';
-
+                    // Always prefer clicking the label for radio buttons
+                    // This handles both hidden inputs (Ashby) and standard visible ones safely
                     const label = targetRadio.labels?.[0] || document.querySelector(`label[for="${CSS.escape(targetRadio.id)}"]`);
 
-                    if (isHidden && label) {
+                    if (label) {
                         label.click();
                     } else {
                         targetRadio.click();

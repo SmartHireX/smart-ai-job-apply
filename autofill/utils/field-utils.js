@@ -380,12 +380,11 @@ class FieldUtils {
                 }
 
                 if (bestMatch) {
-                    // Always click to ensure UI state sync, regardless of checked property
-                    // For hidden radios (like on Ashby), clicking the label is often more robust
-                    const isHidden = !this.isFieldVisible(bestMatch);
+                    // Always prefer clicking the label for radio buttons
+                    // This handles both hidden inputs (Ashby) and standard visible ones safely
                     const label = bestMatch.labels?.[0] || document.querySelector(`label[for="${CSS.escape(bestMatch.id)}"]`);
 
-                    if (isHidden && label) {
+                    if (label) {
                         label.click();
                     } else {
                         bestMatch.click();
