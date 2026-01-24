@@ -295,14 +295,16 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
         // HELPER: Find the VISIBLE element to animate (since the input might be hidden/opacity:0)
         let visualTarget = getVisualTarget(element);
 
-        // Show a brief "Ghost" pulse (200ms) on the VISIBLE target
+        // Show a brief "Ghost" pulse on the VISIBLE target
         visualTarget.classList.add('smarthirex-typing');
         visualTarget.classList.add('smarthirex-ai-writing');
 
         // Scroll the VISUAL target
         visualTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        await new Promise(r => setTimeout(r, 200));
+        // PAUSE: Wait for scroll to finish + User verification
+        // User Request: "Go for the field then select, don't select until on screen"
+        await new Promise(r => setTimeout(r, 600));
 
         setFieldValue(element, value); // Set value on the REAL input
 
