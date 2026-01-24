@@ -573,11 +573,26 @@ class FieldUtils {
                     const label = this.getOptionLabelText(cb) || "";
                     const val = cb.value || "";
 
+                    // Normalize for comparison
+                    const normalize = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const nLabel = normalize(label);
+                    const nVal = normalize(val);
+
                     const isMatch = valuesArray.some(tv => {
                         const targetStr = String(tv).toLowerCase().trim();
+                        // 1. Direct Match
                         if (val.toLowerCase().trim() === targetStr) return true;
                         if (label.toLowerCase().trim() === targetStr) return true;
-                        return this.calculateJaccardSimilarity(label, tv) > 0.6;
+
+                        // 2. Normalized Match
+                        const nTarget = normalize(tv);
+                        if (nVal === nTarget && nVal.length > 0) return true;
+                        if (nLabel === nTarget && nLabel.length > 0) return true;
+
+                        // 3. Fuzzy Match
+                        const simLabel = this.calculateJaccardSimilarity(label, tv);
+                        const simVal = this.calculateJaccardSimilarity(val, tv);
+                        return Math.max(simLabel, simVal) > 0.6;
                     });
 
                     const shouldBeChecked = isMatch || (isSingleBoolean && (val === element.value || val === 'on'));

@@ -152,18 +152,30 @@ class ExecutionEngine {
     }
 
     _handleUserEdit(element, fieldMetadata) {
+        console.log("_handleUserEdit", element, fieldMetadata);
         if (!fieldMetadata) return;
 
         let newValue;
         const type = (element.type || '').toLowerCase();
 
         if (type === 'checkbox') {
-            if (element.checked) {
-                const rawVal = element.value;
-                newValue = (!rawVal || rawVal === 'on') ? true : rawVal;
+            const rawVal = element.value;
+            // Try to resolve a meaningful value (label) if value is generic 'on'
+            if (!rawVal || rawVal === 'on') {
+                const text = this.getOptionLabelText(element);
+                newValue = text || true;
             } else {
+                newValue = rawVal;
+            }
+
+            // NEW: Support for deselecting items in multi-select arrays
+            if (window.InteractionLog && window.InteractionLog.updateMultiSelection) {
+                window.InteractionLog.updateMultiSelection(fieldMetadata, fieldMetadata.label, newValue, element.checked);
                 return;
             }
+
+            if (!element.checked) return;
+
         } else if (type === 'radio') {
             if (!element.checked) return;
             const rawVal = element.value;

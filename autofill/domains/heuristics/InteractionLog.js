@@ -800,6 +800,85 @@ function getCanonicalKey(key) {
 /**
  * Cache a field selection
  */
+/**
+ * Explicitly update a multi-value selection (Add/Remove)
+ * @param {Object} field - Field metadata
+ * @param {string} label - Field label
+ * @param {string} value - Value to add/remove
+ * @param {boolean} isSelected - True to add, False to remove
+ */
+async function updateMultiSelection(field, label, value, isSelected) {
+    console.log('in updateMultiSelection', field, label, value, isSelected);
+    const currentOp = _cacheLock.then(async () => {
+        const { key: semanticType } = generateSemanticKey(field, label);
+        console.log('semanticType', semanticType);
+        if (!semanticType) return;
+
+        const targetCacheKey = determineCacheStrategy(semanticType, field);
+        console.log('targetCacheKey', targetCacheKey);
+        if (targetCacheKey !== CACHE_KEYS.ATOMIC_MULTI) {
+            // For non-multi fields, we only care about selection (overwrite)
+            if (isSelected) {
+                return cacheSelection(field, label, value);
+            }
+            return; // Ignore deselection for single-value fields (or implement clear logic if needed)
+        }
+
+        const cache = await getCache(targetCacheKey);
+        const storageKey = getCanonicalKey(semanticType);
+        console.log('storageKey', storageKey);
+        console.log('cache', cache);
+        if (!cache[storageKey]) {
+            cache[storageKey] = { value: [], useCount: 0, confidence: 0.75, variants: [] };
+        }
+        const entry = cache[storageKey];
+
+        // Normalize Input
+        let inputPayload = value;
+        if (typeof value === 'string' && value.includes(',')) {
+            inputPayload = value.split(',').map(s => s.trim()).filter(s => s);
+        }
+        const valuesToProcess = Array.isArray(inputPayload) ? inputPayload : [inputPayload];
+
+        // Normalize Existing
+        let existingArray = [];
+        if (Array.isArray(entry.value)) existingArray = entry.value;
+        else if (typeof entry.value === 'string' && entry.value) existingArray = [entry.value];
+
+        const set = new Set(existingArray);
+
+        valuesToProcess.forEach(val => {
+            if (isSelected) {
+                set.add(val);
+            } else {
+                set.delete(val);
+            }
+        });
+
+        entry.value = Array.from(set);
+        entry.lastUsed = Date.now();
+
+        const normLabel = normalizeFieldName(label);
+        if (normLabel && !entry.variants.includes(normLabel)) entry.variants.push(normLabel);
+
+        await saveCache(targetCacheKey, cache);
+
+        // Meta update
+        const meta = await getMetadata();
+        const single = await getCache(CACHE_KEYS.ATOMIC_SINGLE);
+        const multi = await getCache(CACHE_KEYS.ATOMIC_MULTI);
+        meta.totalEntries = Object.keys(single).length + Object.keys(multi).length;
+        await saveMetadata(meta);
+
+    }).catch(err => console.error('[InteractionLog] Error in updateMultiSelection:', err));
+
+    _cacheLock = currentOp;
+    await currentOp;
+}
+
+/**
+ * Cache a field selection
+ */
 async function cacheSelection(field, label, value) {
     const currentOp = _cacheLock.then(async () => {
         // 1. Generate Key
@@ -975,6 +1054,7 @@ async function clearCache() {
 window.InteractionLog = {
     getCachedValue,
     cacheSelection,
+    updateMultiSelection,
     cleanupCache,
     getCacheStats,
     clearCache,

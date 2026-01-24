@@ -1788,17 +1788,56 @@ function attachSelfCorrectionTrigger(element) {
 
     const handleChange = async () => {
         const label = getFieldLabel(element);
-        const fieldType = element.type || element.tagName?.toLowerCase();
+        const fieldType = (element.type || element.tagName || '').toLowerCase();
+
+        // ---------------------------------------------------------
+        // 0. METADATA RECOVERY (Construct fieldObj FIRST)
+        // ---------------------------------------------------------
+        let cacheLabel = element.getAttribute('cache_label');
+        let instanceType = element.getAttribute('instance_type'); // From DOM
+        let scope = element.getAttribute('scope') || 'GLOBAL';
+
+        if (!cacheLabel && window.NovaCache) {
+            const entry = window.NovaCache[element.id] || window.NovaCache[element.name];
+            if (entry) {
+                // Handle new Object structure or legacy string
+                cacheLabel = (typeof entry === 'object') ? entry.label : entry;
+
+                // If DOM was missing metadata, recover it from NovaCache
+                if (typeof entry === 'object') {
+                    if (!instanceType) instanceType = entry.type;
+                    if (element.getAttribute('scope') === null) scope = entry.scope;
+                }
+
+                // Force attributes onto element for consistency
+                if (cacheLabel) element.setAttribute('cache_label', cacheLabel);
+                if (instanceType) element.setAttribute('instance_type', instanceType);
+
+            }
+        }
+
+        // Create rich field object to pass architectural metadata (instance_type)
+        const fieldObj = {
+            id: element.id,
+            name: element.name,
+            tagName: element.tagName,
+            type: element.type,
+            cache_label: cacheLabel,
+            instance_type: instanceType, // From DOM or Cache
+            scope: scope,
+            element: element,
+            // Add ML prediction if available on element property
+            ml_prediction: element.__ml_prediction
+        };
 
         console.log(`⚡ [Sidebar] Event Triggered by Field: "${label}"`, {
             name: element.name,
             id: element.id,
             type: fieldType,
             value: element.value,
-            'ml_attr_label': element.getAttribute('data-nova-ml-label') || 'null',
-            'ml_prop': element.__ml_prediction || 'undefined'
+            checked: element.checked,
+            fieldObj: fieldObj
         });
-
 
         // Determine if this is a non-text input (for SelectionCache)
         const isNonTextInput = fieldType === 'radio' || fieldType === 'checkbox' ||
@@ -1808,7 +1847,28 @@ function attachSelfCorrectionTrigger(element) {
         // Get the value
         let newValue;
         if (fieldType === 'checkbox') {
-            newValue = element.checked ? (element.value || 'true') : '';
+            console.log('in checkbox')
+            const rawVal = element.value;
+            // Robust value extraction
+            if (!rawVal || rawVal === 'on' || rawVal === 'true') {
+                const text = getOptionLabelText(element);
+                newValue = text || true;
+            } else {
+                newValue = rawVal;
+            }
+
+            // Branch 1: Unified Multi-Select Update (if supported)
+            if (window.InteractionLog && window.InteractionLog.updateMultiSelection) {
+                console.log('in updateMultiSelection with fieldObj')
+                // PASS RICHER METADATA OBJECT
+                await window.InteractionLog.updateMultiSelection(fieldObj, label, newValue, element.checked);
+                return; // Skip the standard cacheSelection call below
+            }
+
+            // Fallback (Old Behavior)
+            newValue = element.checked ? newValue : '';
+            if (!element.checked) return; // Don't cache unchecks in legacy mode
+
         } else if (fieldType === 'radio') {
             // For radio, only cache if checked
             if (!element.checked) return;
@@ -1850,30 +1910,31 @@ function attachSelfCorrectionTrigger(element) {
         // Resurrect Authoritative Cache Key (from Pipeline/GlobalStore)
         // 0. Pre-Flight: Ensure Authoritative Cache Key
         // Resurrect Authoritative Cache Key (from Pipeline/GlobalStore)
-        let cacheLabel = element.getAttribute('cache_label');
-        let instanceType = element.getAttribute('instance_type'); // From DOM
-        let scope = element.getAttribute('scope') || 'GLOBAL';
+        // Moved to top of handleChange
+        // let cacheLabel = element.getAttribute('cache_label');
+        // let instanceType = element.getAttribute('instance_type'); // From DOM
+        // let scope = element.getAttribute('scope') || 'GLOBAL';
 
-        if (!cacheLabel && window.NovaCache) {
-            const entry = window.NovaCache[element.id] || window.NovaCache[element.name];
-            if (entry) {
-                // Handle new Object structure or legacy string
-                cacheLabel = (typeof entry === 'object') ? entry.label : entry;
+        // if (!cacheLabel && window.NovaCache) {
+        //     const entry = window.NovaCache[element.id] || window.NovaCache[element.name];
+        //     if (entry) {
+        //         // Handle new Object structure or legacy string
+        //         cacheLabel = (typeof entry === 'object') ? entry.label : entry;
 
-                // If DOM was missing metadata, recover it from NovaCache
-                if (typeof entry === 'object') {
-                    if (!instanceType) instanceType = entry.type;
-                    if (element.getAttribute('scope') === null) scope = entry.scope;
-                }
+        //         // If DOM was missing metadata, recover it from NovaCache
+        //         if (typeof entry === 'object') {
+        //             if (!instanceType) instanceType = entry.type;
+        //             if (element.getAttribute('scope') === null) scope = entry.scope;
+        //         }
 
-                // Force attributes onto element for consistency
-                if (cacheLabel) element.setAttribute('cache_label', cacheLabel);
-                if (instanceType) element.setAttribute('instance_type', instanceType);
+        //         // Force attributes onto element for consistency
+        //         if (cacheLabel) element.setAttribute('cache_label', cacheLabel);
+        //         if (instanceType) element.setAttribute('instance_type', instanceType);
 
-            } else {
-                console.warn(`⚠️ [CacheDebug] Lookup Failed for [${element.id}, ${element.name}]. Available Keys:`, Object.keys(window.NovaCache));
-            }
-        }
+        //     } else {
+        //         console.warn(`⚠️ [CacheDebug] Lookup Failed for [${element.id}, ${element.name}]. Available Keys:`, Object.keys(window.NovaCache));
+        //     }
+        // }
 
         console.log(`🔍 [CacheDebug] Cache Label: ${cacheLabel}, Type: ${instanceType}`);
 
@@ -1884,17 +1945,18 @@ function attachSelfCorrectionTrigger(element) {
         let handledByInteractionLog = false;
 
         // Create rich field object to pass architectural metadata (instance_type)
-        const fieldObj = {
-            id: element.id,
-            name: element.name,
-            tagName: element.tagName,
-            type: element.type,
-            cache_label: cacheLabel,
-            instance_type: instanceType, // From DOM or Cache
-            scope: scope,
-            element: element
-        };
-
+        // Moved to top of handleChange
+        // const fieldObj = {
+        //     id: element.id,
+        //     name: element.name,
+        //     tagName: element.tagName,
+        //     type: element.type,
+        //     cache_label: cacheLabel,
+        //     instance_type: instanceType, // From DOM or Cache
+        //     scope: scope,
+        //     element: element
+        // };
+        console.log('fieldObj', fieldObj);
         // Strategy A: Non-Text Inputs (always explicit selection)
         if (isNonTextInput && window.SelectionCache) {
             await window.SelectionCache.cacheSelection(fieldObj, label, newValue);
