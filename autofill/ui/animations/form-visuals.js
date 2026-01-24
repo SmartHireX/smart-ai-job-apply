@@ -290,6 +290,10 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
     element.classList.add('smarthirex-typing');
     element.classList.add('smarthirex-ai-writing'); // New class for pulse effect
     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // PAUSE for scroll: Let the field settle in the center before we start acting
+    await new Promise(r => setTimeout(r, 450));
+
     element.focus();
 
     // Check if text input
@@ -306,7 +310,7 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
             element.value = '';
         }
 
-        // Use SAME speed as simulateTyping: 10-20ms per character (human-like but fast)
+        // Moderated Typing Speed: 35-65ms per character (Natural "AI Thinking" feel)
         for (const char of chars) {
             const currentVal = element.value;
             if (typeof setter === 'function') {
@@ -314,12 +318,13 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
             } else {
                 element.value = currentVal + char;
             }
-            // Random delay 10-20ms (same as cache/heuristic fills)
-            await new Promise(r => setTimeout(r, Math.random() * 10 + 10));
+            // Increase delay for better visibility
+            await new Promise(r => setTimeout(r, Math.random() * 30 + 35));
         }
     } else {
         // For non-text fields (Radio, Checkbox, Select, Date, File)
-        await new Promise(r => setTimeout(r, 200));
+        // Longer pause so user sees the "ghost" pulse before the selection happens
+        await new Promise(r => setTimeout(r, 500));
 
         // Use Global Export or FieldUtils
         const fillFn = window.setFieldValue || (window.FieldUtils && window.FieldUtils.setFieldValue);
