@@ -62,6 +62,14 @@ class FieldUtils {
             return parentLabel.innerText.replace(element.value || '', '').trim();
         }
 
+        // Try sibling label (common in styled radios like Ashby)
+        if (element.parentElement && element.parentElement.nextElementSibling) {
+            const next = element.parentElement.nextElementSibling;
+            if (next.tagName === 'LABEL') {
+                return next.innerText.trim();
+            }
+        }
+
         // Try aria-label
         if (element.getAttribute('aria-label')) {
             return element.getAttribute('aria-label').trim();
@@ -360,15 +368,20 @@ class FieldUtils {
                 const targetValue = String(value).toLowerCase().trim();
                 let bestMatch = null;
 
-                // Priority 1: Exact Value Match
-                for (const radio of group) {
-                    if (radio.value.toLowerCase().trim() === targetValue) {
-                        bestMatch = radio;
-                        break;
+                // Ashby-specific: Inputs often have value="on" and rely on React state
+                // If the input value is generic ('on', 'true'), we MUST rely on the label text (Fuzzy Match)
+
+                // Priority 1: Exact Value Match (only if value is meaningful)
+                if (targetValue !== 'on' && targetValue !== 'true') {
+                    for (const radio of group) {
+                        if (radio.value.toLowerCase().trim() === targetValue) {
+                            bestMatch = radio;
+                            break;
+                        }
                     }
                 }
 
-                // Priority 2: Label Match (Fuzzy)
+                // Priority 2: Label Match (Fuzzy) - Critical for Ashby
                 if (!bestMatch) {
                     for (const radio of group) {
                         const label = this.getFieldLabel(radio).toLowerCase();
@@ -380,48 +393,34 @@ class FieldUtils {
                 }
 
                 if (bestMatch) {
-                    // console.log(`[FieldUtils] Found match:`, bestMatch);
+                    console.log(`[FieldUtils] Found best match for radio:`, bestMatch);
 
-                    // 1. Click the input itself (Standard)
+                    // robust label finding (Id, Labels property, or Sibling)
+                    let label = bestMatch.labels?.[0] || document.querySelector(`label[for="${CSS.escape(bestMatch.id)}"]`);
+
+                    if (!label && bestMatch.parentElement && bestMatch.parentElement.nextElementSibling?.tagName === 'LABEL') {
+                        label = bestMatch.parentElement.nextElementSibling;
+                    }
+
+                    // SIMPLIFIED STRATEGY: Click everything relevant
+                    // 1. Click the input itself (standard behavior)
                     try {
+                        console.log(`[FieldUtils] Clicking radio input...`);
                         bestMatch.click();
-                    } catch (e) { }
-
-                    // 2. Click the label (Critical for Ashby/React hidden inputs)
-                    let label = bestMatch.labels?.[0];
-
-                    // Fallback 1: ID Match
-                    if (!label && bestMatch.id) {
-                        label = document.querySelector(`label[for="${CSS.escape(bestMatch.id)}"]`);
+                    } catch (e) {
+                        console.error(`[FieldUtils] Input click failed`, e);
                     }
 
-                    // Fallback 2: Wrapped in Label
-                    if (!label) {
-                        label = bestMatch.closest('label');
-                    }
-
-                    // Fallback 3: Sibling Label (Ashby style)
-                    if (!label && bestMatch.parentElement) {
-                        if (bestMatch.parentElement.nextElementSibling?.tagName === 'LABEL') {
-                            label = bestMatch.parentElement.nextElementSibling;
-                        } else if (bestMatch.nextElementSibling?.tagName === 'LABEL') {
-                            label = bestMatch.nextElementSibling;
-                        }
-                    }
-
-                    // Attempt Click on Label
+                    // 2. Click the label (Required for Ashby/React)
                     if (label) {
                         try {
+                            console.log(`[FieldUtils] Clicking radio label...`);
                             label.click();
-                        } catch (e) { }
-                    }
-
-                    // Fallback 4: Click Parent Wrapper (Last Resort for "Fake" Radios)
-                    // If no label found, and input is hidden, clicking the parent might trigger the listener
-                    if (!label && (bestMatch.style.opacity === '0' || bestMatch.type === 'hidden')) {
-                        try {
-                            bestMatch.parentElement?.click();
-                        } catch (e) { }
+                        } catch (e) {
+                            console.error(`[FieldUtils] Label click failed`, e);
+                        }
+                    } else {
+                        console.warn(`[FieldUtils] No label found for radio match.`);
                     }
 
                     this.dispatchChangeEvents(bestMatch);
