@@ -241,6 +241,8 @@ class ExecutionEngine {
                 // Ashby-specific: Inputs often have value="on" and rely on React state
                 // If the input value is generic ('on', 'true'), we MUST rely on the label text (Fuzzy Match)
 
+                const targetValue = String(value).toLowerCase().trim();
+
                 // Priority 1: Exact Value Match (only if value is meaningful)
                 if (targetValue !== 'on' && targetValue !== 'true') {
                     for (const radio of group) {
