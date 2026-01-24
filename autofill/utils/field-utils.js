@@ -389,18 +389,38 @@ class FieldUtils {
 
                     // 2. Click the label (Critical for Ashby/React hidden inputs)
                     let label = bestMatch.labels?.[0];
-                    if (!label) {
-                        const id = bestMatch.id;
-                        if (id) label = document.querySelector(`label[for="${CSS.escape(id)}"]`);
-                    }
-                    // Sibling label fallback (Ashby style)
-                    if (!label && bestMatch.parentElement && bestMatch.parentElement.nextElementSibling?.tagName === 'LABEL') {
-                        label = bestMatch.parentElement.nextElementSibling;
+
+                    // Fallback 1: ID Match
+                    if (!label && bestMatch.id) {
+                        label = document.querySelector(`label[for="${CSS.escape(bestMatch.id)}"]`);
                     }
 
+                    // Fallback 2: Wrapped in Label
+                    if (!label) {
+                        label = bestMatch.closest('label');
+                    }
+
+                    // Fallback 3: Sibling Label (Ashby style)
+                    if (!label && bestMatch.parentElement) {
+                        if (bestMatch.parentElement.nextElementSibling?.tagName === 'LABEL') {
+                            label = bestMatch.parentElement.nextElementSibling;
+                        } else if (bestMatch.nextElementSibling?.tagName === 'LABEL') {
+                            label = bestMatch.nextElementSibling;
+                        }
+                    }
+
+                    // Attempt Click on Label
                     if (label) {
                         try {
                             label.click();
+                        } catch (e) { }
+                    }
+
+                    // Fallback 4: Click Parent Wrapper (Last Resort for "Fake" Radios)
+                    // If no label found, and input is hidden, clicking the parent might trigger the listener
+                    if (!label && (bestMatch.style.opacity === '0' || bestMatch.type === 'hidden')) {
+                        try {
+                            bestMatch.parentElement?.click();
                         } catch (e) { }
                     }
 
