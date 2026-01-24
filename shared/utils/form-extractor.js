@@ -264,7 +264,8 @@ class FormExtractor {
         const options = [];
 
         group.forEach(input => {
-            const label = this.extractLabel(input, container);
+            // Use specialized option label extractor (skips Group Context)
+            const label = this.extractOptionLabel(input, container);
             options.push({
                 value: input.value,
                 text: label || input.value
@@ -272,6 +273,42 @@ class FormExtractor {
         });
 
         return options;
+    }
+
+    /**
+     * Extract specific label for an option (skipping group context)
+     */
+    extractOptionLabel(element, container = document) {
+        // Method 1: <label for="id">
+        if (element.id) {
+            const label = container.querySelector(`label[for="${element.id}"]`);
+            if (label) return label.textContent.trim();
+        }
+
+        // Method 2: Wrapped in <label>
+        const parentLabel = element.closest('label');
+        if (parentLabel) {
+            return parentLabel.textContent.replace(element.value || '', '').trim();
+        }
+
+        // Method 3: aria-label
+        if (element.getAttribute('aria-label')) {
+            return element.getAttribute('aria-label');
+        }
+
+        // Method 4: Next Sibling Label (Ashby style)
+        // <input> <label>Option</label>
+        if (element.nextElementSibling && element.nextElementSibling.tagName === 'LABEL') {
+            return element.nextElementSibling.textContent.trim();
+        }
+
+        // Method 5: Parent's Next Sibling (Ashby Nested style)
+        // <span><input></span> <label>Option</label>
+        if (element.parentElement && element.parentElement.nextElementSibling?.tagName === 'LABEL') {
+            return element.parentElement.nextElementSibling.textContent.trim();
+        }
+
+        return '';
     }
 
     /**
