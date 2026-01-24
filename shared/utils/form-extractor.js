@@ -266,8 +266,16 @@ class FormExtractor {
         group.forEach(input => {
             // Use specialized option label extractor (skips Group Context)
             const label = this.extractOptionLabel(input, container);
+
+            // Fix: If value is generic 'on', use the label as the value
+            // This helps the AI make distinct choices in the options array
+            let val = input.value;
+            if (val === 'on' || val === 'true') {
+                val = label || val;
+            }
+
             options.push({
-                value: input.value,
+                value: val,
                 text: label || input.value
             });
         });
