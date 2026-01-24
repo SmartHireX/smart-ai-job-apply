@@ -9,6 +9,17 @@
  * Helper functions for field manipulation, state capture, and DOM operations
  */
 class FieldUtils {
+    static CATEGORICAL_FIELDS = /\b(gender|sex|race|ethnicity|pronouns|veteran|disability|identity)\b/i;
+
+    /**
+     * Check if a field is categorical and needs strict matching
+     * @param {string} label - Field label or name
+     * @returns {boolean}
+     */
+    static isStrictMatchNeeded(label) {
+        return label && this.CATEGORICAL_FIELDS.test(label);
+    }
+
     /**
      * Check if a field is visible
      * @param {HTMLElement} element - Field element
@@ -445,12 +456,42 @@ class FieldUtils {
                 let bestMatch = null;
                 let maxSim = 0;
 
+                const isStrict = this.isStrictMatchNeeded(fieldMetadata?.label || element.name || element.id);
+
                 const calculateSim = (s1, s2) => {
                     if (!s1 || !s2) return 0;
-                    const t1 = String(s1).toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-                    const t2 = String(s2).toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+                    const t1 = String(s1).toLowerCase().trim();
+                    const t2 = String(s2).toLowerCase().trim();
+
+                    // 1. Direct Equality (Highest Priority)
                     if (t1 === t2) return 1.0;
-                    if (t1.includes(t2) || t2.includes(t1)) return 0.8;
+
+                    // 2. Cleaned Equality
+                    const c1 = t1.replace(/[^a-z0-9]/g, '');
+                    const c2 = t2.replace(/[^a-z0-9]/g, '');
+                    if (c1 === c2) return 0.95;
+
+                    // 3. Strict Boundary Match for Categories
+                    if (isStrict) {
+                        // For categorical data, strings must either be equal OR 
+                        // one must be a distinct word within the other (not just a substring like 'man' in 'woman')
+                        const words1 = new Set(t1.split(/\W+/));
+                        const words2 = new Set(t2.split(/\W+/));
+
+                        const hasWordMatch = words1.has(t2) || words2.has(t1);
+                        if (hasWordMatch) return 0.85;
+
+                        // Reject partial Inclusion (e.g., "woman".includes("man"))
+                        if (t1.includes(t2) || t2.includes(t1)) {
+                            // Only allow if it's a full word match (already covered above)
+                            // otherwise, it's a dangerous collision for Gender
+                            return 0;
+                        }
+                    } else {
+                        // Standard Inclusion (Safe for generic fields)
+                        if (c1.includes(c2) || c2.includes(c1)) return 0.8;
+                    }
+
                     return this.calculateJaccardSimilarity(s1, s2);
                 };
 
@@ -593,7 +634,18 @@ class FieldUtils {
                         // 3. Fuzzy Match
                         const simLabel = this.calculateJaccardSimilarity(label, tv);
                         const simVal = this.calculateJaccardSimilarity(val, tv);
-                        return Math.max(simLabel, simVal) > 0.6;
+                        const maxSim = Math.max(simLabel, simVal);
+
+                        if (this.isStrictMatchNeeded(fieldMetadata?.label || element.name || element.id)) {
+                            // Strict Categorical matching: If tokens overlap but labels don't match exactly,
+                            // we must be CAREFUL. "Woman" includes "Man" in Jaccard token sets if sanitized.
+                            // But split(/\W+/) handles "woman" and "man" as distinct tokens.
+                            // The real threat is "Man (cis)" vs "Woman (cis)".
+                            if (maxSim > 0.8) return true;
+                            return false;
+                        }
+
+                        return maxSim > 0.6;
                     });
 
                     const shouldBeChecked = isMatch || (isSingleBoolean && (val === element.value || val === 'on'));

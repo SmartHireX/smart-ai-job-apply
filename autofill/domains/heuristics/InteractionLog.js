@@ -248,9 +248,9 @@ const TOKEN_WEIGHTS = {
     'employer': 3, 'job': 2.5, 'title': 2.5, 'institution': 3, 'school': 3,
     'degree': 3, 'linkedin': 3, 'city': 2.5, 'state': 2.5,
 
-    // Modifiers (Medium weight)
-    'current': 1.5, 'expected': 1.5, 'start': 1.5, 'end': 1.5,
-    'type': 1.5, 'level': 1.5,
+    // Modifiers (High weight to prevent collisions like current vs expected)
+    'current': 2.5, 'expected': 2.5, 'start': 2.5, 'end': 2.5,
+    'type': 2.5, 'level': 2.5,
 
     // Generic (Low weight - often noise)
     'primary': 0.5, 'secondary': 0.5, 'your': 0.3, 'the': 0.2,
@@ -657,7 +657,7 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     }
 
     // 3. Match Logic
-    const match = findBestKeyMatch(semanticType, cache, 0.6, { mlLabel: isML ? semanticType : null, label });
+    const match = findBestKeyMatch(semanticType, cache, 0.75, { mlLabel: isML ? semanticType : null, label });
 
     // console.log(`🔍 [InteractionLog] Lookup: "${semanticType}" -> Bucket: ${targetBucket} -> Found:`, match ? match.matchedKey : 'NULL');
 
@@ -689,7 +689,11 @@ async function getCachedValue(fieldOrSelector, labelArg) {
         const searchTerms = [label, field.name, field.id].filter(Boolean).map(t => normalizeFieldName(t));
         for (const term of searchTerms) {
             for (const [type, entry] of Object.entries(cache)) {
-                if (entry.variants && entry.variants.some(v => v.includes(term) || term.includes(v))) {
+                // STRICTOR: Use Word Boundary Matching for Variants
+                if (entry.variants && entry.variants.some(v => {
+                    const pattern = new RegExp(`\\b${v}\\b`, 'i');
+                    return pattern.test(term) || (new RegExp(`\\b${term}\\b`, 'i')).test(v);
+                })) {
                     semanticType = type;
                     cached = entry;
                     // console.log(`[InteractionLog] 🔍 Fuzzy Hit in ${targetCacheKey}: ${term} ~ [${type}]`);

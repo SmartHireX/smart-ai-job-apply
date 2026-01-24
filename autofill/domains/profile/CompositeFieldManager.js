@@ -158,16 +158,6 @@ class CompositeFieldManager {
             }
         }
 
-        // STRATEGY D: Global Memory (Cross-Site Facts)
-        if (window.GlobalMemory) {
-            const memRes = await window.GlobalMemory.resolveField(field);
-            if (memRes && memRes.value) {
-                if (await this.fill(field.element, memRes.value, field)) {
-                    return { filled: true, source: 'global_memory', value: memRes.value };
-                }
-            }
-        }
-
         return { filled: false, source: 'pending_ai' };
     }
 
@@ -405,6 +395,12 @@ class CompositeFieldManager {
         if (tokensA.size === 1 && tokensB.size === 1) {
             const tA = [...tokensA][0];
             const tB = [...tokensB][0];
+
+            // GENDER SAFETY: Avoid "man" matching "woman"
+            if ((tA === 'man' && tB === 'woman') || (tA === 'woman' && tB === 'man')) {
+                return false;
+            }
+
             if (tA.includes(tB) || tB.includes(tA)) return true;
         }
 

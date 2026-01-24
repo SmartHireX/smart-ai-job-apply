@@ -240,8 +240,7 @@ class PipelineOrchestrator {
     async resolveMemoryBatch(fields, context) {
         return this.runResolutionChain(fields, [
             (f) => this.strategyInteractionLog(f),
-            (f) => this.strategyRuleEngine(f, context.resumeData), // User Data Fallback
-            (f) => this.strategyGlobalMemory(f)                    // Smart Memory (Last Resort)
+            (f) => this.strategyRuleEngine(f, context.resumeData) // User Data Fallback
         ]);
     }
 
@@ -252,8 +251,7 @@ class PipelineOrchestrator {
     async resolveHeuristicBatch(fields, context) {
         return this.runResolutionChain(fields, [
             (f) => this.strategyInteractionLog(f),
-            (f) => this.strategyRuleEngine(f, context.resumeData), // User Data Fallback
-            (f) => this.strategyGlobalMemory(f)                    // Smart Memory (Last Resort)
+            (f) => this.strategyRuleEngine(f, context.resumeData) // User Data Fallback
         ]);
     }
 
