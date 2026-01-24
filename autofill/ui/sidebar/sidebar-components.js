@@ -715,6 +715,19 @@ function showAccordionSidebar(allFields) {
                 return c.field.checked;
             });
 
+            const firstCheckbox = checkboxes[0];
+            const parentContext = firstCheckbox.parentContext;
+
+            // Determine group label with smart priority (Matches Radio logic)
+            let groupLabel;
+            if (firstCheckbox.mlLabel && firstCheckbox.mlConfidence > 0.8) {
+                groupLabel = firstCheckbox.mlLabel;
+            } else if (parentContext && parentContext.length > 5) {
+                groupLabel = parentContext;
+            } else {
+                groupLabel = getGroupQuestionLabel(firstCheckbox.field);
+            }
+
             if (checkedBoxes.length > 0) {
                 // Get SPECIFIC checkbox option labels, not group question
                 const selectedValues = checkedBoxes.map(cb => {
@@ -731,8 +744,6 @@ function showAccordionSidebar(allFields) {
                     return value;
                 });
 
-                let groupLabel = getGroupQuestionLabel(checkboxes[0].field);
-
                 groupedFields.push({
                     ...checkedBoxes[0],
                     label: groupLabel,
@@ -744,9 +755,6 @@ function showAccordionSidebar(allFields) {
                     totalCount: checkboxes.length
                 });
             } else {
-                const firstCheckbox = checkboxes[0];
-                let groupLabel = getGroupQuestionLabel(firstCheckbox.field);
-
                 groupedFields.push({
                     ...firstCheckbox,
                     label: groupLabel,
