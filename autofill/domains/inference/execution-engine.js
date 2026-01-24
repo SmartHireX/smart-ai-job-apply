@@ -273,8 +273,7 @@ class ExecutionEngine {
                 }
 
                 if (targetRadio) {
-                    // Always prefer clicking the label for radio buttons
-                    // This handles both hidden inputs (Ashby) and standard visible ones safely
+                    console.log(`[ExecutionEngine] Found target radio:`, targetRadio);
 
                     // Robust label finding (Id, Labels property, or Sibling)
                     let label = targetRadio.labels?.[0] || document.querySelector(`label[for="${CSS.escape(targetRadio.id)}"]`);
@@ -283,13 +282,27 @@ class ExecutionEngine {
                         label = targetRadio.parentElement.nextElementSibling;
                     }
 
-                    if (label) {
-                        label.click();
-                        // Double-tap: Click wrapper logic for deep nested listeners
-                        if (targetRadio.parentElement?.click) targetRadio.parentElement.click();
-                    } else {
+                    // SIMPLIFIED STRATEGY: Click everything relevant
+                    // 1. Click the input itself
+                    try {
+                        console.log(`[ExecutionEngine] Clicking radio input...`);
                         targetRadio.click();
+                    } catch (e) {
+                        console.error(`[ExecutionEngine] Input click failed`, e);
                     }
+
+                    // 2. Click the label
+                    if (label) {
+                        try {
+                            console.log(`[ExecutionEngine] Clicking radio label...`);
+                            label.click();
+                        } catch (e) {
+                            console.error(`[ExecutionEngine] Label click failed`, e);
+                        }
+                    } else {
+                        console.warn(`[ExecutionEngine] No label found for radio match.`);
+                    }
+
                     this.dispatchEvents(targetRadio);
                 }
             }

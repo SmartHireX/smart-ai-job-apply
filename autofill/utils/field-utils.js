@@ -393,8 +393,7 @@ class FieldUtils {
                 }
 
                 if (bestMatch) {
-                    // Always prefer clicking the label for radio buttons
-                    // This handles both hidden inputs (Ashby) and standard visible ones safely
+                    console.log(`[FieldUtils] Found best match for radio:`, bestMatch);
 
                     // robust label finding (Id, Labels property, or Sibling)
                     let label = bestMatch.labels?.[0] || document.querySelector(`label[for="${CSS.escape(bestMatch.id)}"]`);
@@ -403,13 +402,27 @@ class FieldUtils {
                         label = bestMatch.parentElement.nextElementSibling;
                     }
 
-                    if (label) {
-                        label.click();
-                        // Also try clicking the wrapper if label click fails (double tap)
-                        if (bestMatch.parentElement?.click) bestMatch.parentElement.click();
-                    } else {
+                    // SIMPLIFIED STRATEGY: Click everything relevant
+                    // 1. Click the input itself (standard behavior)
+                    try {
+                        console.log(`[FieldUtils] Clicking radio input...`);
                         bestMatch.click();
+                    } catch (e) {
+                        console.error(`[FieldUtils] Input click failed`, e);
                     }
+
+                    // 2. Click the label (Required for Ashby/React)
+                    if (label) {
+                        try {
+                            console.log(`[FieldUtils] Clicking radio label...`);
+                            label.click();
+                        } catch (e) {
+                            console.error(`[FieldUtils] Label click failed`, e);
+                        }
+                    } else {
+                        console.warn(`[FieldUtils] No label found for radio match.`);
+                    }
+
                     this.dispatchChangeEvents(bestMatch);
                 }
             }
