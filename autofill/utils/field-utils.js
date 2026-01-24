@@ -379,8 +379,31 @@ class FieldUtils {
                     }
                 }
 
-                if (bestMatch && !bestMatch.checked) {
-                    bestMatch.click();
+                if (bestMatch) {
+                    // console.log(`[FieldUtils] Found match:`, bestMatch);
+
+                    // 1. Click the input itself (Standard)
+                    try {
+                        bestMatch.click();
+                    } catch (e) { }
+
+                    // 2. Click the label (Critical for Ashby/React hidden inputs)
+                    let label = bestMatch.labels?.[0];
+                    if (!label) {
+                        const id = bestMatch.id;
+                        if (id) label = document.querySelector(`label[for="${CSS.escape(id)}"]`);
+                    }
+                    // Sibling label fallback (Ashby style)
+                    if (!label && bestMatch.parentElement && bestMatch.parentElement.nextElementSibling?.tagName === 'LABEL') {
+                        label = bestMatch.parentElement.nextElementSibling;
+                    }
+
+                    if (label) {
+                        try {
+                            label.click();
+                        } catch (e) { }
+                    }
+
                     this.dispatchChangeEvents(bestMatch);
                 }
             }
