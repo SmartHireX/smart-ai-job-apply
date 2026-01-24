@@ -1442,7 +1442,7 @@ function setNativeValue(element, value) {
     element.dispatchEvent(event);
 }
 
-function setFieldValue(element, value) {
+function setFieldValue(element, value, fieldMetadata = null) {
     const type = element.type;
     const tag = element.tagName.toLowerCase();
 
@@ -1464,8 +1464,8 @@ function setFieldValue(element, value) {
         return;
     }
 
-    if (type === 'radio') setRadioValue(element, normalizedValue);
-    else if (type === 'checkbox') setCheckboxValue(element, normalizedValue);
+    if (type === 'radio') setRadioValue(element, normalizedValue, fieldMetadata);
+    else if (type === 'checkbox') setCheckboxValue(element, normalizedValue, fieldMetadata);
     else if (type === 'date' || type === 'time' || type === 'datetime-local') setDateTimeValue(element, normalizedValue);
     else if (tag === 'select') setSelectValue(element, normalizedValue);
     else if (type === 'tel') setTelValue(element, normalizedValue); // Special handling for phone inputs
@@ -1540,9 +1540,9 @@ function setTelValue(element, value) {
     }
 }
 
-function setRadioValue(element, value) {
+function setRadioValue(element, value, fieldMetadata = null) {
     if (window.FieldUtils && typeof window.FieldUtils.setFieldValue === 'function') {
-        window.FieldUtils.setFieldValue(element, value);
+        window.FieldUtils.setFieldValue(element, value, fieldMetadata);
     } else {
         const name = element.name;
         const radios = document.querySelectorAll(`input[name="${name}"]`);
@@ -1574,9 +1574,9 @@ function setRadioValue(element, value) {
     }
 }
 
-function setCheckboxValue(element, value) {
+function setCheckboxValue(element, value, fieldMetadata = null) {
     if (window.FieldUtils && typeof window.FieldUtils.setFieldValue === 'function') {
-        window.FieldUtils.setFieldValue(element, value);
+        window.FieldUtils.setFieldValue(element, value, fieldMetadata);
         return;
     }
     let targetValues = value;

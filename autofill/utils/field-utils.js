@@ -515,7 +515,8 @@ class FieldUtils {
             }
             const valuesArray = Array.isArray(targetValues) ? targetValues : [targetValues];
             const isSingleBoolean = valuesArray.length === 1 && (valuesArray[0] === true || valuesArray[0] === 'true' || valuesArray[0] === 'on');
-
+            console.log("valuesarray", valuesArray)
+            console.log("fieldMetadata", fieldMetadata)
             // 0. Metadata-based toggle (Highest Priority for logical groups)
             if (fieldMetadata && fieldMetadata.options) {
                 fieldMetadata.options.forEach(opt => {

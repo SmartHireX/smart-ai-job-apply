@@ -93,7 +93,7 @@ class ExecutionEngine {
 
         // 3. Set Value (Visual / Human Speed)
         if (window.showGhostingAnimation) {
-            await window.showGhostingAnimation(element, value, confidence);
+            await window.showGhostingAnimation(element, value, confidence, fieldMetadata);
         } else {
             await this.setValueRobust(element, value, fieldMetadata);
             this.dispatchEvents(element);
@@ -231,7 +231,7 @@ class ExecutionEngine {
             if (window.FieldUtils && typeof window.FieldUtils.setFieldValue === 'function') {
                 window.FieldUtils.setFieldValue(element, value, fieldMetadata);
             } else if (typeof window.setFieldValue === 'function') {
-                window.setFieldValue(element, value);
+                window.setFieldValue(element, value, fieldMetadata);
             } else {
                 element.checked = (value === true || value === 'true' || value === element.value);
             }

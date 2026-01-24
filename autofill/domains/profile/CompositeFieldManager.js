@@ -82,6 +82,8 @@ class CompositeFieldManager {
     async resolveAndFill(field, type, groupEntity = null, matchedSkills = []) {
         if (!field || !field.element) return { filled: false, source: 'error' };
 
+        console.log(`[CompositeFieldManager] 🎯 resolveAndFill candidate:`, field);
+
         // Ensure index is set
         const index = field.index !== undefined ? field.index : this.indexer.getIndex(field, type);
         field.field_index = index;
@@ -120,7 +122,7 @@ class CompositeFieldManager {
 
                 if (cleanValue) {
                     console.log(`[CompositeFieldManager] ✅ Found Value:`, cleanValue);
-                    if (await this.fill(field.element, cleanValue)) {
+                    if (await this.fill(field.element, cleanValue, field)) {
                         return { filled: true, source: 'cache', value: cleanValue };
                     }
                 } else {
@@ -135,7 +137,7 @@ class CompositeFieldManager {
 
         // STRATEGY B: Skill Matching (User Resume Data)
         if (type === 'skills' && matchedSkills.length > 0) {
-            if (await this.fill(field.element, matchedSkills)) {
+            if (await this.fill(field.element, matchedSkills, field)) {
                 // Auto-Cache successful user data mapping for future speed
                 if (this.cache) this.cache.cacheSelection(field, field.label, matchedSkills);
                 return { filled: true, source: 'user_skills', value: matchedSkills };
@@ -148,7 +150,7 @@ class CompositeFieldManager {
             if (data) {
                 const valueToFill = this.extractValueFromEntity(data, field);
                 if (valueToFill) {
-                    if (await this.fill(field.element, valueToFill)) {
+                    if (await this.fill(field.element, valueToFill, field)) {
                         if (this.cache) this.cache.cacheSelection(field, field.label, valueToFill);
                         return { filled: true, source: 'profile', value: valueToFill };
                     }
@@ -160,7 +162,7 @@ class CompositeFieldManager {
         if (window.GlobalMemory) {
             const memRes = await window.GlobalMemory.resolveField(field);
             if (memRes && memRes.value) {
-                if (await this.fill(field.element, memRes.value)) {
+                if (await this.fill(field.element, memRes.value, field)) {
                     return { filled: true, source: 'global_memory', value: memRes.value };
                 }
             }
@@ -191,7 +193,7 @@ class CompositeFieldManager {
      * @param {any} value - String or Array of Strings
      * @returns {Promise<boolean>} Success status
      */
-    async fill(element, value) {
+    async fill(element, value, field = null) {
         if (value === undefined || value === null) return false;
 
         // Normalize value to Array for consistent processing
@@ -204,14 +206,15 @@ class CompositeFieldManager {
         if (window.showGhostingAnimation) {
             // Pass the raw value (or joined array) to let showGhostingAnimation handle group pulsing
             const displayValue = values.join(', ');
-            await window.showGhostingAnimation(element, displayValue, 0.9);
+            await window.showGhostingAnimation(element, displayValue, 0.9, field);
         }
 
         // 1. Checkbox Group (Robust Delegation)
         // Use Global FieldUtils to ensure "Progressive Escalation" strategy
         if (type === 'checkbox') {
             if (window.setFieldValue) {
-                window.setFieldValue(element, values);
+                // Pass field metadata (which contains .options) to generic utility
+                window.setFieldValue(element, values, field);
                 return true;
             }
             // Fallback if FieldUtils missing (unlikely)

@@ -266,7 +266,7 @@ function highlightSubmitButton() {
  * @param {string} value - Value to type
  * @param {number} confidence - AI confidence level
  */
-async function showGhostingAnimation(element, value, confidence = 0.8) {
+async function showGhostingAnimation(element, value, confidence = 0.8, fieldMetadata = null) {
     if (!element || !value) return;
 
     // Check accessibility preference for reduced motion
@@ -274,7 +274,7 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
 
     if (prefersReducedMotion) {
         // Instant fill for users who prefer no animations
-        setFieldValue(element, value);
+        setFieldValue(element, value, fieldMetadata);
         highlightField(element, confidence);
         const dispatchFn = window.dispatchChangeEvents || (window.FieldUtils && window.FieldUtils.dispatchChangeEvents);
         if (typeof dispatchFn === 'function') {
@@ -364,7 +364,7 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
         // Use Global Export or FieldUtils
         const fillFn = window.setFieldValue || (window.FieldUtils && window.FieldUtils.setFieldValue);
         if (typeof fillFn === 'function') {
-            const actualTarget = fillFn(element, value);
+            const actualTarget = fillFn(element, value, fieldMetadata);
 
             // Cleanup happens after filling
         } else {
