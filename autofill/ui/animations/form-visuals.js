@@ -286,7 +286,25 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
         return;
     }
 
-    // Add visual state
+    // Check if text input
+    const isText = (element.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'color', 'file', 'date', 'time'].includes(element.type)) || element.tagName === 'TEXTAREA';
+
+    if (!isText) {
+        // INSTANT FILL for non-text inputs (Checkbox, Radio, Select)
+        // No ghosting, no delay, straight to business.
+        setFieldValue(element, value);
+        highlightField(element, confidence);
+        const dispatchFn = window.dispatchChangeEvents || (window.FieldUtils && window.FieldUtils.dispatchChangeEvents);
+        if (typeof dispatchFn === 'function') {
+            dispatchFn(element);
+        } else {
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        return;
+    }
+
+    // Add visual state for TEXT inputs only
     element.classList.add('smarthirex-typing');
     element.classList.add('smarthirex-ai-writing'); // New class for pulse effect
     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -296,9 +314,7 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
 
     element.focus();
 
-    // Check if text input
-    const isText = (element.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'color', 'file', 'date', 'time'].includes(element.type)) || element.tagName === 'TEXTAREA';
-
+    // Check if text input (Redundant declaration removed)
     if (isText) {
         const chars = String(value).split('');
 
