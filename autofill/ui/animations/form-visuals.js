@@ -85,7 +85,13 @@ async function simulateTyping(element, value, confidence = 1.0) {
 
     element.classList.remove('smarthirex-typing');
     highlightField(element, confidence);
-    dispatchChangeEvents(element);
+    const dispatchFn = window.dispatchChangeEvents || (window.FieldUtils && window.FieldUtils.dispatchChangeEvents);
+    if (typeof dispatchFn === 'function') {
+        dispatchFn(element);
+    } else {
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+    }
     await new Promise(r => setTimeout(r, 50));
 }
 
@@ -270,7 +276,13 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
         // Instant fill for users who prefer no animations
         setFieldValue(element, value);
         highlightField(element, confidence);
-        dispatchChangeEvents(element);
+        const dispatchFn = window.dispatchChangeEvents || (window.FieldUtils && window.FieldUtils.dispatchChangeEvents);
+        if (typeof dispatchFn === 'function') {
+            dispatchFn(element);
+        } else {
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+        }
         return;
     }
 
@@ -286,67 +298,62 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
     if (isText) {
         const chars = String(value).split('');
 
-        // Use Native Setter for robust filling
-        setNativeValue(element, '');
+        // Use Native Setter (Global Export)
+        const setter = window.setNativeValue || (window.FieldUtils && window.FieldUtils.setNativeValue);
+        if (typeof setter === 'function') {
+            setter(element, '');
+        } else {
+            element.value = '';
+        }
 
         // Use SAME speed as simulateTyping: 10-20ms per character (human-like but fast)
         for (const char of chars) {
             const currentVal = element.value;
-            setNativeValue(element, currentVal + char);
+            if (typeof setter === 'function') {
+                setter(element, currentVal + char);
+            } else {
+                element.value = currentVal + char;
+            }
             // Random delay 10-20ms (same as cache/heuristic fills)
             await new Promise(r => setTimeout(r, Math.random() * 10 + 10));
         }
     } else {
-        // For non-text fields, show brief animation then fill
+        // For non-text fields (Radio, Checkbox, Select, Date, File)
         await new Promise(r => setTimeout(r, 200));
 
-        // Delegate entirely to FieldUtils (Simplicity Restoration)
-        setFieldValue(element, value);
-
-        /*
-        // SPECIAL HANDLING FOR RADIOS (Removed for Simplicity)
-        if (element.type === 'radio') {
-            // 1. Direct Input Click
-            try {
-                element.click();
-            } catch (e) { }
-
-            // 2. Find and Click Label
-            let label = element.labels?.[0];
-            if (!label && element.id) {
-                label = document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
-            }
-            if (!label && element.parentElement && element.parentElement.nextElementSibling?.tagName === 'LABEL') {
-                label = element.parentElement.nextElementSibling;
-            }
-
-            if (label) {
-                try {
-                    label.click();
-                } catch (e) { }
-            }
-
-            // 3. React/Ashby State Sync: Native Setter (via FieldUtils)
-            if (window.FieldUtils && typeof window.FieldUtils.setNativeChecked === 'function') {
-                window.FieldUtils.setNativeChecked(element, true);
-                window.FieldUtils.dispatchChangeEvents(element);
-            } else {
-                // Fallback inline native setter
-                try {
-                    const nativeSettter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked')?.set;
-                    if (nativeSettter) { nativeSettter.call(element, true); }
-                } catch (e) { }
+        // Use Global Export or FieldUtils
+        const fillFn = window.setFieldValue || (window.FieldUtils && window.FieldUtils.setFieldValue);
+        if (typeof fillFn === 'function') {
+            const actualTarget = fillFn(element, value);
+            if (actualTarget && actualTarget !== element) {
+                // If FieldUtils pivoted to a better target (e.g. correct radio in a group)
+                // update our local reference for the highlight and dispatch
+                element.classList.remove('smarthirex-typing');
+                element.classList.remove('smarthirex-ai-writing');
+                element = actualTarget;
+                element.classList.add('smarthirex-typing');
+                element.classList.add('smarthirex-ai-writing');
             }
         } else {
-            setFieldValue(element, value);
+            // Minimal Fallback
+            if (element.type === 'radio' || element.type === 'checkbox') {
+                element.checked = true;
+            } else {
+                element.value = value;
+            }
         }
-        */
     }
 
     element.classList.remove('smarthirex-typing');
     element.classList.remove('smarthirex-ai-writing');
     highlightField(element, confidence);
-    dispatchChangeEvents(element);
+    const dispatchFn = window.dispatchChangeEvents || (window.FieldUtils && window.FieldUtils.dispatchChangeEvents);
+    if (typeof dispatchFn === 'function') {
+        dispatchFn(element);
+    } else {
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+    }
 }
 
 // ===========================================

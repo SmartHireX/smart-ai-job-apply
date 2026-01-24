@@ -495,7 +495,7 @@ class FieldUtils {
             }
 
             this.dispatchChangeEvents(radioNode);
-            return;
+            return radioNode;
         }
 
         // 2. Checkboxes (Group-Aware)
@@ -535,7 +535,7 @@ class FieldUtils {
                     this.dispatchChangeEvents(element);
                 }
             }
-            return;
+            return element;
         }
 
         // 3. Dates (Smart Parsing)
@@ -554,7 +554,7 @@ class FieldUtils {
             }
             this.setNativeValue(element, formattedValue);
             this.dispatchChangeEvents(element);
-            return;
+            return element;
         }
 
         // 4. Select Dropdowns (Native Setter + Fuzzy Match)
@@ -582,7 +582,7 @@ class FieldUtils {
                 }
             }
             this.dispatchChangeEvents(element);
-            return;
+            return element;
         }
 
         // 5. Standard Text/Number Inputs
@@ -594,6 +594,7 @@ class FieldUtils {
 
         this.setNativeValue(element, value);
         this.dispatchChangeEvents(element);
+        return element;
     }
 }
 
