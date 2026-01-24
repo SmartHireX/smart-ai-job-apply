@@ -58,14 +58,26 @@ class FormObserver {
     async updateCache(element) {
         if (!window.InteractionLog) return;
 
+        let val = element.value;
+        const type = (element.type || '').toLowerCase();
+
+        // NORMALIZATION: If value is generic 'on', try to find a label
+        if (type === 'radio' || type === 'checkbox') {
+            if (val === 'on' || val === 'true') {
+                if (window.getOptionLabelText) {
+                    val = window.getOptionLabelText(element) || val;
+                }
+            }
+        }
+
         // Construct a field-like object for the logger
         const field = {
             element: element,
             name: element.name,
             id: element.id,
-            type: element.type || element.tagName.toLowerCase(),
+            type: type,
             label: this.getLabel(element),
-            value: element.value,
+            value: val,
             // Try to recover attributes set by Pipeline
             cache_label: element.getAttribute('cache_label'),
             instance_type: element.getAttribute('instance_type'),

@@ -1533,36 +1533,44 @@ function setTelValue(element, value) {
 }
 
 function setRadioValue(element, value) {
-    const name = element.name;
-    const radios = document.querySelectorAll(`input[name="${name}"]`);
-    let bestMatch = null;
-    let maxSim = 0;
+    if (window.FieldUtils && typeof window.FieldUtils.setFieldValue === 'function') {
+        window.FieldUtils.setFieldValue(element, value);
+    } else {
+        const name = element.name;
+        const radios = document.querySelectorAll(`input[name="${name}"]`);
+        let bestMatch = null;
+        let maxSim = 0;
 
-    radios.forEach(r => {
-        const label = findLabelText(r);
-        const val = r.value;
+        radios.forEach(r => {
+            const label = getOptionLabelText(r);
+            const val = r.value;
 
-        const labelSim = calculateUsingJaccardSimilarity(label, value);
-        const valSim = calculateUsingJaccardSimilarity(val, value);
+            const labelSim = calculateUsingJaccardSimilarity(label, value);
+            const valSim = calculateUsingJaccardSimilarity(val, value);
 
-        // Exact match override
-        const exactMatch = (val === value || label === value) ? 1.0 : 0;
+            // Exact match override
+            const exactMatch = (val === value || label === value) ? 1.0 : 0;
 
-        const sim = Math.max(labelSim, valSim, exactMatch);
+            const sim = Math.max(labelSim, valSim, exactMatch);
 
-        if (sim > maxSim) {
-            maxSim = sim;
-            bestMatch = r;
+            if (sim > maxSim) {
+                maxSim = sim;
+                bestMatch = r;
+            }
+        });
+
+        if (bestMatch && maxSim > 0.4) {
+            bestMatch.checked = true;
+            dispatchChangeEvents(bestMatch);
         }
-    });
-
-    if (bestMatch && maxSim > 0.4) {
-        bestMatch.checked = true;
-        dispatchChangeEvents(bestMatch);
     }
 }
 
 function setCheckboxValue(element, value) {
+    if (window.FieldUtils && typeof window.FieldUtils.setFieldValue === 'function') {
+        window.FieldUtils.setFieldValue(element, value);
+        return;
+    }
     let targetValues = value;
 
     // Robustness: Handle comma-separated strings as arrays
@@ -1578,7 +1586,7 @@ function setCheckboxValue(element, value) {
         const checkboxes = document.querySelectorAll(`input[name="${name}"]`);
 
         checkboxes.forEach(cb => {
-            const label = findLabelText(cb) || '';
+            const label = getOptionLabelText(cb) || '';
             const val = cb.value || '';
 
             // Check if this checkbox matches ANY value in the array
@@ -1758,6 +1766,10 @@ function getOptionLabelText(input) {
         if (inputInClone) inputInClone.remove();
         return clone.innerText.trim();
     }
+    // Ashby Style: Input followed immediately by Label
+    if (input.nextElementSibling && input.nextElementSibling.tagName === 'LABEL') {
+        return input.nextElementSibling.innerText.trim();
+    }
     return null;
 }
 
@@ -1794,10 +1806,11 @@ function attachSelfCorrectionTrigger(element) {
             if (!element.checked) return;
             newValue = element.value;
 
-            // Handle Dynamic Values (e.g., numeric IDs like '27794634')
-            // If value looks like an ID, prefer the visible label text (e.g., 'Yes')
+            // Handle Generic Values (on/true) OR Dynamic IDs
+            const isGeneric = newValue.toLowerCase() === 'on' || newValue.toLowerCase() === 'true';
             const isDynamic = /^[0-9]+$/.test(newValue) || (newValue.length > 8 && /[0-9]/.test(newValue) && !newValue.includes(' '));
-            if (isDynamic) {
+
+            if (isGeneric || isDynamic) {
                 const textLabel = getOptionLabelText(element);
                 if (textLabel) newValue = textLabel;
             }

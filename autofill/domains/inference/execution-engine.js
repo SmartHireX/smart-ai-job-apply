@@ -142,6 +142,27 @@ class ExecutionEngine {
         }
     }
 
+    // Helper to extract text from a specific option input (Sync with sidebar-components.js)
+    getOptionLabelText(input) {
+        if (input.labels && input.labels.length > 0) return input.labels[0].innerText.trim();
+        if (input.id) {
+            const label = document.querySelector(`label[for="${CSS.escape(input.id)}"]`);
+            if (label) return label.innerText.trim();
+        }
+        const parent = input.closest('label');
+        if (parent) {
+            const clone = parent.cloneNode(true);
+            const inputInClone = clone.querySelector('input');
+            if (inputInClone) inputInClone.remove();
+            return clone.innerText.trim();
+        }
+        // Ashby Style: Input followed immediately by Label
+        if (input.nextElementSibling && input.nextElementSibling.tagName === 'LABEL') {
+            return input.nextElementSibling.innerText.trim();
+        }
+        return null;
+    }
+
     _handleUserEdit(element, fieldMetadata) {
         if (!fieldMetadata) return;
 
@@ -167,9 +188,14 @@ class ExecutionEngine {
         } else if (type === 'radio') {
             if (!element.checked) return; // Only cache the selected radio
             const rawVal = element.value;
-            // If value is generic "on", try to find a label
-            if (!rawVal || rawVal === 'on') {
-                newValue = element.labels?.[0]?.innerText?.trim() || "true";
+            // If value is generic "on" or "true", try to find a label
+            // Also handle dynamic IDs like '27794634'
+            const isGeneric = !rawVal || rawVal === 'on' || rawVal === 'true';
+            const isDynamic = /^[0-9]+$/.test(rawVal) || (rawVal.length > 8 && /[0-9]/.test(rawVal) && !rawVal.includes(' '));
+
+            if (isGeneric || isDynamic) {
+                const text = this.getOptionLabelText(element);
+                newValue = text || "true";
             } else {
                 newValue = rawVal;
             }
@@ -235,24 +261,62 @@ class ExecutionEngine {
         // Debug Entry
         console.log(`🛠️ [SetValueRobust] Tag: "${tagName}", Type: "${type}", Target: "${value}"`);
 
-        // Special Radio Button Handling
+        // Special Radio Button Handling (Group-Aware)
         if (type === 'radio') {
-            // STRATEGY: Progressive Escalation
+            let targetRadio = element;
+
+            // 0. Group Lookup: If current element isn't a clear match, scan the group
+            if (element.name) {
+                const group = document.querySelectorAll(`input[name="${CSS.escape(element.name)}"]`);
+                let bestMatch = null;
+                let maxSim = 0;
+
+                const calculateSim = (s1, s2) => {
+                    if (!s1 || !s2) return 0;
+                    const t1 = String(s1).toLowerCase().trim();
+                    const t2 = String(s2).toLowerCase().trim();
+                    if (t1 === t2) return 1.0;
+                    if (t1.includes(t2) || t2.includes(t1)) return 0.8;
+                    if (window.calculateUsingJaccardSimilarity) {
+                        return window.calculateUsingJaccardSimilarity(s1, s2);
+                    }
+                    return 0;
+                };
+
+                group.forEach(r => {
+                    const label = this.getOptionLabelText(r) || "";
+                    const val = r.value || "";
+                    const sim = Math.max(calculateSim(label, value), calculateSim(val, value));
+                    if (sim > maxSim) {
+                        maxSim = sim;
+                        bestMatch = r;
+                    }
+                });
+
+                if (bestMatch && maxSim > 0.4) {
+                    targetRadio = bestMatch;
+                    console.log(`🎯 [ExecutionEngine] Radio Targeted: "${value}" -> Option: "${this.getOptionLabelText(targetRadio)}" (sim: ${maxSim.toFixed(2)})`);
+                }
+            }
+
+            // STRATEGY: Progressive Escalation on the BEST match
+            const radioNode = targetRadio;
+
             // 1. Try Simple Click
             try {
-                if (!element.checked) {
+                if (!radioNode.checked) {
                     console.log(`[ExecutionEngine] Clicking radio...`);
-                    element.click();
+                    radioNode.click();
                 }
             } catch (e) {
                 console.error(`[ExecutionEngine] Radio click failed`, e);
             }
 
             // 2. Fallback: Label Click (If Input Click Failed)
-            if (!element.checked) {
-                const label = element.labels?.[0] ||
-                    document.querySelector(`label[for="${CSS.escape(element.id || '')}"]`) ||
-                    (element.parentElement && element.parentElement.nextElementSibling?.tagName === 'LABEL' ? element.parentElement.nextElementSibling : null);
+            if (!radioNode.checked) {
+                const label = radioNode.labels?.[0] ||
+                    document.querySelector(`label[for="${CSS.escape(radioNode.id || '')}"]`) ||
+                    (radioNode.parentElement && radioNode.parentElement.nextElementSibling?.tagName === 'LABEL' ? radioNode.parentElement.nextElementSibling : null);
 
                 if (label) {
                     try {
@@ -263,22 +327,57 @@ class ExecutionEngine {
             }
 
             // 3. Last Resort: Native Setter
-            if (!element.checked) {
+            if (!radioNode.checked) {
                 try {
                     const nativeLast = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked')?.set;
-                    if (nativeLast) { nativeLast.call(element, true); }
+                    if (nativeLast) { nativeLast.call(radioNode, true); }
                 } catch (e) { }
             }
 
-            this.dispatchEvents(element);
+            this.dispatchEvents(radioNode);
             return;
         }
 
-        // Checkbox Handling
+        // Checkbox Handling (Group-Aware)
         if (type === 'checkbox') {
-            const shouldBeChecked = value === true || value === 'true' || value === element.value;
-            if (element.checked !== shouldBeChecked) {
-                element.click();
+            let targetValues = value;
+            if (typeof value === 'string' && value.includes(',')) {
+                targetValues = value.split(',').map(v => v.trim());
+            }
+            const valuesArray = Array.isArray(targetValues) ? targetValues : [targetValues];
+            const isSingleBoolean = valuesArray.length === 1 && (valuesArray[0] === true || valuesArray[0] === 'true' || valuesArray[0] === 'on');
+
+            if (element.name) {
+                const group = document.querySelectorAll(`input[name="${CSS.escape(element.name)}"]`);
+                group.forEach(cb => {
+                    const label = this.getOptionLabelText(cb) || "";
+                    const val = cb.value || "";
+
+                    const isMatch = valuesArray.some(tv => {
+                        const targetStr = String(tv).toLowerCase().trim();
+                        if (val.toLowerCase().trim() === targetStr) return true;
+                        if (label.toLowerCase().trim() === targetStr) return true;
+                        if (window.calculateUsingJaccardSimilarity) {
+                            return window.calculateUsingJaccardSimilarity(label, tv) > 0.6;
+                        }
+                        return false;
+                    });
+
+                    const shouldBeChecked = isMatch || (isSingleBoolean && (val === element.value || val === 'on'));
+
+                    if (cb.checked !== shouldBeChecked) {
+                        console.log(`🎯 [ExecutionEngine] Checkbox Toggled: "${label}" -> ${shouldBeChecked}`);
+                        cb.click();
+                        this.dispatchEvents(cb);
+                    }
+                });
+            } else {
+                // Single checkbox without name
+                const shouldBeChecked = valuesArray.some(tv => tv === true || tv === 'true' || tv === element.value);
+                if (element.checked !== shouldBeChecked) {
+                    element.click();
+                    this.dispatchEvents(element);
+                }
             }
             return;
         }

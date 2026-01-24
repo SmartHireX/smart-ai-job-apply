@@ -799,6 +799,24 @@ async function cacheSelection(field, label, value) {
         const targetCacheKey = determineCacheStrategy(semanticType, field);
         const cache = await getCache(targetCacheKey);
 
+        // SAFETY: Final normalization check for generic radio/checkbox values
+        // If value is 'on' or 'true', try to recover semantic label from field/DOM if possible
+        if (value === 'on' || value === 'true' || value === true) {
+            if (field && (field.type === 'radio' || field.type === 'checkbox')) {
+                // Handle both raw HTMLElement and POJO wrapping an element (e.g. from FormObserver)
+                const element = (typeof HTMLElement !== 'undefined' && field instanceof HTMLElement) ? field : field.element;
+
+                // If it's a DOM element, try to get label
+                if (typeof HTMLElement !== 'undefined' && element instanceof HTMLElement) {
+                    if (window.getOptionLabelText) {
+                        value = window.getOptionLabelText(element) || value;
+                    } else if (window.FieldUtils && window.FieldUtils.getOptionLabelText) {
+                        value = window.FieldUtils.getOptionLabelText(element) || value;
+                    }
+                }
+            }
+        }
+
         // A. SECTIONAL_MULTI: Row-Based Storage (Array of Hashes)
         if (targetCacheKey === CACHE_KEYS.SECTIONAL_MULTI) {
             const index = getFieldIndex(field, label);
@@ -881,9 +899,11 @@ async function cacheSelection(field, label, value) {
 
         await saveCache(targetCacheKey, cache);
 
-        // Meta update
+        // Meta update (FIXED: use Object.keys for length)
         const meta = await getMetadata();
-        meta.totalEntries = (await getCache(CACHE_KEYS.ATOMIC_SINGLE)).length + (await getCache(CACHE_KEYS.ATOMIC_MULTI)).length; // Approx
+        const single = await getCache(CACHE_KEYS.ATOMIC_SINGLE);
+        const multi = await getCache(CACHE_KEYS.ATOMIC_MULTI);
+        meta.totalEntries = Object.keys(single).length + Object.keys(multi).length;
         await saveMetadata(meta);
 
     }).catch(err => console.error('[InteractionLog] Error in cacheSelection:', err));

@@ -94,6 +94,32 @@ class FieldUtils {
     }
 
     /**
+     * Get specific label for a radio/checkbox option (robust)
+     * @param {HTMLElement} input - Radio or Checkbox element
+     * @returns {string|null} Option label text
+     */
+    static getOptionLabelText(input) {
+        if (!input) return null;
+        if (input.labels && input.labels.length > 0) return input.labels[0].innerText.trim();
+        if (input.id) {
+            const label = document.querySelector(`label[for="${CSS.escape(input.id)}"]`);
+            if (label) return label.innerText.trim();
+        }
+        const parent = input.closest('label');
+        if (parent) {
+            const clone = parent.cloneNode(true);
+            const inputInClone = clone.querySelector('input');
+            if (inputInClone) inputInClone.remove();
+            return clone.innerText.trim();
+        }
+        // Ashby Style: Input followed immediately by Label
+        if (input.nextElementSibling && input.nextElementSibling.tagName === 'LABEL') {
+            return input.nextElementSibling.innerText.trim();
+        }
+        return null;
+    }
+
+    /**
      * Capture current field state for undo functionality
      * @param {HTMLElement} element - Field element
      * @returns {Object} Field state snapshot
@@ -166,7 +192,12 @@ class FieldUtils {
      * @param {HTMLElement} element - Input element
      */
     static dispatchChangeEvents(element) {
+        if (!element) return;
+
+        // Sequence: MouseDown -> MouseUp -> Focus -> Input -> Change -> Blur
         const events = [
+            new MouseEvent('mousedown', { bubbles: true, cancelable: true }),
+            new MouseEvent('mouseup', { bubbles: true, cancelable: true }),
             new Event('input', { bubbles: true, cancelable: true }),
             new Event('change', { bubbles: true, cancelable: true }),
             new Event('blur', { bubbles: true, cancelable: true })
@@ -179,6 +210,19 @@ class FieldUtils {
                 console.warn('Event dispatch failed:', error);
             }
         });
+    }
+
+    /**
+     * Calculate Jaccard Similarity between two strings
+     */
+    static calculateJaccardSimilarity(str1, str2) {
+        if (!str1 || !str2) return 0;
+        const set1 = new Set(String(str1).toLowerCase().split(/\W+/));
+        const set2 = new Set(String(str2).toLowerCase().split(/\W+/));
+        const intersection = new Set([...set1].filter(x => set2.has(x)));
+        const union = new Set([...set1, ...set2]);
+        if (union.size === 0) return 0;
+        return intersection.size / union.size;
     }
 
     /**
@@ -383,49 +427,113 @@ class FieldUtils {
 
         // 1. Radio Buttons (Complex Group Handling)
         if (type === 'radio') {
-            // STRATEGY: Progressive Escalation
-            // 1. Try Simple Click (Historical)
-            try {
-                if (!element.checked) {
-                    element.click();
+            let targetRadio = element;
+
+            // 0. Group Lookup: Scan nearby context for the correct option
+            if (element.name) {
+                const container = element.closest('form') || element.closest('.form-group') || element.closest('fieldset') || document;
+                const group = container.querySelectorAll(`input[name="${CSS.escape(element.name)}"]`);
+                let bestMatch = null;
+                let maxSim = 0;
+
+                const calculateSim = (s1, s2) => {
+                    if (!s1 || !s2) return 0;
+                    const t1 = String(s1).toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+                    const t2 = String(s2).toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+                    if (t1 === t2) return 1.0;
+                    if (t1.includes(t2) || t2.includes(t1)) return 0.8;
+                    return this.calculateJaccardSimilarity(s1, s2);
+                };
+
+                group.forEach(r => {
+                    const label = this.getOptionLabelText(r) || "";
+                    const val = r.value || "";
+                    const sim = Math.max(calculateSim(label, value), calculateSim(val, value));
+                    if (sim > maxSim) {
+                        maxSim = sim;
+                        bestMatch = r;
+                    }
+                });
+
+                if (bestMatch && maxSim > 0.4) {
+                    targetRadio = bestMatch;
+                    console.log(`🎯 [FieldUtils] Radio Group Match: "${value}" -> "${this.getOptionLabelText(targetRadio)}" (sim: ${maxSim.toFixed(2)})`);
                 }
-            } catch (e) {
-                console.warn('[FieldUtils] Radio click failed', e);
             }
 
-            // 2. Verification & Fallback (Ashby Specific)
-            // If simple click didn't work (hidden input ignored), try clicking the label
-            if (!element.checked) {
-                // console.log('[FieldUtils] Input click failed to check. Trying label...');
-                let label = element.labels?.[0];
-                if (!label && element.id) {
-                    label = document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
+            // STRATEGY: Progressive Escalation on the BEST match
+            const radioNode = targetRadio;
+
+            // 1. Try Natural Click
+            try {
+                if (!radioNode.checked) {
+                    radioNode.click();
                 }
-                if (!label && element.parentElement && element.parentElement.nextElementSibling?.tagName === 'LABEL') {
-                    label = element.parentElement.nextElementSibling;
-                }
+            } catch (e) { }
+
+            // 2. Fallback: Label Click (Common for styled radios)
+            if (!radioNode.checked) {
+                const label = radioNode.labels?.[0] ||
+                    document.querySelector(`label[for="${CSS.escape(radioNode.id || '')}"]`) ||
+                    (radioNode.parentElement && radioNode.parentElement.nextElementSibling?.tagName === 'LABEL' ? radioNode.parentElement.nextElementSibling : null) ||
+                    radioNode.closest('label');
 
                 if (label) {
-                    try { label.click(); } catch (e) { }
+                    try {
+                        label.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+                        label.click();
+                        label.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+                        // Also try dispatching click if .click() is ignored
+                        label.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                    } catch (e) { }
                 }
             }
 
-            // 3. Final Resort: Native Setter (React Bypass)
-            if (!element.checked) {
-                // console.log('[FieldUtils] Label click failed. Forcing state...');
-                this.setNativeChecked(element, true);
+            // 3. Last Resort: Forced State (Bypass Virtual DOM)
+            if (!radioNode.checked) {
+                this.setNativeChecked(radioNode, true);
             }
 
-            this.dispatchChangeEvents(element);
+            this.dispatchChangeEvents(radioNode);
             return;
         }
 
-        // 2. Checkboxes
+        // 2. Checkboxes (Group-Aware)
         if (type === 'checkbox') {
-            const shouldBeChecked = value === true || value === 'true' || String(value).toLowerCase() === 'yes' || value === element.value;
-            if (element.checked !== shouldBeChecked) {
-                element.click();
-                this.dispatchChangeEvents(element);
+            let targetValues = value;
+            if (typeof value === 'string' && value.includes(',')) {
+                targetValues = value.split(',').map(v => v.trim());
+            }
+            const valuesArray = Array.isArray(targetValues) ? targetValues : [targetValues];
+            const isSingleBoolean = valuesArray.length === 1 && (valuesArray[0] === true || valuesArray[0] === 'true' || valuesArray[0] === 'on');
+
+            if (element.name) {
+                const group = document.querySelectorAll(`input[name="${CSS.escape(element.name)}"]`);
+                group.forEach(cb => {
+                    const label = this.getOptionLabelText(cb) || "";
+                    const val = cb.value || "";
+
+                    const isMatch = valuesArray.some(tv => {
+                        const targetStr = String(tv).toLowerCase().trim();
+                        if (val.toLowerCase().trim() === targetStr) return true;
+                        if (label.toLowerCase().trim() === targetStr) return true;
+                        return this.calculateJaccardSimilarity(label, tv) > 0.6;
+                    });
+
+                    const shouldBeChecked = isMatch || (isSingleBoolean && (val === element.value || val === 'on'));
+
+                    if (cb.checked !== shouldBeChecked) {
+                        cb.click();
+                        this.dispatchChangeEvents(cb);
+                    }
+                });
+            } else {
+                // Single checkbox without name
+                const shouldBeChecked = valuesArray.some(tv => tv === true || tv === 'true' || tv === element.value);
+                if (element.checked !== shouldBeChecked) {
+                    element.click();
+                    this.dispatchChangeEvents(element);
+                }
             }
             return;
         }
@@ -500,4 +608,5 @@ window.setFieldValue = FieldUtils.setFieldValue.bind(FieldUtils); // Global Expo
 window.dispatchChangeEvents = FieldUtils.dispatchChangeEvents.bind(FieldUtils);
 
 // Export class to global scope
+window.getOptionLabelText = FieldUtils.getOptionLabelText.bind(FieldUtils);
 window.FieldUtils = FieldUtils;
