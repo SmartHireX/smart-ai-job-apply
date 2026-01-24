@@ -120,7 +120,7 @@ class CompositeFieldManager {
 
                 if (cleanValue) {
                     console.log(`[CompositeFieldManager] ✅ Found Value:`, cleanValue);
-                    if (this.fill(field.element, cleanValue)) {
+                    if (await this.fill(field.element, cleanValue)) {
                         return { filled: true, source: 'cache', value: cleanValue };
                     }
                 } else {
@@ -135,7 +135,7 @@ class CompositeFieldManager {
 
         // STRATEGY B: Skill Matching (User Resume Data)
         if (type === 'skills' && matchedSkills.length > 0) {
-            if (this.fill(field.element, matchedSkills)) {
+            if (await this.fill(field.element, matchedSkills)) {
                 // Auto-Cache successful user data mapping for future speed
                 if (this.cache) this.cache.cacheSelection(field, field.label, matchedSkills);
                 return { filled: true, source: 'user_skills', value: matchedSkills };
@@ -148,7 +148,7 @@ class CompositeFieldManager {
             if (data) {
                 const valueToFill = this.extractValueFromEntity(data, field);
                 if (valueToFill) {
-                    if (this.fill(field.element, valueToFill)) {
+                    if (await this.fill(field.element, valueToFill)) {
                         if (this.cache) this.cache.cacheSelection(field, field.label, valueToFill);
                         return { filled: true, source: 'profile', value: valueToFill };
                     }
@@ -160,7 +160,7 @@ class CompositeFieldManager {
         if (window.GlobalMemory) {
             const memRes = await window.GlobalMemory.resolveField(field);
             if (memRes && memRes.value) {
-                if (this.fill(field.element, memRes.value)) {
+                if (await this.fill(field.element, memRes.value)) {
                     return { filled: true, source: 'global_memory', value: memRes.value };
                 }
             }
@@ -189,9 +189,9 @@ class CompositeFieldManager {
      * 
      * @param {HTMLElement} element 
      * @param {any} value - String or Array of Strings
-     * @returns {boolean} Success status
+     * @returns {Promise<boolean>} Success status
      */
-    fill(element, value) {
+    async fill(element, value) {
         if (value === undefined || value === null) return false;
 
         // Normalize value to Array for consistent processing
@@ -199,8 +199,22 @@ class CompositeFieldManager {
         const type = (element.type || '').toLowerCase();
         const tagName = element.tagName;
 
-        // 1. Checkbox Group
+        // VISUALS: Trigger Ghost Animation (if available)
+        // This ensures multi-select fields get the same premium treatment as atomic fields
+        if (window.showGhostingAnimation) {
+            // Pass the raw value (or joined array) to let showGhostingAnimation handle group pulsing
+            const displayValue = values.join(', ');
+            await window.showGhostingAnimation(element, displayValue, 0.9);
+        }
+
+        // 1. Checkbox Group (Robust Delegation)
+        // Use Global FieldUtils to ensure "Progressive Escalation" strategy
         if (type === 'checkbox') {
+            if (window.setFieldValue) {
+                window.setFieldValue(element, values);
+                return true;
+            }
+            // Fallback if FieldUtils missing (unlikely)
             return this.fillCheckboxGroup(element, values);
         }
 
@@ -236,6 +250,7 @@ class CompositeFieldManager {
     }
 
     fillCheckboxGroup(triggerElement, values) {
+        // Legacy fallback only. In V4, we delegate to FieldUtils.
         const name = triggerElement.name;
 
         // Robust query: If name is missing, only target the element itself.
