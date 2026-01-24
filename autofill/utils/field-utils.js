@@ -360,15 +360,20 @@ class FieldUtils {
                 const targetValue = String(value).toLowerCase().trim();
                 let bestMatch = null;
 
-                // Priority 1: Exact Value Match
-                for (const radio of group) {
-                    if (radio.value.toLowerCase().trim() === targetValue) {
-                        bestMatch = radio;
-                        break;
+                // Ashby-specific: Inputs often have value="on" and rely on React state
+                // If the input value is generic ('on', 'true'), we MUST rely on the label text
+
+                // Priority 1: Exact Value Match (only if value is meaningful)
+                if (targetValue !== 'on' && targetValue !== 'true') {
+                    for (const radio of group) {
+                        if (radio.value.toLowerCase().trim() === targetValue) {
+                            bestMatch = radio;
+                            break;
+                        }
                     }
                 }
 
-                // Priority 2: Label Match (Fuzzy)
+                // Priority 2: Label Match (Fuzzy) - Critical for Ashby
                 if (!bestMatch) {
                     for (const radio of group) {
                         const label = this.getFieldLabel(radio).toLowerCase();
