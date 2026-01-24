@@ -415,45 +415,6 @@ class FieldUtils {
         return isNaN(parsed) ? null : parsed;
     }
     /**
-     * Robust Click Helper (Radio/Checkbox)
-     * Attempts multiple strategies to toggle state in stubborn frameworks
-     */
-    static triggerClickSequence(element) {
-        if (!element) return;
-
-        // 1. Try Natural Click
-        try {
-            element.click();
-        } catch (e) { }
-
-        // 2. Fallback: Label Click (Common for styled inputs)
-        // If state didn't change (hard to know async, but we try anyway)
-        const label = element.labels?.[0] ||
-            document.querySelector(`label[for="${CSS.escape(element.id || '')}"]`) ||
-            (element.parentElement && element.parentElement.nextElementSibling?.tagName === 'LABEL' ? element.parentElement.nextElementSibling : null) ||
-            element.closest('label');
-
-        if (label) {
-            try {
-                // Dispatch full mouse sequence to fool React/Listening handlers
-                label.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-                label.click();
-                label.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-                label.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-            } catch (e) { }
-        }
-
-        // 3. Last Resort: Forced State (Bypass Virtual DOM)
-        // Valid for both radio (true) and checkbox (toggle/true)
-        // We assume we want it CHECKED if we called this.
-        if (!element.checked) {
-            this.setNativeChecked(element, true);
-        }
-
-        this.dispatchChangeEvents(element);
-    }
-
-    /**
      * Enhanced Value Setter for all field types (Radio, Checkbox, Date, Select)
      * Derived from ExecutionEngine and sidebar-components logic.
      */
@@ -510,11 +471,43 @@ class FieldUtils {
             }
 
             // STRATEGY: Progressive Escalation on the BEST match
-            this.triggerClickSequence(targetRadio);
-            return targetRadio;
+            const radioNode = targetRadio;
+
+            // 1. Try Natural Click
+            try {
+                if (!radioNode.checked) {
+                    radioNode.click();
+                }
+            } catch (e) { }
+
+            // 2. Fallback: Label Click (Common for styled radios)
+            if (!radioNode.checked) {
+                const label = radioNode.labels?.[0] ||
+                    document.querySelector(`label[for="${CSS.escape(radioNode.id || '')}"]`) ||
+                    (radioNode.parentElement && radioNode.parentElement.nextElementSibling?.tagName === 'LABEL' ? radioNode.parentElement.nextElementSibling : null) ||
+                    radioNode.closest('label');
+
+                if (label) {
+                    try {
+                        label.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+                        label.click();
+                        label.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+                        // Also try dispatching click if .click() is ignored
+                        label.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                    } catch (e) { }
+                }
+            }
+
+            // 3. Last Resort: Forced State (Bypass Virtual DOM)
+            if (!radioNode.checked) {
+                this.setNativeChecked(radioNode, true);
+            }
+
+            this.dispatchChangeEvents(radioNode);
+            return radioNode;
         }
 
-        // 2. Checkboxes (Group-Aware & Robust like Radios)
+        // 2. Checkboxes (Group-Aware)
         if (type === 'checkbox') {
             let targetValues = value;
             if (typeof value === 'string' && value.includes(',')) {
@@ -537,74 +530,99 @@ class FieldUtils {
                     });
 
                     const shouldBeChecked = isMatch || (isSingleBoolean && opt.selector.includes(element.id));
+
                     if (cb.checked !== shouldBeChecked) {
-                        this.triggerClickSequence(cb); // Use shared click helper
+                        try {
+                            // STRATEGY: Progressive Escalation (Parity with Radio)
+
+                            // 1. Try Natural Click
+                            cb.click();
+
+                            // 2. Fallback: Label Click (if state didn't change)
+                            if (cb.checked !== shouldBeChecked) {
+                                const label = cb.labels?.[0] ||
+                                    document.querySelector(`label[for="${CSS.escape(cb.id || '')}"]`) ||
+                                    cb.closest('label');
+                                if (label) {
+                                    label.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+                                    label.click();
+                                    label.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+                                }
+                            }
+
+                            // 3. Last Resort: Forced State
+                            if (cb.checked !== shouldBeChecked) {
+                                this.setNativeChecked(cb, shouldBeChecked);
+                            }
+
+                            this.dispatchChangeEvents(cb);
+                        } catch (e) {
+                            // Fallback for hidden elements
+                            this.setNativeChecked(cb, shouldBeChecked);
+                            this.dispatchChangeEvents(cb);
+                        }
                     }
                 });
                 return element;
             }
 
-            // 1. Group Lookup (Scoped & Robust) - Matches Radio Logic
-            // If name exists, scope search to container to find siblings
-            let group = [];
+            // 1. Name-based fallback (Legacy/Standard)
             if (element.name) {
-                const container = element.closest('form') || element.closest('.form-group') || element.closest('fieldset') || document;
-                group = Array.from(container.querySelectorAll(`input[name="${CSS.escape(element.name)}"]`));
-            }
+                const group = document.querySelectorAll(`input[name="${CSS.escape(element.name)}"]`);
+                group.forEach(cb => {
+                    const label = this.getOptionLabelText(cb) || "";
+                    const val = cb.value || "";
 
-            // If group invalid or empty, fall back to document-wide name search or just the element itself
-            if (group.length === 0 && element.name) {
-                group = Array.from(document.querySelectorAll(`input[name="${CSS.escape(element.name)}"]`));
-            }
-            if (group.length === 0) group = [element];
+                    const isMatch = valuesArray.some(tv => {
+                        const targetStr = String(tv).toLowerCase().trim();
+                        if (val.toLowerCase().trim() === targetStr) return true;
+                        if (label.toLowerCase().trim() === targetStr) return true;
+                        return this.calculateJaccardSimilarity(label, tv) > 0.6;
+                    });
 
-            // Similarity Helper (Same as Radio)
-            const calculateSim = (s1, s2) => {
-                if (!s1 || !s2) return 0;
-                const t1 = String(s1).toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-                const t2 = String(s2).toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-                if (t1 === t2) return 1.0;
-                if (t1.includes(t2) || t2.includes(t1)) return 0.8;
-                return this.calculateJaccardSimilarity(s1, s2);
-            };
+                    const shouldBeChecked = isMatch || (isSingleBoolean && (val === element.value || val === 'on'));
 
-            group.forEach(cb => {
-                const label = this.getOptionLabelText(cb) || "";
-                const val = cb.value || "";
+                    if (cb.checked !== shouldBeChecked) {
+                        try {
+                            // STRATEGY: Progressive Escalation
+                            cb.click();
 
-                // Determine if this specific checkbox matches ANY of the target values
-                let isMatch = false;
-                let bestSim = 0;
+                            if (cb.checked !== shouldBeChecked) {
+                                const label = cb.labels?.[0] ||
+                                    document.querySelector(`label[for="${CSS.escape(cb.id || '')}"]`) ||
+                                    cb.closest('label');
+                                if (label) {
+                                    label.click();
+                                }
+                            }
 
-                for (const tv of valuesArray) {
-                    const simLabel = calculateSim(label, tv);
-                    const simVal = calculateSim(val, tv);
-                    const currentBest = Math.max(simLabel, simVal);
+                            if (cb.checked !== shouldBeChecked) {
+                                this.setNativeChecked(cb, shouldBeChecked);
+                            }
 
-                    if (currentBest > 0.6) { // Threshold match
-                        isMatch = true;
-                        if (currentBest > bestSim) bestSim = currentBest;
+                            this.dispatchChangeEvents(cb);
+                        } catch (e) {
+                            this.setNativeChecked(cb, shouldBeChecked);
+                            this.dispatchChangeEvents(cb);
+                        }
                     }
-
-                    // Direct boolean/single value check
-                    const targetStr = String(tv).toLowerCase().trim();
-                    if (val.toLowerCase().trim() === targetStr) isMatch = true;
-                    if (label.toLowerCase().trim() === targetStr) isMatch = true;
+                });
+            } else {
+                // Single checkbox without name
+                const shouldBeChecked = valuesArray.some(tv => tv === true || tv === 'true' || tv === element.value);
+                if (element.checked !== shouldBeChecked) {
+                    try {
+                        element.click();
+                        if (element.checked !== shouldBeChecked) {
+                            this.setNativeChecked(element, shouldBeChecked);
+                        }
+                        this.dispatchChangeEvents(element);
+                    } catch (e) {
+                        this.setNativeChecked(element, shouldBeChecked);
+                        this.dispatchChangeEvents(element);
+                    }
                 }
-
-                const shouldBeChecked = isMatch || (isSingleBoolean && (String(val) === String(valuesArray[0]) || val === 'on'));
-
-                if (shouldBeChecked && !cb.checked) {
-                    console.log(`🎯 [FieldUtils] Checkbox Group Match: "${valuesArray.join(',')}" -> "${label}" (sim: ${bestSim.toFixed(2)})`);
-                    this.triggerClickSequence(cb);
-                } else if (!shouldBeChecked && cb.checked) {
-                    // Uncheck if it shouldn't be checked (optional, but good for multi-select correctness)
-                    // Only uncheck if we are filling a fresh set? Assuming additive for now unless configured otherwise.
-                    // For now, let's strictly enforce state if it's a named group to avoid partial matches
-                    this.triggerClickSequence(cb);
-                }
-            });
-
+            }
             return element;
         }
 

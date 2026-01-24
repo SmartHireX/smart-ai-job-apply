@@ -286,43 +286,7 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
         return;
     }
 
-    // Check if text input
-    const isText = (element.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'color', 'file', 'date', 'time'].includes(element.type)) || element.tagName === 'TEXTAREA';
-
-    if (!isText) {
-        // VISUAL SELECTION for non-text inputs (Checkbox, Radio, Select)
-
-        // HELPER: Find the VISIBLE element to animate (since the input might be hidden/opacity:0)
-        let visualTarget = getVisualTarget(element);
-
-        // Show a brief "Ghost" pulse on the VISIBLE target
-        visualTarget.classList.add('smarthirex-typing');
-        visualTarget.classList.add('smarthirex-ai-writing');
-
-        // Scroll the VISUAL target
-        visualTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-        // PAUSE: Wait for scroll to finish + User verification
-        // User Request: "Go for the field then select, don't select until on screen"
-        await new Promise(r => setTimeout(r, 600));
-
-        setFieldValue(element, value); // Set value on the REAL input
-
-        visualTarget.classList.remove('smarthirex-typing');
-        visualTarget.classList.remove('smarthirex-ai-writing');
-        highlightField(visualTarget, confidence); // Highlight the visible part
-
-        const dispatchFn = window.dispatchChangeEvents || (window.FieldUtils && window.FieldUtils.dispatchChangeEvents);
-        if (typeof dispatchFn === 'function') {
-            dispatchFn(element);
-        } else {
-            element.dispatchEvent(new Event('input', { bubbles: true }));
-            element.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        return;
-    }
-
-    // Add visual state for TEXT inputs only
+    // Add visual state
     element.classList.add('smarthirex-typing');
     element.classList.add('smarthirex-ai-writing'); // New class for pulse effect
     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -331,6 +295,9 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
     await new Promise(r => setTimeout(r, 450));
 
     element.focus();
+
+    // Check if text input
+    const isText = (element.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'color', 'file', 'date', 'time'].includes(element.type)) || element.tagName === 'TEXTAREA';
 
     if (isText) {
         const chars = String(value).split('');
@@ -355,8 +322,66 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
             await new Promise(r => setTimeout(r, Math.random() * 30 + 35));
         }
     } else {
-        // Fallback for unexpected cases
-        setFieldValue(element, value);
+        // For non-text fields (Radio, Checkbox, Select, Date, File)
+        const type = (element.type || '').toLowerCase();
+        let targets = [element];
+
+        // NEW: Checkbox Group Logic (Multi-Element Ghosting)
+        if (type === 'checkbox' && element.name) {
+            let values = value;
+            if (typeof value === 'string' && value.includes(',')) {
+                values = value.split(',').map(v => v.trim());
+            }
+            const valuesArray = Array.isArray(values) ? values : [values];
+
+            // If multiple values, finding all targets to highlight simultaneously
+            if (valuesArray.length > 0) {
+                const allCheckboxes = document.querySelectorAll(`input[name="${CSS.escape(element.name)}"]`);
+                const matched = Array.from(allCheckboxes).filter(cb => {
+                    // Check ID/Value/Label to match logic in FieldUtils
+                    const val = cb.value || '';
+                    if (valuesArray.includes(val)) return true;
+
+                    // Check label
+                    const label = cb.labels?.[0]?.innerText.trim();
+                    if (label && valuesArray.some(tv => label.includes(tv))) return true;
+
+                    return false;
+                });
+                if (matched.length > 0) targets = matched;
+            }
+        }
+
+        // Apply Ghost Classes to ALL targets (Unified Pulse)
+        targets.forEach(t => {
+            t.classList.add('smarthirex-typing');
+            t.classList.add('smarthirex-ai-writing');
+        });
+
+        // Longer pause so user sees the "ghost" pulse before the selection happens
+        await new Promise(r => setTimeout(r, 600));
+
+        // Use Global Export or FieldUtils
+        const fillFn = window.setFieldValue || (window.FieldUtils && window.FieldUtils.setFieldValue);
+        if (typeof fillFn === 'function') {
+            const actualTarget = fillFn(element, value);
+
+            // Cleanup happens after filling
+        } else {
+            // Minimal Fallback
+            if (element.type === 'radio' || element.type === 'checkbox') {
+                element.checked = true;
+            } else {
+                element.value = value;
+            }
+        }
+
+        // Remove classes from ALL targets
+        targets.forEach(t => {
+            t.classList.remove('smarthirex-typing');
+            t.classList.remove('smarthirex-ai-writing');
+            highlightField(t, confidence);
+        });
     }
 
     element.classList.remove('smarthirex-typing');
@@ -369,38 +394,6 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
         element.dispatchEvent(new Event('input', { bubbles: true }));
         element.dispatchEvent(new Event('change', { bubbles: true }));
     }
-}
-
-/**
- * Helper: Find the best visible element for highlighting/animating
- * Handles hidden inputs (opacity:0) by finding linked labels or parents.
- */
-function getVisualTarget(element) {
-    if (!element) return null;
-    let visualTarget = element;
-
-    if (element.type === 'checkbox' || element.type === 'radio') {
-        // 1. Explicit Label via ID
-        if (element.id) {
-            const label = document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
-            if (label) return label;
-        }
-
-        // 2. Ancestor Label (closest is better than parentElement)
-        const parentLabel = element.closest('label');
-        if (parentLabel) return parentLabel;
-
-        // 3. Fallback for hidden inputs without labels (Custom DIV wrappers)
-        const style = window.getComputedStyle(element);
-        if (style.opacity === '0' || style.visibility === 'hidden' || style.display === 'none') {
-            // Try next sibling (often the custom radio/check graphic)
-            if (element.nextElementSibling) return element.nextElementSibling;
-
-            // Otherwise, default to parent (the wrapper)
-            if (element.parentElement) return element.parentElement;
-        }
-    }
-    return visualTarget;
 }
 
 // ===========================================
