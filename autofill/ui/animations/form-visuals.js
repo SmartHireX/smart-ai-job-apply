@@ -293,31 +293,13 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
         // VISUAL SELECTION for non-text inputs (Checkbox, Radio, Select)
 
         // HELPER: Find the VISIBLE element to animate (since the input might be hidden/opacity:0)
-        let visualTarget = element;
-        if (element.type === 'checkbox' || element.type === 'radio') {
-            if (element.id) {
-                const label = document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
-                if (label) visualTarget = label;
-            }
-            // If no label for, check parent
-            if (visualTarget === element && element.parentElement.tagName === 'LABEL') {
-                visualTarget = element.parentElement;
-            }
-            // If implicit label is hidden or wrapper is needed (common in frameworks)
-            // Check if input opacity is 0 or display none
-            const style = window.getComputedStyle(element);
-            if (style.opacity === '0' || style.visibility === 'hidden' || style.display === 'none') {
-                // Try next sibling (React pattern: input + span)
-                if (element.nextElementSibling) visualTarget = element.nextElementSibling;
-                // Or parent wrapper if next sibling is not useful
-                else if (element.parentElement) visualTarget = element.parentElement;
-            }
-        }
+        let visualTarget = getVisualTarget(element);
 
         // Show a brief "Ghost" pulse (200ms) on the VISIBLE target
         visualTarget.classList.add('smarthirex-typing');
         visualTarget.classList.add('smarthirex-ai-writing');
-        // Scroll the ACTUAL element or visual target? Visual is safer for centering.
+
+        // Scroll the VISUAL target
         visualTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
         await new Promise(r => setTimeout(r, 200));
@@ -385,6 +367,38 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
         element.dispatchEvent(new Event('input', { bubbles: true }));
         element.dispatchEvent(new Event('change', { bubbles: true }));
     }
+}
+
+/**
+ * Helper: Find the best visible element for highlighting/animating
+ * Handles hidden inputs (opacity:0) by finding linked labels or parents.
+ */
+function getVisualTarget(element) {
+    if (!element) return null;
+    let visualTarget = element;
+
+    if (element.type === 'checkbox' || element.type === 'radio') {
+        // 1. Explicit Label via ID
+        if (element.id) {
+            const label = document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
+            if (label) return label;
+        }
+
+        // 2. Ancestor Label (closest is better than parentElement)
+        const parentLabel = element.closest('label');
+        if (parentLabel) return parentLabel;
+
+        // 3. Fallback for hidden inputs without labels (Custom DIV wrappers)
+        const style = window.getComputedStyle(element);
+        if (style.opacity === '0' || style.visibility === 'hidden' || style.display === 'none') {
+            // Try next sibling (often the custom radio/check graphic)
+            if (element.nextElementSibling) return element.nextElementSibling;
+
+            // Otherwise, default to parent (the wrapper)
+            if (element.parentElement) return element.parentElement;
+        }
+    }
+    return visualTarget;
 }
 
 // ===========================================
