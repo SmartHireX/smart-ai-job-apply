@@ -348,7 +348,7 @@ function getVisualLabel(element) {
 
     // Strict Stop Patterns (Don't cross these boundaries)
     const BOUNDARY_TAGS = new Set(['FORM', 'BODY', 'HTML', 'SECTION', 'ARTICLE']);
-    console.log("element", element)
+    //console.log("element", element)
     let current = element;
     let bestCandidate = null;
     let bestScore = -100;
@@ -465,7 +465,7 @@ function getFieldLabel(element) {
     const clean = (txt) => (txt || '').replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
 
     // DEBUG: Trace execution with Frame Context
-    console.log(`[FormDetector] getFieldLabel called in frame: ${window.location.host} (Input: ${element.name || element.id})`, element);
+    //console.log(`[FormDetector] getFieldLabel called in frame: ${window.location.host} (Input: ${element.name || element.id})`, element);
     let label = '';
     const type = element.type;
     const isGroup = type === 'radio' || type === 'checkbox';
@@ -760,7 +760,8 @@ function isFieldVisible(element) {
             element.type !== 'hidden' &&
             style.display !== 'none' &&
             style.visibility !== 'hidden' &&
-            style.opacity !== '0' &&
+            // ALLOW radios/checkboxes with opacity 0 (Ashby fix)
+            (style.opacity !== '0' || element.type === 'radio' || element.type === 'checkbox') &&
             element.offsetWidth > 0 &&
             element.offsetHeight > 0 &&
             !element.closest('[aria-hidden="true"]') // Prevent focus on hidden elements
