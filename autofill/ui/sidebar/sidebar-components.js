@@ -1830,14 +1830,7 @@ function attachSelfCorrectionTrigger(element) {
             ml_prediction: element.__ml_prediction
         };
 
-        console.log(`⚡ [Sidebar] Event Triggered by Field: "${label}"`, {
-            name: element.name,
-            id: element.id,
-            type: fieldType,
-            value: element.value,
-            checked: element.checked,
-            fieldObj: fieldObj
-        });
+
 
         // Determine if this is a non-text input (for SelectionCache)
         const isNonTextInput = fieldType === 'radio' || fieldType === 'checkbox' ||
@@ -1847,7 +1840,7 @@ function attachSelfCorrectionTrigger(element) {
         // Get the value
         let newValue;
         if (fieldType === 'checkbox') {
-            console.log('in checkbox')
+
             const rawVal = element.value;
             // Robust value extraction
             if (!rawVal || rawVal === 'on' || rawVal === 'true') {
@@ -1859,7 +1852,7 @@ function attachSelfCorrectionTrigger(element) {
 
             // Branch 1: Unified Multi-Select Update (if supported)
             if (window.InteractionLog && window.InteractionLog.updateMultiSelection) {
-                console.log('in updateMultiSelection with fieldObj')
+
                 // PASS RICHER METADATA OBJECT
                 await window.InteractionLog.updateMultiSelection(fieldObj, label, newValue, element.checked);
                 return; // Skip the standard cacheSelection call below
@@ -1936,7 +1929,7 @@ function attachSelfCorrectionTrigger(element) {
         //     }
         // }
 
-        console.log(`🔍 [CacheDebug] Cache Label: ${cacheLabel}, Type: ${instanceType}`);
+
 
         // 1. Determine Cache Strategy
         // We use InteractionLog (SelectionCache) for "Known Profile Fields" and "Structured Inputs" (Select/Radio).
@@ -1956,7 +1949,7 @@ function attachSelfCorrectionTrigger(element) {
         //     scope: scope,
         //     element: element
         // };
-        console.log('fieldObj', fieldObj);
+
         // Strategy A: Non-Text Inputs (always explicit selection)
         if (isNonTextInput && window.SelectionCache) {
             await window.SelectionCache.cacheSelection(fieldObj, label, newValue);

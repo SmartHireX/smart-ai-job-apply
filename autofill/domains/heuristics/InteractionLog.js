@@ -156,6 +156,7 @@ async function saveMetadata(metadata) {
 // ============================================================================
 
 let _cacheLock = Promise.resolve();
+const _keyLocks = {}; // Per-bucket locks for granular concurrency control
 
 /**
  * Determine the "Index" of the field (0, 1, 2)
@@ -808,30 +809,67 @@ function getCanonicalKey(key) {
  * @param {boolean} isSelected - True to add, False to remove
  */
 async function updateMultiSelection(field, label, value, isSelected) {
-    console.log('in updateMultiSelection', field, label, value, isSelected);
+    // 1. Direct Retrieval using Metadata
+    // Priority: field.cache_label -> generateSemanticKey
+    let storageKey = field.cache_label;
+    let semanticType = field.cache_label;
+
+    if (!storageKey) {
+        const keyData = generateSemanticKey(field, label);
+        storageKey = keyData.key;
+        semanticType = keyData.key;
+    }
+
+    if (!storageKey) return; // Should not happen with new sidebar logic
+
+    // 2. Determine Strategy based on Instance Type
+    // Priority: field.instance_type -> determineCacheStrategy
+    let targetCacheKey = null;
+    if (field.instance_type === 'ATOMIC_MULTI') {
+        targetCacheKey = CACHE_KEYS.ATOMIC_MULTI;
+    } else if (field.instance_type === 'ATOMIC_SINGLE') {
+        targetCacheKey = CACHE_KEYS.ATOMIC_SINGLE;
+    } else if (field.instance_type === 'SECTIONAL_MULTI') {
+        targetCacheKey = CACHE_KEYS.SECTIONAL_MULTI;
+    } else {
+        targetCacheKey = determineCacheStrategy(semanticType, field);
+    }
+
+    // 3. Routing Logic
+    if (targetCacheKey !== CACHE_KEYS.ATOMIC_MULTI) {
+        // For non-multi fields, we only care about selection (overwrite)
+        if (isSelected) {
+            return cacheSelection(field, label, value);
+        }
+        return;
+    }
+
+    // GLOBAL LOCK: Strictly serialize all updates to prevent race conditions
     const currentOp = _cacheLock.then(async () => {
-        const { key: semanticType } = generateSemanticKey(field, label);
-        console.log('semanticType', semanticType);
-        if (!semanticType) return;
-
-        const targetCacheKey = determineCacheStrategy(semanticType, field);
-        console.log('targetCacheKey', targetCacheKey);
-        if (targetCacheKey !== CACHE_KEYS.ATOMIC_MULTI) {
-            // For non-multi fields, we only care about selection (overwrite)
-            if (isSelected) {
-                return cacheSelection(field, label, value);
-            }
-            return; // Ignore deselection for single-value fields (or implement clear logic if needed)
-        }
-
         const cache = await getCache(targetCacheKey);
-        const storageKey = getCanonicalKey(semanticType);
-        console.log('storageKey', storageKey);
-        console.log('cache', cache);
-        if (!cache[storageKey]) {
-            cache[storageKey] = { value: [], useCount: 0, confidence: 0.75, variants: [] };
+
+        // Canonicalize key for storage consistency
+        // Uses simple normalization to avoid subtle mismatches
+        const canonicalKey = storageKey ? storageKey.toLowerCase().trim() : '';
+
+        // 4. Initialize if missing
+        if (!cache[canonicalKey]) {
+            cache[canonicalKey] = {
+                value: [],
+                useCount: 0,
+                confidence: 0.75,
+                variants: [],
+                type: 'ATOMIC_MULTI',
+                scope: field.scope || 'GLOBAL'
+            };
         }
-        const entry = cache[storageKey];
+        const entry = cache[canonicalKey];
+
+        // Ensure metadata sync
+        if (field.instance_type) entry.type = field.instance_type;
+        if (field.scope) entry.scope = field.scope;
+
+        // 5. Array Update Logic (Add/Remove)
 
         // Normalize Input
         let inputPayload = value;
@@ -839,12 +877,13 @@ async function updateMultiSelection(field, label, value, isSelected) {
             inputPayload = value.split(',').map(s => s.trim()).filter(s => s);
         }
         const valuesToProcess = Array.isArray(inputPayload) ? inputPayload : [inputPayload];
-
+        console.log("entry", entry);
         // Normalize Existing
         let existingArray = [];
         if (Array.isArray(entry.value)) existingArray = entry.value;
         else if (typeof entry.value === 'string' && entry.value) existingArray = [entry.value];
 
+        // Use a Set for unique values
         const set = new Set(existingArray);
 
         valuesToProcess.forEach(val => {
@@ -854,7 +893,6 @@ async function updateMultiSelection(field, label, value, isSelected) {
                 set.delete(val);
             }
         });
-
         entry.value = Array.from(set);
         entry.lastUsed = Date.now();
 
@@ -872,6 +910,7 @@ async function updateMultiSelection(field, label, value, isSelected) {
 
     }).catch(err => console.error('[InteractionLog] Error in updateMultiSelection:', err));
 
+    // Update global lock
     _cacheLock = currentOp;
     await currentOp;
 }
@@ -879,14 +918,17 @@ async function updateMultiSelection(field, label, value, isSelected) {
 /**
  * Cache a field selection
  */
+/**
+ * Cache a field selection
+ */
 async function cacheSelection(field, label, value) {
-    const currentOp = _cacheLock.then(async () => {
-        // 1. Generate Key
-        const { key: semanticType, isML } = generateSemanticKey(field, label);
-        if (!semanticType) return;
+    // 1. Generate Key
+    const { key: semanticType, isML } = generateSemanticKey(field, label);
+    if (!semanticType) return;
 
-        // 2. Determine Storage Strategy
-        const targetCacheKey = determineCacheStrategy(semanticType, field);
+    // 2. Determine Storage Strategy
+    const targetCacheKey = determineCacheStrategy(semanticType, field);
+    const currentOp = _cacheLock.then(async () => {
         const cache = await getCache(targetCacheKey);
 
         // SAFETY: Final normalization check for generic radio/checkbox values
@@ -949,38 +991,36 @@ async function cacheSelection(field, label, value) {
                 entry.value[index] = value;
                 entry.lastUsed = Date.now();
             }
-        }
-        // B. ATOMIC_MULTI: Merged Sets (Skills, Interests)
-        else if (targetCacheKey === CACHE_KEYS.ATOMIC_MULTI) {
-            const storageKey = getCanonicalKey(semanticType);
-            if (!cache[storageKey]) cache[storageKey] = { value: [], useCount: 0, confidence: 0.75, variants: [] };
-            const entry = cache[storageKey];
+        } else {
+            // B. ATOMIC Logic (Single or Multi)
 
-            let inputPayload = value;
-            if (typeof value === 'string' && value.includes(',')) {
-                inputPayload = value.split(',').map(s => s.trim()).filter(s => s);
+            // Canonicalize key
+            const storageKey = semanticType; // generateSemanticKey returns usage key
+            const canonicalKey = getCanonicalKey(storageKey);
+
+            if (!cache[canonicalKey]) {
+                cache[canonicalKey] = {
+                    value: targetCacheKey === CACHE_KEYS.ATOMIC_MULTI ? [] : null,
+                    useCount: 0,
+                    confidence: 0.75,
+                    variants: [],
+                    type: targetCacheKey // Store type
+                };
+            }
+            const entry = cache[canonicalKey];
+
+            // ATOMIC_MULTI: BLOCK LEGACY UPDATES
+            // We strictly enforce that all multi-select updates must go through updateMultiSelection
+            // cacheSelection is only for "overwrite" values (Single, Sectional Row)
+            if (targetCacheKey === CACHE_KEYS.ATOMIC_MULTI) {
+                // console.log(`[InteractionLog] 🚫 Skipping ATOMIC_MULTI in cacheSelection (Delegated to updateMultiSelection): ${canonicalKey}`);
+                // return; // We simply do nothing here
+            } else {
+                // ATOMIC_SINGLE: Overwrite
+                entry.value = value;
             }
 
-            let existingArray = [];
-            if (Array.isArray(entry.value)) existingArray = entry.value;
-            else if (typeof entry.value === 'string' && entry.value) existingArray = [entry.value];
-
-            const set = new Set(existingArray);
-            if (Array.isArray(inputPayload)) inputPayload.forEach(i => set.add(i));
-            else if (inputPayload) set.add(inputPayload);
-
-            entry.value = Array.from(set);
-            entry.lastUsed = Date.now();
-
-            const normLabel = normalizeFieldName(label);
-            if (normLabel && !entry.variants.includes(normLabel)) entry.variants.push(normLabel);
-        }
-        // C. ATOMIC_SINGLE: Scalar Values
-        else {
-            const storageKey = getCanonicalKey(semanticType);
-            if (!cache[storageKey]) cache[storageKey] = { value: null, useCount: 0, confidence: 0.75, variants: [] };
-            const entry = cache[storageKey];
-            entry.value = value;
+            entry.useCount++;
             entry.lastUsed = Date.now();
 
             const normLabel = normalizeFieldName(label);
@@ -989,7 +1029,7 @@ async function cacheSelection(field, label, value) {
 
         await saveCache(targetCacheKey, cache);
 
-        // Meta update (FIXED: use Object.keys for length)
+        // Meta update
         const meta = await getMetadata();
         const single = await getCache(CACHE_KEYS.ATOMIC_SINGLE);
         const multi = await getCache(CACHE_KEYS.ATOMIC_MULTI);
@@ -1001,6 +1041,7 @@ async function cacheSelection(field, label, value) {
     _cacheLock = currentOp;
     await currentOp;
 }
+
 
 async function cleanupCache() {
     // Cleanup all buckets

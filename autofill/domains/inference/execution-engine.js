@@ -152,7 +152,7 @@ class ExecutionEngine {
     }
 
     _handleUserEdit(element, fieldMetadata) {
-        console.log("_handleUserEdit", element, fieldMetadata);
+
         if (!fieldMetadata) return;
 
         let newValue;
