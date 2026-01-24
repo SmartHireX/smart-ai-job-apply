@@ -290,10 +290,21 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
     const isText = (element.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'color', 'file', 'date', 'time'].includes(element.type)) || element.tagName === 'TEXTAREA';
 
     if (!isText) {
-        // INSTANT FILL for non-text inputs (Checkbox, Radio, Select)
-        // No ghosting, no delay, straight to business.
+        // VISUAL SELECTION for non-text inputs (Checkbox, Radio, Select)
+        // Show a brief "Ghost" pulse (200ms) so user sees what is being selected, 
+        // but keeps it snappy compared to the old 500ms delay.
+        element.classList.add('smarthirex-typing');
+        element.classList.add('smarthirex-ai-writing');
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        await new Promise(r => setTimeout(r, 200));
+
         setFieldValue(element, value);
+
+        element.classList.remove('smarthirex-typing');
+        element.classList.remove('smarthirex-ai-writing');
         highlightField(element, confidence);
+
         const dispatchFn = window.dispatchChangeEvents || (window.FieldUtils && window.FieldUtils.dispatchChangeEvents);
         if (typeof dispatchFn === 'function') {
             dispatchFn(element);
