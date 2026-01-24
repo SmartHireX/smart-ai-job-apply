@@ -291,6 +291,7 @@ class ExecutionEngine {
                     try {
                         console.log(`[ExecutionEngine] Clicking radio input...`);
                         targetRadio.click();
+                        targetRadio.checked = true;
                     } catch (e) {
                         console.error(`[ExecutionEngine] Input click failed`, e);
                     }
@@ -303,8 +304,17 @@ class ExecutionEngine {
                         } catch (e) {
                             console.error(`[ExecutionEngine] Label click failed`, e);
                         }
-                    } else {
-                        console.warn(`[ExecutionEngine] No label found for radio match.`);
+                    }
+
+                    // 3. NUCLEAR OPTION: Click the parent wrapper (Common in modern React UI libs)
+                    if (targetRadio.parentElement) {
+                        try {
+                            targetRadio.parentElement.click();
+                        } catch (e) { }
+
+                        if (targetRadio.parentElement.parentElement) {
+                            targetRadio.parentElement.parentElement.click();
+                        }
                     }
 
                     this.dispatchEvents(targetRadio);

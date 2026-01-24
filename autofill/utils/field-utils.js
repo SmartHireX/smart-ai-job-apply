@@ -413,6 +413,8 @@ class FieldUtils {
                     try {
                         console.log(`[FieldUtils] Clicking radio input...`);
                         bestMatch.click();
+                        // Force check just in case
+                        bestMatch.checked = true;
                     } catch (e) {
                         console.error(`[FieldUtils] Input click failed`, e);
                     }
@@ -425,9 +427,24 @@ class FieldUtils {
                         } catch (e) {
                             console.error(`[FieldUtils] Label click failed`, e);
                         }
-                    } else {
-                        console.warn(`[FieldUtils] No label found for radio match.`);
                     }
+
+                    // 3. NUCLEAR OPTION: Click the parent wrapper (Common in modern React UI libs)
+                    // Ashby often has a <div> wrapping the input and label that handles the click
+                    if (bestMatch.parentElement) {
+                        try {
+                            // console.log(`[FieldUtils] Clicking radio parent wrapper...`);
+                            bestMatch.parentElement.click();
+                        } catch (e) { }
+
+                        // Try grandparent too if parent is just a styling span
+                        if (bestMatch.parentElement.parentElement) {
+                            // console.log(`[FieldUtils] Clicking radio grandparent wrapper...`);
+                            bestMatch.parentElement.parentElement.click();
+                        }
+                    }
+
+                    this.dispatchChangeEvents(bestMatch);
 
                     this.dispatchChangeEvents(bestMatch);
                 }
