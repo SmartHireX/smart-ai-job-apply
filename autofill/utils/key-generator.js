@@ -82,15 +82,18 @@
     function generateEnterpriseCacheKey(field) {
         if (!field) return '';
 
-        // 1. Gather Signals (Score: Name > Label > ID > Context)
-        const name = splitCamelCase(field.name || '');
+        // 1. Gather Signals (Score: Label > (Name + Context))
         const label = field.label || '';
-        const id = splitCamelCase(field.id || ''); // IDs often use camelCase
+        const name = splitCamelCase(field.name || '');
         const parentContext = field.parentContext || '';
-        const placeholder = field.placeholder || '';
 
-        // Combine all raw inputs into a single "Soup"
-        const rawSoup = [name, label, id, placeholder, parentContext].filter(Boolean).join(' ');
+        // Prioritize Label. If missing, combine Name and ParentContext.
+        let rawSoup = '';
+        if (label.trim()) {
+            rawSoup = label;
+        } else {
+            rawSoup = [name, parentContext].filter(Boolean).join(' ');
+        }
 
         if (!rawSoup.trim()) return '';
 
