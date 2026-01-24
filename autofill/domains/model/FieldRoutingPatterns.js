@@ -8,10 +8,10 @@
 class FieldRoutingPatterns {
 
     // Regex for identifying Profile Questions (that should go to GlobalMemory, not MultiCache)
-    static PROFILE_QUESTIONS = /visa|sponsor|veteran|military|disability|handicap|citizen|work.?auth|ethnic|race|gender|sex\b|felony|criminal|background.?check/i;
+    static PROFILE_QUESTIONS = /\b(visa|sponsor|veteran|military|disability|handicap|citizen|work.?auth|ethnic|race|gender|sex|pronouns)\b/i;
 
     // Hard Overrides: Contexts that are NEVER sectional (Survey/Motivation/Static Questions)
-    static FLAT_MULTI_OVERRIDES = /how.*did.*hear|source|referral|motivation|interested.*in|availability|preferences|interests/i;
+    static FLAT_MULTI_OVERRIDES = /\b(how.*did.*hear|source|referral|motivation|interested.*in|availability|preferences|interests|pronouns|authorization|sponsorship|visa|legal.*consent|agreement|acknowledgment|background.*check)\b/i;
 
     /**
      * 1. Classify the Structural Role (Instance Type)
@@ -24,67 +24,77 @@ class FieldRoutingPatterns {
         const context = [field.label, field.name, field.parentContext].filter(Boolean).join(' ').toLowerCase();
 
         // A. HARD OVERRIDE GUARDRAIL (High Priority)
-        // If it matches a known flat multi-select pattern, force ATOMIC_MULTI immediately.
         if (this.FLAT_MULTI_OVERRIDES.test(context)) {
-            // console.log(`🛡️ [Routing] Hard Override Triggered: "${context}" -> ATOMIC_MULTI`);
-            return 'ATOMIC_MULTI';
+            return isCheckOrMulti ? 'ATOMIC_MULTI' : 'ATOMIC_SINGLE';
         }
 
         // B. SPECIAL CASE: ATOMIC_MULTI Sets (Skills, Interests)
-        const atomicSetKeywords = /skills|technologies|tools|languages|hobbies|interests|competencies/i;
+        const atomicSetKeywords = /\b(skills|technologies|tools|languages|hobbies|interests|competencies)\b/i;
         if (isCheckOrMulti && atomicSetKeywords.test(context)) {
             return 'ATOMIC_MULTI';
         }
 
         // C. MULTI-SIGNAL SECTIONAL DETECTION (The Opt-In Engine)
-        // A field must accumulate at least 2 independent signals to be SECTIONAL_MULTI.
         if (isCheckOrMulti || field.field_index !== null) {
             const score = this.calculateSectionalScore(field, context);
-            field.sectionalScore = score; // Store for debug logging in Pipeline
+            field.sectionalScore = score;
 
             if (score >= 2) {
                 return 'SECTIONAL_MULTI';
             }
         }
 
-        // D. ATOMIC_MULTI (Generic Checkboxes/MultiSelects that didn't hit sectional threshold)
+        // D. ATOMIC_MULTI (Generic Checkboxes/MultiSelects)
         if (isCheckOrMulti) {
             return 'ATOMIC_MULTI';
         }
 
-        // E. ATOMIC_SINGLE (Global Facts like Email, Phone, Single-Selects)
         return 'ATOMIC_SINGLE';
     }
 
     /**
-     * Calculate sectional eligibility score
-     * threshold >= 2 -> SECTIONAL_MULTI
+     * Calculate sectional eligibility score (Hardened V2)
      */
     static calculateSectionalScore(field, context) {
         let score = 0;
         const ctx = context || [field.label, field.name, field.parentContext].filter(Boolean).join(' ').toLowerCase();
 
-        // Signal 1: Keyword Signal (+1)
-        const sectionKeywords = /job.*title|role|position|employer|company|work|employment|school|university|degree|education|graduation|major|field_of_study/i;
+        // Signal 1: Hardened Keyword Signal (+1)
+        // Require word boundaries and compound terms for weaker words to avoid "employer" in survey triggers
+        const sectionKeywords = /\b(job.*title|role|position|employer.*name|company.*name|work.*experience|employment.*history|school.*name|university.*name|degree.*earned|graduation.*year|field.*of.*study)\b/i;
         if (sectionKeywords.test(ctx)) score += 1;
 
-        // Signal 2: Index Signal (+1)
-        // Check for explicit indexing in name/id like _0, [1], or card sequences
-        const indexPattern = /[\b_.-]\d+[\b_.-]|card|item|repeater/i;
-        const explicitIndex = (field.name && indexPattern.test(field.name)) || (field.id && indexPattern.test(field.id));
-        if (explicitIndex) score += 1;
+        // Signal 2: Hardened Index Signal (+1)
+        // Exclude UUID patterns: If name/id is long (>25) and ends in -0 or -1, ignore it.
+        const indexPattern = /[\b_.-]\d+[\b_.-]|\b(card|item|repeater)\b/i;
+        const name = field.name || '';
+        const id = field.id || '';
 
-        // Signal 3: Structural/Position Signal (+1)
-        // If the indexing service assigned an index > 0, it's a strong indicator of repetition
-        if (field.field_index > 0) score += 1;
+        let hasRealIndex = false;
+        if (indexPattern.test(name) || indexPattern.test(id)) {
+            const isUUID = (name.length > 25 && /^[0-9a-f-]{30,}/i.test(name)) || (id.length > 25 && /^[0-9a-f-]{30,}/i.test(id));
+            if (!isUUID) hasRealIndex = true;
+        }
 
-        // Signal 4: Container Signal (+1) (If DOM element available)
+        if (hasRealIndex) score += 1;
+
+        // Signal 3: Structural Signal (+1) (Capped)
+        // Capping index at 50; values like 4199 are usually DOM walk errors or flat list overflow
+        if (field.field_index > 0 && field.field_index < 50) score += 1;
+
+        // Signal 4: Container Signal (+1)
         if (field.element) {
             const repeaterContainer = field.element.closest('.repeater, .repeating-section, .ashby-repeater, .fieldset-repeater, [data-repeating]');
             if (repeaterContainer) score += 1;
         }
 
-        return score;
+        // Negative Signal: Legal/Profile Bias (-1)
+        // If it looks strongly like a profile or legal question, reduce sectional confidence
+        if (this.PROFILE_QUESTIONS.test(ctx) || /\b(proof|authorization|sponsorship|visa)\b/i.test(ctx)) {
+            score -= 1;
+        }
+
+        return Math.max(0, score);
     }
 
     /**
