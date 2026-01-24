@@ -56,10 +56,18 @@ class FieldUtils {
             if (label) return label.innerText.trim();
         }
 
-        // Try parent label
+        // Try closest label (parent)
         const parentLabel = element.closest('label');
         if (parentLabel) {
             return parentLabel.innerText.replace(element.value || '', '').trim();
+        }
+
+        // Try sibling label (common in styled radios like Ashby)
+        if (element.parentElement && element.parentElement.nextElementSibling) {
+            const next = element.parentElement.nextElementSibling;
+            if (next.tagName === 'LABEL') {
+                return next.innerText.trim();
+            }
         }
 
         // Try aria-label
@@ -387,10 +395,18 @@ class FieldUtils {
                 if (bestMatch) {
                     // Always prefer clicking the label for radio buttons
                     // This handles both hidden inputs (Ashby) and standard visible ones safely
-                    const label = bestMatch.labels?.[0] || document.querySelector(`label[for="${CSS.escape(bestMatch.id)}"]`);
+
+                    // robust label finding (Id, Labels property, or Sibling)
+                    let label = bestMatch.labels?.[0] || document.querySelector(`label[for="${CSS.escape(bestMatch.id)}"]`);
+
+                    if (!label && bestMatch.parentElement && bestMatch.parentElement.nextElementSibling?.tagName === 'LABEL') {
+                        label = bestMatch.parentElement.nextElementSibling;
+                    }
 
                     if (label) {
                         label.click();
+                        // Also try clicking the wrapper if label click fails (double tap)
+                        if (bestMatch.parentElement?.click) bestMatch.parentElement.click();
                     } else {
                         bestMatch.click();
                     }
