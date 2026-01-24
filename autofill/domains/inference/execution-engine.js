@@ -92,9 +92,14 @@ class ExecutionEngine {
         // 1. Scroll into view
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // 2. Focus
-        element.dispatchEvent(new Event('focus', { bubbles: true }));
-        element.focus();
+        // 2. Focus (Safely)
+        try {
+            element.dispatchEvent(new Event('focus', { bubbles: true }));
+            element.focus({ preventScroll: true }); // Prevent jumping for hidden elements
+        } catch (e) {
+            // Use FieldUtils visibility check if available, otherwise assume it's hidden/radio
+            // console.warn('[ExecutionEngine] Focus failed (likely hidden element)', e);
+        }
 
         // 3. Set Value (Visual / Human Speed)
         if (window.showGhostingAnimation) {
@@ -231,10 +236,10 @@ class ExecutionEngine {
         console.log(`🛠️ [SetValueRobust] Tag: "${tagName}", Type: "${type}", Target: "${value}"`);
 
         // Special Radio Button Handling
-        // HISTORICAL RESTORATION: Keep it simple.
         if (type === 'radio') {
+            // STRATEGY: Progressive Escalation
+            // 1. Try Simple Click
             try {
-                // Just click it. Trust the element.
                 if (!element.checked) {
                     console.log(`[ExecutionEngine] Clicking radio...`);
                     element.click();
@@ -242,6 +247,29 @@ class ExecutionEngine {
             } catch (e) {
                 console.error(`[ExecutionEngine] Radio click failed`, e);
             }
+
+            // 2. Fallback: Label Click (If Input Click Failed)
+            if (!element.checked) {
+                const label = element.labels?.[0] ||
+                    document.querySelector(`label[for="${CSS.escape(element.id || '')}"]`) ||
+                    (element.parentElement && element.parentElement.nextElementSibling?.tagName === 'LABEL' ? element.parentElement.nextElementSibling : null);
+
+                if (label) {
+                    try {
+                        console.log(`[ExecutionEngine] Fallback: Clicking label...`);
+                        label.click();
+                    } catch (e) { }
+                }
+            }
+
+            // 3. Last Resort: Native Setter
+            if (!element.checked) {
+                try {
+                    const nativeLast = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked')?.set;
+                    if (nativeLast) { nativeLast.call(element, true); }
+                } catch (e) { }
+            }
+
             this.dispatchEvents(element);
             return;
         }

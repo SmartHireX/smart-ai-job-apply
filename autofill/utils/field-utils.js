@@ -383,18 +383,37 @@ class FieldUtils {
 
         // 1. Radio Buttons (Complex Group Handling)
         if (type === 'radio') {
-            // HISTORICAL RESTORATION: Keep it simple.
-            // If we have the element, just click it.
-            // The upstream logic (FormAnalyzer) has already identified this as the target choice.
-            // We don't need to re-search the DOM or find labels. 
-            // Programmatic click() on an input triggers 'change' events even if hidden.
-
+            // STRATEGY: Progressive Escalation
+            // 1. Try Simple Click (Historical)
             try {
                 if (!element.checked) {
                     element.click();
                 }
             } catch (e) {
                 console.warn('[FieldUtils] Radio click failed', e);
+            }
+
+            // 2. Verification & Fallback (Ashby Specific)
+            // If simple click didn't work (hidden input ignored), try clicking the label
+            if (!element.checked) {
+                // console.log('[FieldUtils] Input click failed to check. Trying label...');
+                let label = element.labels?.[0];
+                if (!label && element.id) {
+                    label = document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
+                }
+                if (!label && element.parentElement && element.parentElement.nextElementSibling?.tagName === 'LABEL') {
+                    label = element.parentElement.nextElementSibling;
+                }
+
+                if (label) {
+                    try { label.click(); } catch (e) { }
+                }
+            }
+
+            // 3. Final Resort: Native Setter (React Bypass)
+            if (!element.checked) {
+                // console.log('[FieldUtils] Label click failed. Forcing state...');
+                this.setNativeChecked(element, true);
             }
 
             this.dispatchChangeEvents(element);
