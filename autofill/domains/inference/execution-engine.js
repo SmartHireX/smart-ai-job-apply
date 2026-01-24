@@ -291,7 +291,12 @@ class ExecutionEngine {
                     try {
                         console.log(`[ExecutionEngine] Clicking radio input...`);
                         targetRadio.click();
-                        targetRadio.checked = true;
+
+                        // Force check using Native Setter (React Bypass)
+                        const nativeLast = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked').set;
+                        if (nativeLast) { nativeLast.call(targetRadio, true); }
+                        else { targetRadio.checked = true; }
+
                     } catch (e) {
                         console.error(`[ExecutionEngine] Input click failed`, e);
                     }

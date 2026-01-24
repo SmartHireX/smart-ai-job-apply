@@ -143,6 +143,25 @@ class FieldUtils {
     }
 
     /**
+     * Set native checked state (triggers React/Vue change detection)
+     * @param {HTMLElement} element - Checkbox/Radio element
+     * @param {boolean} checked - Checked state to set
+     */
+    static setNativeChecked(element, checked) {
+        const nativeCheckedSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype,
+            'checked'
+        ).set;
+
+        try {
+            nativeCheckedSetter.call(element, checked);
+        } catch (error) {
+            // console.warn('Native checked setter failed, falling back to direct assignment:', error);
+            element.checked = checked;
+        }
+    }
+
+    /**
      * Dispatch change events to trigger framework reactivity
      * @param {HTMLElement} element - Input element
      */
@@ -413,8 +432,8 @@ class FieldUtils {
                     try {
                         console.log(`[FieldUtils] Clicking radio input...`);
                         bestMatch.click();
-                        // Force check just in case
-                        bestMatch.checked = true;
+                        // Force check using Native Setter (React Bypass)
+                        this.setNativeChecked(bestMatch, true);
                     } catch (e) {
                         console.error(`[FieldUtils] Input click failed`, e);
                     }
