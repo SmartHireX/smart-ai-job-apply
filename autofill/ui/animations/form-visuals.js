@@ -291,19 +291,42 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
 
     if (!isText) {
         // VISUAL SELECTION for non-text inputs (Checkbox, Radio, Select)
-        // Show a brief "Ghost" pulse (200ms) so user sees what is being selected, 
-        // but keeps it snappy compared to the old 500ms delay.
-        element.classList.add('smarthirex-typing');
-        element.classList.add('smarthirex-ai-writing');
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // HELPER: Find the VISIBLE element to animate (since the input might be hidden/opacity:0)
+        let visualTarget = element;
+        if (element.type === 'checkbox' || element.type === 'radio') {
+            if (element.id) {
+                const label = document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
+                if (label) visualTarget = label;
+            }
+            // If no label for, check parent
+            if (visualTarget === element && element.parentElement.tagName === 'LABEL') {
+                visualTarget = element.parentElement;
+            }
+            // If implicit label is hidden or wrapper is needed (common in frameworks)
+            // Check if input opacity is 0 or display none
+            const style = window.getComputedStyle(element);
+            if (style.opacity === '0' || style.visibility === 'hidden' || style.display === 'none') {
+                // Try next sibling (React pattern: input + span)
+                if (element.nextElementSibling) visualTarget = element.nextElementSibling;
+                // Or parent wrapper if next sibling is not useful
+                else if (element.parentElement) visualTarget = element.parentElement;
+            }
+        }
+
+        // Show a brief "Ghost" pulse (200ms) on the VISIBLE target
+        visualTarget.classList.add('smarthirex-typing');
+        visualTarget.classList.add('smarthirex-ai-writing');
+        // Scroll the ACTUAL element or visual target? Visual is safer for centering.
+        visualTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
         await new Promise(r => setTimeout(r, 200));
 
-        setFieldValue(element, value);
+        setFieldValue(element, value); // Set value on the REAL input
 
-        element.classList.remove('smarthirex-typing');
-        element.classList.remove('smarthirex-ai-writing');
-        highlightField(element, confidence);
+        visualTarget.classList.remove('smarthirex-typing');
+        visualTarget.classList.remove('smarthirex-ai-writing');
+        highlightField(visualTarget, confidence); // Highlight the visible part
 
         const dispatchFn = window.dispatchChangeEvents || (window.FieldUtils && window.FieldUtils.dispatchChangeEvents);
         if (typeof dispatchFn === 'function') {
@@ -325,7 +348,6 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
 
     element.focus();
 
-    // Check if text input (Redundant declaration removed)
     if (isText) {
         const chars = String(value).split('');
 
@@ -349,31 +371,8 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
             await new Promise(r => setTimeout(r, Math.random() * 30 + 35));
         }
     } else {
-        // For non-text fields (Radio, Checkbox, Select, Date, File)
-        // Longer pause so user sees the "ghost" pulse before the selection happens
-        await new Promise(r => setTimeout(r, 500));
-
-        // Use Global Export or FieldUtils
-        const fillFn = window.setFieldValue || (window.FieldUtils && window.FieldUtils.setFieldValue);
-        if (typeof fillFn === 'function') {
-            const actualTarget = fillFn(element, value);
-            if (actualTarget && actualTarget !== element) {
-                // If FieldUtils pivoted to a better target (e.g. correct radio in a group)
-                // update our local reference for the highlight and dispatch
-                element.classList.remove('smarthirex-typing');
-                element.classList.remove('smarthirex-ai-writing');
-                element = actualTarget;
-                element.classList.add('smarthirex-typing');
-                element.classList.add('smarthirex-ai-writing');
-            }
-        } else {
-            // Minimal Fallback
-            if (element.type === 'radio' || element.type === 'checkbox') {
-                element.checked = true;
-            } else {
-                element.value = value;
-            }
-        }
+        // Fallback for unexpected cases
+        setFieldValue(element, value);
     }
 
     element.classList.remove('smarthirex-typing');
