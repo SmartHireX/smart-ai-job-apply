@@ -364,7 +364,6 @@ class FieldUtils {
 
         // 1. Radio Buttons (Complex Group Handling)
         if (type === 'radio') {
-            console.log(`[FieldUtils] Handling Radio Set: Name="${element.name}", Target="${value}"`);
             const name = element.name;
             if (name) {
                 const group = document.querySelectorAll(`input[name="${CSS.escape(name)}"]`);

@@ -26,7 +26,6 @@ class ExecutionEngine {
      */
     async fill(selectorOrElement, value, confidence = 1.0, fieldMetadata = null, source = null) {
         let element = selectorOrElement;
-        // console.log(`[ExecutionEngine] Fill requested for:`, selectorOrElement);
         if (typeof selectorOrElement === 'string') {
             try {
                 element = document.querySelector(selectorOrElement);

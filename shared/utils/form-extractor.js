@@ -156,7 +156,7 @@ class FormExtractor {
     extractLabel(element, container = document) {
         // Method 0: Centralized FANG Logic (Priority Override)
         if (typeof window.getFieldLabel === 'function') {
-            console.log(`[FormExtractor] Calling window.getFieldLabel for element:`, element);
+            //console.log(`[FormExtractor] Calling window.getFieldLabel for element:`, element);
             const visualLabel = window.getFieldLabel(element);
             if (visualLabel && visualLabel !== 'Unknown Field') {
                 return visualLabel;

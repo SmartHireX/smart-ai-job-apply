@@ -300,8 +300,6 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
         // For non-text fields, show brief animation then fill
         await new Promise(r => setTimeout(r, 200));
 
-        console.log(`[FormVisuals] calling setFieldValue for ${element.type} with value: ${value}`);
-
         // SPECIAL HANDLING FOR RADIOS (Visual Click)
         if (element.type === 'radio') {
             // 1. Direct Input Click (Failsafe)
