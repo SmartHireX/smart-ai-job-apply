@@ -383,7 +383,21 @@ function extractFieldsFromDOM(source) {
         // GROUPING LOGIC for Radios and Checkboxes
         if (type === 'radio' || type === 'checkbox') {
             const wrapper = input.closest('.form-group, fieldset, tr, .radio-group, .checkbox-group, div[role="group"]');
-            const groupKey = input.name || (wrapper ? `wrapper_${Array.from(root.querySelectorAll('*')).indexOf(wrapper)}` : null);
+
+            // A. Check for shared name in this container/wrapper
+            const name = input.name;
+            const siblingsInWrapper = wrapper ? Array.from(wrapper.querySelectorAll(`input[type="${type}"]`)) : [];
+            const hasSharedName = name && siblingsInWrapper.every(s => s.name === name);
+
+            let groupKey = '';
+            if (hasSharedName) {
+                groupKey = `name:${name}`;
+            } else if (wrapper) {
+                // B. Anonymous Group (Unique or missing names)
+                groupKey = `wrapper:${Array.from(root.querySelectorAll('*')).indexOf(wrapper)}`;
+            } else if (name) {
+                groupKey = `name:${name}`;
+            }
 
             if (groupKey && processedGroups.has(groupKey)) {
                 // Add option to existing group
@@ -402,7 +416,7 @@ function extractFieldsFromDOM(source) {
                     id: input.id || '', // First ID
                     label: label, // Initial label
                     value: '', // No default value for group
-                    selector: input.name ? `input[name="${safeName}"]` : `input[type="${type}"]`,
+                    selector: input.name && hasSharedName ? `input[name="${safeName}"]` : `input[type="${type}"]`,
                     options: [{
                         label: label,
                         value: input.value,

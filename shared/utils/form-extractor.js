@@ -45,8 +45,7 @@ class FormExtractor {
     extractInputs(container) {
         const inputs = container.querySelectorAll('input');
         const fields = [];
-        const processedGroups = new Set(); // For name-based grouping
-        const processedWrappers = new Set(); // For context-based grouping (anonymous groups)
+        const processedGroups = new Set(); // Stores group keys (name or wrapper index)
 
         inputs.forEach(input => {
             // Skip hidden, submit, button
@@ -57,19 +56,32 @@ class FormExtractor {
             const type = (input.type || '').toLowerCase();
             const isStructured = ['radio', 'checkbox'].includes(type);
 
-            // 1. Standard Name-Based Grouping
-            if (isStructured && input.name) {
-                if (processedGroups.has(input.name)) return;
-                processedGroups.add(input.name);
-            }
-            // 2. Context-Based Grouping (for unique/missing names)
-            else if (isStructured) {
+            if (isStructured) {
                 const wrapper = input.closest('.form-group, fieldset, tr, .radio-group, .checkbox-group, div[role="group"]');
-                if (wrapper) {
-                    // If we've already processed a group from this specific wrapper, skip
-                    if (processedWrappers.has(wrapper)) return;
-                    processedWrappers.add(wrapper);
+                let groupKey = '';
+
+                // A. Check for shared name in this container/wrapper
+                const name = input.name;
+                const siblingsInWrapper = wrapper ? Array.from(wrapper.querySelectorAll(`input[type="${type}"]`)) : [];
+                const hasSharedName = name && siblingsInWrapper.every(s => s.name === name);
+
+                if (hasSharedName) {
+                    groupKey = `name:${name}`;
+                } else if (wrapper) {
+                    // B. Anonymous Group (Unique or missing names)
+                    // Use the wrapper's index or unique ID as the key
+                    const allNodes = Array.from(container.querySelectorAll('*'));
+                    groupKey = `wrapper:${allNodes.indexOf(wrapper)}`;
+                } else if (name) {
+                    // C. Fallback to name if no wrapper found
+                    groupKey = `name:${name}`;
+                } else {
+                    // D. Individual field (no name, no wrapper)
+                    groupKey = `element:${Array.from(container.querySelectorAll('input')).indexOf(input)}`;
                 }
+
+                if (processedGroups.has(groupKey)) return;
+                processedGroups.add(groupKey);
             }
 
             const field = this.buildFieldObject(input, container);
