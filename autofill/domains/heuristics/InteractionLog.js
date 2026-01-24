@@ -159,16 +159,27 @@ let _cacheLock = Promise.resolve();
 
 /**
  * Determine the "Index" of the field (0, 1, 2)
+ * Bucket-Aware (V4): Returns null for atomic/global fields
  */
 function getFieldIndex(field, label) {
+    // 1. ARCHITECTURAL OVERRIDE (High Priority)
+    // If we know this field is ATOMIC, it has no index.
+    if (field && field.instance_type && field.instance_type !== 'SECTIONAL_MULTI') {
+        return null;
+    }
+
     if (field && typeof field.field_index === 'number') return field.field_index;
+
     if (window.IndexingService) {
         const attrIndex = window.IndexingService.detectIndexFromAttribute ? window.IndexingService.detectIndexFromAttribute(field) : null;
         if (attrIndex !== null) return attrIndex;
+
         const labelIndex = window.IndexingService.detectIndexFromLabel ? window.IndexingService.detectIndexFromLabel(label) : null;
         if (labelIndex !== null) return labelIndex;
     }
-    return 0;
+
+    // Default to null instead of 0 to prevent noisy global metadata
+    return null;
 }
 
 // ============================================================================
