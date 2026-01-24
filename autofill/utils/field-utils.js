@@ -24,7 +24,9 @@ class FieldUtils {
         }
 
         // Check opacity
-        if (parseFloat(style.opacity) === 0) {
+        // EXCEPTION: Radio buttons and checkboxes are often hidden (opacity: 0) 
+        // and replaced by custom styled labels. We must treat them as "visible" to interacting logic.
+        if (parseFloat(style.opacity) === 0 && element.type !== 'radio' && element.type !== 'checkbox') {
             return false;
         }
 
