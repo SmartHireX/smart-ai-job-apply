@@ -71,14 +71,44 @@ class IndexingService {
 
     /**
      * Detect index from name/id attributes like "job_title_1"
+     * Anchored and UUID-Safe (V3)
      */
     detectIndexFromAttribute(field) {
         const str = (field.name || field.id || '');
-        // Matches "_0", "-0", "[0]" at end or middle
-        const match = str.match(/[_\-\[](\d+)[_\-\]]?$/) || str.match(/[_\-\[](\d+)[_\-\]]?/);
-        if (match) {
-            return parseInt(match[1], 10);
+        if (!str) return null;
+
+        // 1. UUID PROTECTION
+        // Framework IDs (Ashby, Lever, Greenhouse) often contain numeric segments or end in framework-assigned -0/-1
+        // If the string looks like a long UUID, we ignore segments unless they are clearly structural.
+        const isLongIdentifier = str.length > 25;
+        const reflectsUUID = /^[0-9a-f-]{30,}/i.test(str) || /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i.test(str);
+
+        // 2. ANCHORED INDEX DETECTION
+        // We only match indices that are preceded by a separator AND either at the end 
+        // OR follow a specific structural keyword like "employer_0_name"
+        const patterns = [
+            /[\b_.-](\d+)$/,              // Suffix: -0, _1, .2
+            /[\[](\d+)[\]]/,               // Array: [0], [1]
+            /[\b_.-](\d+)[\b_.-]/          // Infix: _0_, -1-
+        ];
+
+        for (const pattern of patterns) {
+            const match = str.match(pattern);
+            if (match) {
+                const val = parseInt(match[1], 10);
+
+                // If it's a UUID, only accept small indices (< 20) that are CLEARLY suffixes.
+                // Random segments like 4538 inside a UUID must be rejected.
+                if (reflectsUUID || isLongIdentifier) {
+                    const isSuffix = str.endsWith(match[0]);
+                    if (isSuffix && val < 20) return val;
+                    continue; // Ignore random infix numbers in UUIDs
+                }
+
+                return val;
+            }
         }
+
         return null;
     }
 

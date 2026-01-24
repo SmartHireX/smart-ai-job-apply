@@ -200,27 +200,29 @@ class PipelineOrchestrator {
             // --- STRUCTURAL CLASSIFICATION (The Core Upgrade) ---
             if (window.FIELD_ROUTING_PATTERNS) {
                 field.instance_type = window.FIELD_ROUTING_PATTERNS.classifyInstanceType(field);
+
+                // CLEANUP: Only SECTIONAL_MULTI carries a row index.
+                // This prevents atomic fields from carrying noisy position metadata.
+                if (field.instance_type !== 'SECTIONAL_MULTI') {
+                    field.field_index = null;
+                }
+
                 field.scope = window.FIELD_ROUTING_PATTERNS.classifyScope(field);
 
                 // Debug Logging for Classification (High Verbosity for Verification)
                 const label = (field.ml_prediction?.label || field.label || '').substring(0, 20);
-                if (field.instance_type === 'SECTIONAL_MULTI' || field.sectionalScore > 0) {
+                if (field.instance_type === 'SECTIONAL_MULTI' || (field.sectionalScore > 0)) {
                     // console.log(`🧬 [Pipeline] Struct: "${label}" -> Bucket: ${field.instance_type} | Scope: ${field.scope} | Score: ${field.sectionalScore || 0}`);
                 }
+            }
 
-                // CLEANUP: If scope is GLOBAL, the index is irrelevant and should be removed
-                if (field.scope === 'GLOBAL') {
-                    field.field_index = null;
-                }
-
-                // IMMUTABILITY ENFORCEMENT
-                // Verify these properties cannot be changed downstream
-                try {
-                    Object.defineProperty(field, 'instance_type', { writable: false, configurable: false });
-                    Object.defineProperty(field, 'scope', { writable: false, configurable: false });
-                } catch (e) {
-                    console.warn('[Pipeline] Could not freeze field structure', e);
-                }
+            // IMMUTABILITY ENFORCEMENT
+            // Verify these properties cannot be changed downstream
+            try {
+                Object.defineProperty(field, 'instance_type', { writable: false, configurable: false });
+                Object.defineProperty(field, 'scope', { writable: false, configurable: false });
+            } catch (e) {
+                console.warn('[Pipeline] Could not freeze field structure', e);
             }
 
             return field;

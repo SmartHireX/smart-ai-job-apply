@@ -65,15 +65,11 @@ class FieldRoutingPatterns {
         if (sectionKeywords.test(ctx)) score += 1;
 
         // Signal 2: Hardened Index Signal (+1)
-        // Exclude UUID patterns: If name/id is long (>25) and ends in -0 or -1, ignore it.
-        const indexPattern = /[\b_.-]\d+[\b_.-]|\b(card|item|repeater)\b/i;
-        const name = field.name || '';
-        const id = field.id || '';
-
+        // Delegate to IndexingService which now implements anchored regex and UUID protection (V3)
         let hasRealIndex = false;
-        if (indexPattern.test(name) || indexPattern.test(id)) {
-            const isUUID = (name.length > 25 && /^[0-9a-f-]{30,}/i.test(name)) || (id.length > 25 && /^[0-9a-f-]{30,}/i.test(id));
-            if (!isUUID) hasRealIndex = true;
+        if (window.IndexingService && typeof window.IndexingService.detectIndexFromAttribute === 'function') {
+            const detectedIdx = window.IndexingService.detectIndexFromAttribute(field);
+            if (detectedIdx !== null) hasRealIndex = true;
         }
 
         if (hasRealIndex) score += 1;
