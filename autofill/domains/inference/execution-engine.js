@@ -238,21 +238,32 @@ class ExecutionEngine {
                 const group = document.querySelectorAll(`input[name="${CSS.escape(name)}"]`);
                 let targetRadio = null;
 
-                // Find the radio button with the matching value (case-insensitive)
-                const targetValue = String(value).toLowerCase().trim();
-                for (const radio of group) {
-                    const radioValue = String(radio.value).toLowerCase().trim();
-                    if (radioValue === targetValue) {
-                        targetRadio = radio;
-                        break;
+                // Ashby-specific: Inputs often have value="on" and rely on React state
+                // If the input value is generic ('on', 'true'), we MUST rely on the label text (Fuzzy Match)
+
+                // Priority 1: Exact Value Match (only if value is meaningful)
+                if (targetValue !== 'on' && targetValue !== 'true') {
+                    for (const radio of group) {
+                        const radioValue = String(radio.value).toLowerCase().trim();
+                        if (radioValue === targetValue) {
+                            targetRadio = radio;
+                            break;
+                        }
                     }
                 }
 
-                // If no exact match, try matching by label text
+                // Priority 2: Label Match (Fuzzy) - Critical for Ashby
                 if (!targetRadio) {
                     for (const radio of group) {
-                        const label = radio.labels?.[0]?.textContent?.toLowerCase().trim() || '';
-                        if (label === targetValue || label.includes(targetValue)) {
+                        // Standard Label Check
+                        let labelText = radio.labels?.[0]?.textContent?.toLowerCase().trim();
+
+                        // Sibling Label Check (Fallback)
+                        if (!labelText && radio.parentElement && radio.parentElement.nextElementSibling?.tagName === 'LABEL') {
+                            labelText = radio.parentElement.nextElementSibling.innerText.trim().toLowerCase();
+                        }
+
+                        if (labelText && (labelText === targetValue || labelText.includes(targetValue) || targetValue.includes(labelText))) {
                             targetRadio = radio;
                             break;
                         }
@@ -262,10 +273,18 @@ class ExecutionEngine {
                 if (targetRadio) {
                     // Always prefer clicking the label for radio buttons
                     // This handles both hidden inputs (Ashby) and standard visible ones safely
-                    const label = targetRadio.labels?.[0] || document.querySelector(`label[for="${CSS.escape(targetRadio.id)}"]`);
+
+                    // Robust label finding (Id, Labels property, or Sibling)
+                    let label = targetRadio.labels?.[0] || document.querySelector(`label[for="${CSS.escape(targetRadio.id)}"]`);
+
+                    if (!label && targetRadio.parentElement && targetRadio.parentElement.nextElementSibling?.tagName === 'LABEL') {
+                        label = targetRadio.parentElement.nextElementSibling;
+                    }
 
                     if (label) {
                         label.click();
+                        // Double-tap: Click wrapper logic for deep nested listeners
+                        if (targetRadio.parentElement?.click) targetRadio.parentElement.click();
                     } else {
                         targetRadio.click();
                     }
