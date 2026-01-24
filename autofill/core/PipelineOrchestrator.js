@@ -202,9 +202,13 @@ class PipelineOrchestrator {
                 field.instance_type = window.FIELD_ROUTING_PATTERNS.classifyInstanceType(field);
                 field.scope = window.FIELD_ROUTING_PATTERNS.classifyScope(field);
 
+                // Debug Logging for Classification (High Verbosity for Verification)
+                const label = (field.ml_prediction?.label || field.label || '').substring(0, 20);
+                if (field.instance_type === 'SECTIONAL_MULTI' || field.sectionalScore > 0) {
+                    // console.log(`🧬 [Pipeline] Struct: "${label}" -> Bucket: ${field.instance_type} | Scope: ${field.scope} | Score: ${field.sectionalScore || 0}`);
+                }
+
                 // CLEANUP: If scope is GLOBAL, the index is irrelevant and should be removed
-                // to prevent confusion (e.g. Skills set showing index 0).
-                // We keep it for SECTION scope (Job Titles, Scope-Isolated Questions).
                 if (field.scope === 'GLOBAL') {
                     field.field_index = null;
                 }
@@ -542,7 +546,7 @@ class PipelineOrchestrator {
         // Use centralized routing logic
         if (window.FIELD_ROUTING_PATTERNS && typeof window.FIELD_ROUTING_PATTERNS.isMultiValueEligible === 'function') {
             const fieldContext = [field.label, field.name, field.parentContext].filter(Boolean).join(' ').toLowerCase();
-            return window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, field.type || 'text');
+            return window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, field.type || 'text', field);
         }
 
         // Fallback (should typically be handled by centralized logic)

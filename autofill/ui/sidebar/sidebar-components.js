@@ -1907,7 +1907,7 @@ function attachSelfCorrectionTrigger(element) {
         const fieldContext = [label, element.name, element.id].filter(Boolean).join(' ').toLowerCase();
 
         // Use centralized routing logic
-        const isMultiCacheEligible = window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, element.type);
+        const isMultiCacheEligible = window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, element.type, fieldObj);
 
         // (Moved cacheLabel logic up)
         // console.log(`🔍 [CacheDebug] Cache Label: ${cacheLabel} and element : `, element);
