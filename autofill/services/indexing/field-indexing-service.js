@@ -48,7 +48,7 @@ class IndexingService {
      * @returns {number} The calculated index (0-based)
      */
     getIndex(field, type) {
-        if (!type) return 0;
+        if (!type) return null;
 
         // 1. Attribute Check (Strongest Signal)
         // e.g. "edu_school_1" -> Index 1
