@@ -26,6 +26,7 @@ class ExecutionEngine {
      */
     async fill(selectorOrElement, value, confidence = 1.0, fieldMetadata = null, source = null) {
         let element = selectorOrElement;
+        // console.log(`[ExecutionEngine] Fill requested for:`, selectorOrElement);
         if (typeof selectorOrElement === 'string') {
             try {
                 element = document.querySelector(selectorOrElement);
@@ -223,6 +224,7 @@ class ExecutionEngine {
      * Robust Value Setter (Bypasses Virtual DOM locking)
      */
     async setValueRobust(element, value) {
+        console.log('in select value robust')
         const tagName = element.tagName.toLowerCase();
         const type = (element.type || '').toLowerCase();
 
@@ -244,7 +246,10 @@ class ExecutionEngine {
                 const targetValue = String(value).toLowerCase().trim();
 
                 // Priority 1: Exact Value Match (only if value is meaningful)
-                if (targetValue !== 'on' && targetValue !== 'true') {
+                if (targetValue === 'on' || targetValue === 'true' || targetValue === 'yes') {
+                    // If value is generic "True", assume specific element passed to function IS the target
+                    targetRadio = element.type === 'radio' ? element : null;
+                } else {
                     for (const radio of group) {
                         const radioValue = String(radio.value).toLowerCase().trim();
                         if (radioValue === targetValue) {

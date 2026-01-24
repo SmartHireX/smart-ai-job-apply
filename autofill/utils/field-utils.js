@@ -360,8 +360,11 @@ class FieldUtils {
         const tagName = element.tagName.toLowerCase();
         const type = (element.type || '').toLowerCase();
 
+        console.log(`[FieldUtils] setFieldValue called for ${tagName} (type: ${type}) with value: ${value}`);
+
         // 1. Radio Buttons (Complex Group Handling)
         if (type === 'radio') {
+            console.log(`[FieldUtils] Handling Radio Set: Name="${element.name}", Target="${value}"`);
             const name = element.name;
             if (name) {
                 const group = document.querySelectorAll(`input[name="${CSS.escape(name)}"]`);
@@ -372,7 +375,11 @@ class FieldUtils {
                 // If the input value is generic ('on', 'true'), we MUST rely on the label text (Fuzzy Match)
 
                 // Priority 1: Exact Value Match (only if value is meaningful)
-                if (targetValue !== 'on' && targetValue !== 'true') {
+                if (targetValue === 'on' || targetValue === 'true' || targetValue === 'yes') {
+                    // If value is generic "True", assume specific element passed to function IS the target
+                    // This handles cases where we resolved a specific selector (e.g. #male) but passed value="on"
+                    bestMatch = element;
+                } else {
                     for (const radio of group) {
                         if (radio.value.toLowerCase().trim() === targetValue) {
                             bestMatch = radio;
