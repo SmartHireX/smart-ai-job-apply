@@ -657,7 +657,7 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     }
 
     // 3. Match Logic
-    const match = findBestKeyMatch(semanticType, cache, 0.75, { mlLabel: isML ? semanticType : null, label });
+    const match = findBestKeyMatch(semanticType, cache, 0.8, { mlLabel: isML ? semanticType : null, label });
 
     // console.log(`🔍 [InteractionLog] Lookup: "${semanticType}" -> Bucket: ${targetBucket} -> Found:`, match ? match.matchedKey : 'NULL');
 

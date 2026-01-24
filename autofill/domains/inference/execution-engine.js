@@ -262,6 +262,9 @@ class ExecutionEngine {
             if (type === 'number' && window.FieldUtils && window.FieldUtils.parseNumericValue) {
                 const parsed = window.FieldUtils.parseNumericValue(value);
                 if (parsed !== null) value = parsed;
+            } else if (type === 'tel' && window.FieldUtils && window.FieldUtils.parsePhoneValue) {
+                const parsed = window.FieldUtils.parsePhoneValue(value);
+                if (parsed !== null) value = parsed;
             }
             this.nativeValueSetter.call(element, value);
         } else if (tagName === 'textarea' && this.nativeTextAreaSetter) {

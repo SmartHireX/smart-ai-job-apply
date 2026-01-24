@@ -422,8 +422,31 @@ class FieldUtils {
         if (/less than|under/i.test(str)) return 0;
 
         // 4. Try parsing standard float
-        const parsed = parseFloat(str.replace(/[^0-9.-]/g, ''));
+        // Use a more restrictive regex for standard numbers to avoid stripping digits from phone-like strings
+        const numericStr = str.replace(/[^0-9.-]/g, '');
+        if (!numericStr) return null;
+
+        const parsed = parseFloat(numericStr);
         return isNaN(parsed) ? null : parsed;
+    }
+
+    /**
+     * Parse a phone number value (strips formatting but preserves full digit sequence)
+     * @param {string|number} value - Input value
+     * @returns {string|null} Sanitized phone string or null
+     */
+    static parsePhoneValue(value) {
+        if (value === null || value === undefined || value === '') return null;
+
+        const str = String(value).trim();
+
+        // Preserve leading '+' for international numbers, then strip all non-digits
+        const hasPlus = str.startsWith('+');
+        const digits = str.replace(/\D/g, '');
+
+        if (!digits) return null;
+
+        return hasPlus ? `+${digits}` : digits;
     }
     /**
      * Enhanced Value Setter for all field types (Radio, Checkbox, Date, Select)
