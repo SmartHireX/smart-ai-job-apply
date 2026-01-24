@@ -407,6 +407,8 @@ function extractFieldsFromDOM(source) {
                     value: input.value,
                     selector: input.id ? `#${CSS.escape(input.id)}` : `input[name="${safeName}"][value="${safeValue}"]`
                 });
+                if (!group.groupElements) group.groupElements = [group.field]; // Init if first time
+                group.groupElements.push(input);
                 return;
             } else if (groupKey) {
                 // Create new Group
@@ -421,7 +423,9 @@ function extractFieldsFromDOM(source) {
                         label: label,
                         value: input.value,
                         selector: input.id ? `#${CSS.escape(input.id)}` : `input[name="${safeName}"][value="${safeValue}"]`
-                    }]
+                    }],
+                    element: input,
+                    groupElements: [input]
                 };
                 processedGroups.set(groupKey, groupObj);
                 fields.push(groupObj);

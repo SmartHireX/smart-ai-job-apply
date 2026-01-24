@@ -175,13 +175,54 @@ class FormExtractor {
         if (type === 'select' || type === 'select-one' || type === 'select-multiple') {
             field.options = this.extractOptions(element);
         } else if (type === 'radio' || type === 'checkbox') {
-            field.options = this.extractRadioCheckboxOptions(element, container);
+            const { options, groupElements } = this.extractStructuredGroupData(element, container);
+            field.options = options;
+            field.groupElements = groupElements; // Capture ALL elements in the group
         }
 
         // Add attributes
         field.attributes = this.extractAttributes(element);
 
         return field;
+    }
+
+    /**
+     * Extract options AND elements for radio/checkbox groups
+     */
+    extractStructuredGroupData(element, container = document) {
+        const type = element.type;
+        const name = element.name;
+
+        let group = [];
+
+        // Strategy A: Name-based group (Standard)
+        if (name) {
+            group = Array.from(container.querySelectorAll(`input[type="${type}"][name="${CSS.escape(name)}"]`));
+        }
+
+        // Strategy B: Context-based group (for unique names or missing names)
+        if (group.length <= 1) {
+            const wrapper = element.closest('.form-group, fieldset, tr, .radio-group, .checkbox-group, div[role="group"]');
+            if (wrapper) {
+                group = Array.from(wrapper.querySelectorAll(`input[type="${type}"]`));
+            }
+        }
+
+        const options = [];
+        const groupElements = [];
+
+        group.forEach(input => {
+            const label = this.extractOptionLabel(input, container);
+            let val = input.value;
+            if (val === 'on' || val === 'true') val = label || val;
+
+            const optionSelector = input.id ? `#${CSS.escape(input.id)}` : (input.name && input.value ? `input[name="${CSS.escape(input.name)}"][value="${CSS.escape(input.value)}"]` : `input[name="${CSS.escape(input.name || '')}"]`);
+
+            options.push({ value: val, text: label || input.value, selector: optionSelector });
+            groupElements.push(input);
+        });
+
+        return { options, groupElements };
     }
 
     /**
@@ -284,61 +325,6 @@ class FormExtractor {
                 text: opt.textContent.trim()
             });
         });
-        return options;
-    }
-
-    /**
-     * Extract options for radio/checkbox groups
-     */
-    extractRadioCheckboxOptions(element, container = document) {
-        const type = element.type;
-        const name = element.name;
-
-        let group = [];
-
-        // Strategy A: Name-based group (Standard)
-        if (name) {
-            group = Array.from(container.querySelectorAll(`input[type="${type}"][name="${CSS.escape(name)}"]`));
-        }
-
-        // Strategy B: Context-based group (for unique names or missing names)
-        if (group.length <= 1) {
-            const wrapper = element.closest('.form-group, fieldset, tr, .radio-group, .checkbox-group, div[role="group"]');
-            if (wrapper) {
-                group = Array.from(wrapper.querySelectorAll(`input[type="${type}"]`));
-            }
-        }
-
-        const options = [];
-
-        group.forEach(input => {
-            // Use specialized option label extractor (skips Group Context)
-            const label = this.extractOptionLabel(input, container);
-
-            // Fix: If value is generic 'on', use the label as the value
-            // This helps the AI make distinct choices in the options array
-            let val = input.value;
-            if (val === 'on' || val === 'true') {
-                val = label || val;
-            }
-
-            // Capture individual selector for this specific option
-            let optionSelector = '';
-            if (input.id) {
-                optionSelector = `#${CSS.escape(input.id)}`;
-            } else if (input.name && input.value) {
-                optionSelector = `input[name="${CSS.escape(input.name)}"][value="${CSS.escape(input.value)}"]`;
-            } else if (input.name) {
-                optionSelector = `input[name="${CSS.escape(input.name)}"]`;
-            }
-
-            options.push({
-                value: val,
-                text: label || input.value,
-                selector: optionSelector // ESSENTIAL for targeted multi-fill
-            });
-        });
-
         return options;
     }
 

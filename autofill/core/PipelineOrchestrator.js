@@ -71,10 +71,14 @@ class PipelineOrchestrator {
                     field.cache_label = cacheLabel;
 
                     // 1. Store on DOM for fast access (Primary)
-                    field.element.setAttribute('cache_label', cacheLabel);
-                    if (field.instance_type) {
-                        field.element.setAttribute('instance_type', field.instance_type);
-                    }
+                    const targets = field.groupElements || [field.element];
+                    targets.forEach(target => {
+                        if (target.setAttribute) {
+                            target.setAttribute('cache_label', cacheLabel);
+                            if (field.instance_type) target.setAttribute('instance_type', field.instance_type);
+                            if (field.scope) target.setAttribute('scope', field.scope);
+                        }
+                    });
 
                     // 2. Store in Global Cache for persistence (GlobalStore)
                     if (!window.NovaCache) window.NovaCache = {};
@@ -86,12 +90,10 @@ class PipelineOrchestrator {
                         scope: field.scope || 'GLOBAL'
                     };
 
-                    if (field.element.id) {
-                        window.NovaCache[field.element.id] = cacheEntry;
-                    }
-                    if (field.element.name) {
-                        window.NovaCache[field.element.name] = cacheEntry;
-                    }
+                    targets.forEach(target => {
+                        if (target.id) window.NovaCache[target.id] = cacheEntry;
+                        if (target.name) window.NovaCache[target.name] = cacheEntry;
+                    });
 
                     // console.log(`🏷️ [Pipeline] Cache Label Assigned: "${field.label}" -> "${cacheLabel}" (ML Conf: ${field.ml_prediction.confidence})`);
                 } catch (e) {
