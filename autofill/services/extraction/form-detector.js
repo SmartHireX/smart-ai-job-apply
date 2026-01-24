@@ -760,8 +760,7 @@ function isFieldVisible(element) {
             element.type !== 'hidden' &&
             style.display !== 'none' &&
             style.visibility !== 'hidden' &&
-            // ALLOW radios/checkboxes with opacity 0 (Ashby fix)
-            (style.opacity !== '0' || element.type === 'radio' || element.type === 'checkbox') &&
+            style.opacity !== '0' &&
             element.offsetWidth > 0 &&
             element.offsetHeight > 0 &&
             !element.closest('[aria-hidden="true"]') // Prevent focus on hidden elements

@@ -278,13 +278,7 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
     element.classList.add('smarthirex-typing');
     element.classList.add('smarthirex-ai-writing'); // New class for pulse effect
     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    // SAFE FOCUS: Only focus if visible to avoid crash on opacity:0
-    try {
-        if (element.type !== 'hidden' && window.getComputedStyle(element).opacity !== '0') {
-            element.focus({ preventScroll: true });
-        }
-    } catch (e) { }
+    element.focus();
 
     // Check if text input
     const isText = (element.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'color', 'file', 'date', 'time'].includes(element.type)) || element.tagName === 'TEXTAREA';
@@ -305,14 +299,7 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
     } else {
         // For non-text fields, show brief animation then fill
         await new Promise(r => setTimeout(r, 200));
-
-        // SPECIAL HANDLING FOR RADIOS (Visual Click)
-        if (element.type === 'radio') {
-            // For radios, setFieldValue handles the group logic, but let's ensure we visualize the click
-            setFieldValue(element, value);
-        } else {
-            setFieldValue(element, value);
-        }
+        setFieldValue(element, value);
     }
 
     element.classList.remove('smarthirex-typing');

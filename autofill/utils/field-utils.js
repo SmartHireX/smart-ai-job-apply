@@ -24,9 +24,7 @@ class FieldUtils {
         }
 
         // Check opacity
-        // EXCEPTION: Radio buttons and checkboxes are often hidden (opacity: 0) 
-        // and replaced by custom styled labels. We must treat them as "visible" to interacting logic.
-        if (parseFloat(style.opacity) === 0 && element.type !== 'radio' && element.type !== 'checkbox') {
+        if (parseFloat(style.opacity) === 0) {
             return false;
         }
 
@@ -58,18 +56,10 @@ class FieldUtils {
             if (label) return label.innerText.trim();
         }
 
-        // Try closest label (parent)
+        // Try parent label
         const parentLabel = element.closest('label');
         if (parentLabel) {
             return parentLabel.innerText.replace(element.value || '', '').trim();
-        }
-
-        // Try sibling label (common in styled radios like Ashby)
-        if (element.parentElement && element.parentElement.nextElementSibling) {
-            const next = element.parentElement.nextElementSibling;
-            if (next.tagName === 'LABEL') {
-                return next.innerText.trim();
-            }
         }
 
         // Try aria-label
@@ -370,20 +360,15 @@ class FieldUtils {
                 const targetValue = String(value).toLowerCase().trim();
                 let bestMatch = null;
 
-                // Ashby-specific: Inputs often have value="on" and rely on React state
-                // If the input value is generic ('on', 'true'), we MUST rely on the label text
-
-                // Priority 1: Exact Value Match (only if value is meaningful)
-                if (targetValue !== 'on' && targetValue !== 'true') {
-                    for (const radio of group) {
-                        if (radio.value.toLowerCase().trim() === targetValue) {
-                            bestMatch = radio;
-                            break;
-                        }
+                // Priority 1: Exact Value Match
+                for (const radio of group) {
+                    if (radio.value.toLowerCase().trim() === targetValue) {
+                        bestMatch = radio;
+                        break;
                     }
                 }
 
-                // Priority 2: Label Match (Fuzzy) - Critical for Ashby
+                // Priority 2: Label Match (Fuzzy)
                 if (!bestMatch) {
                     for (const radio of group) {
                         const label = this.getFieldLabel(radio).toLowerCase();
@@ -394,37 +379,8 @@ class FieldUtils {
                     }
                 }
 
-                if (bestMatch) {
-                    console.log(`[FieldUtils] Found best match for radio:`, bestMatch);
-
-                    // robust label finding (Id, Labels property, or Sibling)
-                    let label = bestMatch.labels?.[0] || document.querySelector(`label[for="${CSS.escape(bestMatch.id)}"]`);
-
-                    if (!label && bestMatch.parentElement && bestMatch.parentElement.nextElementSibling?.tagName === 'LABEL') {
-                        label = bestMatch.parentElement.nextElementSibling;
-                    }
-
-                    // SIMPLIFIED STRATEGY: Click everything relevant
-                    // 1. Click the input itself (standard behavior)
-                    try {
-                        console.log(`[FieldUtils] Clicking radio input...`);
-                        bestMatch.click();
-                    } catch (e) {
-                        console.error(`[FieldUtils] Input click failed`, e);
-                    }
-
-                    // 2. Click the label (Required for Ashby/React)
-                    if (label) {
-                        try {
-                            console.log(`[FieldUtils] Clicking radio label...`);
-                            label.click();
-                        } catch (e) {
-                            console.error(`[FieldUtils] Label click failed`, e);
-                        }
-                    } else {
-                        console.warn(`[FieldUtils] No label found for radio match.`);
-                    }
-
+                if (bestMatch && !bestMatch.checked) {
+                    bestMatch.click();
                     this.dispatchChangeEvents(bestMatch);
                 }
             }

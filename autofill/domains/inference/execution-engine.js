@@ -238,71 +238,30 @@ class ExecutionEngine {
                 const group = document.querySelectorAll(`input[name="${CSS.escape(name)}"]`);
                 let targetRadio = null;
 
-                // Ashby-specific: Inputs often have value="on" and rely on React state
-                // If the input value is generic ('on', 'true'), we MUST rely on the label text (Fuzzy Match)
-
+                // Find the radio button with the matching value (case-insensitive)
                 const targetValue = String(value).toLowerCase().trim();
-
-                // Priority 1: Exact Value Match (only if value is meaningful)
-                if (targetValue !== 'on' && targetValue !== 'true') {
-                    for (const radio of group) {
-                        const radioValue = String(radio.value).toLowerCase().trim();
-                        if (radioValue === targetValue) {
-                            targetRadio = radio;
-                            break;
-                        }
+                for (const radio of group) {
+                    const radioValue = String(radio.value).toLowerCase().trim();
+                    if (radioValue === targetValue) {
+                        targetRadio = radio;
+                        break;
                     }
                 }
 
-                // Priority 2: Label Match (Fuzzy) - Critical for Ashby
+                // If no exact match, try matching by label text
                 if (!targetRadio) {
                     for (const radio of group) {
-                        // Standard Label Check
-                        let labelText = radio.labels?.[0]?.textContent?.toLowerCase().trim();
-
-                        // Sibling Label Check (Fallback)
-                        if (!labelText && radio.parentElement && radio.parentElement.nextElementSibling?.tagName === 'LABEL') {
-                            labelText = radio.parentElement.nextElementSibling.innerText.trim().toLowerCase();
-                        }
-
-                        if (labelText && (labelText === targetValue || labelText.includes(targetValue) || targetValue.includes(labelText))) {
+                        const label = radio.labels?.[0]?.textContent?.toLowerCase().trim() || '';
+                        if (label === targetValue || label.includes(targetValue)) {
                             targetRadio = radio;
                             break;
                         }
                     }
                 }
 
-                if (targetRadio) {
-                    console.log(`[ExecutionEngine] Found target radio:`, targetRadio);
-
-                    // Robust label finding (Id, Labels property, or Sibling)
-                    let label = targetRadio.labels?.[0] || document.querySelector(`label[for="${CSS.escape(targetRadio.id)}"]`);
-
-                    if (!label && targetRadio.parentElement && targetRadio.parentElement.nextElementSibling?.tagName === 'LABEL') {
-                        label = targetRadio.parentElement.nextElementSibling;
-                    }
-
-                    // SIMPLIFIED STRATEGY: Click everything relevant
-                    // 1. Click the input itself
-                    try {
-                        console.log(`[ExecutionEngine] Clicking radio input...`);
-                        targetRadio.click();
-                    } catch (e) {
-                        console.error(`[ExecutionEngine] Input click failed`, e);
-                    }
-
-                    // 2. Click the label
-                    if (label) {
-                        try {
-                            console.log(`[ExecutionEngine] Clicking radio label...`);
-                            label.click();
-                        } catch (e) {
-                            console.error(`[ExecutionEngine] Label click failed`, e);
-                        }
-                    } else {
-                        console.warn(`[ExecutionEngine] No label found for radio match.`);
-                    }
-
+                if (targetRadio && !targetRadio.checked) {
+                    // console.log(`[ExecutionEngine] 📻 Selecting radio: "${targetRadio.value}" in group "${name}"`);
+                    targetRadio.click();
                     this.dispatchEvents(targetRadio);
                 }
             }
