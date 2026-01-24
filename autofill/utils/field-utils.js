@@ -448,20 +448,13 @@ class FieldUtils {
                         }
                     }
 
-                    // 3. NUCLEAR OPTION: Click the parent wrapper (Common in modern React UI libs)
-                    // Ashby often has a <div> wrapping the input and label that handles the click
-                    if (bestMatch.parentElement) {
-                        try {
-                            // console.log(`[FieldUtils] Clicking radio parent wrapper...`);
-                            bestMatch.parentElement.click();
-                        } catch (e) { }
-
-                        // Try grandparent too if parent is just a styling span
-                        if (bestMatch.parentElement.parentElement) {
-                            // console.log(`[FieldUtils] Clicking radio grandparent wrapper...`);
-                            bestMatch.parentElement.parentElement.click();
+                    // 3. React/Ashby State Sync: Native Setter
+                    try {
+                        const nativeSettter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked')?.set;
+                        if (nativeSettter) {
+                            nativeSettter.call(bestMatch, true);
                         }
-                    }
+                    } catch (e) { }
 
                     this.dispatchChangeEvents(bestMatch);
 

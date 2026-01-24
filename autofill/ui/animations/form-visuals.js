@@ -302,14 +302,12 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
 
         // SPECIAL HANDLING FOR RADIOS (Visual Click)
         if (element.type === 'radio') {
-            // 1. Direct Input Click (Failsafe)
+            // 1. Direct Input Click
             try {
-                // console.log('[FormVisuals] 🟢 Direct Click on Radio Input');
                 element.click();
-            } catch (e) { console.warn('[FormVisuals] Direct click failed', e); }
+            } catch (e) { }
 
-            // 2. Find and Click Label (Ashby/React Requirement)
-            // Copy of robust logic from FieldUtils/ExecutionEngine
+            // 2. Find and Click Label
             let label = element.labels?.[0];
             if (!label && element.id) {
                 label = document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
@@ -320,16 +318,20 @@ async function showGhostingAnimation(element, value, confidence = 0.8) {
 
             if (label) {
                 try {
-                    // console.log('[FormVisuals] 🟢 Direct Click on Radio Label', label);
                     label.click();
-                } catch (e) { console.warn('[FormVisuals] Label click failed', e); }
+                } catch (e) { }
             }
 
-            // 3. Ensure State Sync via FieldUtils (for React trackers)
-            if (window.FieldUtils && typeof window.FieldUtils.setFieldValue === 'function') {
-                window.FieldUtils.setFieldValue(element, value);
-            } else if (typeof setFieldValue === 'function') {
-                setFieldValue(element, value);
+            // 3. React/Ashby State Sync: Native Setter (via FieldUtils)
+            if (window.FieldUtils && typeof window.FieldUtils.setNativeChecked === 'function') {
+                window.FieldUtils.setNativeChecked(element, true);
+                window.FieldUtils.dispatchChangeEvents(element);
+            } else {
+                // Fallback inline native setter
+                try {
+                    const nativeSettter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked')?.set;
+                    if (nativeSettter) { nativeSettter.call(element, true); }
+                } catch (e) { }
             }
         } else {
             setFieldValue(element, value);

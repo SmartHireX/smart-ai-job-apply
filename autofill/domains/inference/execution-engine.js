@@ -311,16 +311,11 @@ class ExecutionEngine {
                         }
                     }
 
-                    // 3. NUCLEAR OPTION: Click the parent wrapper (Common in modern React UI libs)
-                    if (targetRadio.parentElement) {
-                        try {
-                            targetRadio.parentElement.click();
-                        } catch (e) { }
-
-                        if (targetRadio.parentElement.parentElement) {
-                            targetRadio.parentElement.parentElement.click();
-                        }
-                    }
+                    // 3. React/Ashby State Sync: Native Setter
+                    try {
+                        const nativeLast = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked')?.set;
+                        if (nativeLast) { nativeLast.call(targetRadio, true); }
+                    } catch (e) { }
 
                     this.dispatchEvents(targetRadio);
                 }
