@@ -229,11 +229,33 @@ class FormExtractor {
      * Extract label for field
      */
     extractLabel(element, container = document) {
+        // Generic labels to ignore (often from aria-label or title attributes)
+        const INVALID_LABELS = new Set([
+            'indicates a required field',
+            'required field',
+            'required',
+            'optional',
+            'current value is',
+            '*',
+            ''
+        ]);
+
+        // Helper to validate label quality
+        const isValid = (text) => {
+            if (!text || typeof text !== 'string') return false;
+            const normalized = text.toLowerCase().trim();
+            // Check exact matches
+            if (INVALID_LABELS.has(normalized)) return false;
+            // Check partial matches for "current value is..."
+            if (normalized.startsWith('current value is')) return false;
+            return true;
+        };
+
         // Method 0: Centralized FANG Logic (Priority Override)
         if (typeof window.getFieldLabel === 'function') {
             //console.log(`[FormExtractor] Calling window.getFieldLabel for element:`, element);
             const visualLabel = window.getFieldLabel(element);
-            if (visualLabel && visualLabel !== 'Unknown Field') {
+            if (visualLabel && visualLabel !== 'Unknown Field' && isValid(visualLabel)) {
                 return visualLabel;
             }
         } else {
@@ -252,7 +274,7 @@ class FormExtractor {
                 if (groupLabel && groupLabel.textContent.trim().length > 3) {
                     const text = groupLabel.textContent.trim();
                     // If the found text is just the option text (e.g. "Yes"), keep searching
-                    if (text.toLowerCase() !== (element.value || '').toLowerCase()) {
+                    if (text.toLowerCase() !== (element.value || '').toLowerCase() && isValid(text)) {
                         return text;
                     }
                 }
@@ -260,7 +282,9 @@ class FormExtractor {
                 // Fallback: If no label inside wrapper, look at previous sibling of wrapper
                 const prev = wrapper.previousElementSibling;
                 if (prev && (prev.tagName === 'LABEL' || prev.tagName.match(/^H[1-6]$/))) {
-                    return prev.textContent.trim();
+                    if (isValid(prev.textContent.trim())) {
+                        return prev.textContent.trim();
+                    }
                 }
             }
         }
@@ -268,30 +292,33 @@ class FormExtractor {
         // Method 2: <label for="id">
         if (element.id) {
             const label = container.querySelector(`label[for="${element.id}"]`);
-            if (label) return label.textContent.trim();
+            if (label && isValid(label.textContent.trim())) return label.textContent.trim();
         }
 
         // Method 3: Wrapped in <label>
         const parentLabel = element.closest('label');
         if (parentLabel) {
-            return parentLabel.textContent.replace(element.value || '', '').trim();
+            const text = parentLabel.textContent.replace(element.value || '', '').trim();
+            if (isValid(text)) return text;
         }
 
-        // Method 4: aria-label
+        // Method 4: aria-label (Low priority if it's generic)
         if (element.getAttribute('aria-label')) {
-            return element.getAttribute('aria-label');
+            const label = element.getAttribute('aria-label');
+            // Only accept if it's NOT in our invalid list
+            if (isValid(label)) return label;
         }
 
         // Method 5: Previous sibling
         let prev = element.previousElementSibling;
         while (prev && prev.tagName !== 'LABEL') {
             if (prev.textContent && prev.textContent.trim().length < 100) {
-                return prev.textContent.trim();
+                if (isValid(prev.textContent.trim())) return prev.textContent.trim();
             }
             prev = prev.previousElementSibling;
         }
         if (prev && prev.tagName === 'LABEL') {
-            return prev.textContent.trim();
+            if (isValid(prev.textContent.trim())) return prev.textContent.trim();
         }
 
         // Method 6: Table header (for table-based forms)
@@ -303,7 +330,9 @@ class FormExtractor {
                 const cellIndex = Array.from(tr.cells).indexOf(td);
                 const headerRow = table.querySelector('thead tr') || table.querySelector('tr');
                 if (headerRow && headerRow.cells[cellIndex]) {
-                    return headerRow.cells[cellIndex].textContent.trim();
+                    if (isValid(headerRow.cells[cellIndex].textContent.trim())) {
+                        return headerRow.cells[cellIndex].textContent.trim();
+                    }
                 }
             }
         }

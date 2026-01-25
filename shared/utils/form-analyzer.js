@@ -482,11 +482,23 @@ function extractFieldsFromDOM(source) {
                         field.parentContext = rawContext;
                         // Smart Label Promotion:
                         // If current label is technical (cards[...], field_1, UUID) or "Unknown Field",
+                        // OR if it's a generic "required" label,
                         // but we found a valid human-readable context/header, USE IT as the label.
-                        const isTechnical = /cards\[|\[.*\]|^field[-_]?\d|unknown field|[0-9a-f-]{20,}/i.test(field.label);
-                        if (isTechnical && rawContext.length > 5 && rawContext.length < 150) {
+                        // SAFEGUARD: Don't promote if context is just the label (normalized)
+                        const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const isRedundant = normalize(rawContext) === normalize(field.label) || rawContext.includes(field.label);
+
+                        const isTechnical = /cards\[|\[.*\]|^field[-_]?\d|unknown field|[0-9a-f-]{20,}|indicates a required field|required field|^required$|^optional$/i.test(field.label);
+
+                        // Promotion
+                        if (isTechnical && rawContext.length > 5 && rawContext.length < 150 && !isRedundant) {
                             // console.log(`✨ [SmartLabel] Promoted context to label: "${rawContext}" (was "${field.label}")`);
                             field.label = rawContext;
+                        }
+
+                        // Context Assignment (Avoid self-reference)
+                        if (!isRedundant) {
+                            field.parentContext = rawContext;
                         }
                     }
                 }

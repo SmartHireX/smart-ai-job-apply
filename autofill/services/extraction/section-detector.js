@@ -331,6 +331,17 @@ function detectFieldSectionContext(field, allFields = []) {
  * @param {HTMLElement} field
  * @returns {string|null}
  */
+/**
+ * Find the nearest heading text (Accessibility Tree style context)
+ * Priority Ladder:
+ * 1. Semantic Headers (H1-H6, role="heading")
+ * 2. Fieldset Legend
+ * 3. Group Labels (Not associated with field)
+ * 4. Table Context
+ * 5. Aggressive Sibling Search (Question-like divs)
+ * @param {HTMLElement} field
+ * @returns {string|null}
+ */
 function getNearestHeadingText(field) {
     if (!field) return null;
 
@@ -356,107 +367,107 @@ function getNearestHeadingText(field) {
         return true;
     };
 
-    // 1. Fieldset Legend (Strongest Grouping)
-    const fieldset = field.closest('fieldset');
-    if (fieldset) {
-        const legend = fieldset.querySelector('legend');
-        if (legend) {
-            const text = (legend.innerText || legend.textContent || "").trim();
-            if (text) {
+    // Helper: Check if a label is associated with the CURRENT field (Control Label)
+    const isAssociatedLabel = (label, currentField) => {
+        if (label.htmlFor && label.htmlFor === currentField.id) return true;
+        if (label.contains(currentField)) return true;
+        // In some frameworks, label is a sibling with a specific aria-relation, typically rare but possible.
+        // Simple heuristic: If it's a LABEL tag and explicitly has `for` pointing elsewhere, it's definitely NOT for this group (unless it's the group label? No, group labels usually don't have 'for').
+        return false;
+    };
+
+    // Helper: Check if it's a valid Group Label (Standalone)
+    const isGroupLabel = (label, currentField) => {
+        // Must NOT be associated with the field
+        if (isAssociatedLabel(label, currentField)) return false;
+        // Must NOT target another input explicitly (unless we want to chance it, but safer to skip)
+        if (label.htmlFor && label.htmlFor !== currentField.id) return false;
+        // Must NOT contain another input (unless it's the one we're looking at, which we checked)
+        if (label.querySelector('input, select, textarea')) return false;
+
+        return true; // Likely a text-only label acting as a header
+    };
+
+
+    // 1. Traverse up to find Semantically Strong Headers (H1-H6, Legend, Role=Heading)
+    // We walk up parents, and for each parent, scan previous siblings.
+    let current = field;
+    let depth = 0;
+    const MAX_DEPTH = 6;
+    const MAX_SIBLINGS = 15;
+
+    while (current && current.tagName !== 'BODY' && depth < MAX_DEPTH) {
+
+        // Check Parent for Fieldset Legend immediately
+        if (current.tagName === 'FIELDSET') {
+            const legend = current.querySelector('legend');
+            if (legend) {
+                const text = (legend.innerText || legend.textContent || "").trim();
                 if (isValidHeading(text, legend)) return text;
             }
         }
-    }
 
-    // 2. Table Context
-    const cell = field.closest('td');
-    if (cell) {
-        // Try Row Header
-        const row = cell.parentElement;
-        if (row && row.tagName === 'TR') {
-            const header = row.querySelector('th');
-            const hText = (header ? (header.innerText || header.textContent || "") : "").trim();
-            if (hText) {
-                if (isValidHeading(hText, header)) return hText;
-            }
-        }
-
-        // Try Table Caption
-        const table = field.closest('table');
-        if (table) {
-            const caption = table.querySelector('caption');
-            const cText = (caption ? (caption.innerText || caption.textContent || "") : "").trim();
-            if (cText) {
-                if (isValidHeading(cText, caption)) return cText;
-            }
-        }
-    }
-
-    // 3. Reverse DOM Walk (The "Fang" Way)
-    // Walk up parents, and for each parent, scan previous siblings for H1-H6
-    let current = field;
-    let depth = 0;
-    const MAX_DEPTH = 5;
-    const MAX_SIBLINGS = 10; // Reduced to avoid picking up unrelated UI
-
-    // Track candidates - prioritize question-like text
-    let questionCandidate = null;
-    let regularCandidate = null;
-
-    while (current && current.tagName !== 'BODY' && depth < MAX_DEPTH) {
+        // Check Previous Siblings
         let sibling = current.previousElementSibling;
         let siblingCount = 0;
 
         while (sibling && siblingCount < MAX_SIBLINGS) {
+
+            // DISTANCE CAP: Stop if we hit another Control (Input/Textarea/Select)
+            // This prevents leaking context from a previous field ("Name" label from previous field becoming "Section" for this one)
+            const tagName = sibling.tagName;
+            if (tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA') {
+                // If we hit a raw input, we've likely gone too far in this sibling list.
+                // Stop scanning siblings, but continue walking up parents.
+                break;
+            }
+            // Also check if sibling WRAPS a control (standard form-group pattern)
+            // Using a cheaper check than querySelectorAll if possible
+            if (sibling.querySelector && sibling.querySelector('input, select, textarea')) {
+                // But wait! Nesting ATS Case: <label>Work Exp <div><label>Comp</label><input></div></label>
+                // If we are INSIDE this sibling, we shouldn't stop.
+                // We are currently scanning `current`'s previous siblings. `current` is the ancestor of our field.
+                // So `sibling` is completely separate. If `sibling` contains an input, it's a previous question.
+                break;
+            }
+
+
             const text = (sibling.innerText || sibling.textContent || "").trim();
 
-            // Priority 1: Sibling is a LABEL tag
-            if (sibling.tagName === 'LABEL' && isValidHeading(text, sibling)) {
-                return text;
+            if (!text) {
+                sibling = sibling.previousElementSibling;
+                siblingCount++;
+                continue;
             }
 
-            // Priority 2: Sibling IS a Header
-            if (/^H[1-6]$/.test(sibling.tagName)) {
-                if (isValidHeading(text, sibling)) {
-                    if (QUESTION_PATTERNS.test(text)) {
-                        return text; // Immediate return for question-like headings
-                    }
-                    if (!regularCandidate) regularCandidate = text;
+            // Priority 1: Semantic Heading (H1-H6)
+            if (/^H[1-6]$/.test(tagName) || sibling.getAttribute('role') === 'heading') {
+                if (isValidHeading(text, sibling)) return text;
+            }
+
+            // Priority 2: Group/Section Label
+            if (tagName === 'LABEL') {
+                // Check if it's a valid Group Label (Not associated with field, no 'for', no input)
+                if (isGroupLabel(sibling, field)) {
+                    if (isValidHeading(text, sibling)) return text;
                 }
+                // If associated, we SKIP it (it's a control label)
             }
 
-            // Priority 3: Sibling CONTAINS a Header
-            const nestedHeader = sibling.querySelector('h1, h2, h3, h4, h5, h6');
+            // Priority 3: Nested Headings (div > h3)
+            const nestedHeader = sibling.querySelector('h1, h2, h3, h4, h5, h6, [role="heading"]');
             if (nestedHeader) {
                 const hText = (nestedHeader.innerText || nestedHeader.textContent || "").trim();
-                if (isValidHeading(hText, nestedHeader)) {
-                    if (QUESTION_PATTERNS.test(hText)) {
-                        return hText; // Immediate return for question-like headings
-                    }
-                    if (!regularCandidate) regularCandidate = hText;
-                }
+                if (isValidHeading(hText, nestedHeader)) return hText;
             }
 
-            // Priority 4: "Label-like" divs - MORE SPECIFIC matching
+            // Priority 4: "Label-like" divs (Fallback)
             if (sibling.className && typeof sibling.className === 'string') {
                 const cls = sibling.className.toLowerCase();
                 if (cls.includes('form-label') || cls.includes('field-label') ||
                     cls.includes('question') || cls.includes('form-title')) {
-                    if (isValidHeading(text, sibling)) {
-                        if (QUESTION_PATTERNS.test(text)) {
-                            return text;
-                        }
-                        if (!regularCandidate) regularCandidate = text;
-                    }
-                }
-            }
-
-            // Emergency Break: If we encounter a sibling that is a known field entry container, 
-            // STOP walking siblings. We are entering the territory of another field.
-            if (sibling.className && typeof sibling.className === 'string') {
-                const cls = sibling.className.toLowerCase();
-                if (cls.includes('field-entry') || cls.includes('form-group') || cls.includes('ashby-application-form-field-entry')) {
-                    break;
+                    // Treat as Group Label candidate
+                    if (isValidHeading(text, sibling)) return text;
                 }
             }
 
@@ -468,36 +479,27 @@ function getNearestHeadingText(field) {
         depth++;
     }
 
-    // 4. Aggressive Sibling Search (Fallback for div-based questions)
-    if (!questionCandidate && !regularCandidate) {
-        let curr = field;
-        for (let i = 0; i < 3; i++) {
-            if (!curr || curr.tagName === 'BODY') break;
-
-            // Check all previous siblings for raw text that looks like a question
-            let sib = curr.previousElementSibling;
-            while (sib) {
-                // EMERGENCY BREAK: Don't walk into neighboring field entries
-                if (sib.classList && sib.classList.contains('ashby-application-form-field-entry')) {
-                    break;
-                }
-
-                const text = (sib.innerText || sib.textContent || "").trim();
-                // If it looks strongly like a question, take it even if it's a DIV/SPAN
-                if (text.length > 5 && text.length < 200 && QUESTION_PATTERNS.test(text)) {
-                    // Ignore buttons/navs
-                    if (!EXCLUSION_PATTERNS.test(text)) {
-                        return text;
-                    }
-                }
-                sib = sib.previousElementSibling;
+    // 2. Table Context (Secondary)
+    const cell = field.closest('td');
+    if (cell) {
+        const table = field.closest('table');
+        if (table) {
+            // Try Caption
+            const caption = table.querySelector('caption');
+            if (caption) {
+                const cText = (caption.innerText || caption.textContent || "").trim();
+                if (isValidHeading(cText, caption)) return cText;
             }
-            curr = curr.parentElement;
+            // Try Thead
+            const header = table.querySelector('th');
+            if (header) {
+                const hText = (header.innerText || header.textContent || "").trim();
+                if (isValidHeading(hText, header)) return hText;
+            }
         }
     }
 
-    // Return best candidate (question-like preferred)
-    return questionCandidate || regularCandidate || null;
+    return null;
 }
 
 // Export to window
