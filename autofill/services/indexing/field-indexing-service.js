@@ -66,7 +66,21 @@ class IndexingService {
         if (attrResult) {
             // NORMALIZE: Map random IDs (7, 12, 99) to logical 0-based sequence (0, 1, 2)
             // This fixes "workExperience-7" being treated as Index 7 when it's just the first item.
-            const logicalIndex = this.getLogicalIndex(type || 'generic', attrResult.index);
+
+            // ROGUE ID SUPPRESSION (User Fix):
+            // If the Attribute ID is "High/Random" (> 10) AND we are visually still in the same group 
+            // (no section start seen), we FORCE merge this ID into the current logical group.
+            // This prevents "School-0" and "Year-28" from splitting into two entries.
+            const typeKey = type || 'generic';
+            const currentCounter = this.counters[typeKey] || 0;
+            const isRandomId = attrResult.index > 10;
+
+            // Check if we should override the mapping BEFORE asking for logical index
+            if (isRandomId && !this.hasSeenSectionStart(field, typeKey)) {
+                this.forceMapRawIndex(typeKey, attrResult.index, currentCounter);
+            }
+
+            const logicalIndex = this.getLogicalIndex(typeKey, attrResult.index);
             return { index: logicalIndex, confidence: attrResult.tier };
         }
 
@@ -112,6 +126,24 @@ class IndexingService {
         const newIndex = section.next++;
         section.map.set(rawId, newIndex);
         return newIndex;
+    }
+
+    /**
+     * Force a raw ID to map to a specific logical index.
+     * Used for merging "Rogue IDs" (like education-28) into the current group.
+     */
+    forceMapRawIndex(type, rawId, targetIndex) {
+        if (!this.sectionIndexMap[type]) {
+            this.sectionIndexMap[type] = { map: new Map(), next: 0 };
+        }
+        // Only set if not already set (or overwrite? Overwrite is safer for correction)
+        this.sectionIndexMap[type].map.set(rawId, targetIndex);
+
+        // Ensure 'next' is generally ahead of this to avoid collisions, 
+        // though strictly 'next' tracks *generated* indices.
+        if (targetIndex >= this.sectionIndexMap[type].next) {
+            this.sectionIndexMap[type].next = targetIndex + 1;
+        }
     }
 
     /**
