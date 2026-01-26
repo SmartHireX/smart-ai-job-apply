@@ -252,14 +252,23 @@ class PipelineOrchestrator {
     applyStructuralGrouping(fields) {
         const { blocks, orphans } = window.SectionGrouper.groupFieldsByContainer(fields);
 
-        // Group blocks by fingerprint to identify repeaters
-        const fingerprintMap = new Map(); // fingerprint -> blocks[]
+        // Group blocks by (SectionType + Fingerprint) to identify repeaters within context
+        const groupMap = new Map(); // "type:fingerprint" -> blocks[]
         blocks.forEach(block => {
-            if (!fingerprintMap.has(block.fingerprint)) fingerprintMap.set(block.fingerprint, []);
-            fingerprintMap.get(block.fingerprint).push(block);
+            // Determine the predominant section type for this block
+            const typeCounts = {};
+            block.fields.forEach(f => {
+                const t = f.section_type || 'generic';
+                typeCounts[t] = (typeCounts[t] || 0) + 1;
+            });
+            const predominantType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0][0];
+
+            const groupKey = `${predominantType}:${block.fingerprint}`;
+            if (!groupMap.has(groupKey)) groupMap.set(groupKey, []);
+            groupMap.get(groupKey).push(block);
         });
 
-        fingerprintMap.forEach((instances, fingerprint) => {
+        groupMap.forEach((instances, key) => {
             // Sort instances by vertical position for deterministic indexing
             instances.sort((a, b) => a.top - b.top);
 
@@ -267,6 +276,7 @@ class PipelineOrchestrator {
 
             instances.forEach((instance, index) => {
                 instance.fields.forEach(field => {
+                    const [type, fingerprint] = key.split(':');
                     field.container_fingerprint = fingerprint;
                     field.field_index = index;
                     field.indexSource = 'STRUCTURAL';
@@ -274,7 +284,6 @@ class PipelineOrchestrator {
                     if (isRepeater) {
                         field.isStrongRepeater = true;
                     } else {
-                        // Solitary fields remain ATOMIC_SINGLE but with SECTION scope
                         field.wasSolitaryStructural = true;
                     }
                 });

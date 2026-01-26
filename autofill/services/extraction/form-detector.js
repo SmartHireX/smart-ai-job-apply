@@ -335,7 +335,7 @@ function extractFormHTML() {
 
 
 function getVisualLabel(element) {
-    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|button|submit|cancel|^indicates.*required/i;
+    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|button|submit|cancel|^indicates.*required|^[mdy]{1,4}$|month|year|day|date/i;
     // Expanded Question Patterns
     const QUESTION_PATTERNS = /\?$|:$|what|where|when|why|how|which|who|are you|do you|have you|please|enter|provide|select|choose|describe|indicate/i;
 
@@ -604,7 +604,7 @@ function getFieldLabel(element) {
     // Look for question text in parent containers (common in Ashby, Lever, etc.)
     let parent = element.parentElement;
     const QUESTION_PATTERNS = /\?$|what|where|when|why|how|which|who|are you|do you|have you|please|enter your|provide your/i;
-    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|button|submit|cancel|^indicates.*required/i;
+    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|button|submit|cancel|^indicates.*required|^[mdy]{1,4}$|month|year|day|date/i;
 
     for (let i = 0; i < 6 && parent && parent.tagName !== 'FORM' && parent.tagName !== 'BODY'; i++) {
         // Look for question-like headers in this parent

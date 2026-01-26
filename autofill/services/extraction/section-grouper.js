@@ -141,7 +141,12 @@ class SectionGrouper {
     // --- Helpers ---
 
     getNodeSignature(node) {
-        const inputs = node.querySelectorAll('input, select, textarea');
+        const inputs = Array.from(node.querySelectorAll('input, select, textarea')).filter(el => {
+            if (el.type === 'hidden') return false;
+            // Simple visibility check
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null;
+        });
         const labels = Array.from(node.querySelectorAll('label, .label, span')).map(l => l.innerText.toLowerCase().trim());
         return {
             tagName: node.tagName,

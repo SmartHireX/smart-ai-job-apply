@@ -584,12 +584,31 @@ function generateSemanticKey(fieldOrElement, label) {
     if (window.KeyGenerator) {
         fallbackKey = window.KeyGenerator.generateEnterpriseCacheKey(field);
     } else {
-        // Fallback if KeyGenerator is missing (shouldn't happen)
-        const rawInput = [field.name, field.label, field.parentContext].filter(Boolean).join(' ') || targetLabel || '';
+        // Fallback if KeyGenerator is missing
+        // 1. Strip instance-specific numbers (e.g. work-17-- -> work--)
+        const stripNumbers = (s) => (s || '').replace(/\d+/g, '');
+
+        const cleanName = stripNumbers(field.name);
+        const cleanId = stripNumbers(field.id);
+
+        // 2. Detect Sub-Field Context (Month/Year) from Name/ID
+        let subContext = '';
+        const lowerName = (field.name || '').toLowerCase();
+        const lowerId = (field.id || '').toLowerCase();
+        if (lowerName.includes('month') || lowerId.includes('month')) subContext = 'month';
+        else if (lowerName.includes('year') || lowerId.includes('year')) subContext = 'year';
+        else if (lowerName.includes('day') || lowerId.includes('day')) subContext = 'day';
+
+        const rawInput = [cleanName, field.label, field.parentContext].filter(Boolean).join(' ') || targetLabel || '';
         fallbackKey = rawInput.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+        // 3. Append sub-context for uniqueness (e.g. from_year vs from_month)
+        if (subContext && !fallbackKey.includes(subContext)) {
+            fallbackKey += `_${subContext}`;
+        }
     }
 
-    fallbackKey = fallbackKey || normalizeFieldName(field.id) || 'unknown_field';
+    fallbackKey = (fallbackKey || '').replace(/\d+/g, '') || 'unknown_field';
 
     // D. SCOPE ISOLATION (SECTION KEYS)
     // We only want to namespace ATOMIC_SINGLE fields that appear inside a section (e.g. "Did you manage a team?" in Job 1).
