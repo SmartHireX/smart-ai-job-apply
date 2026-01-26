@@ -88,7 +88,7 @@ class FormProcessor {
         }
 
         // Use FormAnalyzer to get fields
-        const fields = window.FormAnalyzer.extractFieldsFromDOM(formSource);
+        const fields = await window.FormAnalyzer.extractFieldsFromDOM(formSource);
         console.log(`📊 [FormProcessor] Extracted ${fields.length} fields. First field label: ${fields[0]?.label}`);
 
         // new pipeline execution

@@ -113,8 +113,8 @@ class PipelineOrchestrator {
 
         // 2. Group (Memory, Heuristic, Profile, General)
         const groups = this.pipeline.grouping(enriched);
-        this.logGrouping(groups);
-
+        // this.logGrouping(groups);
+        console.log("🚀 ~ PipelineOrchestrator ~ executePipeline ~ groups:", groups)
         const results = {};
         const unresolved = [];
 

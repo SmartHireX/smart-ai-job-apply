@@ -279,14 +279,14 @@ const HEURISTIC_PATTERNS = {
  * Extract form fields from HTML using DOM traversal (Local Logic)
  * Replaces the expensive "ANALYZE_FORM" AI call.
  * @param {string|HTMLElement} source
- * @returns {Array} Array of field objects
+ * @returns {Promise<Array>} Array of field objects
  */
-function extractFieldsFromDOM(source) {
+async function extractFieldsFromDOM(source) {
     // Priority: Use FormExtractor if available (Phase 1 Refactor)
     if (window.FormExtractor) {
-        console.log('[FormAnalyzer] FormExtractor found. Delegating extraction...');
+        // console.log('[FormAnalyzer] FormExtractor found. Delegating extraction...');
         const extractor = new window.FormExtractor();
-        const fields = extractor.extract(source);
+        const fields = await extractor.extract(source);
 
         // Enrich with Section Context (SectionDetector)
         if (window.SectionDetector && fields.length > 0) {
@@ -364,7 +364,7 @@ function extractFieldsFromDOM(source) {
         // Determine Label
         let label = '';
         if (typeof window.getFieldLabel === 'function') {
-            console.log(`[FormAnalyzer-Fallback] Calling window.getFieldLabel for input:`, input);
+            //console.log(`[FormAnalyzer-Fallback] Calling window.getFieldLabel for input:`, input);
             label = window.getFieldLabel(input);
         } else {
             console.warn(`[FormAnalyzer-Fallback] window.getFieldLabel NOT available!`);

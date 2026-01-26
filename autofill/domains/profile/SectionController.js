@@ -16,7 +16,7 @@ class SectionController extends window.Handler {
     }
 
     async handle(fields, context) {
-        console.log("🚀 ~ SectionController ~ handle ~ fields:", fields)
+
         const results = {};
         const { resumeData } = context;
 
@@ -26,8 +26,8 @@ class SectionController extends window.Handler {
         for (const [sectionKey, sectionFields] of Object.entries(sections)) {
             const { type, index } = this.parseSectionKey(sectionKey);
             // console.log(`📜 [SectionController] Processing Transactional Section: ${type} #${index} (${sectionFields.length} fields)`);
-            console.log("🚀 ~ SectionController ~ handle ~ type:", type)
-            console.log("🚀 ~ SectionController ~ handle ~ index:", index)
+            //console.log("🚀 ~ SectionController ~ handle ~ type:", type)
+            // console.log("🚀 ~ SectionController ~ handle ~ index:", index)
             // 2. Fetch Source Entity (Transactional Unit)
             // Fallback to Resume Data
             let entity = this.getEntityFromResume(resumeData, type, index) || {};
@@ -89,11 +89,6 @@ class SectionController extends window.Handler {
     }
 
     async mapSection(fields, entity, source, type, index) {
-        console.log("🚀 ~ SectionController ~ mapSection ~ fields:", fields)
-        console.log("🚀 ~ SectionController ~ mapSection ~ entity:", entity)
-        console.log("🚀 ~ SectionController ~ mapSection ~ source:", source)
-        console.log("🚀 ~ SectionController ~ mapSection ~ type:", type)
-        console.log("🚀 ~ SectionController ~ mapSection ~ index:", index)
         const mapped = {};
         for (const field of fields) {
             // 1. Check InteractionLog (Cache) Priority
