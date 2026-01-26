@@ -82,7 +82,7 @@ class PipelineOrchestrator {
 
                     const cacheEntry = {
                         label: cacheLabel,
-                        type: field.instance_type || 'ATOMIC_SINGLE',
+                        instance_type: field.instance_type || 'ATOMIC_SINGLE',
                         scope: field.scope || 'GLOBAL',
                         field_index: field.field_index,
                         section_type: field.section_type
@@ -186,7 +186,9 @@ class PipelineOrchestrator {
             // DOM Indexing
             if (window.IndexingService) {
                 const label = (field.ml_prediction?.label || field.label || field.name || '').toLowerCase();
-                const type = this.getSectionType(label);
+                field.section_type = this.getSectionType(label);
+                const type = field.section_type;
+
 
                 // --- SMART SEQUENTIAL INCREMENT ---
                 // If we hit a "Header Field" (Company/School) and we have ALREADY seen one in this batch,

@@ -65,9 +65,11 @@ class ExecutionEngine {
         value = String(value);
 
         // Attach ML prediction to DOM element for sidebar cache access
-        if (fieldMetadata && fieldMetadata.ml_prediction) {
-            element.__ml_prediction = fieldMetadata.ml_prediction;
+        if (fieldMetadata) {
+            if (fieldMetadata.ml_prediction) element.__ml_prediction = fieldMetadata.ml_prediction;
+            if (!fieldMetadata.element) fieldMetadata.element = element;
         }
+
 
         // Stamp Source for Sidebar/UI tracking
         if (source) {
@@ -193,9 +195,19 @@ class ExecutionEngine {
         }
 
         let cacheLabel = fieldMetadata.cache_label || element.getAttribute('cache_label');
-        if (!cacheLabel && window.NovaCache) {
-            cacheLabel = window.NovaCache[element.id] || window.NovaCache[element.name];
+        if (window.NovaCache) {
+            const entry = window.NovaCache[element.id] || window.NovaCache[element.name];
+            if (entry && typeof entry === 'object') {
+                if (!cacheLabel) cacheLabel = entry.label;
+                if (!fieldMetadata.instance_type) fieldMetadata.instance_type = entry.instance_type || entry.type;
+                if (fieldMetadata.field_index === null || fieldMetadata.field_index === undefined) {
+                    fieldMetadata.field_index = entry.field_index;
+                }
+            } else if (entry && !cacheLabel) {
+                cacheLabel = entry;
+            }
         }
+
 
         const fieldContext = [fieldMetadata.label, fieldMetadata.name, fieldMetadata.parentContext].filter(Boolean).join(' ').toLowerCase();
         const isMultiCacheEligible = window.FIELD_ROUTING_PATTERNS ? window.FIELD_ROUTING_PATTERNS.isMultiValueEligible(fieldContext, element.type) : false;
@@ -206,10 +218,12 @@ class ExecutionEngine {
             fieldMetadata.instance_type = element.getAttribute('instance_type');
         }
 
+        const isSectional = ['SECTION_REPEATER', 'SECTION_CANDIDATE'].includes(fieldMetadata.instance_type);
         const isStructuredInput = ['radio', 'checkbox', 'select', 'select-one', 'select-multiple'].includes(type);
         const isAtomicSingle = fieldMetadata.instance_type === 'ATOMIC_SINGLE';
 
-        if ((isStructuredInput || isAtomicSingle || isMultiCacheEligible) && window.InteractionLog) {
+        // Unified Store Strategy: Prefer InteractionLog for all modern tracking
+        if (window.InteractionLog) {
             window.InteractionLog.cacheSelection(fieldMetadata, fieldMetadata.label, newValue);
         } else if (window.GlobalMemory) {
             const key = cacheLabel || (window.GlobalMemory.normalizeKey ? window.GlobalMemory.normalizeKey(fieldMetadata.label) : fieldMetadata.label);

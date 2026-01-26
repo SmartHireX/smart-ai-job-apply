@@ -97,9 +97,8 @@ function determineCacheStrategy(semanticKey, field = null) {
     // 0. EXPLICIT ROUTING (Architecture V2)
     if (field && field.instance_type) {
         if (field.instance_type === 'ATOMIC_MULTI') return CACHE_KEYS.ATOMIC_MULTI;
-        if (field.instance_type === 'SECTION_REPEATER') return CACHE_KEYS.SECTION_REPEATER;
+        if (field.instance_type === 'SECTION_REPEATER' || field.instance_type === 'SECTION_CANDIDATE') return CACHE_KEYS.SECTION_REPEATER;
         if (field.instance_type === 'ATOMIC_SINGLE') return CACHE_KEYS.ATOMIC_SINGLE;
-        if (field.instance_type === 'SECTION_CANDIDATE') return CACHE_KEYS.ATOMIC_SINGLE;
     }
 
     // Check for Atomic Multi Keywords
@@ -160,11 +159,25 @@ const _keyLocks = {}; // Per-bucket locks for granular concurrency control
 function getFieldIndex(field, label) {
     // 1. ARCHITECTURAL OVERRIDE (High Priority)
     // If we know this field is ATOMIC, it has no index.
-    if (field && field.instance_type && field.instance_type !== 'SECTION_REPEATER') {
+    const isSectional = field?.instance_type === 'SECTION_REPEATER' || field?.instance_type === 'SECTION_CANDIDATE';
+    if (field && field.instance_type && !isSectional) {
         return null;
     }
 
     if (field && typeof field.field_index === 'number') return field.field_index;
+
+    // 2. DOM RECOVERY (Layer 3)
+    const element = field?.element;
+    if (element && typeof element.getAttribute === 'function') {
+        const attrIdx = element.getAttribute('field_index');
+        if (attrIdx !== null) return parseInt(attrIdx);
+    }
+
+    // 3. CANDIDATE DEFAULT (Layer 4)
+    // If it's a candidate and we have no index, it's almost certainly the first instance (index 0).
+    if (field?.instance_type === 'SECTION_CANDIDATE') return 0;
+
+
 
     if (window.IndexingService) {
         const attrIndex = window.IndexingService.detectIndexFromAttribute ? window.IndexingService.detectIndexFromAttribute(field) : null;
@@ -522,31 +535,32 @@ function generateSemanticKey(fieldOrElement, label) {
     let cachedMeta = null;
 
     if (typeof HTMLElement !== 'undefined' && fieldOrElement instanceof HTMLElement) {
-        // 1. Try DOM Attribute
-        preCalculatedKey = fieldOrElement.getAttribute('cache_label');
-
-        // 2. Try NovaCache
-        if (!preCalculatedKey && window.NovaCache) {
-            const entry = window.NovaCache[fieldOrElement.id] || window.NovaCache[fieldOrElement.name];
-            if (entry) {
-                preCalculatedKey = (typeof entry === 'object') ? entry.label : entry;
-                cachedMeta = (typeof entry === 'object') ? entry : null;
+        // Always attempt metadata enrichment from NovaCache
+        if (window.NovaCache && (field.id || field.name)) {
+            const entry = window.NovaCache[field.id] || window.NovaCache[field.name];
+            if (entry && typeof entry === 'object') {
+                preCalculatedKey = preCalculatedKey || entry.label;
+                cachedMeta = entry;
+            } else if (entry && !preCalculatedKey) {
+                preCalculatedKey = entry;
             }
         }
-    } else if (field) {
-        preCalculatedKey = field.cache_label;
-        if (!preCalculatedKey && window.NovaCache && (field.id || field.name)) {
-            const entry = window.NovaCache[field.id] || window.NovaCache[field.name];
-            if (entry) {
-                preCalculatedKey = (typeof entry === 'object') ? entry.label : entry;
-                cachedMeta = (typeof entry === 'object') ? entry : null;
+
+        // Recover from DOM if POJO is missing metadata but has element
+        if (field.element && typeof field.element.getAttribute === 'function') {
+            field.instance_type = field.instance_type || field.element.getAttribute('instance_type');
+            field.scope = field.scope || field.element.getAttribute('scope');
+            if (field.field_index === undefined || field.field_index === null) {
+                const attrIdx = field.element.getAttribute('field_index');
+                if (attrIdx !== null) field.field_index = parseInt(attrIdx);
             }
+            field.section_type = field.section_type || field.element.getAttribute('section_type');
         }
     }
 
     // ENHANCEMENT: Inject cached metadata into field object if missing
-    if (cachedMeta && field && !field.instance_type) {
-        field.instance_type = field.instance_type || cachedMeta.type;
+    if (cachedMeta && field) {
+        field.instance_type = field.instance_type || cachedMeta.instance_type || cachedMeta.type;
         field.scope = field.scope || cachedMeta.scope;
         if (field.field_index === null || field.field_index === undefined) {
             field.field_index = cachedMeta.field_index;
@@ -634,7 +648,8 @@ async function getCachedValue(fieldOrSelector, labelArg) {
 
     // A. SECTIONAL LOOKUP
     if (targetBucket === CACHE_KEYS.SECTION_REPEATER) {
-        const parentSection = getSectionMapping(semanticType);
+        const parentSection = getSectionMapping(semanticType, field);
+
         if (parentSection && cache[parentSection]) {
             const index = getFieldIndex(field, label);
             const sectionEntry = cache[parentSection];
@@ -805,9 +820,34 @@ function validateSingleOption(field, singleValue) {
 }
 
 // Helper: Map semantic key to parent section
-function getSectionMapping(key) {
-    if (/job|work|employer|company|title|position/.test(key)) return 'work_experience';
-    if (/school|university|degree|education|institution|gpa|major|field_of_study|score|grade/.test(key)) return 'education';
+function getSectionMapping(key, field = null) {
+    // 1. Priority: Explicit Section Type or Context
+    const sectionType = field?.section_type || field?.parentContext ||
+        (key.includes('work') ? 'work' : key.includes('edu') ? 'education' : null);
+
+    if (sectionType === 'work' || sectionType === 'work_experience') return 'work_experience';
+    if (sectionType === 'education' || sectionType === 'edu') return 'education';
+
+    // 2. Fallback: Keyword Mapping for legacy/implicit keys
+    const normalizedKey = key.toLowerCase();
+
+    // Work Keywords (inclusive of 'employ', 'job', 'position', 'experience', 'description', 'start', 'end')
+    if (/(job|work|employ|company|title|position|responsibilit|description|experience)/.test(normalizedKey)) {
+        return 'work_experience';
+    }
+
+    // Education Keywords (inclusive of 'school', 'university', 'degree', 'major', 'gpa', 'study')
+    if (/(school|university|degree|educat|institut|gpa|major|field_of_study|score|grade|study)/.test(normalizedKey)) {
+        return 'education';
+    }
+
+    // 3. Ambiguous Date Handling (Default to Work if context is unclear but it's a repeater)
+    if (/(date|start|end|year|month)/.test(normalizedKey)) {
+        // If we made it here, it's a repeater field but we don't know the type.
+        // We favor work_experience as the most common repeater.
+        return 'work_experience';
+    }
+
     return null;
 }
 
@@ -955,6 +995,8 @@ async function cacheSelection(field, label, value) {
 
     // 2. Determine Storage Strategy
     const targetCacheKey = determineCacheStrategy(semanticType, field);
+    // console.log(`[InteractionLog] 💾 Caching: Key="${semanticType}" Bucket=${targetCacheKey} Type=${field?.instance_type || 'N/A'}`);
+
     const currentOp = _cacheLock.then(async () => {
         const cache = await getCache(targetCacheKey);
 
@@ -979,7 +1021,8 @@ async function cacheSelection(field, label, value) {
         // A. SECTION_REPEATER: Row-Based Storage (Array of Hashes)
         if (targetCacheKey === CACHE_KEYS.SECTION_REPEATER) {
             const index = getFieldIndex(field, label);
-            const parentSection = getSectionMapping(semanticType);
+            const parentSection = getSectionMapping(semanticType, field);
+
 
             if (parentSection) {
                 // Initialize Parent Section if missing (e.g. cache['education'])
@@ -1003,6 +1046,8 @@ async function cacheSelection(field, label, value) {
                 const storageKey = getCanonicalKey(semanticType);
                 entry.value[index][storageKey] = value;
                 entry.lastUsed = Date.now();
+                console.log(`[InteractionLog] ✅ Saved to SECTION_REPEATER: [${parentSection}][${index}][${storageKey}] = "${value}"`);
+
 
                 // Update variants (on parent)
                 const normLabel = normalizeFieldName(label);
