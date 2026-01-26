@@ -87,7 +87,7 @@ function classifyFieldType(signature) {
 const CACHE_KEYS = {
     ATOMIC_SINGLE: 'ATOMIC_SINGLE',     // Scalar Values (Email, Phone)
     ATOMIC_MULTI: 'ATOMIC_MULTI',       // Sets (Skills, Interests)
-    SECTIONAL_MULTI: 'SECTIONAL_MULTI'  // Row-Based Arrays (Jobs, Edu)
+    SECTION_REPEATER: 'SECTION_REPEATER'  // Row-Based Arrays (Jobs, Edu)
 };
 
 const METADATA_KEY = 'selectionCacheMetadata';
@@ -97,14 +97,9 @@ function determineCacheStrategy(semanticKey, field = null) {
     // 0. EXPLICIT ROUTING (Architecture V2)
     if (field && field.instance_type) {
         if (field.instance_type === 'ATOMIC_MULTI') return CACHE_KEYS.ATOMIC_MULTI;
-        if (field.instance_type === 'SECTIONAL_MULTI') return CACHE_KEYS.SECTIONAL_MULTI;
+        if (field.instance_type === 'SECTION_REPEATER') return CACHE_KEYS.SECTION_REPEATER;
         if (field.instance_type === 'ATOMIC_SINGLE') return CACHE_KEYS.ATOMIC_SINGLE;
-    }
-
-    // 1. FALLBACK INFERENCE (Legacy/Heuristic)
-    // Check for Sectional Keywords
-    if (/job|employer|institution|degree|education|work|school|title|position/.test(semanticKey)) {
-        return CACHE_KEYS.SECTIONAL_MULTI;
+        if (field.instance_type === 'SECTION_CANDIDATE') return CACHE_KEYS.ATOMIC_SINGLE;
     }
 
     // Check for Atomic Multi Keywords
@@ -165,7 +160,7 @@ const _keyLocks = {}; // Per-bucket locks for granular concurrency control
 function getFieldIndex(field, label) {
     // 1. ARCHITECTURAL OVERRIDE (High Priority)
     // If we know this field is ATOMIC, it has no index.
-    if (field && field.instance_type && field.instance_type !== 'SECTIONAL_MULTI') {
+    if (field && field.instance_type && field.instance_type !== 'SECTION_REPEATER') {
         return null;
     }
 
@@ -591,7 +586,8 @@ function generateSemanticKey(fieldOrElement, label) {
 
     const isGlobalOverride = GLOBAL_OVERRIDE_KEYS.some(k => fallbackKey.includes(k));
 
-    if (!isGlobalOverride && field.scope === 'SECTION' && field.instance_type === 'ATOMIC_SINGLE') {
+    const isSectionalType = field.instance_type === 'ATOMIC_SINGLE' || field.instance_type === 'SECTION_CANDIDATE';
+    if (!isGlobalOverride && field.scope === 'SECTION' && isSectionalType) {
         const sectionType = field.section_type || 'section'; // e.g. 'work'
         const index = field.field_index || 0;
 
@@ -630,7 +626,7 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     let cached = null;
 
     // A. SECTIONAL LOOKUP
-    if (targetBucket === CACHE_KEYS.SECTIONAL_MULTI) {
+    if (targetBucket === CACHE_KEYS.SECTION_REPEATER) {
         const parentSection = getSectionMapping(semanticType);
         if (parentSection && cache[parentSection]) {
             const index = getFieldIndex(field, label);
@@ -853,8 +849,8 @@ async function updateMultiSelection(field, label, value, isSelected) {
         targetCacheKey = CACHE_KEYS.ATOMIC_MULTI;
     } else if (field.instance_type === 'ATOMIC_SINGLE') {
         targetCacheKey = CACHE_KEYS.ATOMIC_SINGLE;
-    } else if (field.instance_type === 'SECTIONAL_MULTI') {
-        targetCacheKey = CACHE_KEYS.SECTIONAL_MULTI;
+    } else if (field.instance_type === 'SECTION_REPEATER') {
+        targetCacheKey = CACHE_KEYS.SECTION_REPEATER;
     } else {
         targetCacheKey = determineCacheStrategy(semanticType, field);
     }
@@ -973,8 +969,8 @@ async function cacheSelection(field, label, value) {
             }
         }
 
-        // A. SECTIONAL_MULTI: Row-Based Storage (Array of Hashes)
-        if (targetCacheKey === CACHE_KEYS.SECTIONAL_MULTI) {
+        // A. SECTION_REPEATER: Row-Based Storage (Array of Hashes)
+        if (targetCacheKey === CACHE_KEYS.SECTION_REPEATER) {
             const index = getFieldIndex(field, label);
             const parentSection = getSectionMapping(semanticType);
 
@@ -1092,7 +1088,7 @@ async function cleanupCache() {
 async function getCacheStats() {
     const single = await getCache(CACHE_KEYS.ATOMIC_SINGLE);
     const multiSet = await getCache(CACHE_KEYS.ATOMIC_MULTI);
-    const multiSec = await getCache(CACHE_KEYS.SECTIONAL_MULTI);
+    const multiSec = await getCache(CACHE_KEYS.SECTION_REPEATER);
 
     // Merge for display
     const merged = { ...single, ...multiSet, ...multiSec };

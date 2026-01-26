@@ -382,8 +382,7 @@ class HeuristicEngine {
             patterns: [
                 /\b(edu[_\-\s]?start|education[_\-\s]?start)\b/i,
                 /\benrollment[_\-\s]?date\b/i,
-                /\bstart[_\-\s]?year\b/i,
-                /\bfirst[_\-\s]?year[_\-\s]?attended\b/i
+                /\bstart[_\-\s]?year\b/i
             ],
             confidence: 0.91,
             category: 'education',
@@ -395,8 +394,7 @@ class HeuristicEngine {
                 /\b(edu[_\-\s]?end|education[_\-\s]?end)\b/i,
                 /\b(graduation[_\-\s]?date|graduation[_\-\s]?year)\b/i,
                 /\b(completed|completion[_\-\s]?date)\b/i,
-                /\bgraduated\b/i,
-                /\blast[_\-\s]?year[_\-\s]?attended\b/i
+                /\bgraduated\b/i
             ],
             confidence: 0.92,
             category: 'education',

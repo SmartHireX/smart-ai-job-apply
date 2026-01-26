@@ -64,12 +64,9 @@ class PipelineOrchestrator {
                         if (window.KeyGenerator) {
                             cacheLabel = window.KeyGenerator.generateEnterpriseCacheKey(field);
                         } else {
-                            console.warn('[Pipeline] KeyGenerator not found, falling back to simple key');
                             cacheLabel = [field.name, field.label].filter(Boolean).join('_') || 'unknown';
                         }
                     }
-                    // console.log(`🔍 [CacheDebug] Cache Label: ${cacheLabel}`);
-
                     // CENTRALIZED: Attach cache_label to field object
                     // This allows all downstream consumers (workflows, sidebar, InteractionLog)
                     // to simply access field.cache_label instead of regenerating keys.
@@ -108,16 +105,10 @@ class PipelineOrchestrator {
                         });
                     }
 
-                    // console.log(`🏷️ [Pipeline] Cache Label Assigned: "${field.label}" -> "${cacheLabel}" (ML Conf: ${field.ml_prediction.confidence})`);
                 } catch (e) {
-                    console.warn('[Pipeline] Failed to attach Cache Label:', e);
+                    // console.warn('[Pipeline] Failed to attach Cache Label:', e);
                 }
-            } else {
-                // Even without ML, we should technically assign a fallback cache label, 
-                // but for now we follow the "if ml_prediction" block structure.
-                // console.log(`⚠️ [Pipeline] Field Skipped (No Element/ML): "${field.label}"`);
             }
-
         });
 
         // 2. Group (Memory, Heuristic, Profile, General)
@@ -129,22 +120,26 @@ class PipelineOrchestrator {
 
         // --- PHASE 1: EXPLICIT LOCAL RESOLUTION ---
 
-        // A. MEMORY BATCH (Strategy: InteractionLog -> GlobalMemory -> RuleEngine)
-        if (groups.memory.length > 0) {
-            const res = await this.resolveMemoryBatch(groups.memory, context);
-            await this.applyAndCollect(res, results, groups.memory, unresolved);
+        // A. ATOMIC_SINGLE (Merged Memory/Heuristic)
+        // Strategy: InteractionLog -> RuleEngine
+        const atomicFields = groups.ATOMIC_SINGLE || [];
+
+        if (atomicFields.length > 0) {
+            const res = await this.resolveAtomicBatch(atomicFields, context);
+            await this.applyAndCollect(res, results, atomicFields, unresolved);
         }
 
-        // B. HEURISTIC BATCH (Strategy: InteractionLog -> GlobalMemory -> RuleEngine)
-        if (groups.heuristic.length > 0) {
-            const res = await this.resolveHeuristicBatch(groups.heuristic, context);
-            await this.applyAndCollect(res, results, groups.heuristic, unresolved);
-        }
+        // B. MULTI-VALUE / SECTIONS (Complex)
+        // Strategy: SectionController / CompositeFieldManager
+        const complexFields = [
+            ...(groups.ATOMIC_MULTI || []),
+            ...(groups.SECTION_REPEATER || []),
+            ...(groups.SECTION_CANDIDATE || []) // Route candidates here so SectionController can use indices
+        ];
 
-        // C. COMPLEX BATCH (Strategy: SectionController / CompositeFieldManager)
-        if (groups.complex.length > 0) {
-            const res = await this.processMultiSelect(groups.complex, context);
-            await this.applyAndCollect(res, results, groups.complex, unresolved);
+        if (complexFields.length > 0) {
+            const res = await this.processMultiSelect(complexFields, context);
+            await this.applyAndCollect(res, results, complexFields, unresolved);
         }
 
         // D. GENERAL (Fallthrough)
@@ -243,12 +238,6 @@ class PipelineOrchestrator {
                 if (window.IndexingService.getStableUID) {
                     field.instance_uid = window.IndexingService.getStableUID(field, type);
                 }
-
-                // Logging
-                // console.log(`🔍 [Enrich] ${label.substring(0, 20)}... | ML: ${field.ml_prediction?.label || 'N/A'} | Idx: ${field.field_index}`);
-
-            } else {
-                console.warn('⚠️ IndexingService missing during enrichment');
             }
 
             // --- STRUCTURAL CLASSIFICATION (The Core Upgrade) ---
@@ -263,33 +252,30 @@ class PipelineOrchestrator {
                 field.instance_type = window.FIELD_ROUTING_PATTERNS.classifyInstanceType(field, groupCount);
 
                 // REPEATER REGISTRY LOCK-IN (Layer 4)
-                // If designated as SECTIONAL_MULTI with strong score, treat as repeater
-                if (field.instance_type === 'SECTIONAL_MULTI' && field.sectionalScore >= 10) {
+                if (field.instance_type === 'SECTION_REPEATER') {
                     const base = window.IndexingService ? window.IndexingService.getBaseKey(field) : field.name;
                     if (base) this.repeaterRegistry.add(base);
                 }
-                // AUTO-PROMOTE if widely known 
+                // AUTO-PROMOTE if widely known
                 else if (window.IndexingService) {
                     const base = window.IndexingService.getBaseKey(field);
-                    // If registry has it, force upgrade atomic to sectional (if failed classification)
-                    if (this.repeaterRegistry.has(base) && field.instance_type !== 'SECTIONAL_MULTI') {
-                        field.instance_type = 'SECTIONAL_MULTI';
+                    if (this.repeaterRegistry.has(base) && field.instance_type !== 'SECTION_REPEATER') {
+                        // Force upgrade to prevent flip-flop
+                        // console.log(`🔒 [Registry] Upgrading ${base} to SECTION_REPEATER`);
+                        field.instance_type = 'SECTION_REPEATER';
                     }
                 }
 
-                // CLEANUP: Only SECTIONAL_MULTI carries a row index.
-                const isSectional = field.instance_type === 'SECTIONAL_MULTI';
-                if (!isSectional) {
+                // CLEANUP: Only SECTION_REPEATER or SECTION_CANDIDATE with STRUCTURAL index carry a row index.
+                // This prevents synthetic singletons from carrying noisy position metadata.
+                const isSectional = field.instance_type === 'SECTION_REPEATER' || field.instance_type === 'SECTION_CANDIDATE';
+                const isStructuralIdx = field.indexSource === 'STRUCTURAL';
+
+                if (!isSectional && !isStructuralIdx) {
                     field.field_index = null;
                 }
 
                 field.scope = window.FIELD_ROUTING_PATTERNS.classifyScope(field);
-
-                // Debug Logging for Classification (High Verbosity for Verification)
-                const label = (field.ml_prediction?.label || field.label || '').substring(0, 20);
-                if (isSectional || (field.sectionalScore > 0)) {
-                    // console.log(`🧬 [Pipeline] Struct: "${label}" -> Bucket: ${field.instance_type} | Scope: ${field.scope} | Score: ${field.sectionalScore || 0}`);
-                }
             }
 
             // IMMUTABILITY ENFORCEMENT
@@ -313,23 +299,19 @@ class PipelineOrchestrator {
      * Resolve Memory Fields (Text)
      * Chain: InteractionLog -> GlobalMemory -> RuleEngine
      */
-    async resolveMemoryBatch(fields, context) {
+    /**
+     * Resolve Atomic Fields (Single Value)
+     * Chain: InteractionLog -> RuleEngine
+     * Merges legacy Memory and Heuristic batches.
+     */
+    async resolveAtomicBatch(fields, context) {
         return this.runResolutionChain(fields, [
             (f) => this.strategyInteractionLog(f),
             (f) => this.strategyRuleEngine(f, context.resumeData) // User Data Fallback
         ]);
     }
 
-    /**
-     * Resolve Heuristic Fields (Select/Radio)
-     * Chain: InteractionLog -> GlobalMemory -> RuleEngine
-     */
-    async resolveHeuristicBatch(fields, context) {
-        return this.runResolutionChain(fields, [
-            (f) => this.strategyInteractionLog(f),
-            (f) => this.strategyRuleEngine(f, context.resumeData) // User Data Fallback
-        ]);
-    }
+
 
     /**
      * Strategy: Global Inference (AI)
@@ -346,11 +328,9 @@ class PipelineOrchestrator {
      * Logic: SectionController vs CompositeFieldManager
      */
     async processMultiSelect(fields, context) {
-        console.log('processMultiSelect', fields);
         const results = {};
         const { section, composite } = this.partitionProfileFields(fields);
-        console.log('section', section);
-        console.log('composite', composite);
+
         // 1. Section Fields (Jobs/Edu) -> SectionController (Transactional)
         if (section.length > 0 && this.controllers.section) {
             const sRes = await this.controllers.section.handle(section, context);
@@ -489,57 +469,25 @@ class PipelineOrchestrator {
     // --- Helpers ---
 
     groupFields(fields) {
-        const groups = { memory: [], heuristic: [], complex: [], general: [] };
+        // Initialize buckets based on instance_type
+        const groups = {
+            ATOMIC_SINGLE: [],
+            ATOMIC_MULTI: [],
+            SECTION_REPEATER: [],
+            SECTION_CANDIDATE: [],
+            general: []
+        };
 
         fields.forEach(field => {
             const type = field.instance_type || 'ATOMIC_SINGLE';
-            const scope = field.scope || 'GLOBAL';
-            const inputType = (field.type || 'text').toLowerCase();
 
-            // --- ROUTING LOGIC (The Truth Table) ---
-
-            // 1. COMPLEX (Sets & Sections)
-            // Route: SECTIONAL_MULTI | ATOMIC_MULTI -> groups.complex
-            if (type === 'SECTIONAL_MULTI' || type === 'ATOMIC_MULTI') {
-                this.assertAllowedResolver(type, scope, 'CompositeFieldManager');
-                groups.complex.push(field);
-                return;
+            // Route strictly by instance_type
+            if (groups[type]) {
+                groups[type].push(field);
+            } else {
+                // Fallback for unclassified fields
+                groups.general.push(field);
             }
-
-            // 2. MEMORY (Global Facts)
-            // Route: ATOMIC_SINGLE (Text/Email/Date) -> groups.memory
-            if (type === 'ATOMIC_SINGLE') {
-                const isRadio = inputType === 'radio';
-                const isSelect = inputType === 'select-one' || inputType === 'select';
-
-                // HEURISTIC SCOPE: All Radios and Selects (Global OR Section)
-                // We want all structured choices to go through HeuristicEngine (RuleEngine)
-                // This allows:
-                // 1. InteractionLog Check (Cache)
-                // 2. RuleEngine Check (Logic/Demographics)
-                // 3. ExecutionEngine Fuzzy Matching
-                if (isRadio || isSelect) {
-                    this.assertAllowedResolver(type, scope, 'HeuristicEngine');
-                    groups.heuristic.push(field);
-                    return;
-                }
-
-                if (scope === 'GLOBAL') {
-                    // Global single fields (Text/Email/etc) go to Memory for cross-site persistence
-                    this.assertAllowedResolver(type, scope, 'GlobalMemory');
-                    groups.memory.push(field);
-                    return;
-                }
-
-                // Allow simple section text fields to go to memory (e.g. Job Description, Company Name)
-                // These are legally routed to Memory/InteractionLog via the GlobalMemory adapter
-                this.assertAllowedResolver(type, scope, 'GlobalMemory');
-                groups.memory.push(field);
-                return;
-            }
-
-            // Fallback
-            groups.general.push(field);
         });
         return groups;
     }
@@ -553,7 +501,7 @@ class PipelineOrchestrator {
             'ATOMIC_SINGLE:GLOBAL': ['RuleEngine', 'GlobalMemory'],
             'ATOMIC_SINGLE:SECTION': ['HeuristicEngine', 'GlobalMemory'], // GlobalMemory okay if key is scoped
             'ATOMIC_MULTI:GLOBAL': ['CompositeFieldManager'],
-            'SECTIONAL_MULTI:SECTION': ['SectionController', 'CompositeFieldManager'],
+            'SECTION_REPEATER:SECTION': ['SectionController', 'CompositeFieldManager'],
             'COMPOSITE:GROUP': ['CompositeFieldManager']
         };
 
@@ -570,7 +518,7 @@ class PipelineOrchestrator {
         const composite = [];
         fields.forEach(f => {
             // Priority: Architecture V2 (Instance Type)
-            if (f.instance_type === 'SECTIONAL_MULTI') {
+            if (f.instance_type === 'SECTION_REPEATER') {
                 section.push(f);
             } else if (f.instance_type === 'ATOMIC_MULTI') {
                 composite.push(f);
@@ -649,14 +597,25 @@ class PipelineOrchestrator {
     }
 
     logGrouping(groups) {
-        // console.log(`📊 [Pipeline] Grouping Summary: Mem:${groups.memory.length} Heu:${groups.heuristic.length} Multi:${groups.multiValue.length} Gen:${groups.general.length}`);
+        console.log(`📊 [Pipeline] Grouping Summary:`);
 
-        // Detailed Group Logging
-        // Detailed Group Logging
-        if (groups.memory.length > 0) console.log('🧠 [Group: Memory]', groups.memory);
-        if (groups.heuristic.length > 0) console.log('⚡ [Group: Heuristic]', groups.heuristic);
-        if (groups.complex.length > 0) console.log('📚 [Group: Complex]', groups.complex);
-        if (groups.general.length > 0) console.log('📂 [Group: General]', groups.general);
+        const logGroup = (name, list) => {
+            if (!list || list.length === 0) return;
+            console.group(`${name} (${list.length})`);
+            list.forEach(f => {
+                const label = (f.label || f.name || 'unnamed').substring(0, 30);
+                const reason = (f.routingReasons || []).join(', ') || 'N/A';
+                const meta = `Score: ${f.sectionalScore || 0}, Signals: ${f.structuralSignalCount || 0}`;
+                console.log(`- ${label} | Reason: ${reason} | ${meta}`);
+            });
+            console.groupEnd();
+        };
+
+        logGroup('🧠 Atomic', groups.ATOMIC_SINGLE);
+        logGroup('📚 Atomic Multi', groups.ATOMIC_MULTI);
+        logGroup('⚡ Section Repeater', groups.SECTION_REPEATER);
+        logGroup('⏳ Section Candidate', groups.SECTION_CANDIDATE);
+        logGroup('📂 General', groups.general);
     }
 
     async applyHumanJitter() {

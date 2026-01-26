@@ -469,7 +469,7 @@ class CompositeFieldManager {
 
             return 'skills';
         }
-        if (field.instance_type === 'SECTIONAL_MULTI') {
+        if (field.instance_type === 'SECTION_REPEATER') {
             // Distinguish Work vs Edu based on label keywords
             // This is a sub-classification within the sectional type
             const label = (field.label || '').toLowerCase();
