@@ -249,8 +249,8 @@ const ALIAS_REGISTRY = {
     'field_of_study': ['major', 'concentration', 'discipline', 'education_major', 'study_field'],
     'gpa': ['gpa_score', 'grade_point_average', 'score', 'grade'],
     'work_description': ['description', 'summary', 'job_description', 'responsibilities'],
-    'start_date': ['job_start_date', 'education_start_date', 'start_year', 'from'],
-    'end_date': ['job_end_date', 'education_end_date', 'end_year', 'to']
+    'start_date': ['job_start_date', 'education_start_date', 'start_year', 'from', 'date_start', 'datestart'],
+    'end_date': ['job_end_date', 'education_end_date', 'end_year', 'to', 'date_end', 'dateend']
 };
 
 // --- 3. WEIGHTED TOKENS (Higher = More Important) ---
@@ -657,6 +657,10 @@ async function getCachedValue(fieldOrSelector, labelArg) {
             if (Array.isArray(sectionEntry.value) && sectionEntry.value[index]) {
                 const canonicalKey = getCanonicalKey(semanticType);
                 const rowValue = sectionEntry.value[index][canonicalKey];
+
+                // Row Integrity Guard: If field has a container_uid, we would ideally verify it here.
+                // For now, we enforce that sectional fields NEVER leak into global single-cache.
+
                 if (rowValue !== undefined) {
                     return {
                         value: rowValue,
@@ -666,7 +670,7 @@ async function getCachedValue(fieldOrSelector, labelArg) {
                     };
                 }
 
-                // Optional: Check un-normalized key as backup (for legacy data)
+                // Check un-normalized key as backup (for legacy data)
                 if (sectionEntry.value[index][semanticType] !== undefined) {
                     return {
                         value: sectionEntry.value[index][semanticType],
@@ -676,34 +680,39 @@ async function getCachedValue(fieldOrSelector, labelArg) {
                     };
                 }
 
-                // 3. Fuzzy/Loose Matching (Restore for robustness)
-                // Iterate keys in the row to find a match
+                // Internal Row Fuzzy Match (e.g. "start_date" vs "job_start_date")
                 const rowKeys = Object.keys(sectionEntry.value[index]);
-                const match = rowKeys.find(k => k.includes(semanticType) || semanticType.includes(k) || (canonicalKey && k.includes(canonicalKey)));
+                const fuzzyMatch = rowKeys.find(k => {
+                    const canonicalK = getCanonicalKey(k);
+                    return canonicalK === canonicalKey ||
+                        k.includes(semanticType) ||
+                        semanticType.includes(k) ||
+                        (canonicalKey && (k.includes(canonicalKey) || canonicalKey.includes(k)));
+                });
 
-                if (match && sectionEntry.value[index][match]) {
-                    // console.log(`[InteractionLog] ✅ Found via Fuzzy Match: ${match} = "${sectionEntry.value[index][match]}"`);
+                if (fuzzyMatch && sectionEntry.value[index][fuzzyMatch] !== undefined) {
                     return {
-                        value: sectionEntry.value[index][match],
+                        value: sectionEntry.value[index][fuzzyMatch],
                         confidence: 0.85,
                         source: 'section_row_cache_fuzzy',
-                        semanticType: match
+                        semanticType: fuzzyMatch
                     };
                 }
             }
         }
+
+        // SECTIONAL GUARD: If we are here, we are a sectional field but didn't find a match in the row.
+        // We MUST NOT fall through to generic matchers which might return the entire row object.
+        return null;
     }
 
-    // 3. Match Logic
     const match = findBestKeyMatch(semanticType, cache, 0.8, { mlLabel: isML ? semanticType : null, label });
-
-    // console.log(`🔍 [InteractionLog] Lookup: "${semanticType}" -> Bucket: ${targetBucket} -> Found:`, match ? match.matchedKey : 'NULL');
 
     if (match) {
         return {
-            value: match.value.answer || match.value.value || match.value, // Robust extraction
+            value: match.value.answer || match.value.value || match.value,
             confidence: match.similarity,
-            source: 'selection_cache', // Preserving source ID for legacy compat
+            source: 'selection_cache',
             semanticType: match.matchedKey
         };
     }
@@ -713,12 +722,11 @@ async function getCachedValue(fieldOrSelector, labelArg) {
         cached = cache[semanticType];
     }
 
-    // C. CROSS-BUCKET FALLBACK (If miss in primary, try Atomic Single/legacy)
-    if (!cached && targetBucket !== CACHE_KEYS.ATOMIC_SINGLE) {
-        const singleCache = await getCache(CACHE_KEYS.ATOMIC_SINGLE);
-        if (singleCache[semanticType]) {
-            cached = singleCache[semanticType];
-            // console.log(`[InteractionLog] 🔄 Fallback Hit in ATOMIC_SINGLE: ${semanticType}`);
+    // C. CROSS-BUCKET FALLBACK (Safe for ATOMIC only)
+    if (!cached && targetBucket === CACHE_KEYS.ATOMIC_SINGLE) {
+        const multiCache = await getCache(CACHE_KEYS.ATOMIC_MULTI);
+        if (multiCache[semanticType]) {
+            cached = multiCache[semanticType];
         }
     }
     // B. Fuzzy Search (Secondary)

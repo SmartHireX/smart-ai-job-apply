@@ -573,7 +573,7 @@ function getNearestHeadingText(field) {
     if (!field) return null;
 
     // Exclusion patterns - common UI elements that are NOT form questions
-    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|drag.*drop|browse.*file|supported.*format|pdf|docx|button|submit|cancel|back|next|previous|step \d|page \d/i;
+    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|drag.*drop|browse.*file|supported.*format|pdf|docx|button|submit|cancel|back|next|previous|step \d|page \d|^indicates.*required/i;
 
     // Question-like patterns (prioritize these)
     const QUESTION_PATTERNS = /\?|what|where|when|why|how|which|who|are you|do you|have you|can you|will you|would you|please|enter|provide|describe|select|choose|years.*experience|tell.*us/i;

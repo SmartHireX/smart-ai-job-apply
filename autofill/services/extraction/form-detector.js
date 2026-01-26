@@ -334,15 +334,8 @@ function extractFormHTML() {
 
 
 
-/**
- * FANG-STYLE VISUAL LABEL ALGORITHM
- * Aggressive recursive search for "Human Readable Questions"
- * 1. Deep scan (up to 8 levels)
- * 2. Wide scan (all previous siblings)
- * 3. Content Analysis (Question marks, Colons, Keywords)
- */
 function getVisualLabel(element) {
-    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|button|submit|cancel/i;
+    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|button|submit|cancel|^indicates.*required/i;
     // Expanded Question Patterns
     const QUESTION_PATTERNS = /\?$|:$|what|where|when|why|how|which|who|are you|do you|have you|please|enter|provide|select|choose|describe|indicate/i;
 
@@ -611,7 +604,7 @@ function getFieldLabel(element) {
     // Look for question text in parent containers (common in Ashby, Lever, etc.)
     let parent = element.parentElement;
     const QUESTION_PATTERNS = /\?$|what|where|when|why|how|which|who|are you|do you|have you|please|enter your|provide your/i;
-    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|button|submit|cancel/i;
+    const EXCLUSION_PATTERNS = /autofill|resume|upload|download|attach|button|submit|cancel|^indicates.*required/i;
 
     for (let i = 0; i < 6 && parent && parent.tagName !== 'FORM' && parent.tagName !== 'BODY'; i++) {
         // Look for question-like headers in this parent

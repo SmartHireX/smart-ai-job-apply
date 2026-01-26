@@ -59,6 +59,7 @@ const SCRIPT_QUEUE = [
     'autofill/domains/model/FieldRoutingPatterns.js',
     'autofill/core/PipelineOrchestrator.js',
     'autofill/services/extraction/section-detector.js',
+    'autofill/services/extraction/section-grouper.js',
     'autofill/services/extraction/sibling-cluster.js',
     'autofill/domains/profile/CompositeFieldManager.js',
     'autofill/services/ai/AIBatchProcessor.js',

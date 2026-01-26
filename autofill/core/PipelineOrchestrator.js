@@ -147,138 +147,139 @@ class PipelineOrchestrator {
         return results;
     }
 
-    ingestAndEnrich(fields) {
-        // Track unique headers to detect new sections (e.g. Job 1 -> Job 2)
-        const seenHeaders = { work: false, education: false };
+    async ingestAndEnrich(fields) {
+        // Phase 1: Initial Enrichment (ML + Detector Signals)
+        await Promise.all(fields.map(async field => {
+            if (!field.ml_prediction && this.classifier) {
+                field.ml_prediction = await this.classifier.classify(field);
+            }
+            if (window.SectionDetector && field.element) {
+                const secRes = window.SectionDetector.detect(field.element);
+                if (secRes) {
+                    field.parentContext = secRes.context;
+                    field.sectionConfidence = secRes.confidence;
+                    if (secRes.isRepeater) field.isStrongRepeater = true;
+                }
+            }
+            const label = (field.ml_prediction?.label || field.label || field.name || '').toLowerCase();
+            field.section_type = this.getSectionType(label);
+        }));
 
-        // PRE-PASS: Count occurrences of each Base Key to prove Repeater status
+        // Phase 2: Structural Grouping (Layout-Level Truth)
+        if (window.SectionGrouper) {
+            this.applyStructuralGrouping(fields);
+        }
+
+        // Phase 3: Final Indexing & Routing
+        const seenHeaders = { work: false, education: false };
         const baseKeyCounts = {};
         if (window.IndexingService && window.IndexingService.getBaseKey) {
             fields.forEach(f => {
                 const base = window.IndexingService.getBaseKey(f);
-                if (base) {
-                    baseKeyCounts[base] = (baseKeyCounts[base] || 0) + 1;
-                }
+                if (base) baseKeyCounts[base] = (baseKeyCounts[base] || 0) + 1;
             });
         }
 
-        return Promise.all(fields.map(async field => {
-            // Hybrid Classification (Heuristic + Neural with 5-tier arbitration)
-            if (!field.ml_prediction && this.classifier) {
-                field.ml_prediction = await this.classifier.classify(field);
-            }
+        fields.forEach(field => {
+            const type = field.section_type;
 
-            // DETECT SECTION CONTEXT & REPEATER SIGNALS (Layer 2a Enhancement)
-            // We use SectionDetector to find "Add Job" buttons and other strong repeater cues.
-            if (window.SectionDetector && field.element) {
-                const secRes = window.SectionDetector.detect(field.element);
-                if (secRes) {
-                    field.parentContext = secRes.context; // e.g. 'work', 'education'
-                    field.sectionConfidence = secRes.confidence;
-
-                    // Propagate the "Add Button" / "ATS Array" signal
-                    if (secRes.isRepeater) {
-                        field.isStrongRepeater = true;
-                    }
-                }
-            }
-
-            // DOM Indexing
-            if (window.IndexingService) {
+            // DOM Indexing Fallback (If structural didn't catch it)
+            if (window.IndexingService && field.field_index === undefined) {
                 const label = (field.ml_prediction?.label || field.label || field.name || '').toLowerCase();
-                field.section_type = this.getSectionType(label);
-                const type = field.section_type;
-
-
-                // --- SMART SEQUENTIAL INCREMENT ---
-                // If we hit a "Header Field" (Company/School) and we have ALREADY seen one in this batch,
-                // it implies we have moved to the NEXT section (e.g. Job 1 -> Job 2).
-
                 const isWorkHeader = type === 'work' && (label.includes('company') || label.includes('employer') || label.includes('organization'));
                 const isEduHeader = type === 'education' && (label.includes('school') || label.includes('university') || label.includes('institution'));
 
                 if (isWorkHeader) {
-                    if (seenHeaders.work) {
-                        // We already saw a company, this must be the next one!
-                        window.IndexingService.incrementCounter('work');
-                    }
+                    if (seenHeaders.work) window.IndexingService.incrementCounter('work');
                     seenHeaders.work = true;
                 }
-
                 if (isEduHeader) {
-                    if (seenHeaders.education) {
-                        window.IndexingService.incrementCounter('education');
-                    }
+                    if (seenHeaders.education) window.IndexingService.incrementCounter('education');
                     seenHeaders.education = true;
                 }
 
-                // INDEXING V2: Use new { index, confidence } logic
                 const idxRes = window.IndexingService.getIndex(field, type);
-                // Handle both old (number) and new (object) return signatures for safety
                 if (idxRes !== null && typeof idxRes === 'object' && idxRes.index !== undefined) {
                     field.field_index = idxRes.index;
-                    field.indexConfidence = idxRes.confidence; // metadata for debug
                 } else if (typeof idxRes === 'number') {
                     field.field_index = idxRes;
-                } else {
-                    field.field_index = null;
-                }
-
-                // STABLE UID (Layer 3b): Generate Drift-Proof ID
-                if (window.IndexingService.getStableUID) {
-                    field.instance_uid = window.IndexingService.getStableUID(field, type);
                 }
             }
 
-            // --- STRUCTURAL CLASSIFICATION (The Core Upgrade) ---
+            // Instance Type & Scope resolution
             if (window.FIELD_ROUTING_PATTERNS) {
-                // Get pre-calculated count for this field's base key
-                let groupCount = 1;
-                if (window.IndexingService && window.IndexingService.getBaseKey) {
-                    const base = window.IndexingService.getBaseKey(field);
-                    groupCount = baseKeyCounts[base] || 1;
-                }
-
+                const base = window.IndexingService ? window.IndexingService.getBaseKey(field) : field.name;
+                const groupCount = baseKeyCounts[base] || 1;
                 field.instance_type = window.FIELD_ROUTING_PATTERNS.classifyInstanceType(field, groupCount);
 
-                // REPEATER REGISTRY LOCK-IN (Layer 4)
-                if (field.instance_type === 'SECTION_REPEATER') {
-                    const base = window.IndexingService ? window.IndexingService.getBaseKey(field) : field.name;
-                    if (base) this.repeaterRegistry.add(base);
-                }
-                // AUTO-PROMOTE if widely known
-                else if (window.IndexingService) {
-                    const base = window.IndexingService.getBaseKey(field);
-                    if (this.repeaterRegistry.has(base) && field.instance_type !== 'SECTION_REPEATER') {
-                        // Force upgrade to prevent flip-flop
-                        // console.log(`🔒 [Registry] Upgrading ${base} to SECTION_REPEATER`);
-                        field.instance_type = 'SECTION_REPEATER';
-                    }
+                // Registry Promotion
+                if (field.instance_type === 'SECTION_REPEATER' && base) this.repeaterRegistry.add(base);
+                else if (this.repeaterRegistry.has(base) && field.instance_type !== 'SECTION_REPEATER') {
+                    field.instance_type = 'SECTION_REPEATER';
                 }
 
-                // CLEANUP: Only SECTION_REPEATER or SECTION_CANDIDATE with STRUCTURAL index carry a row index.
-                // This prevents synthetic singletons from carrying noisy position metadata.
                 const isSectional = field.instance_type === 'SECTION_REPEATER' || field.instance_type === 'SECTION_CANDIDATE';
-                const isStructuralIdx = field.indexSource === 'STRUCTURAL';
-
-                if (!isSectional && !isStructuralIdx) {
+                if (!isSectional && field.indexSource !== 'STRUCTURAL') {
                     field.field_index = null;
                 }
-
                 field.scope = window.FIELD_ROUTING_PATTERNS.classifyScope(field);
             }
 
-            // IMMUTABILITY ENFORCEMENT
-            // Verify these properties cannot be changed downstream
+            // Stable UID
+            if (window.IndexingService && window.IndexingService.getStableUID && !field.instance_uid) {
+                field.instance_uid = window.IndexingService.getStableUID(field, type);
+            }
+
+            // Container UID (Hardened Layout Anchor)
+            if (field.field_index !== null && field.container_fingerprint) {
+                field.container_uid = `${field.container_fingerprint}_row${field.field_index}`;
+            }
+
+            // Freeze
             try {
                 Object.defineProperty(field, 'instance_type', { writable: false, configurable: false });
                 Object.defineProperty(field, 'scope', { writable: false, configurable: false });
-            } catch (e) {
-                console.warn('[Pipeline] Could not freeze field structure', e);
-            }
+            } catch (e) { }
+        });
 
-            return field;
-        }));
+        return fields;
+    }
+
+    /**
+     * Apply structural grouping to fields.
+     * Identifies containers and assigns deterministic indices.
+     */
+    applyStructuralGrouping(fields) {
+        const { blocks, orphans } = window.SectionGrouper.groupFieldsByContainer(fields);
+
+        // Group blocks by fingerprint to identify repeaters
+        const fingerprintMap = new Map(); // fingerprint -> blocks[]
+        blocks.forEach(block => {
+            if (!fingerprintMap.has(block.fingerprint)) fingerprintMap.set(block.fingerprint, []);
+            fingerprintMap.get(block.fingerprint).push(block);
+        });
+
+        fingerprintMap.forEach((instances, fingerprint) => {
+            // Sort instances by vertical position for deterministic indexing
+            instances.sort((a, b) => a.top - b.top);
+
+            const isRepeater = instances.length > 1;
+
+            instances.forEach((instance, index) => {
+                instance.fields.forEach(field => {
+                    field.container_fingerprint = fingerprint;
+                    field.field_index = index;
+                    field.indexSource = 'STRUCTURAL';
+
+                    if (isRepeater) {
+                        field.isStrongRepeater = true;
+                    } else {
+                        // Solitary fields remain ATOMIC_SINGLE but with SECTION scope
+                        field.wasSolitaryStructural = true;
+                    }
+                });
+            });
+        });
     }
 
     // ==========================================
