@@ -50,7 +50,7 @@ class FieldRoutingPatterns {
             // 2. PROVEN GROUPING: count(baseKey) >= 2 
             //    (Use groupCount passed from Orchestrator pre-pass)
             if (score >= 10 && groupCount >= 2) {
-                return 'SECTION_REPEATER';
+                return 'SECTIONAL_MULTI';
             }
 
             if (score >= 2) {

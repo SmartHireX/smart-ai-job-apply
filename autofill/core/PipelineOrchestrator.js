@@ -263,23 +263,22 @@ class PipelineOrchestrator {
                 field.instance_type = window.FIELD_ROUTING_PATTERNS.classifyInstanceType(field, groupCount);
 
                 // REPEATER REGISTRY LOCK-IN (Layer 4)
-                if (field.instance_type === 'SECTION_REPEATER') {
+                // If designated as SECTIONAL_MULTI with strong score, treat as repeater
+                if (field.instance_type === 'SECTIONAL_MULTI' && field.sectionalScore >= 10) {
                     const base = window.IndexingService ? window.IndexingService.getBaseKey(field) : field.name;
                     if (base) this.repeaterRegistry.add(base);
                 }
-                // AUTO-PROMOTE if widely known
+                // AUTO-PROMOTE if widely known 
                 else if (window.IndexingService) {
                     const base = window.IndexingService.getBaseKey(field);
-                    if (this.repeaterRegistry.has(base) && field.instance_type !== 'SECTION_REPEATER') {
-                        // Force upgrade to prevent flip-flop
-                        // console.log(`🔒 [Registry] Upgrading ${base} to SECTION_REPEATER`);
-                        field.instance_type = 'SECTION_REPEATER';
+                    // If registry has it, force upgrade atomic to sectional (if failed classification)
+                    if (this.repeaterRegistry.has(base) && field.instance_type !== 'SECTIONAL_MULTI') {
+                        field.instance_type = 'SECTIONAL_MULTI';
                     }
                 }
 
-                // CLEANUP: Only SECTIONAL_MULTI/REPEATER carries a row index.
-                // This prevents atomic fields from carrying noisy position metadata.
-                const isSectional = field.instance_type === 'SECTIONAL_MULTI' || field.instance_type === 'SECTION_REPEATER';
+                // CLEANUP: Only SECTIONAL_MULTI carries a row index.
+                const isSectional = field.instance_type === 'SECTIONAL_MULTI';
                 if (!isSectional) {
                     field.field_index = null;
                 }
@@ -378,7 +377,7 @@ class PipelineOrchestrator {
     async strategyInteractionLog(fields) {
         if (!window.InteractionLog) return {};
         const results = {};
-        console.log('strategyInteractionLog', fields);
+        //console.log('strategyInteractionLog', fields);
         for (const field of fields) {
             // Pass the FULL field object to allow ML-based lookup
             const cached = await window.InteractionLog.getCachedValue(field);

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Add Button Detection Test</title>
+    <!-- Mock dependencies -->
+    <script>
+        window.IndexingService = {
+            reset: () => { },
+            getBaseKey: (f) => f.name.replace(/\d+/, ''),
+            getIndex: (f) => ({ index: null, confidence: 0 }), // SIMULATE NO INDEX
+            incrementCounter: () => { }
+        };
+        window.PipelineOrchestrator = null;
+    </script>
+    <script src="../autofill/services/extraction/section-detector.js"></script>
+    <script src="../autofill/domains/model/FieldRoutingPatterns.js"></script>
+    <script src="../autofill/core/PipelineOrchestrator.js"></script>
+</head>
+
+<body>
+    <h1>Add Button Detection Test</h1>
+
+    <!-- Case 1: Field inside container with Add Button (Footer) -->
+    <div id="container-1">
+        <label for="job-title">Job Title</label>
+        <input id="job-title" name="title" type="text" class="field">
+
+        <div class="footer">
+            <button type="button">Add Another Job</button>
+        </div>
+    </div>
+
+    <!-- Case 2: Field with Sibling Add Button (Action Bar) -->
+    <div id="container-2">
+        <input id="edu-school" name="school" type="text" class="field">
+    </div>
+    <div class="actions">
+        <!-- Text matches "add education" -->
+        <button type="button">Add Education</button>
+    </div>
+
+    <!-- Case 3: Negative Heuristic (Add Note) -->
+    <div id="container-3">
+        <input id="notes" name="notes" type="text" class="field">
+        <button type="button">Add Note</button> <!-- Should NOT trigger repeater -->
+    </div>
+
+    <pre id="output"></pre>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const results = {};
+            const orchestrator = new window.PipelineOrchestrator();
+
+            const testField = async (id) => {
+                const el = document.getElementById(id);
+                const field = {
+                    element: el,
+                    id: id,
+                    name: el.name,
+                    label: id,
+                    type: 'text',
+                    // Mock what extraction would give
+                };
+
+                // Manually run ingest/enrich to trigger SectionDetector
+                // We wrap in array as ingest expects array
+                const enriched = await orchestrator.ingestAndEnrich([field]);
+                const f = enriched[0];
+
+                return {
+                    parentContext: f.parentContext,
+                    isStrongRepeater: f.isStrongRepeater,
+                    instance_type: f.instance_type
+                };
+            };
+
+            results['case_1_internal_button'] = await testField('job-title');
+            results['case_2_sibling_button'] = await testField('edu-school');
+            results['case_3_negative_heuristic'] = await testField('notes');
+
+            document.getElementById('output').textContent = JSON.stringify(results, null, 2);
+        });
+    </script>
+</body>
+
+</html>

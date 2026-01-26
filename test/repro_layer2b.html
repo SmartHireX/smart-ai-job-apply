@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Layer 2b Detection Test</title>
+    <!-- Mock dependencies -->
+    <script>
+        window.IndexingService = {
+            reset: () => { },
+            getBaseKey: (f) => f.name.replace(/\d+/, ''),
+            getIndex: (f) => ({ index: null, confidence: 0 }),
+            incrementCounter: () => { }
+        };
+        window.PipelineOrchestrator = null;
+    </script>
+    <script src="../autofill/services/extraction/section-detector.js"></script>
+    <script src="../autofill/domains/model/FieldRoutingPatterns.js"></script>
+    <script src="../autofill/core/PipelineOrchestrator.js"></script>
+</head>
+
+<body>
+    <h1>Layer 2b Detection Test</h1>
+
+    <!-- Case 1: ATS Array Naming -->
+    <input id="ats-array" name="education[][school_name]" class="field">
+
+    <!-- Case 2: Semantic Tuple (Work) -->
+    <div id="semantic-tuple">
+        <label>Company Name</label> <input id="tuple-company">
+        <label>Job Title</label> <input id="tuple-title">
+    </div>
+
+    <!-- Case 3: Multiset Fingerprinting (Siblings) -->
+    <div id="fingerprint-wrapper">
+        <div class="item">
+            <label>School</label> <input type="text">
+            <label>Degree</label> <input type="text">
+        </div>
+        <div class="item">
+            <label>School</label> <input type="text"> <!-- Order Check: Identical types/salt -->
+            <label>Degree</label> <input id="fingerprint-target" type="text">
+        </div>
+    </div>
+
+    <!-- Case 4: Negative Domain (Survey) -->
+    <div id="survey-container">
+        <h2>Marketing Survey</h2>
+        <label>How did you hear about us?</label>
+        <input id="survey-field" name="hear_about">
+    </div>
+
+    <pre id="output"></pre>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const results = {};
+            const orchestrator = new window.PipelineOrchestrator();
+
+            const testField = async (id, nameOverride) => {
+                const el = document.getElementById(id);
+                const field = {
+                    element: el,
+                    id: id,
+                    name: nameOverride || el.name || id,
+                    label: el.previousElementSibling?.innerText || '',
+                    type: 'text',
+                };
+
+                const enriched = await orchestrator.ingestAndEnrich([field]);
+                const f = enriched[0];
+
+                return {
+                    parentContext: f.parentContext,
+                    isStrongRepeater: f.isStrongRepeater,
+                    instance_type: f.instance_type
+                };
+            };
+
+            results['case_1_ats_array'] = await testField('ats-array');
+            results['case_2_semantic_tuple'] = await testField('tuple-company');
+            results['case_3_fingerprint'] = await testField('fingerprint-target');
+            results['case_4_negative_domain'] = await testField('survey-field');
+
+            document.getElementById('output').textContent = JSON.stringify(results, null, 2);
+        });
+    </script>
+</body>
+
+</html>

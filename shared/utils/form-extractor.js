@@ -43,7 +43,10 @@ class FormExtractor {
      * Extract input fields (text, email, tel, date, radio, checkbox, etc.)
      */
     extractInputs(container) {
-        const inputs = container.querySelectorAll('input');
+        // ROBUST SCRAPER UPGRADE: Use DeepDomWalker instead of querySelectorAll
+        // This ensures we find inputs inside Shadow Roots (Workday/Salesforce)
+        const inputs = this.collectDeepFields(container, ['input']);
+
         const fields = [];
         const processedGroups = new Set(); // Stores group keys (name or wrapper index)
 
@@ -70,14 +73,16 @@ class FormExtractor {
                 } else if (wrapper) {
                     // B. Anonymous Group (Unique or missing names)
                     // Use the wrapper's index or unique ID as the key
-                    const allNodes = Array.from(container.querySelectorAll('*'));
-                    groupKey = `wrapper:${allNodes.indexOf(wrapper)}`;
+                    // Note: In Shadow DOM, getting "allNodes" from container might be expensive/wrong.
+                    // We stick to wrapper reference if possible, or skip unknown grouping.
+                    if (wrapper.id) groupKey = `wrapper:${wrapper.id}`;
+                    else groupKey = `name:${name || 'unknown'}`;
                 } else if (name) {
                     // C. Fallback to name if no wrapper found
                     groupKey = `name:${name}`;
                 } else {
-                    // D. Individual field (no name, no wrapper)
-                    groupKey = `element:${Array.from(container.querySelectorAll('input')).indexOf(input)}`;
+                    // D. Individual field (no name, no wrapper) - Weak ID
+                    groupKey = `element:${input.id || Math.random()}`;
                 }
 
                 if (processedGroups.has(groupKey)) return;
@@ -92,33 +97,37 @@ class FormExtractor {
     }
 
     /**
-     * Extract select dropdowns
-     */
-    extractSelects(container) {
-        const selects = container.querySelectorAll('select');
-        const fields = [];
-
-        selects.forEach(select => {
-            const field = this.buildFieldObject(select, container);
-            if (field) fields.push(field);
-        });
-
-        return fields;
-    }
-
-    /**
      * Extract textareas
      */
     extractTextareas(container) {
-        const textareas = container.querySelectorAll('textarea');
+        // ROBUST SCRAPER UPGRADE: Deep Scan
+        const textareas = this.collectDeepFields(container, ['textarea']);
         const fields = [];
 
         textareas.forEach(textarea => {
             const field = this.buildFieldObject(textarea, container);
             if (field) fields.push(field);
         });
-
         return fields;
+    }
+
+    /**
+     * EXTRACT (Main Entry Point)
+     */
+    extract(root) {
+        // Single Pass Extraction (Optimized)
+        // Instead of calling collectDeepFields 3 times, we call it once and filter results.
+        const allFields = this.collectDeepFields(root, ['input', 'select', 'textarea']);
+
+        // Convert to Normalized Field Objects
+        const processedFields = [];
+
+        allFields.forEach(el => {
+            const field = this.buildFieldObject(el, root); // Pass container for context
+            if (field) processedFields.push(field);
+        });
+
+        return processedFields;
     }
 
     /**
@@ -417,6 +426,284 @@ class FormExtractor {
         div.innerHTML = html;
         return div;
     }
+
+    // ==========================================
+    // ROBUST SCRAPER UPGRADES (Enterprise Grade)
+    // ==========================================
+
+    /**
+     * Entry Point: Extract with Stability Check and Two-Pass Verification
+     * @param {Element} root 
+     */
+    async extractWithStability(root) {
+        if (!root) return [];
+
+        // Pass 1: Wait for stability
+        await this.waitForDomStability({ root, idleMs: 200, timeoutMs: 2000 });
+        const pass1 = this.collectDeepFields(root);
+
+        // Pass 2: Verification (React Guard)
+        // Short sleep to catch immediate re-renders/unmounts
+        await new Promise(r => setTimeout(r, 150));
+        const pass2 = this.collectDeepFields(root);
+
+        // Intersect & Deduplicate
+        return this.intersectAndDedupeFields(pass1, pass2);
+    }
+
+    /**
+     * Intersect two passes and deduplicate by Semantic Fingerprint
+     */
+    intersectAndDedupeFields(pass1, pass2) {
+        const map2 = new Map();
+        pass2.forEach(el => map2.set(this.getSemanticFingerprint(el), el));
+
+        const resultNodes = [];
+        const seen = new Set();
+
+        pass1.forEach(el => {
+            const fingerprint = this.getSemanticFingerprint(el);
+
+            // 1. Stability Check: Must exist in Pass 2
+            if (map2.has(fingerprint)) {
+                const stableNode = map2.get(fingerprint); // Prefer the later node (Pass 2)
+
+                // 2. Dedup Check
+                if (!seen.has(fingerprint)) {
+                    seen.add(fingerprint);
+
+                    // 3. Usability Filter (Visibility)
+                    if (this.isUsableField(stableNode)) {
+                        resultNodes.push(stableNode);
+                    }
+                }
+            }
+        });
+
+        // Convert Nodes to Field Objects
+        const fields = [];
+        resultNodes.forEach(node => {
+            const field = this.buildFieldObject(node, document); // Assuming document context for now
+            if (field) fields.push(field);
+        });
+
+        return fields;
+    }
+
+    /**
+     * Generate Enterprise-Grade Fingerprint
+     * Combines Semantics (Label/Name) + Structure (DOM Path Anchor)
+     */
+    getSemanticFingerprint(el) {
+        // Label normalization
+        const label = this.extractLabel(el) || '';
+        const normLabel = label.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        // Structural Anchor (Ancestor ID or Path)
+        // We limit path depth to avoid brittleness, but enough to distinguish repeated sections
+        const domPath = this.getStableDomPath(el, 3);
+
+        return `${normLabel}|${el.name || ''}|${el.id || ''}|${domPath}`;
+    }
+
+    /**
+     * Get stable DOM path (ancestors)
+     */
+    getStableDomPath(el, depth) {
+        let path = '';
+        let current = el.parentElement;
+        let d = 0;
+        while (current && d < depth && current.tagName !== 'BODY') {
+            let seg = current.tagName.toLowerCase();
+            if (current.id) seg += `#${current.id}`;
+            else if (current.getAttribute('data-automation-id')) seg += `[data-automation-id="${current.getAttribute('data-automation-id')}"]`;
+            else {
+                // Positional index (fragile but necessary for arrays)
+                const index = Array.from(current.parentElement?.children || []).indexOf(current);
+                seg += `:nth-child(${index + 1})`;
+            }
+            path = `/${seg}${path}`;
+            current = current.parentElement;
+            d++;
+        }
+        return path;
+    }
+
+    /**
+     * Check if field is usable (Visible, Enabled, Sized)
+     */
+    isUsableField(el) {
+        if (!el.isConnected || el.disabled || el.readOnly) return false;
+
+        // Computed style check
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+
+        // Geometry check
+        const rect = el.getBoundingClientRect();
+        // Relaxed size check for Workday
+        // If it has 0 size but HAS CONTENT, we treat it as a data field and keep it.
+        // This handles cases where Workday hides "value" inputs behind styled divs.
+        if (rect.width === 0 || rect.height === 0) {
+            if (el.value && el.value.trim().length > 0) return true;
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Robust Deep DOM Walker (Budgeted & Scoped)
+     */
+    collectDeepFields(root, types = ['input', 'select', 'textarea']) {
+        console.log('[FormExtractor] Starting Deep Walk...');
+
+        // MASSIVE BUDGET for Workday (Infinite Scroll / Huge DOMs)
+        const WALKER_BUDGET = { MAX_NODES: 200000, MAX_TIME: 10000 };
+        const ctx = { count: 0, start: performance.now() };
+        const visited = new WeakSet();
+
+        // NUCLEAR DEDUPLICATION: Track specific Nodes we've already collected
+        const processedNodes = new Set();
+
+        // Helper booleans for specialized types
+        const wantsInputs = types.includes('input');
+
+        // Helper for recursion
+        const walk = (node, depth) => {
+            if (!node || visited.has(node)) return [];
+            if (depth > 20) return []; // Increased depth
+
+            visited.add(node);
+
+            // Note: ctx.count is now incremented in the loop for granularity
+
+            const fields = [];
+            const walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null, false);
+
+            let curr = walker.currentNode;
+            while (curr) {
+                ctx.count++; // Correctly count every visited node
+
+                // Periodically log progress
+                if (ctx.count % 5000 === 0) {
+                    console.log(`[FormExtractor] Scanned ${ctx.count} nodes...`);
+                }
+
+                // Budget Check inside loop
+                if (ctx.count > WALKER_BUDGET.MAX_NODES) {
+                    console.warn('[FormExtractor] Budget Exceeded! Stopping scan.');
+                    return fields;
+                }
+                if (performance.now() - ctx.start > WALKER_BUDGET.MAX_TIME) {
+                    console.warn('[FormExtractor] Time Budget Exceeded! Stopping scan.');
+                    return fields;
+                }
+
+                // BUG FIX: ShadowRoot has no tagName
+                const tag = curr.tagName ? curr.tagName.toLowerCase() : '';
+
+                // --- NUCLEAR DEDUPLICATION ---
+                if (processedNodes.has(curr)) {
+                    curr = walker.nextNode();
+                    continue;
+                }
+
+                let collected = false;
+                let candidate = false;
+
+                // 1. Direct Type Match (Input/Select/Textarea)
+                if (types.includes(tag)) {
+                    candidate = true;
+                    if (this.isUsableField(curr)) collected = true;
+                    else console.log(`[FormExtractor] Skipped Hidden/Disabled: ${curr.id || curr.name || tag}`);
+                }
+                // 2. ContentEditable (Treat as Input)
+                else if (wantsInputs && (curr.isContentEditable || curr.getAttribute?.('contenteditable') === 'true')) {
+                    candidate = true;
+                    if (this.isUsableField(curr)) collected = true;
+                    else console.log(`[FormExtractor] Skipped Hidden ContentEditable`);
+                }
+                // 3. Proxy Fallback (Treat as Input)
+                else if (wantsInputs && (tag === 'div' || tag === 'span')) {
+                    if (curr.shadowRoot === null && curr.getAttribute?.('role') === 'textbox') {
+                        // Ensure not a container
+                        if (!curr.querySelector('input, textarea, select')) {
+                            candidate = true;
+                            if (this.isUsableField(curr)) collected = true;
+                            else console.log(`[FormExtractor] Skipped Hidden Proxy`);
+                        }
+                    }
+                }
+
+                if (collected) {
+                    fields.push(curr);
+                    processedNodes.add(curr);
+                }
+
+                // B. Traversal Logic
+
+                // Shadow DOM
+                if (curr.shadowRoot) {
+                    // Two-Tier: Fast Scan
+                    if (curr.shadowRoot.querySelector('input, textarea, select')) {
+                        fields.push(...walk(curr.shadowRoot, depth + 1));
+                    } else {
+                        fields.push(...walk(curr.shadowRoot, depth + 1));
+                    }
+                }
+
+                // Iframes (Same Origin)
+                if (tag === 'iframe') {
+                    try {
+                        const doc = curr.contentDocument;
+                        if (doc && doc.body) fields.push(...walk(doc.body, depth + 1));
+                    } catch (e) { }
+                }
+
+                curr = walker.nextNode();
+            }
+            return fields;
+        };
+
+        const results = walk(root, 0);
+        console.log(`[FormExtractor] Walk complete. Scanned ${ctx.count} nodes. Found ${results.length} fields.`);
+        return results;
+    }
+
+    /**
+     * Wait for DOM Stability (Meaningful Mutations)
+     */
+    waitForDomStability({ root, idleMs, timeoutMs }) {
+        return new Promise(resolve => {
+            let timer;
+            const observer = new MutationObserver((mutations) => {
+                // Filter noise (class changes, style changes) - only care about structure
+                const isMeaningful = mutations.some(m => m.addedNodes.length > 0 || m.removedNodes.length > 0);
+
+                if (isMeaningful) {
+                    clearTimeout(timer);
+                    timer = setTimeout(done, idleMs);
+                }
+            });
+
+            observer.observe(root, { childList: true, subtree: true, attributes: false });
+
+            // Hard timeout
+            const maxTimer = setTimeout(done, timeoutMs);
+
+            function done() {
+                observer.disconnect();
+                clearTimeout(timer);
+                clearTimeout(maxTimer);
+                resolve();
+            }
+
+            // Start initial timer in case of no mutations
+            timer = setTimeout(done, idleMs);
+        });
+    }
+
 }
 
 // Export

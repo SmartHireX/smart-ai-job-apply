@@ -72,11 +72,23 @@ class FormProcessor {
         this.normalizeResumeSchema(resumeData);
 
         // Extract fields
-        const formHTML = this.extractFormHTML();
-        if (!formHTML) throw new Error('No form found');
+        let formSource = null;
+
+        // ROBUST SCRAPER UPGRADE:
+        // If we have the robust FormExtractor (Phase 1), we MUST pass the full document body.
+        // The old logic (extractFormHTML) extracted a specific <form> or Density Winner,
+        // which physically removed all other sections (Repeaters, Modals, Portals) from view.
+        if (window.FormExtractor) {
+            console.log('🚀 [FormProcessor] Robust Scraper detected. Using FULL DOM access.');
+            formSource = document.body;
+        } else {
+            // Legacy Fallback
+            formSource = this.extractFormHTML();
+            if (!formSource) throw new Error('No form found');
+        }
 
         // Use FormAnalyzer to get fields
-        const fields = window.FormAnalyzer.extractFieldsFromDOM(formHTML);
+        const fields = window.FormAnalyzer.extractFieldsFromDOM(formSource);
         console.log(`📊 [FormProcessor] Extracted ${fields.length} fields. First field label: ${fields[0]?.label}`);
 
         // new pipeline execution

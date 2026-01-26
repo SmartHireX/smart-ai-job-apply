@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Robust Scraper Test (Shadow/Dynamic/Deep)</title>
+    <style>
+        .hidden {
+            display: none;
+        }
+
+        .invisible {
+            visibility: hidden;
+        }
+
+        .tiny {
+            width: 0;
+            height: 0;
+        }
+    </style>
+    <script src="../shared/utils/form-extractor.js"></script>
+</head>
+
+<body>
+    <h1>Robust Scraper Test Suite</h1>
+    <div id="log"></div>
+    <button id="run-test" onclick="runScraper()">Run Extractor</button>
+
+    <!-- Case 1: Standard Light DOM -->
+    <div id="light-dom">
+        <input name="light_field" value="light">
+    </div>
+
+    <!-- Case 2: Deep Shadow DOM (Tier 1 & 2) -->
+    <div id="shadow-host-1"></div>
+
+    <!-- Case 3: Closed Shadow Proxy -->
+    <div id="proxy-host" role="textbox" aria-label="Proxy Field" tabindex="0"></div>
+
+    <!-- Case 4: Infinite Loop Trap (Simulated via Cross-Reference) -->
+    <!-- Note: True DOM loops are hard, but we simulate deep recursion -->
+    <div id="deep-nest"></div>
+
+    <!-- Case 5: Dynamic Injection (React Simulation) -->
+    <div id="dynamic-container"></div>
+
+    <!-- Case 6: Visibility Filters -->
+    <input name="hidden_display" class="hidden">
+    <input name="hidden_visibility" class="invisible">
+    <input name="hidden_zero_size" class="tiny">
+    <input name="disabled_field" disabled>
+
+    <script>
+        // Setup Shadow DOMs
+        const host1 = document.getElementById('shadow-host-1');
+        const root1 = host1.attachShadow({ mode: 'open' });
+
+        // Tier 1: Direct Input in Shadow
+        const input1 = document.createElement('input');
+        input1.name = "shadow_tier1";
+        root1.appendChild(input1);
+
+        // Tier 2: Nested Shadow
+        const nestedHost = document.createElement('div');
+        root1.appendChild(nestedHost);
+        const root2 = nestedHost.attachShadow({ mode: 'open' });
+        root2.innerHTML = '<input name="shadow_tier2" value="deep">';
+
+        // Setup Infinite / Deep Nesting Guard
+        // We allow the walker to go deep, checking budget
+        const deepHost = document.getElementById('deep-nest');
+        let current = deepHost;
+        for (let i = 0; i < 50; i++) {
+            const div = document.createElement('div');
+            current.appendChild(div);
+            current = div;
+        }
+        current.innerHTML = '<input name="deep_field">';
+
+        // Setup Dynamic Injection
+        setTimeout(() => {
+            const dynContainer = document.getElementById('dynamic-container');
+            dynContainer.innerHTML = '<input name="dynamic_field" value="loaded_late">';
+            console.log('[Test] Dynamic content injected');
+        }, 300); // 300ms delay
+
+        async function runScraper() {
+            if (!window.FormExtractor) {
+                console.error("FormExtractor not loaded");
+                return;
+            }
+
+            console.log('[Test] Starting Extraction...');
+            const start = performance.now();
+            const extractor = new window.FormExtractor();
+
+            // Should handle the wait internally
+            // simulating usage
+            // Note: Current FormExtractor doesn't have the new logic yet, 
+            // this test validates the UPGRADE.
+
+            // For now, we assume extract() will eventually be async or we wrap it
+            // implementation_plan says we update extract()
+
+            // Mocking the async call pattern if we haven't changed the signature yet
+            // But we plan to make it async/wait-capable or internally guarded.
+            // Let's assume we call a new method or the standard one triggers stability.
+
+            const fields = await extractor.extractWithStability(document.body);
+            const time = performance.now() - start;
+
+            const results = fields.map(f => f.name || f.id || f.selector);
+
+            const report = {
+                count: fields.length,
+                time_ms: time,
+                found_shadow_tier1: results.includes('shadow_tier1'),
+                found_shadow_tier2: results.includes('shadow_tier2'),
+                found_proxy: results.some(r => r === '' && fields.find(x => x.element.id === 'proxy-host')), // Proxy might lack name
+                found_dynamic: results.includes('dynamic_field'),
+                found_deep: results.includes('deep_field'),
+                excluded_hidden: !results.includes('hidden_display'),
+                excluded_disabled: !results.includes('disabled_field')
+            };
+
+            document.getElementById('log').innerText = JSON.stringify(report, null, 2);
+            return report;
+        }
+    </script>
+</body>
+
+</html>

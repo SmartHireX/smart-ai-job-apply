@@ -305,15 +305,33 @@ function detectAddButton(field) {
 /**
  * Detect Greenouse/Lever style structures and Array Naming
  */
+/**
+ * Detect Greenouse/Lever style structures and Array Naming
+ * ENHANCED: Also detects BEM-style semantic IDs (e.g. workExperience-6--jobTitle)
+ */
 function detectATSSignals(field) {
     const parent = field.closest('fieldset, [class*="repeater"], [class*="collection"], [class*="group"]');
 
-    // 1. Array Naming (Strongest Signal)
-    const name = field.name || '';
-    if (/\[\d*\]/.test(name) || /\[\]/.test(name)) { // jobs[0][title] or education[][school]
-        // Infer context from name
-        if (/educ|school|degree/i.test(name)) return { context: 'education', confidence: 10, method: 'ats-array', isRepeater: true };
-        if (/job|work|employ|exp/i.test(name)) return { context: 'work', confidence: 10, method: 'ats-array', isRepeater: true };
+    // 1. Semantic ID/Name Analysis (Strongest Signal)
+    const identifiers = [field.id, field.name].filter(Boolean);
+
+    for (const str of identifiers) {
+        const lower = str.toLowerCase();
+
+        // Check for Array Syntax: jobs[0][title]
+        if (/\[\d*\]/.test(lower) || /\[\]/.test(lower)) {
+            if (/educ|school|degree|institution/i.test(lower)) return { context: 'education', confidence: 10, method: 'ats-array', isRepeater: true };
+            if (/job|work|employ|exp/i.test(lower)) return { context: 'work', confidence: 10, method: 'ats-array', isRepeater: true };
+        }
+
+        // Check for Semantic Prefixes/Infixes (Workday style: workExperience-6--jobTitle)
+        // Matches: workExperience-, education-, jobHISTORY-, etc.
+        if (/work.*exp|job.*hist|employ/i.test(lower)) {
+            return { context: 'work', confidence: 10, method: 'semantic-id', isRepeater: true };
+        }
+        if (/educ|school|degree|academ/i.test(lower)) {
+            return { context: 'education', confidence: 10, method: 'semantic-id', isRepeater: true };
+        }
     }
 
     // 2. Fieldset/Repeater Class

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Repro Duplicates & Budget</title>
+    <script src="../shared/utils/form-extractor.js"></script>
+</head>
+
+<body>
+    <h1>Repro Duplicates</h1>
+    <div id="log"></div>
+    <button id="run-test" onclick="runTest()">Run Test</button>
+
+    <div id="container">
+        <!-- 1. Simple Input -->
+        <input name="test_field" value="A">
+
+        <!-- 2. Shadow Host -->
+        <div id="shadow-host"></div>
+    </div>
+
+    <!-- 3. Deep Tree (Budget Killer) -->
+    <div id="deep-tree"></div>
+
+    <script>
+        // attach shadow
+        const host = document.getElementById('shadow-host');
+        const root = host.attachShadow({ mode: 'open' });
+        root.innerHTML = '<input name="shadow_field" value="B">';
+
+        // generate deep tree to test budget
+        const deepTree = document.getElementById('deep-tree');
+        let curr = deepTree;
+        for (let i = 0; i < 30000; i++) {
+            const span = document.createElement('span');
+            curr.appendChild(span);
+        }
+        curr.innerHTML = '<input name="deep_field" value="C">';
+
+        async function runTest() {
+            if (!window.FormExtractor) return;
+            const extractor = new window.FormExtractor();
+
+            console.log("Extracting...");
+            // Run extractInputs directly to check for duplication
+            const inputs = extractor.extractInputs(document.body);
+
+            const ids = inputs.map(f => f.name || f.selector);
+
+            const duplicates = ids.filter((item, index) => ids.indexOf(item) !== index);
+            const foundDeep = ids.includes('deep_field');
+
+            const report = {
+                count: inputs.length,
+                duplicates: duplicates,
+                has_duplicates: duplicates.length > 0,
+                found_deep: foundDeep,
+                ids: ids
+            };
+
+            document.getElementById('log').innerText = JSON.stringify(report, null, 2);
+        }
+    </script>
+</body>
+
+</html>

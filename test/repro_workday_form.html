@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Repro Workday Form</title>
+    <style>
+        .css-hidden {
+            display: none;
+        }
+    </style>
+    <script src="../shared/utils/form-extractor.js"></script>
+</head>
+
+<body>
+    <h1>Workday Repro</h1>
+    <div id="log"></div>
+    <button id="run-test" onclick="runScraper()">Run Test</button>
+
+    <!-- USER CONTENT START -->
+    <div id="mainContent">
+        <!-- Work Experience 1 -->
+        <div data-fkit-id="workExperience-6--null">
+            <input type="text" id="workExperience-6--jobTitle" name="jobTitle" value="Software Engineer">
+            <input type="text" id="workExperience-6--companyName" name="companyName" value="Flipkart">
+            <!-- Deeply nested date structure -->
+            <div id="workExperience-6--startDate">
+                <input id="workExperience-6--startDate-dateSectionMonth-input" value="12">
+                <input id="workExperience-6--startDate-dateSectionYear-input" value="2022">
+            </div>
+        </div>
+
+        <!-- Work Experience 2 (The one potentially missed) -->
+        <div data-fkit-id="workExperience-23--null">
+            <input type="text" id="workExperience-23--jobTitle" name="jobTitle" value="">
+            <input type="text" id="workExperience-23--companyName" name="companyName" value="">
+            <div id="workExperience-23--startDate">
+                <input id="workExperience-23--startDate-dateSectionMonth-input" value="">
+                <input id="workExperience-23--startDate-dateSectionYear-input" value="">
+            </div>
+        </div>
+
+        <!-- Education (Another repeater) -->
+        <div data-fkit-id="education-36--null">
+            <input type="text" id="education-36--schoolName" name="schoolName">
+            <input type="text" id="education-36--degree" name="degree">
+        </div>
+    </div>
+    <!-- USER CONTENT END -->
+
+    <script>
+        async function runScraper() {
+            if (!window.FormExtractor) {
+                document.getElementById('log').innerText = "FormExtractor NOT LOADED";
+                return;
+            }
+
+            console.log("Starting extraction...");
+            const extractor = new window.FormExtractor();
+
+            // Use the new public API
+            const fields = await extractor.extractWithStability(document.body);
+
+            const results = fields.map(f => f.id || f.name);
+            const report = {
+                count: fields.length,
+                found_exp_1: results.includes('workExperience-6--jobTitle'),
+                found_exp_2: results.includes('workExperience-23--jobTitle'), // CRITICAL CHECK
+                found_edu: results.includes('education-36--schoolName'),
+                all_ids: results
+            };
+
+            document.getElementById('log').innerText = JSON.stringify(report, null, 2);
+        }
+    </script>
+</body>
+
+</html>
