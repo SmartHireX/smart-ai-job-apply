@@ -13,6 +13,11 @@ class PipelineOrchestrator {
         // HybridClassifier handles its own dependencies (HeuristicEngine/NeuralClassifierV8) internally
         this.classifier = window.HybridClassifier ? new window.HybridClassifier({ debug: false }) : null;
 
+        // REPEATER REGISTRY (Layer 4): Form-Scoped Persistence
+        // Stores baseKeys that have been proven to be repeaters (Conf 3 / Add Button)
+        // Prevents flip-flopping and global cache pollution.
+        this.repeaterRegistry = new Set();
+
         // Pipeline Stages
         this.pipeline = {
             ingestion: this.ingestAndEnrich.bind(this),
@@ -83,17 +88,25 @@ class PipelineOrchestrator {
                     // 2. Store in Global Cache for persistence (GlobalStore)
                     if (!window.NovaCache) window.NovaCache = {};
 
-                    // Store rich metadata object for robust routing
-                    const cacheEntry = {
-                        label: cacheLabel,
-                        type: field.instance_type || 'ATOMIC_SINGLE',
-                        scope: field.scope || 'GLOBAL'
-                    };
+                    // WRITE GUARD (Layer 4): Block Global Memory pollution if Repeater
+                    // If this key belongs to a known Repeater, DO NOT write to atomic global cache.
+                    // This forces reads to go through SectionCache ("Sandbox").
+                    const baseKey = window.IndexingService ? window.IndexingService.getBaseKey(field) : field.name;
+                    const isLockedRepeater = this.repeaterRegistry.has(baseKey);
 
-                    targets.forEach(target => {
-                        if (target.id) window.NovaCache[target.id] = cacheEntry;
-                        if (target.name) window.NovaCache[target.name] = cacheEntry;
-                    });
+                    if (!isLockedRepeater) {
+                        // Store rich metadata object for robust routing
+                        const cacheEntry = {
+                            label: cacheLabel,
+                            type: field.instance_type || 'ATOMIC_SINGLE',
+                            scope: field.scope || 'GLOBAL'
+                        };
+
+                        targets.forEach(target => {
+                            if (target.id) window.NovaCache[target.id] = cacheEntry;
+                            if (target.name) window.NovaCache[target.name] = cacheEntry;
+                        });
+                    }
 
                     // console.log(`🏷️ [Pipeline] Cache Label Assigned: "${field.label}" -> "${cacheLabel}" (ML Conf: ${field.ml_prediction.confidence})`);
                 } catch (e) {
@@ -155,10 +168,36 @@ class PipelineOrchestrator {
         // Track unique headers to detect new sections (e.g. Job 1 -> Job 2)
         const seenHeaders = { work: false, education: false };
 
+        // PRE-PASS: Count occurrences of each Base Key to prove Repeater status
+        const baseKeyCounts = {};
+        if (window.IndexingService && window.IndexingService.getBaseKey) {
+            fields.forEach(f => {
+                const base = window.IndexingService.getBaseKey(f);
+                if (base) {
+                    baseKeyCounts[base] = (baseKeyCounts[base] || 0) + 1;
+                }
+            });
+        }
+
         return Promise.all(fields.map(async field => {
             // Hybrid Classification (Heuristic + Neural with 5-tier arbitration)
             if (!field.ml_prediction && this.classifier) {
                 field.ml_prediction = await this.classifier.classify(field);
+            }
+
+            // DETECT SECTION CONTEXT & REPEATER SIGNALS (Layer 2a Enhancement)
+            // We use SectionDetector to find "Add Job" buttons and other strong repeater cues.
+            if (window.SectionDetector && field.element) {
+                const secRes = window.SectionDetector.detect(field.element);
+                if (secRes) {
+                    field.parentContext = secRes.context; // e.g. 'work', 'education'
+                    field.sectionConfidence = secRes.confidence;
+
+                    // Propagate the "Add Button" / "ATS Array" signal
+                    if (secRes.isRepeater) {
+                        field.isStrongRepeater = true;
+                    }
+                }
             }
 
             // DOM Indexing
@@ -188,7 +227,22 @@ class PipelineOrchestrator {
                     seenHeaders.education = true;
                 }
 
-                field.field_index = window.IndexingService.getIndex(field, type);
+                // INDEXING V2: Use new { index, confidence } logic
+                const idxRes = window.IndexingService.getIndex(field, type);
+                // Handle both old (number) and new (object) return signatures for safety
+                if (idxRes !== null && typeof idxRes === 'object' && idxRes.index !== undefined) {
+                    field.field_index = idxRes.index;
+                    field.indexConfidence = idxRes.confidence; // metadata for debug
+                } else if (typeof idxRes === 'number') {
+                    field.field_index = idxRes;
+                } else {
+                    field.field_index = null;
+                }
+
+                // STABLE UID (Layer 3b): Generate Drift-Proof ID
+                if (window.IndexingService.getStableUID) {
+                    field.instance_uid = window.IndexingService.getStableUID(field, type);
+                }
 
                 // Logging
                 // console.log(`🔍 [Enrich] ${label.substring(0, 20)}... | ML: ${field.ml_prediction?.label || 'N/A'} | Idx: ${field.field_index}`);
@@ -199,11 +253,34 @@ class PipelineOrchestrator {
 
             // --- STRUCTURAL CLASSIFICATION (The Core Upgrade) ---
             if (window.FIELD_ROUTING_PATTERNS) {
-                field.instance_type = window.FIELD_ROUTING_PATTERNS.classifyInstanceType(field);
+                // Get pre-calculated count for this field's base key
+                let groupCount = 1;
+                if (window.IndexingService && window.IndexingService.getBaseKey) {
+                    const base = window.IndexingService.getBaseKey(field);
+                    groupCount = baseKeyCounts[base] || 1;
+                }
 
-                // CLEANUP: Only SECTIONAL_MULTI carries a row index.
+                field.instance_type = window.FIELD_ROUTING_PATTERNS.classifyInstanceType(field, groupCount);
+
+                // REPEATER REGISTRY LOCK-IN (Layer 4)
+                if (field.instance_type === 'SECTION_REPEATER') {
+                    const base = window.IndexingService ? window.IndexingService.getBaseKey(field) : field.name;
+                    if (base) this.repeaterRegistry.add(base);
+                }
+                // AUTO-PROMOTE if widely known
+                else if (window.IndexingService) {
+                    const base = window.IndexingService.getBaseKey(field);
+                    if (this.repeaterRegistry.has(base) && field.instance_type !== 'SECTION_REPEATER') {
+                        // Force upgrade to prevent flip-flop
+                        // console.log(`🔒 [Registry] Upgrading ${base} to SECTION_REPEATER`);
+                        field.instance_type = 'SECTION_REPEATER';
+                    }
+                }
+
+                // CLEANUP: Only SECTIONAL_MULTI/REPEATER carries a row index.
                 // This prevents atomic fields from carrying noisy position metadata.
-                if (field.instance_type !== 'SECTIONAL_MULTI') {
+                const isSectional = field.instance_type === 'SECTIONAL_MULTI' || field.instance_type === 'SECTION_REPEATER';
+                if (!isSectional) {
                     field.field_index = null;
                 }
 
@@ -211,7 +288,7 @@ class PipelineOrchestrator {
 
                 // Debug Logging for Classification (High Verbosity for Verification)
                 const label = (field.ml_prediction?.label || field.label || '').substring(0, 20);
-                if (field.instance_type === 'SECTIONAL_MULTI' || (field.sectionalScore > 0)) {
+                if (isSectional || (field.sectionalScore > 0)) {
                     // console.log(`🧬 [Pipeline] Struct: "${label}" -> Bucket: ${field.instance_type} | Scope: ${field.scope} | Score: ${field.sectionalScore || 0}`);
                 }
             }

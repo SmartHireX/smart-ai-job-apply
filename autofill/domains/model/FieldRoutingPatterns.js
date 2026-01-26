@@ -16,8 +16,10 @@ class FieldRoutingPatterns {
     /**
      * 1. Classify the Structural Role (Instance Type)
      * Determines HOW the field behaves (Single vs Set vs Repeating Block)
+     * @param {Object} field
+     * @param {number} groupCount - Number of fields sharing the same Base Key (for Repeater proof)
      */
-    static classifyInstanceType(field) {
+    static classifyInstanceType(field, groupCount = 1) {
         const type = (field.type || 'text').toLowerCase();
         const isCheckOrMulti = type === 'checkbox' || type === 'select-multiple' || field.multiple;
 
@@ -25,6 +27,10 @@ class FieldRoutingPatterns {
 
         // A. HARD OVERRIDE GUARDRAIL (High Priority)
         if (this.FLAT_MULTI_OVERRIDES.test(context)) {
+            // CONFIDENCE CHECK: Even if it looks like atomic, if it has SUPER STRONG structural Repeater signal (Conf 3),
+            // Structure beats Semantic/Keyword. 
+            // e.g. "interests-0-name" is likely a repeater of "Interest" entries, not an atomic "Interests" text box.
+            // But usually "How did you hear" doesn't have repeater indices.
             return isCheckOrMulti ? 'ATOMIC_MULTI' : 'ATOMIC_SINGLE';
         }
 
@@ -38,6 +44,14 @@ class FieldRoutingPatterns {
         if (isCheckOrMulti || field.field_index !== null) {
             const score = this.calculateSectionalScore(field, context);
             field.sectionalScore = score;
+
+            // SECTION_REPEATER LOGIC:
+            // 1. High Confidence Score (>= 10 means Conf 3 was hit in scoring)
+            // 2. PROVEN GROUPING: count(baseKey) >= 2 
+            //    (Use groupCount passed from Orchestrator pre-pass)
+            if (score >= 10 && groupCount >= 2) {
+                return 'SECTION_REPEATER';
+            }
 
             if (score >= 2) {
                 return 'SECTIONAL_MULTI';
@@ -64,15 +78,38 @@ class FieldRoutingPatterns {
         const sectionKeywords = /\b(job.*title|role|position|employer.*name|company.*name|work.*experience|employment.*history|school.*name|university|degree|graduation.*year|study|start.*date|end.*date|description|responsibilities|summary|gpa|major|minor)\b/i;
         if (sectionKeywords.test(ctx)) score += 1;
 
-        // Signal 2: Hardened Index Signal (+1)
-        // Delegate to IndexingService which now implements anchored regex and UUID protection (V3)
-        let hasRealIndex = false;
-        if (window.IndexingService && typeof window.IndexingService.detectIndexFromAttribute === 'function') {
-            const detectedIdx = window.IndexingService.detectIndexFromAttribute(field);
-            if (detectedIdx !== null) hasRealIndex = true;
+        // Signal 2: Hardened Index Signal (Confidence Based)
+        let indexConfidence = 0;
+
+        // REPEATER OVERRIDE: If SectionDetector found an "Add Button" or strong ATS signal, respect it.
+        if (field.isStrongRepeater) {
+            return 10; // SHORT-CIRCUIT: Explicit "Add Button" determines Repeater Capability (Conf 3+)
         }
 
-        if (hasRealIndex) score += 1;
+        if (window.IndexingService && typeof window.IndexingService.getIndex === 'function') {
+            // We infer type from ctx or assume generic to get the index confidence
+            // Ideally we should pass the detected 'work' or 'education' type, but for scoring 'generic' is okay
+            // The IndexingService needs 'type' mainly for sequential counters.
+            // For Attribute Detection (which gives High Confidence), type doesn't matter much.
+            const dummyType = 'generic';
+            const idxRes = window.IndexingService.getIndex(field, dummyType);
+
+            if (idxRes && idxRes.confidence !== undefined) {
+                indexConfidence = idxRes.confidence;
+            }
+        }
+
+        if (indexConfidence >= 3) {
+            return 10; // SHORT-CIRCUIT: Explicit Repeater Signature determines it IMMEDIATELY.
+        }
+        if (indexConfidence === 2) {
+            score += 2; // Strong Attribute
+        }
+        if (indexConfidence === 1) {
+            score += 1; // Explicit Label
+        }
+
+        const hasRealIndex = indexConfidence >= 1;
 
         // Signal 3: Structural Signal (+1) (Capped)
         // Boost if index > 0 OR if it's index 0 but explicitly structural (e.g. "edu_0_degree")

@@ -228,6 +228,206 @@ function detectContainerAttributes(field) {
 }
 
 // ============================================
+// LAYER 5: "Add Another" Button (Confidence: 10 - Repeater Capability)
+// ============================================
+
+/**
+ * Detect "Add Another" button for Repeater Capability
+ * Includes Ownership Resolution and Negative Heuristics
+ */
+function detectAddButton(field) {
+    const BUTTON_REGEX = /add\s+(another|more|new|job|education|experience|employ|item|row|entry|position|degree)/i;
+    const NEGATIVE_REGEX = /note|comment|explanation|file|attachment|document/i;
+
+    // Helper: Validates button text and infers context
+    const analyzeButton = (btn) => {
+        const text = (btn.innerText || btn.textContent || "").trim().toLowerCase();
+        if (!BUTTON_REGEX.test(text)) return null;
+        if (NEGATIVE_REGEX.test(text)) return null;
+
+        if (/education|school|degree|academic/i.test(text)) return 'education';
+        if (/job|work|employ|experience|position/i.test(text)) return 'work';
+        return 'generic'; // Still a repeater, maybe 'generic' context or fallback
+    };
+
+    // Helper: Check ownership (Ownership Resolution)
+    // 1. Walk up DOM for role="region" or aria-controls
+    // 2. Else, find nearest preceding semantic container
+    // For "field" detection, we look if the field is INSIDE a container that "owns" an Add Button.
+
+    let current = field;
+    // Walk up to find a container that might have an Add Button
+    for (let i = 0; i < 6; i++) {
+        if (!current || current.tagName === 'BODY') break;
+
+        // Strategy A: Button INSIDE container (Footer pattern)
+        const internalButtons = Array.from(current.querySelectorAll('button, a[role="button"], input[type="button"]'));
+        for (const btn of internalButtons) {
+            const context = analyzeButton(btn);
+            if (context) {
+                // Negative Heuristic: Container needs > 1 input to be a "List" ... 
+                // BUT for "Latent State" (empty list), we might not have inputs yet. 
+                // Since we are detecting for a *field* that exists, we already have 1 instance.
+                // So we just return the signal.
+                return { context: context === 'generic' ? null : context, confidence: 10, method: 'add-button', isRepeater: true };
+            }
+        }
+
+        // Strategy B: Button is SIBLING of container (Action Bar pattern)
+        let sibling = current.nextElementSibling;
+        let checks = 0;
+        while (sibling && checks < 3) {
+            // Check if sibling IS the button
+            if (sibling.tagName === 'BUTTON' || (sibling.tagName === 'A' && sibling.getAttribute('role') === 'button')) {
+                const context = analyzeButton(sibling);
+                if (context) return { context: context === 'generic' ? null : context, confidence: 10, method: 'add-button-sibling', isRepeater: true };
+            }
+            // Check if sibling CONTAINS the button (e.g. .actions-div > button)
+            const siblingBtn = sibling.querySelector('button, a[role="button"]');
+            if (siblingBtn) {
+                const context = analyzeButton(siblingBtn);
+                if (context) return { context: context === 'generic' ? null : context, confidence: 10, method: 'add-button-sibling', isRepeater: true };
+            }
+            sibling = sibling.nextElementSibling;
+            checks++;
+        }
+
+        current = current.parentElement;
+    }
+
+    return null;
+}
+
+// ============================================
+// LAYER 5b: ATS Structure & Array Naming (Confidence: 10)
+// ============================================
+
+/**
+ * Detect Greenouse/Lever style structures and Array Naming
+ */
+function detectATSSignals(field) {
+    const parent = field.closest('fieldset, [class*="repeater"], [class*="collection"], [class*="group"]');
+
+    // 1. Array Naming (Strongest Signal)
+    const name = field.name || '';
+    if (/\[\d*\]/.test(name) || /\[\]/.test(name)) { // jobs[0][title] or education[][school]
+        // Infer context from name
+        if (/educ|school|degree/i.test(name)) return { context: 'education', confidence: 10, method: 'ats-array', isRepeater: true };
+        if (/job|work|employ|exp/i.test(name)) return { context: 'work', confidence: 10, method: 'ats-array', isRepeater: true };
+    }
+
+    // 2. Fieldset/Repeater Class
+    if (parent) {
+        const cls = (parent.className || "").toLowerCase();
+        if (cls.includes('repeater') || cls.includes('collection')) {
+            // We need to know WHAT it repeats. Infer from field or parent text.
+            const text = (parent.innerText || "").substring(0, 100).toLowerCase();
+            if (/education|school/i.test(text)) return { context: 'education', confidence: 9, method: 'ats-structure', isRepeater: true };
+            if (/work|employment|job/i.test(text)) return { context: 'work', confidence: 9, method: 'ats-structure', isRepeater: true };
+        }
+    }
+
+    return null;
+}
+
+// ============================================
+// LAYER 5d: Semantic Tuples & Fingerprinting (Confidence: 8)
+// ============================================
+
+/**
+ * Require Minimum Viable Tuple (Size >= 2) to confirm Intent
+ */
+function analyzeSectionSemantics(field) {
+    const container = field.closest('fieldset, section, article, .group, .row') || field.parentElement;
+    if (!container) return null;
+
+    const text = (container.innerText || "").toLowerCase();
+
+    // Work Tuples
+    const hasCompany = /company|employer|organization/i.test(text);
+    const hasTitle = /title|role|position/i.test(text);
+    const hasDate = /date|year/i.test(text);
+
+    if (hasCompany && (hasTitle || hasDate)) {
+        return { context: 'work', confidence: 8, method: 'semantic-tuple', isRepeater: true };
+    }
+
+    // Edu Tuples
+    const hasSchool = /school|university|institution|college/i.test(text);
+    const hasDegree = /degree|major|diploma/i.test(text);
+    const hasGradDate = /grad|date|year/i.test(text);
+
+    if (hasSchool && (hasDegree || hasGradDate)) {
+        return { context: 'education', confidence: 8, method: 'semantic-tuple', isRepeater: true };
+    }
+
+    return null;
+}
+
+/**
+ * Multiset Fingerprinting with Semantic Salt
+ */
+function computeFingerprint(field) {
+    const container = field.closest('fieldset, .repeater-item, .collection-item') || field.parentElement?.parentElement; // Go up 2 levels
+    if (!container || container.tagName === 'BODY' || !container.parentElement) return null;
+
+    const siblings = Array.from(container.parentElement.children).filter(c => c !== container && c.tagName === container.tagName);
+    if (siblings.length === 0) return null;
+
+    // Helper: Generate multiset hash for a container
+    const generateHash = (el) => {
+        const inputs = Array.from(el.querySelectorAll('input, select, textarea'));
+        const types = inputs.map(i => i.type || i.tagName).sort().join('|'); // Order-independent (Multiset)
+        // Semantic Salt (Dominant Context)
+        const txt = el.innerText.toLowerCase();
+        let salt = 'generic';
+        if (/school|degree/i.test(txt)) salt = 'edu';
+        else if (/job|company/i.test(txt)) salt = 'work';
+
+        return `${salt}:${types}`;
+    };
+
+    const myHash = generateHash(container);
+    // Find matching sibling
+    const hasMatch = siblings.some(sib => generateHash(sib) === myHash);
+
+    if (hasMatch && myHash.length > 10) { // Avoid empty hashes
+        const context = myHash.startsWith('edu') ? 'education' : (myHash.startsWith('work') ? 'work' : 'generic');
+        if (context !== 'generic') {
+            return { context: context, confidence: 9, method: 'fingerprint', isRepeater: true };
+        }
+    }
+
+    return null;
+}
+
+// ============================================
+// LAYER 5c: Negative Domains (Blocking)
+// ============================================
+
+/**
+ * Block specific domains/keywords from being repeaters
+ */
+function detectNegativeDomains(field) {
+    // 1. Context Check (Parent/Label)
+    let current = field;
+    let text = "";
+    for (let i = 0; i < 3; i++) {
+        if (!current || current.tagName === 'BODY') break;
+        text += (current.className || "") + " " + (current.id || "") + " ";
+        current = current.parentElement;
+    }
+    const label = (field.label || field.name || "").toLowerCase();
+    const context = (text + label).toLowerCase();
+
+    // Block List
+    if (/survey|consent|preferences|referral|newsletter|marketing|feedback|questionnaire/i.test(context)) {
+        return { context: 'other', confidence: 10, method: 'negative-domain', isBlocked: true };
+    }
+    return null;
+}
+
+// ============================================
 // LAYER 6: Field Proximity Clustering (Confidence: 4)
 // ============================================
 
@@ -281,9 +481,17 @@ function detectFieldSectionContext(field, allFields = []) {
     if (!field) return null;
 
     // Run all detection strategies
+    // Negative Domain Check first (Blocking)
+    const neg = detectNegativeDomains(field);
+    if (neg && neg.isBlocked) return null; // Hard Block
+
     const detections = [
         detectAutocompleteSection(field),
         detectFieldsetLegend(field),
+        detectAddButton(field),
+        detectATSSignals(field),
+        analyzeSectionSemantics(field), // New Tuple Logic
+        computeFingerprint(field),      // New Fingerprint Logic
         detectTableCaption(field),
         detectTableHeaders(field),
         detectSectionHeader(field),
@@ -319,7 +527,8 @@ function detectFieldSectionContext(field, allFields = []) {
         context: winnerContext,
         confidence: Math.round(winnerScore),
         methods: detections.filter(d => d.context === winnerContext).map(d => d.method),
-        reliability: Math.round(reliability * 100) / 100
+        reliability: Math.round(reliability * 100) / 100,
+        isRepeater: detections.some(d => d.context === winnerContext && d.isRepeater) // Propagate Repeater Signal
     };
 }
 
@@ -510,6 +719,11 @@ if (typeof window !== 'undefined') {
         // Expose individual layers for testing
         detectAutocompleteSection,
         detectFieldsetLegend,
+        detectAddButton,
+        detectATSSignals,
+        analyzeSectionSemantics,
+        computeFingerprint,
+        detectNegativeDomains,
         detectTableCaption,
         detectTableHeaders,
         detectSectionHeader,
