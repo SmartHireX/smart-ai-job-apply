@@ -53,23 +53,16 @@ class PipelineOrchestrator {
         enriched.forEach(field => {
             if (field.element && field.ml_prediction) {
                 try {
-                    // Start of REFACTOR: Simplify to "cache_label"
                     let cacheLabel = '';
 
                     if (field.ml_prediction.confidence > 0.8) {
                         cacheLabel = field.ml_prediction.label;
+                    } else if (window.KeyGenerator) {
+                        cacheLabel = window.KeyGenerator.generateEnterpriseCacheKey(field);
                     } else {
-                        // ROBUST TOKENIZED KEY GENERATION (Refactored to shared utility)
-                        // Uses the same techniques as the Advanced KeyMatcher
-                        if (window.KeyGenerator) {
-                            cacheLabel = window.KeyGenerator.generateEnterpriseCacheKey(field);
-                        } else {
-                            cacheLabel = [field.name, field.label].filter(Boolean).join('_') || 'unknown';
-                        }
+                        cacheLabel = [field.name, field.label].filter(Boolean).join('_') || 'unknown';
                     }
-                    // CENTRALIZED: Attach cache_label to field object
-                    // This allows all downstream consumers (workflows, sidebar, InteractionLog)
-                    // to simply access field.cache_label instead of regenerating keys.
+
                     field.cache_label = cacheLabel;
 
                     // 1. Store on DOM for fast access (Primary)
@@ -79,34 +72,29 @@ class PipelineOrchestrator {
                             target.setAttribute('cache_label', cacheLabel);
                             if (field.instance_type) target.setAttribute('instance_type', field.instance_type);
                             if (field.scope) target.setAttribute('scope', field.scope);
+                            if (typeof field.field_index === 'number') target.setAttribute('field_index', field.field_index);
+                            if (field.section_type) target.setAttribute('section_type', field.section_type);
                         }
                     });
 
-                    // 2. Store in Global Cache for persistence (GlobalStore)
+                    // 2. Store in NovaCache for sidebar/manual persistence
                     if (!window.NovaCache) window.NovaCache = {};
 
-                    // WRITE GUARD (Layer 4): Block Global Memory pollution if Repeater
-                    // If this key belongs to a known Repeater, DO NOT write to atomic global cache.
-                    // This forces reads to go through SectionCache ("Sandbox").
-                    const baseKey = window.IndexingService ? window.IndexingService.getBaseKey(field) : field.name;
-                    const isLockedRepeater = this.repeaterRegistry.has(baseKey);
+                    const cacheEntry = {
+                        label: cacheLabel,
+                        type: field.instance_type || 'ATOMIC_SINGLE',
+                        scope: field.scope || 'GLOBAL',
+                        field_index: field.field_index,
+                        section_type: field.section_type
+                    };
 
-                    if (!isLockedRepeater) {
-                        // Store rich metadata object for robust routing
-                        const cacheEntry = {
-                            label: cacheLabel,
-                            type: field.instance_type || 'ATOMIC_SINGLE',
-                            scope: field.scope || 'GLOBAL'
-                        };
-
-                        targets.forEach(target => {
-                            if (target.id) window.NovaCache[target.id] = cacheEntry;
-                            if (target.name) window.NovaCache[target.name] = cacheEntry;
-                        });
-                    }
+                    targets.forEach(target => {
+                        if (target.id) window.NovaCache[target.id] = cacheEntry;
+                        if (target.name) window.NovaCache[target.name] = cacheEntry;
+                    });
 
                 } catch (e) {
-                    // console.warn('[Pipeline] Failed to attach Cache Label:', e);
+                    // console.warn('[Pipeline] Failed to attach metadata:', e);
                 }
             }
         });

@@ -501,8 +501,11 @@ function generateSemanticKey(fieldOrElement, label) {
             name: fieldOrElement.name,
             id: fieldOrElement.id,
             type: fieldOrElement.type || fieldOrElement.tagName.toLowerCase(),
-            ml_prediction: fieldOrElement.__ml_prediction,
-            cache_label: fieldOrElement.getAttribute('cache_label')
+            cache_label: fieldOrElement.getAttribute('cache_label'),
+            instance_type: fieldOrElement.getAttribute('instance_type'),
+            scope: fieldOrElement.getAttribute('scope'),
+            field_index: fieldOrElement.getAttribute('field_index') ? parseInt(fieldOrElement.getAttribute('field_index')) : null,
+            section_type: fieldOrElement.getAttribute('section_type')
         };
     }
 
@@ -543,8 +546,12 @@ function generateSemanticKey(fieldOrElement, label) {
 
     // ENHANCEMENT: Inject cached metadata into field object if missing
     if (cachedMeta && field && !field.instance_type) {
-        field.instance_type = cachedMeta.type;
-        field.scope = cachedMeta.scope;
+        field.instance_type = field.instance_type || cachedMeta.type;
+        field.scope = field.scope || cachedMeta.scope;
+        if (field.field_index === null || field.field_index === undefined) {
+            field.field_index = cachedMeta.field_index;
+        }
+        field.section_type = field.section_type || cachedMeta.section_type;
         // console.log(`[InteractionLog] 🧠 Injected Metadata from NovaCache:`, cachedMeta);
     }
 
