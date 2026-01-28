@@ -168,11 +168,17 @@ async function detectForms() {
             statusIcon.textContent = '✓';
             statusIcon.style.background = 'var(--success)';
             fillBtn.disabled = false;
+            // Hide refresh button when forms are detected
+            const refreshBtn = document.getElementById('refresh-btn');
+            if (refreshBtn) refreshBtn.style.display = 'none';
         } else {
             formStatus.textContent = 'No forms found on this page';
             statusIcon.textContent = '○';
             statusIcon.style.background = 'var(--gray-400)';
             fillBtn.disabled = true;
+            // Show refresh button when no forms found
+            const refreshBtn = document.getElementById('refresh-btn');
+            if (refreshBtn) refreshBtn.style.display = 'flex';
         }
 
     } catch (error) {
