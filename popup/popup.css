@@ -417,97 +417,247 @@ body {
 }
 
 /* ============================================
-   HERO BUTTON - Primary CTA
+   ENTERPRISE CTA CARD
    ============================================ */
-.btn-hero {
+.cta-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary) 0%, #8b5cf6 50%, var(--primary) 100%);
+    background-size: 200% 100%;
+    animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.cta-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.cta-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--success);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(0.8);
+    }
+}
+
+.cta-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cta-stats .stat {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-500);
+    background: var(--gray-100);
+    padding: 5px 10px;
+    border-radius: 6px;
+}
+
+/* Enterprise Button */
+.btn-enterprise {
     position: relative;
     width: 100%;
     padding: 0;
-    background: var(--gradient-hero);
-    border: none;
+    background: transparent;
+    border: 2px solid transparent;
     border-radius: var(--radius-lg);
     cursor: pointer;
     overflow: hidden;
-    box-shadow:
-        0 4px 16px var(--primary-glow),
-        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-hero:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow:
-        0 8px 28px var(--primary-glow),
-        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+.btn-enterprise::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 50%, var(--primary-dark) 100%);
+    border-radius: calc(var(--radius-lg) + 2px);
+    z-index: -1;
+    background-size: 200% 200%;
+    animation: border-gradient 4s ease infinite;
 }
 
-.btn-hero:active:not(:disabled) {
+@keyframes border-gradient {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.btn-enterprise-bg {
+    position: absolute;
+    inset: 2px;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);
+    border-radius: calc(var(--radius-lg) - 2px);
+    z-index: 0;
+}
+
+.btn-enterprise:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow:
+        0 12px 28px rgba(37, 99, 235, 0.35),
+        0 0 0 1px rgba(124, 58, 237, 0.3);
+}
+
+.btn-enterprise:hover:not(:disabled) .btn-enterprise-bg {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
+}
+
+.btn-enterprise:active:not(:disabled) {
     transform: translateY(0);
 }
 
-.btn-hero:disabled {
+.btn-enterprise:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.btn-shine {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: var(--gradient-shine);
-    animation: shine 3s ease-in-out infinite;
+.btn-enterprise:disabled::before {
+    background: var(--gray-300);
 }
 
-@keyframes shine {
-    0% {
-        left: -100%;
-    }
-
-    50%,
-    100% {
-        left: 100%;
-    }
-}
-
-.btn-content {
+.btn-enterprise-content {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 20px 24px;
-    position: relative;
-    z-index: 1;
+    padding: 18px 22px;
 }
 
-.btn-icon-wrapper {
-    width: 48px;
-    height: 48px;
+.btn-icon-ring {
+    width: 52px;
+    height: 52px;
     background: rgba(255, 255, 255, 0.15);
-    border-radius: var(--radius-md);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
+    flex-shrink: 0;
+    transition: all 0.3s;
 }
 
-.btn-text {
+.btn-enterprise:hover:not(:disabled) .btn-icon-ring {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
+}
+
+.btn-text-content {
+    flex: 1;
     display: flex;
     flex-direction: column;
     text-align: left;
-    gap: 2px;
+    gap: 4px;
 }
 
-.btn-title {
+.btn-main-text {
     font-size: 16px;
     font-weight: 700;
     color: white;
     letter-spacing: -0.2px;
 }
 
-.btn-subtitle {
+.btn-sub-text {
     font-size: 12px;
     color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.btn-arrow {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.3s;
+}
+
+.btn-enterprise:hover:not(:disabled) .btn-arrow {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(4px);
+}
+
+.cta-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--gray-200);
+}
+
+.cta-footer span {
+    font-size: 11px;
+    color: var(--gray-500);
     font-weight: 500;
 }
 
