@@ -414,20 +414,26 @@ function getExplicitLabel(element) {
         // Handle compound values: "billing street-address" → "street-address"
         const tokens = autocomplete.split(/\s+/);
         const fieldType = tokens[tokens.length - 1];
-        if (AUTOCOMPLETE_MAP[fieldType]) {
+
+        // Guard: Skip section-* tokens (e.g., "section-work" is NOT a label)
+        if (fieldType.startsWith('section-')) {
+            // Continue to next check, don't return
+        } else if (AUTOCOMPLETE_MAP[fieldType]) {
             return AUTOCOMPLETE_MAP[fieldType];
-        }
-        // Fallback: humanize unknown autocomplete values
-        if (fieldType.length > 2) {
+        } else if (fieldType.length > 2) {
+            // Fallback: humanize unknown autocomplete values
             return humanizeLabel(fieldType);
         }
     }
 
     // 1b. Native label association (element.labels API)
+    // Iterate ALL labels, not just [0] (handles helper + primary + validation labels)
     if (element.labels && element.labels.length > 0) {
-        const labelText = cleanLabel(element.labels[0].textContent);
-        if (isValidLabel(labelText)) {
-            return labelText;
+        for (const label of element.labels) {
+            const labelText = cleanLabel(label.textContent);
+            if (isValidLabel(labelText)) {
+                return labelText;
+            }
         }
     }
 
@@ -442,7 +448,22 @@ function getExplicitLabel(element) {
         }
     }
 
-    // 1d. aria-label (direct)
+    // 1d. aria-labelledby (FIRST - references visible DOM text, higher priority)
+    // Chrome & accessibility APIs prioritize aria-labelledby over aria-label
+    if (element.hasAttribute('aria-labelledby')) {
+        const ids = element.getAttribute('aria-labelledby').split(/\s+/);
+        for (const id of ids) {
+            const labelEl = document.getElementById(id);
+            if (labelEl) {
+                const labelText = cleanLabel(labelEl.textContent);
+                if (isValidLabel(labelText)) {
+                    return labelText;
+                }
+            }
+        }
+    }
+
+    // 1e. aria-label (direct - often generic/fallback)
     if (element.hasAttribute('aria-label')) {
         const ariaLabel = cleanLabel(element.getAttribute('aria-label'));
         if (isValidLabel(ariaLabel)) {
@@ -450,26 +471,16 @@ function getExplicitLabel(element) {
         }
     }
 
-    // 1e. aria-labelledby (indirect)
-    if (element.hasAttribute('aria-labelledby')) {
-        const id = element.getAttribute('aria-labelledby');
-        const labelEl = document.getElementById(id);
-        if (labelEl) {
-            const labelText = cleanLabel(labelEl.textContent);
-            if (isValidLabel(labelText)) {
-                return labelText;
-            }
-        }
-    }
-
     // 1f. aria-describedby (secondary label)
     if (element.hasAttribute('aria-describedby')) {
-        const id = element.getAttribute('aria-describedby');
-        const descEl = document.getElementById(id);
-        if (descEl) {
-            const descText = cleanLabel(descEl.textContent);
-            if (descText.length > 5 && descText.length < 150 && isValidLabel(descText)) {
-                return descText;
+        const ids = element.getAttribute('aria-describedby').split(/\s+/);
+        for (const id of ids) {
+            const descEl = document.getElementById(id);
+            if (descEl) {
+                const descText = cleanLabel(descEl.textContent);
+                if (descText.length > 5 && descText.length < 150 && isValidLabel(descText)) {
+                    return descText;
+                }
             }
         }
     }
@@ -574,10 +585,16 @@ function getVisualLabel(element) {
     const container = element.closest(FIELD_CONTAINER_SELECTORS.join(', '));
     if (container) {
         // Search for label-like elements within the container
-        const candidates = container.querySelectorAll('label, .label, .field-label, .form-label, legend, h3, h4, h5, h6');
+        // Exclude legend from non-group fields (prevent "legend hijacking")
+        const isGroup = element.type === 'radio' || element.type === 'checkbox';
+        const selectorParts = ['label', '.label', '.field-label', '.form-label', 'h4', 'h5', 'h6'];
+        if (isGroup) selectorParts.push('legend', 'h3'); // Only groups get legend + h3
+
+        const candidates = container.querySelectorAll(selectorParts.join(', '));
         for (const candidate of candidates) {
             if (candidate.contains(element)) continue; // Skip if it contains the input
-            if (candidate.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING) {
+            // FIX: Use PRECEDING - label should be BEFORE input, not after
+            if (candidate.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_PRECEDING) {
                 const text = cleanLabel(candidate.innerText);
                 if (isValidLabel(text) && !EXCLUSION_PATTERNS.test(text)) {
                     return text; // Found within container, high confidence
