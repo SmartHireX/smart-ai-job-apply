@@ -165,9 +165,13 @@ class PipelineOrchestrator {
             field.section_type = this.getSectionType(label);
         }));
 
-        // Phase 2: Structural Grouping (Layout-Level Truth)
+        // Phase 2: Structural Grouping (Drift-Proof Identity V2)
         if (window.SectionGrouper) {
-            this.applyStructuralGrouping(fields);
+            // New 3-Layer Container Discovery + WeakMap Persistence
+            const { blocks, orphans } = window.SectionGrouper.groupFieldsByContainer(fields);
+
+            // Map blocks to fields for later processing (preserving new UIDs)
+            // (The fields inside 'blocks' have already been mutated by SectionGrouper with UIDs)
         }
 
         // Phase 3: Final Indexing & Routing
@@ -242,6 +246,17 @@ class PipelineOrchestrator {
             } catch (e) { }
         });
 
+        // Phase 4: Date Lifecycle Management (The "Single Writer" Prep)
+        // Ensure all date fields are registered with authoritative metadata
+        if (window.DateHandler) {
+            fields.forEach(f => {
+                if (f.type === 'date' || f.ml_prediction?.label?.includes('date')) {
+                    // Just ensuring metadata is ready, actual writing happens in Executor via DateHandler
+                    f.isDateField = true;
+                }
+            });
+        }
+
         return fields;
     }
 
@@ -288,6 +303,22 @@ class PipelineOrchestrator {
                     }
                 });
             });
+        });
+
+        // 3.5 ENRICHMENT: LABEL SANITIZATION (Fix for "current value is YYYY")
+        fields.forEach(field => {
+            if (field.cache_label) {
+                const crapPatterns = [
+                    /^current value is/i,
+                    /^type a value/i,
+                    /^use arrow keys/i,
+                    /^yyyy$/i, /^mm\/dd\/yyyy$/i
+                ];
+                if (crapPatterns.some(p => p.test(field.cache_label.replace(/_/g, ' ')))) {
+                    // Fallback to name or ml_label if available
+                    field.cache_label = field.ml_prediction?.label || field.name || 'unknown';
+                }
+            }
         });
     }
 

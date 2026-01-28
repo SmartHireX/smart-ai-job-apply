@@ -1,0 +1,83 @@
+<!-- test/drift_proof_test.html -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Drift-Proof Structural Identity Test</title>
+</head>
+
+<body>
+    <h1>Job Application</h1>
+
+    <!-- Job 1 -->
+    <div class="job-section" role="group" aria-label="Work Experience">
+        <input type="text" name="job_title" value="Engineer">
+        <input type="text" name="company" value="Google">
+        <input type="date" name="start_date" value="2022-01-01">
+        <button type="button">Remove</button>
+    </div>
+
+    <!-- Job 2 -->
+    <div class="job-section" role="group" aria-label="Work Experience">
+        <input type="text" name="job_title" value="Manager">
+        <input type="text" name="company" value="Microsoft">
+        <input type="date" name="start_date" value="2020-01-01">
+        <button type="button">Remove</button>
+    </div>
+
+    <script type="module">
+        import '../autofill/services/extraction/section-grouper.js';
+
+        async function runTests() {
+            const fields = Array.from(document.querySelectorAll('input')).map(el => ({
+                element: el,
+                name: el.name,
+                id: el.name, // Mock ID
+                ml_prediction: { label: el.name } // Mock ML
+            }));
+
+            // Test 1: Initial Grouping
+            console.log('--- Test 1: Initial Grouping ---');
+            const res1 = window.SectionGrouper.groupFieldsByContainer(fields);
+
+            const job1UID = res1.blocks[0].instances[0].fields[0].instance_uid;
+            const job2UID = res1.blocks[0].instances[1].fields[0].instance_uid;
+
+            console.log(`Job 1 UID: ${job1UID}`);
+            console.log(`Job 2 UID: ${job2UID}`);
+
+            if (job1UID === job2UID) throw new Error("UID Collision!");
+
+            // Test 2: Reorder Survival (Simulate Swap)
+            console.log('--- Test 2: Reorder Survival ---');
+
+            // Swap DOM nodes
+            const container1 = document.querySelectorAll('.job-section')[0];
+            const container2 = document.querySelectorAll('.job-section')[1];
+            container1.parentNode.insertBefore(container2, container1);
+
+            // Re-run grouping on SAME field objects (simulating SPA re-render where obj refs might persist or change)
+            // But critically, the DOM Nodes are the same identity.
+            const res2 = window.SectionGrouper.groupFieldsByContainer(fields);
+
+            const newJob1UID = res2.blocks[0].instances[0].fields[0].instance_uid;
+            // After swap, the first instance in DOM is now the "Manager" job (old Job 2)
+
+            console.log(`New First Instance UID: ${newJob1UID}`);
+
+            if (newJob1UID !== job2UID) {
+                console.error(`Expected ${job2UID}, got ${newJob1UID}`);
+                throw new Error("UID Drift detected on reorder!");
+            } else {
+                console.log("✅ UID Persisted across reorder!");
+            }
+
+            console.log("ALL TESTS PASSED");
+        }
+
+        // Wait for modules
+        setTimeout(runTests, 1000);
+    </script>
+</body>
+
+</html>

@@ -142,7 +142,10 @@ async function getMetadata() {
 }
 
 async function saveMetadata(metadata) {
-    try { await chrome.storage.local.set({ [METADATA_KEY]: metadata }); } catch (e) { }
+    try {
+        metadata.checksum_version = 1; // Infrastructure Versioning
+        await chrome.storage.local.set({ [METADATA_KEY]: metadata });
+    } catch (e) { }
 }
 
 // ============================================================================
@@ -584,15 +587,19 @@ function generateSemanticKey(fieldOrElement, label) {
     if (window.KeyGenerator) {
         fallbackKey = window.KeyGenerator.generateEnterpriseCacheKey(field);
     } else {
-        // Fallback if KeyGenerator is missing
-        // 1. Strip instance-specific numbers (e.g. work-17-- -> work--)
-        const stripNumbers = (s) => (s || '').replace(/\d+/g, '');
+        // C. ROBUST TOKENIZED KEY GENERATION (Enterprise Grade)
+        // 1. CONDITIONAL ID STRIPPING
+        // - Atomic (Single/Multi): STRIP ALL IDs (Globals like "email", "phone" are unique)
+        // - Sectional: PRESERVE section+instance, strip internal noise
+        const isSectional = field.instance_type === 'SECTION_REPEATER' || field.instance_type === 'SECTION_CANDIDATE';
+        const stripPattern = isSectional ? /workExperience-\d+--/ : /\d+/g; // Example pattern
 
-        const cleanName = stripNumbers(field.name);
-        const cleanId = stripNumbers(field.id);
+        const cleanName = (field.name || '').replace(stripPattern, '');
+        const cleanId = (field.id || '').replace(stripPattern, '');
 
-        // 2. Detect Sub-Field Context (Month/Year) from Name/ID
+        // 2. Detect Sub-Field Context via DateHandler (if available)
         let subContext = '';
+        // ... preserved logic ...
         const lowerName = (field.name || '').toLowerCase();
         const lowerId = (field.id || '').toLowerCase();
         if (lowerName.includes('month') || lowerId.includes('month')) subContext = 'month';

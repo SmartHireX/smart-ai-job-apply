@@ -74,11 +74,9 @@ const SCRIPT_QUEUE = [
     'autofill/workflows/classification-workflow.js',
     'autofill/workflows/instant-fill-workflow.js',
     'autofill/workflows/ai-fill-workflow.js',
-    'chatbot/handlers/context-handler.js',
-    'chatbot/services/ai/context-classifier.js',
+
     'autofill/handlers/autofill-message-handler.js',
     'autofill/handlers/undo-handler.js',
-    'chatbot/handlers/chat-message-handler.js',
 
     // Message Router & Orchestrator (LAST)
     'common/messaging/message-router.js',

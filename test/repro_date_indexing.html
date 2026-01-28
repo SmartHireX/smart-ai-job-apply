@@ -1,0 +1,126 @@
+<!-- test/repro_date_indexing.html -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Repro Date Indexing & Label Quality</title>
+</head>
+
+<body>
+    <h1>Education History</h1>
+
+    <!-- 
+      Scenario: Fragmented/Nested structure where Dates are in a separate container 
+      or structure that might confuse SectionGrouper or Indexing Service.
+    -->
+
+    <!-- Education Entry 1 (Index 0) -->
+    <div class="education-group" role="group">
+        <div class="main-info">
+            <label>School Name</label>
+            <input type="text" name="education-0-school" value="Stanford">
+
+            <label>Degree</label>
+            <input type="text" name="education-0-degree" value="CS">
+        </div>
+
+        <!-- Dates often nested deeper or separately for layout -->
+        <div class="dates-row">
+            <div class="field-wrapper">
+                <label>Start Year</label>
+                <!-- Simulate the bad label via aria-label or surrounding text -->
+                <span id="bad-label-1">current value is YYYY</span>
+                <input type="text" name="education-0--firstYearAttended-dateSectionYear-input"
+                    id="education-0--firstYearAttended-dateSectionYear-input" aria-labelledby="bad-label-1">
+            </div>
+
+            <div class="field-wrapper">
+                <label>End Year</label>
+                <input type="text" name="education-0--lastYearAttended-dateSectionYear-input"
+                    id="education-0--lastYearAttended-dateSectionYear-input" placeholder="YYYY">
+            </div>
+        </div>
+    </div>
+
+    <!-- Education Entry 2 (Index 1) -->
+    <div class="education-group" role="group">
+        <div class="main-info">
+            <label>School Name</label>
+            <input type="text" name="education-1-school" value="MIT">
+            <label>Degree</label>
+            <input type="text" name="education-1-degree" value="Math">
+        </div>
+
+        <div class="dates-row">
+            <div class="field-wrapper">
+                <!-- No label text, just aria-label -->
+                <input type="text" name="education-1--firstYearAttended-dateSectionYear-input"
+                    id="education-1--firstYearAttended-dateSectionYear-input" aria-label="current value is YYYY">
+            </div>
+            <div class="field-wrapper">
+                <input type="text" name="education-1--lastYearAttended-dateSectionYear-input"
+                    id="education-1--lastYearAttended-dateSectionYear-input" placeholder="YYYY">
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Inject Pipeline logic
+        import '../autofill/services/extraction/section-grouper.js';
+
+        // Mock ML Classifier
+        window.HybridClassifier = class {
+            async classify(field) {
+                if (field.name.includes('school')) return { label: 'school' };
+                if (field.name.includes('dateSectionYear')) return { label: 'end_date' }; // generic
+                return { label: 'unknown' };
+            }
+        };
+
+        // Mock Pipeline
+        import '../autofill/core/PipelineOrchestrator.js';
+
+        async function runTest() {
+            const orchestrator = new window.PipelineOrchestrator();
+
+            const rawFields = Array.from(document.querySelectorAll('input')).map(el => ({
+                element: el,
+                name: el.name,
+                id: el.id,
+                label: el.closest('label')?.innerText || '',
+                type: el.type
+            }));
+
+            // Run Pipeline
+            const enriched = await orchestrator.ingestAndEnrich(rawFields);
+
+            console.log('--- ENRICHED FIELDS ---');
+            enriched.forEach(f => {
+                console.log(`Field: ${f.name}`);
+                console.log(`   Index: ${f.field_index}`);
+                console.log(`   Label: ${f.cache_label}`); // This is populated by IngestAndEnrich
+                console.log(`   SectionUID: ${f.section_uid}`);
+                console.log(`   InstanceUID: ${f.instance_uid}`);
+            });
+
+            // Verification
+            const failedIndex = enriched.find(f => f.name.includes('education-0') && f.field_index !== 0);
+            if (failedIndex) {
+                console.error('❌ FAIL: Education 0 field has wrong index:', failedIndex.field_index);
+            } else {
+                console.log('✅ PASS: Index 0 alignment');
+            }
+
+            const badLabel = enriched.find(f => f.cache_label === 'current_value_yyyy');
+            if (badLabel) {
+                console.error('❌ FAIL: Bad label extracted:', badLabel.cache_label);
+            } else {
+                console.log('✅ PASS: Good label extraction');
+            }
+        }
+
+        setTimeout(runTest, 1000);
+    </script>
+</body>
+
+</html>

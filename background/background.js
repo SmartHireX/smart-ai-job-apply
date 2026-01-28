@@ -76,12 +76,8 @@ const CONTENT_SCRIPTS = [
     'autofill/workflows/instant-fill-workflow.js',
     'autofill/workflows/ai-fill-workflow.js',
     'autofill/core/form-processor.js',
-    'chatbot/handlers/context-handler.js',
-    'chatbot/services/ai/context-classifier.js',
-    'autofill/domains/profile/SectionController.js',
     'autofill/handlers/autofill-message-handler.js',
     'autofill/handlers/undo-handler.js',
-    'chatbot/handlers/chat-message-handler.js',
     'common/messaging/message-router.js',
     'autofill/core/autofill-orchestrator.js'
 ];
