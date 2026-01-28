@@ -76,6 +76,7 @@ const CONTENT_SCRIPTS = [
     'autofill/workflows/instant-fill-workflow.js',
     'autofill/workflows/ai-fill-workflow.js',
     'autofill/core/form-processor.js',
+    'autofill/domains/profile/SectionController.js',
     'autofill/handlers/autofill-message-handler.js',
     'autofill/handlers/undo-handler.js',
     'common/messaging/message-router.js',
