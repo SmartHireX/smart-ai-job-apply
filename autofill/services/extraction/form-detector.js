@@ -464,21 +464,34 @@ function getExplicitLabel(element) {
     }
 
     // 1e. aria-label (direct - often generic/fallback)
+    // BUT: Skip generic date component labels - let fieldset legend take priority
     if (element.hasAttribute('aria-label')) {
         const ariaLabel = cleanLabel(element.getAttribute('aria-label'));
-        if (isValidLabel(ariaLabel)) {
+        const isGenericDateLabel = /^(month|year|day|mm|dd|yyyy|date)$/i.test(ariaLabel);
+
+        if (isValidLabel(ariaLabel) && !isGenericDateLabel) {
             return ariaLabel;
         }
+        // If generic date label, continue to Tier 2 to check fieldset legend
     }
 
     // 1f. aria-describedby (secondary label)
-    if (element.hasAttribute('aria-describedby')) {
+    // Skip for date spinbuttons with generic labels - let fieldset legend take priority
+    const isGenericDateSpinbutton = element.getAttribute('role') === 'spinbutton' &&
+        element.hasAttribute('aria-label') &&
+        /^(month|year|day|mm|dd|yyyy)$/i.test(element.getAttribute('aria-label'));
+
+    if (element.hasAttribute('aria-describedby') && !isGenericDateSpinbutton) {
         const ids = element.getAttribute('aria-describedby').split(/\s+/);
         for (const id of ids) {
             const descEl = document.getElementById(id);
             if (descEl) {
                 const descText = cleanLabel(descEl.textContent);
-                if (descText.length > 5 && descText.length < 150 && isValidLabel(descText)) {
+
+                // Filter out help text patterns (e.g., "current value is YYYY", "use arrows to navigate")
+                const isHelpText = /^(current value|use |press |enter |format|example|hint|instruction)/i.test(descText);
+
+                if (descText.length > 5 && descText.length < 150 && isValidLabel(descText) && !isHelpText) {
                     return descText;
                 }
             }
@@ -511,8 +524,11 @@ function getSemanticLabel(element) {
         }
     }
 
-    // 2b. Fieldset legend (for radio/checkbox groups)
-    if (isGroup) {
+    // 2b. Fieldset legend (for radio/checkbox groups AND date spinbuttons)
+    const isDateSpinbutton = element.getAttribute('role') === 'spinbutton' &&
+        (element.getAttribute('aria-label')?.match(/^(month|year|day|mm|dd|yyyy)$/i));
+
+    if (isGroup || isDateSpinbutton) {
         const fieldset = element.closest('fieldset');
         if (fieldset) {
             const legend = fieldset.querySelector('legend');

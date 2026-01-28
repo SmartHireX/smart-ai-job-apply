@@ -124,7 +124,17 @@ data-cy="phone-field" → "Phone Field"
   <input type="radio" name="exp" value="senior">
 </fieldset>
 ```
-Legend is matched ONLY for radio/checkbox groups to prevent "legend hijacking".
+Legend is matched ONLY for radio/checkbox groups **and date spinbuttons** to prevent "legend hijacking".
+
+**Date Spinbutton Support:**
+```html
+<fieldset>
+  <legend><label>From</label></legend>
+  <input role="spinbutton" aria-label="Month">
+  <input role="spinbutton" aria-label="Year">
+</fieldset>
+```
+Date spinbuttons with generic labels (Month, Year, Day, MM, DD, YYYY) will use the fieldset legend instead.
 
 ### Table Headers
 ```html
@@ -207,13 +217,29 @@ if (candidate.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_PRECEDIN
 ```
 
 ### 5. Legend Hijacking Prevention
-Legends only match radio/checkbox groups, not text inputs:
+Legends only match radio/checkbox groups **and date spinbuttons**, not text inputs:
 ```html
 <fieldset>
   <legend>Employment History</legend>  <!-- NOT for text inputs -->
   <input name="company">
 </fieldset>
 ```
+
+### 6. Generic Date Label Detection
+Date spinbuttons with generic component labels skip to fieldset legend:
+```javascript
+// Skip generic labels: Month, Year, Day, MM, DD, YYYY
+aria-label="Month" → Skip to Tier 2 → Extract "From" from legend
+```
+
+### 7. Help Text Filtering
+aria-describedby values that are help text are filtered out:
+```html
+<div aria-describedby="help">
+  <input aria-label="Year">
+</div>
+<div id="help">current value is YYYY</div>
+<!-- "current value is YYYY" is rejected as help text, not a label -->
 
 ---
 
