@@ -23,10 +23,8 @@ class MessageRouter {
 
         // Register handlers in priority order
         this.handlers = [
-            ContextHandler,
             FormHandler,
-            UndoHandler,
-            ChatHandler
+            UndoHandler
         ];
 
         // Setup chrome message listener
