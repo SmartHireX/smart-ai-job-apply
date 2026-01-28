@@ -493,6 +493,15 @@ function showAccordionSidebar(allFields) {
         // Fallback to DOM attribute if source is missing on object (Robust)
         const source = item.source || item.fieldData?.source || element.getAttribute('data-autofill-source') || 'heuristic';
 
+        // Calculate DOM position for sorting (top-to-bottom, left-to-right)
+        const rect = element.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+        const domPosition = {
+            top: rect.top + scrollTop,
+            left: rect.left + scrollLeft
+        };
+
         const fieldInfo = {
             field: element,
             selector: item.selector,
@@ -506,7 +515,8 @@ function showAccordionSidebar(allFields) {
             value: value,
             filled: hasValue,
             isFileUpload,
-            indexBadge // Add indexBadge to fieldInfo
+            indexBadge, // Add indexBadge to fieldInfo
+            domPosition // DOM position for sorting
         };
 
         // Separate radio/checkbox/select from other fields
@@ -966,16 +976,24 @@ function showAccordionSidebar(allFields) {
     groupedSelects.forEach(categorizeField);
     otherFieldsRaw.forEach(categorizeField);
 
-    // SORT FIELDS ALPHABETICALLY BY LABEL (User Request)
-    const labelSorter = (a, b) => {
-        const labelA = (a.mlLabel || a.label || '').toLowerCase();
-        const labelB = (b.mlLabel || b.label || '').toLowerCase();
-        return labelA.localeCompare(labelB);
+    // SORT FIELDS BY DOM POSITION (Top-to-Bottom, Left-to-Right)
+    // This mirrors the actual form layout for intuitive preview
+    const domPositionSorter = (a, b) => {
+        const posA = a.domPosition || { top: 0, left: 0 };
+        const posB = b.domPosition || { top: 0, left: 0 };
+
+        // Primary sort by vertical position (top)
+        // Use small threshold (10px) to handle fields on same row
+        if (Math.abs(posA.top - posB.top) > 10) {
+            return posA.top - posB.top;
+        }
+        // Secondary sort by horizontal position (left) for same row
+        return posA.left - posB.left;
     };
 
-    finalAppFillFields.sort(labelSorter);
-    finalAiFields.sort(labelSorter);
-    finalManualFields.sort(labelSorter);
+    finalAppFillFields.sort(domPositionSorter);
+    finalAiFields.sort(domPositionSorter);
+    finalManualFields.sort(domPositionSorter);
 
     // console.log(`📄 After Grouping & Re-routing - App Fill: ${finalAppFillFields.length}, AI: ${finalAiFields.length}, Manual: ${finalManualFields.length}`);
 
