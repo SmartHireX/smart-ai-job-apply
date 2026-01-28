@@ -7,7 +7,7 @@
 
 // DOM Elements
 let setupSection, mainSection, progressSection;
-let fillBtn, chatBtn, undoBtn, settingsBtn, openSettingsBtn;
+let fillBtn, undoBtn, settingsBtn, openSettingsBtn;
 let formStatus, statusIcon;
 let progressFill, progressTitle, progressText;
 
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     progressSection = document.getElementById('progress-section');
 
     fillBtn = document.getElementById('fill-btn');
-    chatBtn = document.getElementById('chat-btn');
+
     undoBtn = document.getElementById('undo-btn');
     settingsBtn = document.getElementById('settings-btn');
     openSettingsBtn = document.getElementById('open-settings-btn');
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Add event listeners
     fillBtn.addEventListener('click', handleFillForm);
-    chatBtn.addEventListener('click', handleChatOpen);
+
     undoBtn.addEventListener('click', handleUndo);
     settingsBtn.addEventListener('click', openSettings);
     openSettingsBtn.addEventListener('click', openSettings);
@@ -246,38 +246,7 @@ async function handleFillForm() {
     }
 }
 
-/**
- * Handle chat button click
- */
-async function handleChatOpen() {
-    console.log('Opening chat overlay...');
-    try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        if (!tab) {
-            console.log('No active tab found');
-            return;
-        }
-
-        // Activate extension first
-        console.log('🔄 Activating extension for chat...');
-        await chrome.tabs.sendMessage(tab.id, {
-            type: 'ACTIVATE_EXTENSION'
-        });
-
-        // Then toggle chat
-        await chrome.tabs.sendMessage(tab.id, {
-            type: 'TOGGLE_CHAT'
-        });
-
-        // Close popup
-        window.close();
-
-    } catch (error) {
-        console.error('Failed to open chat:', error);
-        showError('Connection error. Please reload the webpage.');
-    }
-}
 
 /**
  * Handle undo button click
