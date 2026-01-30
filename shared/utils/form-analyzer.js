@@ -22,10 +22,13 @@ const MAPPING_RULES = `
 2. **Index-to-Data Mapping**: 
    - For **ALL repeating sections** (Jobs, Education, Projects, Certificates, etc.) or **lists**:
    - **Index 0** (or _0) → **1st entry** in resume list (Most Recent/Current).
-   - **Index 1** (or _1) → **2nd entry** in resume list (Previous).
-   - **Index N** (or _N) → **(N+1)th entry** in resume list.
+   - **Index 1** (or _1, or field_index: 1) → **2nd entry** in resume list (Previous).
+   - **Index N** (or _N, or field_index: N) → **(N+1)th entry** in resume list.
 3. **Strict Non-Reuse Rule**: **NEVER** reuse the same resume entry for different indices. If Index 0 took the 1st entry, Index 1 **MUST** move to the 2nd entry.
-4. **Missing Entries**: If the requested **Index N** exceeds the entries available in the resume (e.g., form asks for "Job 2" but you only have 1 job), you **MUST** return 'null' or an empty string for that field.
+4. **Missing Entries & Entry Counting**:
+   - You MUST count the entries in the user's resume for the current category (Work, Education, etc.).
+   - If the requested **field_index: N** is greater than or equal to the number of entries available (e.g., field has field_index: 1 but you only have 1 entry), you **MUST** return 'null' for that field. 
+   - DO NOT recycle data to fill empty slots.
 `;
 
 // Prompt templates for AI operations (Ported from backend/ai/prompts.py)
@@ -785,6 +788,7 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
             name: f.name || '',
             placeholder: f.placeholder || '',
             options: f.options || [],
+            field_index: f.field_index ?? null,
             sectionContext: f.sectionContext || null,
             parentContext: f.parentContext || null,
             siblingContext: f.siblingContext || null // AI now sees "Siblings: [City, State, Zip]"
