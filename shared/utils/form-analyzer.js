@@ -613,6 +613,8 @@ async function mapResumeToFields(fields, resumeData, pageContext = '') {
         .replace('{{job_context}}', pageContext || 'No specific job description found.')
         .replace('{{text_fields_array}}', JSON.stringify(fields, null, 2));
 
+    console.log('[FormAnalyzer] Sending fields to AI (Legacy):', fields);
+
     const result = await window.AIClient.callAI(prompt, '', {
         maxTokens: 4000, // Reduced token count for efficiency
         temperature: 0.3,
@@ -794,6 +796,7 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
             siblingContext: f.siblingContext || null // AI now sees "Siblings: [City, State, Zip]"
         }));
         const fieldsArray = JSON.stringify(sanitizedFields, null, 2);
+        console.log(`[FormAnalyzer] Sending Batch (${context.type}) to AI:`, sanitizedFields);
 
         // Replace template variables
         let prompt = promptTemplate;
