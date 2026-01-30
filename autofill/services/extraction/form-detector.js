@@ -426,7 +426,26 @@ function getExplicitLabel(element) {
         }
     }
 
-    // 1b. Native label association (element.labels API)
+    // 1b. Lever.co card-based question fields (MUST run before native label check)
+    // For checkbox/radio in Lever: <label><input><span>Yes</span></label> wraps the input,
+    // but the actual question is in a sibling .application-label .text element
+    const leverQuestionContainer = element.closest('li.application-question, .application-question');
+    if (leverQuestionContainer) {
+        const labelDiv = leverQuestionContainer.querySelector('.application-label .text, .application-label');
+        if (labelDiv) {
+            // Get text content but exclude required marker spans
+            const clone = labelDiv.cloneNode(true);
+            const requiredSpans = clone.querySelectorAll('.required, span.required');
+            requiredSpans.forEach(span => span.remove());
+            const labelText = cleanLabel(clone.textContent);
+            if (isValidLabel(labelText)) {
+                console.log('[FormDetector] Lever explicit question label:', labelText);
+                return labelText;
+            }
+        }
+    }
+
+    // 1c. Native label association (element.labels API)
     // Iterate ALL labels, not just [0] (handles helper + primary + validation labels)
     if (element.labels && element.labels.length > 0) {
         for (const label of element.labels) {
@@ -437,7 +456,7 @@ function getExplicitLabel(element) {
         }
     }
 
-    // 1c. Explicit label[for="id"] selector
+    // 1d. Explicit label[for="id"] selector
     if (element.id) {
         const labelFor = document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
         if (labelFor) {
@@ -448,7 +467,7 @@ function getExplicitLabel(element) {
         }
     }
 
-    // 1d. aria-labelledby (FIRST - references visible DOM text, higher priority)
+    // 1e. aria-labelledby (FIRST - references visible DOM text, higher priority)
     // Chrome & accessibility APIs prioritize aria-labelledby over aria-label
     if (element.hasAttribute('aria-labelledby')) {
         const ids = element.getAttribute('aria-labelledby').split(/\s+/);
@@ -463,7 +482,7 @@ function getExplicitLabel(element) {
         }
     }
 
-    // 1e. aria-label (direct - often generic/fallback)
+    // 1f. aria-label (direct - often generic/fallback)
     // BUT: Skip generic date component labels - let fieldset legend take priority
     if (element.hasAttribute('aria-label')) {
         const ariaLabel = cleanLabel(element.getAttribute('aria-label'));
@@ -475,7 +494,7 @@ function getExplicitLabel(element) {
         // If generic date label, continue to Tier 2 to check fieldset legend
     }
 
-    // 1f. aria-describedby (secondary label)
+    // 1g. aria-describedby (secondary label)
     // Skip for date spinbuttons with generic labels - let fieldset legend take priority
     const isGenericDateSpinbutton = element.getAttribute('role') === 'spinbutton' &&
         element.hasAttribute('aria-label') &&
@@ -510,7 +529,38 @@ function getSemanticLabel(element) {
     const type = element.type;
     const isGroup = type === 'radio' || type === 'checkbox';
 
-    // 2a. Data attributes (React/Testing hooks)
+    // 2a. Lever.co card-based question fields (highest priority for semantic)
+    // Structure: li.application-question > div > div.application-label .text (question)
+    //                                         > div.application-field > input (text, checkbox, radio)
+    // Handles both .card-field-input text fields AND checkbox/radio groups
+    const leverQuestionContainer = element.closest('li.application-question, .application-question');
+    if (leverQuestionContainer) {
+        // Look for the label in .application-label .text
+        const labelDiv = leverQuestionContainer.querySelector('.application-label .text, .application-label');
+        if (labelDiv) {
+            // Get text content but exclude required marker spans
+            const clone = labelDiv.cloneNode(true);
+            const requiredSpans = clone.querySelectorAll('.required, span.required');
+            requiredSpans.forEach(span => span.remove());
+            const labelText = cleanLabel(clone.textContent);
+            if (isValidLabel(labelText)) {
+                return labelText;
+            }
+        }
+        // Also check for h4[data-qa="card-name"] as a fallback (category header)
+        const cardSection = leverQuestionContainer.closest('.posting-card, [class*="card"]');
+        if (cardSection) {
+            const cardName = cardSection.querySelector('h4[data-qa="card-name"], h4.card-name');
+            if (cardName) {
+                const labelText = cleanLabel(cardName.textContent);
+                if (isValidLabel(labelText)) {
+                    return labelText;
+                }
+            }
+        }
+    }
+
+    // 2b. Data attributes (React/Testing hooks)
     const dataAttrs = ['data-label', 'data-field-name', 'data-testid', 'data-cy'];
     for (const attr of dataAttrs) {
         if (element.hasAttribute(attr)) {
