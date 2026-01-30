@@ -59,6 +59,15 @@ const CONTENT_SCRIPTS = [
     'autofill/domains/profile/EntityStore.js',
     'autofill/services/indexing/field-indexing-service.js',
     'autofill/domains/model/FieldRoutingPatterns.js',
+    'autofill/domains/model/FieldRoutingPatterns.js',
+
+    // Enterprise Core (Phase 1-4)
+    'autofill/core/ScanState.js',
+    'autofill/core/FieldCandidates.js',
+    'autofill/core/FillabilityPolicy.js',
+    'autofill/core/ContextFeatureExtractor.js',
+    'autofill/core/AutofillScanner.js',
+
     'autofill/core/PipelineOrchestrator.js',
     'autofill/domains/profile/CompositeFieldManager.js',
     'autofill/services/ai/AIBatchProcessor.js',

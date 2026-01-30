@@ -112,6 +112,37 @@ class HybridClassifier {
     }
 
     /**
+     * Get raw hypotheses from all engines (Heuristic + Neural)
+     * Used by AutofillScanner for external arbitration (FieldCandidatesMap)
+     * @param {Object} field 
+     * @returns {Promise<Object>} { heuristic: Result, neural: Result }
+     */
+    async getHypotheses(field) {
+        this._currentField = field; // Setup context
+        try {
+            // 1. Extract features
+            const features = await this._extractFeatures(field);
+
+            // 2. Run both classifiers in parallel
+            const [heuristicResult, neuralResult] = await Promise.all([
+                this._runHeuristic(field, features),
+                this._runNeural(field, features)
+            ]);
+
+            return {
+                heuristic: heuristicResult,
+                neural: neuralResult
+            };
+        } catch (error) {
+            this._logError('Hypothesis generation failed', error);
+            return {
+                heuristic: { label: 'unknown', confidence: 0, source: 'error' },
+                neural: { label: 'unknown', confidence: 0, source: 'error' }
+            };
+        }
+    }
+
+    /**
      * Run heuristic classification
      * @private
      */
