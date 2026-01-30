@@ -21,10 +21,11 @@ const MAPPING_RULES = `
 1. **Chronological Order**: Map indexed fields (e.g. school_0, employer_0) from Latest to Oldest.
 2. **Index-to-Data Mapping**: 
    - For **ALL repeating sections** (Jobs, Education, Projects, Certificates, etc.) or **lists**:
-   - **Index 0** (or _0, or field_index: 0) → **1st entry** in the corresponding resume list (Most Recent/Current).
-   - **Index 1** (or _1, or field_index: 1) → **2nd entry** in the corresponding resume list (Previous).
-   - **Index N** (or _N) → **(N+1)th entry** in the corresponding resume list.
-3. **No Duplication**: Use only entries not already listed in HISTORY CONTEXT. Never repeat the same entry across multiple indices.
+   - **Index 0** (or _0) → **1st entry** in resume list (Most Recent/Current).
+   - **Index 1** (or _1) → **2nd entry** in resume list (Previous).
+   - **Index N** (or _N) → **(N+1)th entry** in resume list.
+3. **Strict Non-Reuse Rule**: **NEVER** reuse the same resume entry for different indices. If Index 0 took the 1st entry, Index 1 **MUST** move to the 2nd entry.
+4. **Missing Entries**: If the requested **Index N** exceeds the entries available in the resume (e.g., form asks for "Job 2" but you only have 1 job), you **MUST** return 'null' or an empty string for that field.
 `;
 
 // Prompt templates for AI operations (Ported from backend/ai/prompts.py)
