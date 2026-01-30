@@ -324,7 +324,8 @@ class HeuristicEngine {
         job_location: {
             patterns: [
                 /\b(job[_\-\s]?location|work[_\-\s]?location)\b/i,
-                /\b(office[_\-\s]?location|employment[_\-\s]?location)\b/i
+                /\b(office[_\-\s]?location|employment[_\-\s]?location)\b/i,
+                /^location$/i
             ],
             confidence: 0.90,
             category: 'work'
@@ -678,7 +679,7 @@ class HeuristicEngine {
             ],
             confidence: 0.95,
             category: 'work',
-            negative: /\b(currently[_\-\s]?employed|are[_\-\s]?you[_\-\s]?employed)\b/i
+            negative: /\b(currently[_\-\s]?employed|are[_\-\s]?you[_\-\s]?employed|location)\b/i
         },
 
         job_type_preference: {
