@@ -20,10 +20,10 @@ const UNIVERSAL_RULES = `
 const MAPPING_RULES = `
 1. **Chronological Order**: Map indexed fields (e.g. school_0, employer_0) from Latest to Oldest.
 2. **Index-to-Data Mapping**: 
-   - Especially for **Jobs, Education, and Projects**:
-   - **Index 0** (or _0, or field_index: 0) → **1st entry** in resume data (Most Recent/Current).
-   - **Index 1** (or _1, or field_index: 1) → **2nd entry** in resume data (Previous).
-   - **Index N** (or _N) → **(N+1)th entry** in resume data.
+   - For **ALL repeating sections** (Jobs, Education, Projects, Certificates, etc.) or **lists**:
+   - **Index 0** (or _0, or field_index: 0) → **1st entry** in the corresponding resume list (Most Recent/Current).
+   - **Index 1** (or _1, or field_index: 1) → **2nd entry** in the corresponding resume list (Previous).
+   - **Index N** (or _N) → **(N+1)th entry** in the corresponding resume list.
 3. **No Duplication**: Use only entries not already listed in HISTORY CONTEXT. Never repeat the same entry across multiple indices.
 `;
 
