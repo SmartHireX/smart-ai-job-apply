@@ -19,9 +19,10 @@ const UNIVERSAL_RULES = `
 // Explicit chronological mapping logic
 const MAPPING_RULES = `
 1. **Chronological Order**: Map indexed fields (e.g. school_0, employer_0) from Latest to Oldest.
-2. **_0 vs _1 Logic**: 
-   - Fields ending with _0 → Most recent/Current entry.
-   - Fields ending with _1 → Previous entry.
+2. **Index-to-Data Mapping**: 
+   - **Index 0** (or _0, or field_index: 0) → **1st entry** in resume data (Most Recent/Current).
+   - **Index 1** (or _1, or field_index: 1) → **2nd entry** in resume data (Previous).
+   - **Index N** (or _N) → **(N+1)th entry** in resume data.
 3. **No Duplication**: Use only entries not already listed in HISTORY CONTEXT. Never repeat the same entry across multiple indices.
 `;
 
