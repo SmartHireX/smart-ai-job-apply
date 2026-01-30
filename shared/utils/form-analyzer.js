@@ -8,18 +8,32 @@
  */
 
 // Prompt templates for AI operations (Ported from backend/ai/prompts.py)
+// Universal behavior rules to reduce token redundancy across prompts
+const UNIVERSAL_RULES = `
+1. Do NOT fabricate experience or facts.
+2. For select/radio/checkbox fields, ONLY use values from the provided options array.
+3. Keep answers concise (<120 words unless clearly required).
+4. Generate professional, ATS-friendly responses tailored to the Job Context.
+`;
+
+// Explicit chronological mapping logic
+const MAPPING_RULES = `
+1. **Chronological Order**: Map indexed fields (e.g. school_0, employer_0) from Latest to Oldest.
+2. **_0 vs _1 Logic**: 
+   - Fields ending with _0 → Most recent/Current entry.
+   - Fields ending with _1 → Previous entry.
+3. **No Duplication**: Use only entries not already listed in HISTORY CONTEXT. Never repeat the same entry across multiple indices.
+`;
+
+// Prompt templates for AI operations (Ported from backend/ai/prompts.py)
 const PROMPTS = {
     // ANALYZE_FORM REMOVED - We use local logic now
     MAP_DATA: `You are an intelligent job-application text assistant.
 
-Your task is to generate values ONLY for unresolved TEXT-BASED form fields
-(e.g., textarea, long text input).
+Your task is to generate values ONLY for unresolved TEXT-BASED form fields (e.g., textarea, long text input).
 
-⚠️ IMPORTANT:
-- DO NOT fabricate experience or facts.
-- For "select" or "radio" fields, YOU MUST PICK A VALID VALUE from the provided "options" array.
-- If no option fits well, return null for that field.
-- You will receive a mix of text and structured fields that local logic missed.
+⚠️ IMPORTANT RULES:
+${UNIVERSAL_RULES}
 
 ────────────────────────────
 USER CONTEXT (COMPRESSED FACTS)
@@ -57,99 +71,50 @@ JOB CONTEXT
 ────────────────────────────
 TEXT FIELDS TO FILL
 ────────────────────────────
-Each item contains:
-- selector: CSS selector
-- label: Field label
-- placeholder: Field placeholder (Strong signal for "Latest" vs "Previous")
-- context: Help text or nearby description (if any)
-
-Fields:
 {{text_fields_array}}
 
 ────────────────────────────
-INSTRUCTIONS
+MAPPING INSTRUCTIONS
 ────────────────────────────
-1. Generate concise, professional, ATS-friendly responses.
-2. Tailor answers to the Job Context.
-3. Use profile facts to answer questions.
-4. Avoid filler words and generic phrases.
-5. Keep answers under 120 words unless clearly required.
-6. DO NOT fabricate experience or facts.
-7. If context is insufficient, return an empty string.
-8. **Sequential History Mapping**: For indexed fields (e.g. school_0, school_1) or repeated sections (Employer 1, Employer 2), YOU MUST map them in CHRONOLOGICAL ORDER (Latest to Oldest). Use the 1st history item for the 1st field (index 0), the 2nd history item for the 2nd field (index 1), and so on. NEVER repeat the same history entry for multiple distinct indices.
-9. **Placeholder Context**: ALWAYS check the "placeholder" field. If it says "Latest Employer", "Current Job", or similar, treat it as Index 0 (Current Role). If "Previous Employer", map it to Index 1. Use this to differentiate generic labels like "Employer".
+${MAPPING_RULES}
+- **Placeholder Context**: Check "placeholder" field. If it says "Latest", "Current", or similar, treat as Index 0.
+
 ────────────────────────────
 RESPONSE FORMAT (JSON ONLY)
 ────────────────────────────
 {
   "mappings": {
-    "<css_selector_1>": {
-      "value": "<generated_text>",
-      "confidence": <0.6 - 0.8>,
+    "<css_selector>": {
+      "value": "<value>",
+      "confidence": <0.6-0.9>,
       "source": "ai_generated",
-      "field_type": "textarea"
-    },
-    "<css_selector_2>": {
-      "value": "<exact_option_value>", 
-      "confidence": 0.9,
-      "source": "ai_generated",
-      "field_type": "select" 
-    },
-    "<css_selector_3>": {
-      "value": true, 
-      "confidence": 0.9,
-      "source": "ai_generated",
-      "field_type": "checkbox" 
+      "field_type": "<type>"
     }
   }
 }
-
-⚠️ SPECIFIC OUTPUT RULES:
-- **Select/Radio**: value MUST be one of the 'value' strings from the provided options array.
-- **Checkbox (Single)**: value MUST be 'true' or 'false'.
-- **Checkbox (Group)**: value MUST be an Array of matching values, e.g. ["remote", "contract"].
-
-⚠️ RULES:
-- Return mappings ONLY for provided selectors
-- No extra text, no explanations
-- Valid JSON only
-`, // Optimization: We will construct a minimal prompt for just the "hard" fields dynamically.
+`,
 
     // NEW: Batched processing prompt for first batch (full context)
-    MAP_DATA_BATCH: `You are an intelligent job-application assistant.
-
-Your task is to answer 1-5 form questions professionally and concisely.
+    MAP_DATA_BATCH: `You are an intelligent job-application assistant answering 1-5 questions.
 
 ────────────────────────────
 USER CONTEXT
 ────────────────────────────
-Name: {{name}}
-Current Role: {{current_role}}
-Total Experience: {{total_years_experience}} years
+Name: {{name}} | Role: {{current_role}} | Exp: {{total_years_experience}} years
 
 ────────────────────────────
 FULL APPLICANT PROFILE
 ────────────────────────────
-## Personal Details
 {{full_personal_info}}
-
-## Work Experience
 {{work_experience_details}}
-
-## Education
 {{education_details}}
 
 ## HISTORY CONTEXT (Already Filled)
 {{filled_history_summary}}
 
-
-## Skills
+## Additional Data
 {{all_skills_details}}
-
-## Projects
 {{project_details}}
-
-## Preferences & Additional Info
 {{custom_fields_details}}
 
 ────────────────────────────
@@ -163,31 +128,18 @@ QUESTIONS TO ANSWER
 {{fields_array}}
 
 ────────────────────────────
-INSTRUCTIONS
+INSTRUCTIONS & RULES
 ────────────────────────────
-1. Generate concise, professional, ATS-friendly responses.
-2. Tailor answers to the Job Context.
-3. Use profile facts - DO NOT fabricate experience.
-4. Keep answers under 120 words unless clearly required.
-5. For select/radio/checkbox fields, ONLY use values from the provided options array.
-6. **Sequential History Mapping**: For indexed fields (e.g. school_0, school_1), map them in CHRONOLOGICAL ORDER (Latest to Oldest). Index 0 = Latest, Index 1 = Previous. DO NOT repeat the same entry.
-7. **No Duplication**: Do NOT reuse history items listed in HISTORY CONTEXT. Start filling from the next available item.
-8. **Section Context Awareness**: Some fields include a "sectionContext" object with detected context ("work" or "education"). Confidence interpretation:
-   - Confidence ≥ 10: Highly confident (explicit HTML semantics like fieldset/autocomplete)
-   - Confidence ≥ 7: Very confident (table headers, section headers)
-   - Confidence ≥ 4: Confident (container analysis, field clustering)
-   - Use this context to disambiguate generic field names (e.g., "From" in work section = job start date, in education section = school start date).
-────────────────────────────
-RESPONSE FORMAT (JSON ONLY - USE ABBREVIATED KEYS)
-────────────────────────────
-{
-  "m": {
-    "<selector>": {"v": "<answer>", "c": <0.6-0.9>, "t": "<type>"}
-  }
-}
+${UNIVERSAL_RULES}
+${MAPPING_RULES}
 
-KEY: m=mappings, v=value, c=confidence, t=type
-Return mappings ONLY for provided selectors. Valid JSON only.
+- **Section Context Awareness**: Use "sectionContext" (work/education) to disambiguate generic names (e.g., "From" in work = job start).
+- Confidence: 10=Explicit, 7=Header-derived, 4=Clustered.
+
+────────────────────────────
+RESPONSE FORMAT (JSON ONLY - ABBREVIATED)
+────────────────────────────
+{"m": {"<selector>": {"v": "<answer>", "c": <0.6-0.9>, "t": "<type>"}}}
 `,
 
     // NEW: Condensed prompt for subsequent batches (minimal context)
@@ -202,43 +154,34 @@ PREV ANSWERS:
 HISTORY USED:
 {{filled_history_summary}}
 
-
 JOB: {{job_context}}
 
 QUESTIONS:
 {{fields_array}}
 
-RULES: <120 words, use provided facts only, select/radio/checkbox use given options only. Fields may include "sectionContext" (work/education) - use to interpret generic names (e.g., "From" in work section = job start, in education = school start). Confidence ≥10=highly confident, ≥7=very confident, ≥4=confident.
+────────────────────────────
+INSTRUCTIONS & RULES
+────────────────────────────
+${UNIVERSAL_RULES}
+${MAPPING_RULES}
 
-JSON RESPONSE (abbreviated keys):
+- Confidence: 10=Explicit, 7=Header-derived, 4=Clustered.
+
+JSON RESPONSE (abbreviated):
 {"m":{"<selector>":{"v":"<answer>","c":<0.6-0.9>,"t":"<type>"}}}
-
-KEY: m=mappings, v=value, c=confidence, t=type
 `,
 
+    GENERATE_ANSWER: `You are helping a job applicant answer a question. 
+Write a professional, concise answer (2-4 sentences) based on the resume.
 
-
-
-
-    GENERATE_ANSWER: `You are helping a job applicant answer a question on a job application form. 
-
-Based on the applicant's resume and the specific question, write a professional, concise answer.
-
-Guidelines:
-- Be professional and confident
-- Keep it concise (2-4 sentences unless more detail is clearly needed)
-- Use information from the resume when relevant
-- For "Why do you want to work here?" type questions, focus on career growth and company fit
-- For behavioral questions, use STAR method briefly
-- Don't make up specific experiences not in the resume
+⚠️ RULES:
+${UNIVERSAL_RULES}
 
 Question: {{QUESTION}}
 
-Context about the job (if available):
-{{CONTEXT}}
+Context: {{CONTEXT}}
 
-Applicant's Resume:
-{{RESUME}}
+Resume: {{RESUME}}
 
 Write the answer:
 `,
@@ -250,10 +193,9 @@ Write the answer:
 - **Role**: You are a helpful assistant for job applications.
 
 **Instructions**:
-1. Analyze user intent: Are they asking about their resume, job applications, or general career advice?
+1. Analyze user intent.
 2. Use the provided **User Profile/Resume** to answer accurately.
 3. Be concise (under 150 words) and helpful.
-4. If the user asks for a cover letter or resume tailoring, use the resume data provided.
 `
 };
 
