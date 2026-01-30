@@ -439,7 +439,6 @@ function getExplicitLabel(element) {
             requiredSpans.forEach(span => span.remove());
             const labelText = cleanLabel(clone.textContent);
             if (isValidLabel(labelText)) {
-                console.log('[FormDetector] Lever explicit question label:', labelText);
                 return labelText;
             }
         }

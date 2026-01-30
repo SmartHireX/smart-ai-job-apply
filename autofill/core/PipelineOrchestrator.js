@@ -217,7 +217,12 @@ class PipelineOrchestrator {
 
                 // Apply Refined Predictions
                 scanResults.forEach(res => {
-                    const field = fields.find(f => f.id === res.fieldId);
+                    const field = fields.find(f => {
+                        if (res.instanceUid && f.instance_uid === res.instanceUid) return true;
+                        if (res.fieldId && f.id === res.fieldId) return true;
+                        if (res.fieldName && f.name === res.fieldName) return true;
+                        return false;
+                    });
                     if (field) {
                         // EXPOSE DECISION EXPLICITLY (Always informative)
                         field.scanner_decision = {

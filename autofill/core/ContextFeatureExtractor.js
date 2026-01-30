@@ -102,10 +102,26 @@ class ContextFeatureExtractor {
     }
 
     _calculateLabelQuality(field) {
-        if (field.label && field.element && field.element.labels && field.element.labels.length > 0) return 1.0; // Explicit
-        if (field.ariaLabel) return 0.9;
-        if (field.placeholder) return 0.6;
-        return 0.4;
+        let score = 0.4;
+        if (field.label && field.element && field.element.labels && field.element.labels.length > 0) score = 1.0; // Explicit
+        else if (field.ariaLabel) score = 0.9;
+        else if (field.placeholder) score = 0.6;
+
+        const labelText = (field.label || field.ariaLabel || field.placeholder || '').trim();
+
+        // Question Penalty: Full questions are usually NOT atomic fields
+        if (labelText.includes('?') || /^(do|are|have|will|can|please)\b/i.test(labelText)) {
+            score *= 0.7;
+        }
+
+        // Length Penalty: Atomic fields shouldn't have paragraph-long labels
+        if (labelText.length > 100) {
+            score *= 0.5; // High penalty for clauses
+        } else if (labelText.length > 60) {
+            score *= 0.8; // Moderate penalty for long questions
+        }
+
+        return score;
     }
 
     _hasSibling(neighbors, regex) {

@@ -28,7 +28,9 @@ class AutofillScanner {
             /\b(captcha|verify|robot|recaptcha|security)\b/i,
             /\b(optional|skip|later)\b/i, // Soft veto in future, hard block for now
             /\b(example|sample|demo)\b/i,
-            /\b(why|describe|explain|tell us|elaborate)\b/i // Block open-ended questions
+            /\b(why|describe|explain|tell us|elaborate)\b/i, // Block open-ended questions
+            /\b(agreement|non[_\-\s]?compete|restrictive|covenant|prevent|prohibit)\b/i, // Legal clauses
+            /\b(consent|privacy|policy|terms|condition|data[_\-\s]?processing|marketing|future[_\-\s]?job)\b/i // Compliance
         ];
 
         // Policy Engine (Phase 4)
@@ -177,7 +179,9 @@ class AutofillScanner {
 
     _createResult(field, decision, confidence, label, reason) {
         return {
-            fieldId: field.id,
+            fieldId: field.id || '',
+            fieldName: field.name || '',
+            instanceUid: field.instance_uid || '',
             label: label,
             confidence: confidence,
             decision: decision,

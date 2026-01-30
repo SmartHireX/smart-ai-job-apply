@@ -269,7 +269,7 @@ class HeuristicEngine {
             ],
             confidence: 0.96,
             category: 'work',
-            negative: /\b(job[_\-\s]?description|page[_\-\s]?title|document[_\-\s]?title|book[_\-\s]?title|fit[_\-\s]?for[_\-\s]?(this|the)?[_\-\s]?role)\b/i
+            negative: /\b(job[_\-\s]?description|page[_\-\s]?title|document[_\-\s]?title|book[_\-\s]?title|fit[_\-\s]?for[_\-\s]?(this|the)?[_\-\s]?role|consent|privacy|applying|processed)\b/i
         },
 
         company_name: {
@@ -282,7 +282,7 @@ class HeuristicEngine {
             ],
             confidence: 0.95,
             category: 'work',
-            negative: /\b(company[_\-\s]?(size|type|culture|website|industry))\b/i
+            negative: /\b(company[_\-\s]?(size|type|culture|website|industry)|agreement|employer\(s\)|prevent|restrictive)\b/i
         },
 
         job_start_date: {
@@ -954,7 +954,8 @@ class HeuristicEngine {
                 /\b(einverstanden|acepto)\b/i  // DE, ES
             ],
             confidence: 0.90,
-            category: 'misc'
+            category: 'misc',
+            negative: /\b(marketing|subscribe|newsletter)\b/i
         },
 
         additional_info: {
