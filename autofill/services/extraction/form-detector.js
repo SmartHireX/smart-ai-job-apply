@@ -577,12 +577,16 @@ function getSemanticLabel(element) {
     const isDateSpinbutton = element.getAttribute('role') === 'spinbutton' &&
         (element.getAttribute('aria-label')?.match(/^(month|year|day|mm|dd|yyyy)$/i));
 
-    if (isGroup || isDateSpinbutton) {
+    if (isGroup || isDateSpinbutton || tagName === 'BUTTON') {
         const fieldset = element.closest('fieldset');
         if (fieldset) {
             const legend = fieldset.querySelector('legend');
             if (legend) {
-                const legendText = cleanLabel(legend.innerText);
+                // Workday often has legend > div[data-automation-id="richText"] > p > span
+                // Standard innerText usually works, but we should prioritize data-automation-id="richText" if it exists
+                const richLabel = legend.querySelector('[data-automation-id="richText"], .rich-label, .css-q564f6');
+                const legendText = cleanLabel(richLabel ? richLabel.innerText : legend.innerText);
+
                 if (isValidLabel(legendText)) {
                     return legendText;
                 }

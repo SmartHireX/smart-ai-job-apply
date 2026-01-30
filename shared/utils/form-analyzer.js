@@ -277,7 +277,8 @@ async function extractFieldsFromDOM(source) {
     const seenFields = new Set(); // DEDUPLICATION SET
 
     // Select all inputs except hidden/submit/button
-    const inputs = root.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]), select, textarea');
+    // ENHANCED: Also capture button-based dropdowns (e.g., Workday aria-haspopup="listbox")
+    const inputs = root.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]), select, textarea, button[aria-haspopup="listbox"], button[aria-expanded="true"], button[aria-expanded="false"]');
 
     inputs.forEach(input => {
         // DEDUPLICATION CHECK
@@ -387,8 +388,13 @@ async function extractFieldsFromDOM(source) {
         else if (input.name) selector = `[name="${safeName}"]`;
         else return; // Skip unverifiable
 
+        let fieldType = type;
+        if (tagName === 'TEXTAREA') fieldType = 'textarea';
+        else if (tagName === 'SELECT') fieldType = 'select';
+        else if (tagName === 'BUTTON' && input.getAttribute('aria-haspopup') === 'listbox') fieldType = 'select';
+
         fields.push({
-            type: tagName === 'TEXTAREA' ? 'textarea' : (tagName === 'SELECT' ? 'select' : type),
+            type: fieldType,
             label: label,
             name: input.name || '',
             id: input.id || '',
