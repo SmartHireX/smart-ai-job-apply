@@ -526,6 +526,7 @@ function getExplicitLabel(element) {
  */
 function getSemanticLabel(element) {
     const type = element.type;
+    const tagName = element.tagName;
     const isGroup = type === 'radio' || type === 'checkbox';
 
     // 2a. Lever.co card-based question fields (highest priority for semantic)
