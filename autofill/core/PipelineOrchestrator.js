@@ -32,6 +32,26 @@ class PipelineOrchestrator {
 
         // Stealth Executor (The Hands)
         this.executor = window.ExecutionEngine ? new window.ExecutionEngine() : null;
+
+        // Enterprise Scanner (The Brain v2)
+        // Uses a lightweight adapter because fields are already enriched by SectionGrouper/SectionDetector
+        const structureAdapter = {
+            getSectionInfo: (f) => ({
+                boundaryId: f.instance_uid || 'root',
+                instanceIndex: 0, // instance_uid uniqueness handles the boundary reset
+                type: f.section_type || 'generic'
+            })
+        };
+
+        // RACE CONDITION FIX: Explicit Check & Log
+        if (window.AutofillScanner) {
+            console.log('✅ [Pipeline] AutofillScanner found. Initializing.');
+            this.scanner = new window.AutofillScanner(structureAdapter, this.classifier);
+        } else {
+            console.warn('⚠️ [Pipeline] AutofillScanner NOT found at init. Attempting lazy recovery...');
+            // In a real async flow we'd await, but constructor is sync.
+            // We'll leave it null and try to re-grab it in executePipeline
+        }
     }
 
     /**
@@ -172,6 +192,65 @@ class PipelineOrchestrator {
 
             // Map blocks to fields for later processing (preserving new UIDs)
             // (The fields inside 'blocks' have already been mutated by SectionGrouper with UIDs)
+        }
+
+        // Phase 2.5: Sequential Scan (Enterprise Logic)
+        // Lazy Init Recovery
+        if (!this.scanner && window.AutofillScanner) {
+            console.log('✅ [Pipeline] AutofillScanner found late. Initializing lazily.');
+            const structureAdapter = {
+                getSectionInfo: (f) => ({
+                    boundaryId: f.instance_uid || 'root',
+                    instanceIndex: 0,
+                    type: f.section_type || 'generic'
+                })
+            };
+            this.scanner = new window.AutofillScanner(structureAdapter, this.classifier);
+        }
+
+        if (this.scanner) {
+            try {
+                // Determine order for scan (DOM / Group order)
+                // SectionGrouper doesn't reorder the main array, but grouped blocks are sorted.
+                // We'll pass the flat list (or we could pass struct). AutofillScanner sorts visually internally if implemented.
+                const scanResults = await this.scanner.scan({ fields });
+
+                // Apply Refined Predictions
+                scanResults.forEach(res => {
+                    const field = fields.find(f => f.id === res.fieldId);
+                    if (field) {
+                        // EXPOSE DECISION EXPLICITLY (Always informative)
+                        field.scanner_decision = {
+                            label: res.label,
+                            decision: res.decision,
+                            confidence: res.confidence,
+                            reason: res.reason
+                        };
+
+                        // logic: If Scanner says "ignore", it trumps even high confidence ML
+                        if (res.decision === 'ignore') {
+                            field.ml_prediction = {
+                                label: 'unknown',
+                                confidence: 0,
+                                source: 'scanner_veto',
+                                original_reason: res.reason
+                            };
+                            field.isVetoed = true;
+                        } else {
+                            // INTEGRATION: Scanner data overrides raw ML 
+                            // because it has been filtered by Fillability Policy (Quality + Context)
+                            field.ml_prediction = {
+                                label: res.label,
+                                confidence: res.confidence,
+                                source: 'scanner_refined',
+                                decision: res.decision
+                            };
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('⚠️ [Pipeline] Scanner Failure:', e);
+            }
         }
 
         // Phase 3: Final Indexing & Routing
