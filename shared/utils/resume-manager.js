@@ -106,14 +106,34 @@ function generateId() {
  * @returns {Promise<Object>}
  */
 async function getResumeData() {
-    const result = await chrome.storage.local.get([RESUME_STORAGE_KEY]);
-    const data = result[RESUME_STORAGE_KEY];
+    if (window.StorageVault) {
+        // Use Centralized Vault
+        const data = await window.StorageVault.bucket('identity').get(RESUME_STORAGE_KEY);
+        if (!data) return null;
+        return deepMerge(JSON.parse(JSON.stringify(DEFAULT_RESUME_SCHEMA)), data);
+    }
 
-    if (!data) {
+    // Legacy Fallback
+    const result = await chrome.storage.local.get([RESUME_STORAGE_KEY]);
+    const rawData = result[RESUME_STORAGE_KEY];
+
+    if (!rawData) {
         return null;
     }
 
-    // Merge with default schema to ensure all fields exist
+    let data = rawData;
+    if (window.EncryptionService && window.EncryptionService.isEncrypted(rawData)) {
+        try {
+            const aad = window.EncryptionAAD.entity(RESUME_STORAGE_KEY);
+            data = await window.EncryptionService.decrypt(rawData, aad);
+        } catch (err) {
+            console.error('[ResumeManager] Decryption failed:', err);
+            throw err;
+        }
+    } else if (typeof rawData !== 'object') {
+        return null;
+    }
+
     return deepMerge(JSON.parse(JSON.stringify(DEFAULT_RESUME_SCHEMA)), data);
 }
 
@@ -125,17 +145,24 @@ async function getResumeData() {
 async function saveResumeData(data) {
     // Update metadata
     const now = new Date().toISOString();
-    if (!data.meta) {
-        data.meta = {};
-    }
-    if (!data.meta.createdAt) {
-        data.meta.createdAt = now;
-    }
+    if (!data.meta) data.meta = {};
+    if (!data.meta.createdAt) data.meta.createdAt = now;
     data.meta.updatedAt = now;
     data.meta.version = (data.meta.version || 0) + 1;
 
-    await chrome.storage.local.set({ [RESUME_STORAGE_KEY]: data });
-    // console.log('Resume data saved successfully');
+    if (window.StorageVault) {
+        await window.StorageVault.bucket('identity').set(RESUME_STORAGE_KEY, data);
+        return;
+    }
+
+    // Legacy Fallback
+    let dataToSave = data;
+    if (window.EncryptionService) {
+        const aad = window.EncryptionAAD.entity(RESUME_STORAGE_KEY);
+        dataToSave = await window.EncryptionService.encrypt(data, aad);
+    }
+
+    await chrome.storage.local.set({ [RESUME_STORAGE_KEY]: dataToSave });
 }
 
 /**

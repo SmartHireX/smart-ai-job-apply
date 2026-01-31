@@ -17,14 +17,25 @@ class EntityStore {
     async init() {
         if (this.isInitialized) return;
         try {
-            const result = await chrome.storage.local.get(['smart_history_profile']);
-            if (result.smart_history_profile) {
-                this.profile = { ...this.profile, ...result.smart_history_profile };
+            if (window.StorageVault) {
+                // Use the new Centralized Vault
+                const bucket = window.StorageVault.bucket('identity');
+                const data = await bucket.get('profile');
+                if (data) {
+                    this.profile = { ...this.profile, ...data };
+                }
+            } else {
+                // Legacy Fallback (Migration will handle moving this to the vault later)
+                const result = await chrome.storage.local.get(['smart_history_profile']);
+                const rawData = result.smart_history_profile;
+                if (rawData && typeof rawData === 'object' && !window.EncryptionService?.isEncrypted?.(rawData)) {
+                    this.profile = { ...this.profile, ...rawData };
+                }
             }
             this.isInitialized = true;
-            // console.log('[EntityStore] Initialized.');
         } catch (e) {
             console.warn('[EntityStore] Init failed:', e);
+            throw e;
         }
     }
 
@@ -33,7 +44,12 @@ class EntityStore {
      */
     async save() {
         try {
-            await chrome.storage.local.set({ 'smart_history_profile': this.profile });
+            if (window.StorageVault) {
+                await window.StorageVault.bucket('identity').set('profile', this.profile);
+            } else {
+                // Emergency Fallback
+                await chrome.storage.local.set({ 'smart_history_profile': this.profile });
+            }
         } catch (e) {
             console.error('[EntityStore] Save failed:', e);
         }
