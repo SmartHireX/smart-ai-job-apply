@@ -409,7 +409,7 @@ async function extractFieldsFromDOM(source) {
     // ENRICH FIELDS WITH SECTION CONTEXT
     // ========================================
     if (typeof window !== 'undefined' && window.SectionDetector) {
-        const allInputs = root.querySelectorAll('input, select, textarea');
+        const allInputs = root.querySelectorAll('input, select, textarea, button');
 
         fields.forEach((field) => {
             let element = null;

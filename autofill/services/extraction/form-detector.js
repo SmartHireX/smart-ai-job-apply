@@ -488,7 +488,18 @@ function getExplicitLabel(element) {
         const isGenericDateLabel = /^(month|year|day|mm|dd|yyyy|date)$/i.test(ariaLabel);
 
         if (isValidLabel(ariaLabel) && !isGenericDateLabel) {
-            return ariaLabel;
+            // NEW: Skip "Value-like" labels on widgets (e.g. "Yes Required", "Select...") 
+            // These usually indicate the label was incorrectly pulled from the current selection.
+            // We want to skip these so TIER 2 (Semantic Legend) can find the real question.
+            const isValueLike = (element.tagName === 'BUTTON' || element.type === 'select-one') && (
+                ariaLabel.length < 15 ||
+                /^(yes|no|select|choose|required|optional)/i.test(ariaLabel) ||
+                ariaLabel.toLowerCase().includes('required') && ariaLabel.length < 25
+            );
+
+            if (!isValueLike) {
+                return ariaLabel;
+            }
         }
         // If generic date label, continue to Tier 2 to check fieldset legend
     }
