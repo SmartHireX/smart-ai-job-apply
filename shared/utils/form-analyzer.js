@@ -837,7 +837,11 @@ async function mapFieldsBatch(fields, context, pageContext = '') {
         }
 
         if (!result.success) {
-            return { success: false, error: result.error || 'AI call failed' };
+            return {
+                success: false,
+                error: result.error || 'AI call failed',
+                errorCode: result.errorCode || null
+            };
         }
 
         if (!result.text) {

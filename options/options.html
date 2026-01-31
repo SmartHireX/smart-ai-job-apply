@@ -105,21 +105,15 @@
                                     target="_blank">Google AI Studio</a></p>
                         </div>
 
-                        <div class="form-group">
-                            <label for="api-key">Gemini API Key</label>
-                            <div class="input-with-button">
-                                <input type="password" id="api-key"
-                                    placeholder="Enter your Gemini API key (starts with AIza...)">
-                                <button id="toggle-key-visibility" class="btn btn-icon" title="Show/Hide">
-                                    <svg id="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="2">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                    </svg>
-                                </button>
-                                <button id="validate-key-btn" class="btn btn-primary">Validate</button>
+                        <div class="form-group" id="multi-keys-section">
+                            <label>Gemini API Keys (Round-Robin rotation, max 5)</label>
+                            <p class="field-hint">Add up to 5 keys for automatic rotation and fallback when one hits rate limit or fails.</p>
+                            <div id="api-keys-list" class="api-keys-list"></div>
+                            <div class="input-with-button" style="margin-top: 8px;">
+                                <input type="password" id="api-key-new" placeholder="Paste a new key and click Add">
+                                <button id="add-api-key-btn" class="btn btn-secondary">Add Key</button>
                             </div>
-                            <div id="api-key-status" class="input-status"></div>
+                            <div id="api-keys-status" class="input-status"></div>
                         </div>
 
                         <div class="form-group">

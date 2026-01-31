@@ -154,7 +154,9 @@ class PipelineOrchestrator {
         if (groups.general.length > 0) unresolved.push(...groups.general);
 
         // --- PHASE 2: GLOBAL INFERENCE FALLBACK ---
-        if (unresolved.length > 0) {
+        // Skip AI when offline; optional tuning when degraded (e.g. lower confidence threshold)
+        const aiStatus = context.aiStatus || 'ok';
+        if (unresolved.length > 0 && aiStatus !== 'offline') {
             // console.log(`🤖 [Pipeline] Global Inference Fallback for ${unresolved.length} fields...`);
             const aiResults = await this.strategyGlobalInference(unresolved, context);
 

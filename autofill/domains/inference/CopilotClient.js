@@ -18,7 +18,13 @@ class CopilotClient extends window.Handler {
 
     async handle(fields, context) {
         const results = {};
-        const { resumeData, smartMemory, callbacks } = context;
+        const { resumeData, smartMemory, callbacks, aiStatus } = context;
+
+        // Explicit fallback: skip AI when offline (managed state)
+        if (aiStatus === 'offline') {
+            console.warn('[AIResolver] AI offline. Skipping AI inference.');
+            return results;
+        }
 
         // Circuit Breaker Check
         if (this.errorCount >= this.CIRCUIT_THRESHOLD) {

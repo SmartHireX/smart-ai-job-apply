@@ -270,6 +270,52 @@ function showErrorToast(message) {
     }, 4000);
 }
 
+const AI_DEGRADED_SESSION_KEY = 'smarthirex_ai_degraded_banner_shown';
+
+/**
+ * One-time, non-intrusive toast when falling back to heuristic mode (AI degraded/offline).
+ * Shows only once per session (sessionStorage).
+ * @param {string} [reason] - 'rate_limit' | 'invalid_key' | 'offline'
+ */
+function showAIDegradedBanner(reason) {
+    try {
+        if (sessionStorage.getItem(AI_DEGRADED_SESSION_KEY)) return;
+        sessionStorage.setItem(AI_DEGRADED_SESSION_KEY, '1');
+    } catch (e) {
+        return;
+    }
+
+    const messages = {
+        rate_limit: 'AI rate limit reached. Using heuristic fill until keys recover.',
+        invalid_key: 'AI keys invalid or revoked. Using heuristic fill. Check Settings.',
+        offline: 'AI unavailable. Using heuristic fill only.'
+    };
+    const message = messages[reason] || 'AI temporarily unavailable. Using heuristic fill.';
+
+    const toast = document.createElement('div');
+    toast.id = 'smarthirex-ai-degraded-toast';
+    toast.style.cssText = `
+        position: fixed; top: 24px; left: 50%; transform: translate(-50%, 0);
+        background: rgba(245, 158, 11, 0.95); color: #1f2937; padding: 12px 20px; border-radius: 10px;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); z-index: 2147483646;
+        display: flex; align-items: center; gap: 12px; font-family: 'Inter', sans-serif;
+        font-weight: 600; font-size: 13px; border: 1px solid rgba(0,0,0,0.08);
+        animation: slideDownFade 0.35s ease-out; max-width: 90%;
+    `;
+    toast.innerHTML = `
+        <span style="flex-shrink: 0;">⚠️</span>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, -8px)';
+        toast.style.transition = 'all 0.25s ease';
+        setTimeout(() => toast.remove(), 250);
+    }, 5000);
+}
+if (typeof window !== 'undefined') window.showAIDegradedBanner = showAIDegradedBanner;
+
 function showUndoConfirmationModal() {
     const existing = document.getElementById('smarthirex-undo-modal-overlay');
     if (existing) existing.remove();
@@ -2299,10 +2345,15 @@ async function handleNovaSubmit() {
     showNovaTyping();
 
     try {
-        // Get optimized context (Text/Markdown)
+        // Get optimized context (Text/Markdown); fallback to getResumeAsText if getOptimizedContext missing
         let resumeContext = '';
         try {
-            resumeContext = await window.ResumeManager?.getOptimizedContext() || '';
+            const rm = window.ResumeManager;
+            if (typeof rm?.getOptimizedContext === 'function') {
+                resumeContext = await rm.getOptimizedContext() || '';
+            } else if (typeof rm?.getResumeAsText === 'function') {
+                resumeContext = await rm.getResumeAsText() || '';
+            }
         } catch (e) {
             console.warn('[Nova] Could not get resume context:', e);
         }

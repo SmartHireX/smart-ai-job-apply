@@ -488,6 +488,25 @@ body {
     background: var(--danger-light);
 }
 
+.btn-small {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.api-keys-list {
+    margin-bottom: 8px;
+}
+
+.api-key-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 8px;
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+}
+
 .btn-icon {
     padding: 8px;
     background: transparent;

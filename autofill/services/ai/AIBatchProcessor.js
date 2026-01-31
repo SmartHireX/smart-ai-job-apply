@@ -16,6 +16,9 @@ const BATCH_SIZE_MIN = 5;
 const BATCH_SIZE_MAX = 10;
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1000;
+/** Predictive abort: stop all AI batches after N consecutive persistent key errors (Invalid Key / Unauthorized) */
+const CONSECUTIVE_KEY_FAILURES_ABORT = 2;
+const PERSISTENT_KEY_ERROR_CODES = ['INVALID_KEY', 'UNAUTHORIZED'];
 
 // ... (constants remain, BATCH_SIZE removed)
 
@@ -199,17 +202,19 @@ function buildSmartContext(resumeData, isFirstBatch = true, previousQA = []) {
  * @param {Object} context - Smart context object
  * @returns {Promise<Object>} Mappings for this batch
  */
+/**
+ * @returns {{ mappings: Object, errorCode?: string }}
+ */
 async function processBatchWithRetry(batch, resumeData, pageContext, context) {
     let lastError = null;
+    let lastErrorCode = null;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
             if (attempt > 0) {
-                // console.log(`[BatchProcessor] Retry attempt ${attempt} for batch...`);
                 await new Promise(r => setTimeout(r, RETRY_DELAY_MS * attempt));
             }
 
-            // Verify FormAnalyzer is available
             if (!window.FormAnalyzer?.mapFieldsBatch) {
                 throw new Error('FormAnalyzer.mapFieldsBatch not available');
             }
@@ -221,22 +226,19 @@ async function processBatchWithRetry(batch, resumeData, pageContext, context) {
             );
 
             if (result && result.success && result.mappings) {
-                return result.mappings;
+                return { mappings: result.mappings };
             }
 
             lastError = result?.error || 'Unknown AI error';
+            lastErrorCode = result?.errorCode || null;
 
-            // Don't retry on certain errors
-            if (lastError.includes('API key') || lastError.includes('unauthorized')) {
+            if (PERSISTENT_KEY_ERROR_CODES.includes(lastErrorCode) || lastError.includes('API key') || lastError.includes('unauthorized')) {
                 break;
             }
-
-            // CRITICAL: Stop on Rate Limit
             if (lastError.includes('Rate limit') || lastError.includes('429') || lastError.includes('Quota exceeded')) {
-                lastError = 'Rate Limit Exceeded'; // Normalize
+                lastError = 'Rate Limit Exceeded';
                 break;
             }
-
         } catch (e) {
             lastError = e.message;
             console.error(`[BatchProcessor] Batch attempt ${attempt} failed:`, e.message);
@@ -245,17 +247,14 @@ async function processBatchWithRetry(batch, resumeData, pageContext, context) {
 
     console.error(`[BatchProcessor] Batch failed after ${MAX_RETRIES + 1} attempts:`, lastError);
 
-    // CRITICAL: Notify user and THROW if Rate Limit to stop entirely
     if (lastError.includes('Rate Limit') || lastError.includes('429')) {
         throw new Error('RATE_LIMIT_EXCEEDED');
     }
 
-    // For other errors, just notify and return empty (allow continue?)
-    // Actually, widespread failure might warrant stopping too, but user specifically asked for Rate Limit.
     if (typeof window.showErrorToast === 'function') {
         window.showErrorToast(`AI Batch Failed: ${lastError}`);
     }
-    return {};
+    return { mappings: {}, errorCode: lastErrorCode || undefined };
 }
 
 /**
@@ -287,15 +286,16 @@ async function processBatchWithStreaming(batch, resumeData, pageContext, options
     }
 
     // Call AI with retry logic
-    let mappings = {};
+    let batchResult = { mappings: {} };
     try {
-        mappings = await processBatchWithRetry(batch, resumeData, pageContext, context);
+        batchResult = await processBatchWithRetry(batch, resumeData, pageContext, context);
     } catch (e) {
         if (e.message === 'RATE_LIMIT_EXCEEDED') {
             throw e; // Propagate up
         }
         return {};
     }
+    const mappings = batchResult.mappings || {};
 
     if (!mappings || Object.keys(mappings).length === 0) {
         // console.warn('[BatchProcessor] Batch returned no mappings');
@@ -354,14 +354,12 @@ async function processBatchWithStreaming(batch, resumeData, pageContext, options
  */
 async function processBatchInBackground(batch, resumeData, pageContext, previousQA = [], isFirstBatch = false) {
     if (!batch || batch.length === 0) {
-        return {};
+        return { mappings: {}, errorCode: undefined };
     }
 
     const context = buildSmartContext(resumeData, isFirstBatch, previousQA);
-    // Propagate Rate Limit Errors
-    const mappings = await processBatchWithRetry(batch, resumeData, pageContext, context);
-
-    return mappings;
+    const result = await processBatchWithRetry(batch, resumeData, pageContext, context);
+    return result;
 }
 
 /**
@@ -454,16 +452,16 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
     const batches = createSmartBatches(processingOrder);
     const allMappings = {};
     const previousQA = [];
+    let consecutiveKeyFailures = 0;
+    let degradationSignalled = false;
 
     // PIPELINE INIT: Start first batch immediately
-    // We treat everything as background/async promises so we can interleave
     let currentBatchPromise = processBatchInBackground(batches[0], resumeData, pageContext, previousQA, true);
 
     for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
         const isLastBatch = (i === batches.length - 1);
 
-        // Notify batch start
         if (callbacks.onBatchStart) {
             try {
                 const labels = batch.map(f => f.label || f.name || 'Field').slice(0, 3);
@@ -471,36 +469,46 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
             } catch (e) { }
         }
 
-        // 1. AWAIT CURRENT: Get results for this batch (should be running/done)
-        let batchMappings = {};
+        // 1. AWAIT CURRENT
+        let batchResult = { mappings: {}, errorCode: undefined };
         try {
-            batchMappings = await currentBatchPromise;
+            batchResult = await currentBatchPromise;
         } catch (e) {
-            // CRITICAL: Exit loop on Rate Limit
             if (e.message === 'RATE_LIMIT_EXCEEDED') {
+                if (!degradationSignalled && callbacks.onAIDegraded) {
+                    try { callbacks.onAIDegraded('rate_limit'); } catch (err) { }
+                    degradationSignalled = true;
+                }
                 if (typeof window.showErrorToast === 'function') {
                     window.showErrorToast('AI Rate Limit Exceeded. Stopping.');
                 }
-                // Wait 3 seconds for user to see the error
                 await new Promise(r => setTimeout(r, 3000));
-
-                break; // Stop processing further batches, proceed to completion
+                break;
             }
-
-            batchMappings = {};
         }
 
-        // 2. START NEXT (BACKGROUND): Immediately start next batch (Parallel to writing)
-        if (!isLastBatch) {
-            // Update context with current answers BEFORE starting next batch
-            // Note: This assumes next batch prompts depend on this batch's answers.
-            // If they do, we must wait for answers. If they don't, we can start earlier.
-            // Given we feed `previousQA`, we DO need the answers. 
-            // BUT we can process what we have. 
-            // In a strict dependency model, we can't fully parallelize independent of data.
-            // However, we can start the HTTP request *while* the UI is animating.
+        const batchMappings = batchResult.mappings || {};
+        const errorCode = batchResult.errorCode;
 
-            // Extract Q&A for history
+        // Predictive abort: N consecutive persistent key errors
+        if (errorCode && PERSISTENT_KEY_ERROR_CODES.includes(errorCode)) {
+            consecutiveKeyFailures++;
+            if (consecutiveKeyFailures >= CONSECUTIVE_KEY_FAILURES_ABORT) {
+                if (!degradationSignalled && callbacks.onAIDegraded) {
+                    try { callbacks.onAIDegraded('invalid_key'); } catch (err) { }
+                    degradationSignalled = true;
+                }
+                if (typeof window.showErrorToast === 'function') {
+                    window.showErrorToast('AI keys invalid or revoked. Stopping. Check Settings.');
+                }
+                break;
+            }
+        } else {
+            consecutiveKeyFailures = 0;
+        }
+
+        // 2. START NEXT (BACKGROUND)
+        if (!isLastBatch) {
             Object.entries(batchMappings).forEach(([selector, data]) => {
                 if (data && data.value) {
                     const field = batch.find(f => f.selector === selector);
@@ -512,21 +520,14 @@ async function processFieldsInBatches(fields, resumeData, pageContext, callbacks
                     }
                 }
             });
-
-            // Start Next Fetch
             currentBatchPromise = processBatchInBackground(batches[i + 1], resumeData, pageContext, previousQA, false);
         }
 
-        // 3. WRITE/ANIMATE (FOREGROUND): Update UI while next batch is fetching
-        // This is the "User Experience" part.
+        // 3. WRITE/ANIMATE
         Object.assign(allMappings, batchMappings);
-
-        // Notify Batch Complete (Data)
         if (callbacks.onBatchComplete) {
             try { callbacks.onBatchComplete(batchMappings, false); } catch (e) { }
         }
-
-        // Animate
         await animateMappings(batchMappings, callbacks);
 
         // 4. VISUAL PACING: Delay for effect (if needed)

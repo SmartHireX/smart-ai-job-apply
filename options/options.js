@@ -71,51 +71,91 @@ function initTabs() {
 }
 
 // ============================================
-// API KEY SECTION
+// API KEY SECTION (single + multiple rotation)
 // ============================================
 
-function initApiKeySection() {
-    const apiKeyInput = document.getElementById('api-key');
-    const apiModelInput = document.getElementById('api-model');
-    const toggleBtn = document.getElementById('toggle-key-visibility');
-    const validateBtn = document.getElementById('validate-key-btn');
-    const statusEl = document.getElementById('api-key-status');
+const MAX_API_KEYS_UI = 5;
 
-    // Toggle visibility
-    toggleBtn.addEventListener('click', () => {
-        const isPassword = apiKeyInput.type === 'password';
-        apiKeyInput.type = isPassword ? 'text' : 'password';
-        toggleBtn.querySelector('svg').innerHTML = isPassword
-            ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>'
-            : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-    });
+function maskKey(key) {
+    if (!key || key.length < 12) return '••••••••';
+    return key.slice(0, 6) + '••••••••' + key.slice(-4);
+}
 
-    // Validate key
-    validateBtn.addEventListener('click', async () => {
-        const key = apiKeyInput.value.trim();
-        const model = apiModelInput.value.trim() || 'gemini-2.5-flash';
-
-        if (!key) {
-            setStatus(statusEl, 'Please enter an API key', 'error');
-            return;
-        }
-
-        setStatus(statusEl, 'Validating...', 'loading');
-        validateBtn.disabled = true;
-
-        const result = await window.AIClient.validateApiKey(key, model);
-
-        if (result.valid) {
-            await window.AIClient.saveApiKey(key, model);
-            setStatus(statusEl, '✓ API key is valid and saved!', 'success');
-            showToast('API key saved successfully!', 'success');
+function renderApiKeysList(keys) {
+    const listEl = document.getElementById('api-keys-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    (keys || []).forEach((key, index) => {
+        const row = document.createElement('div');
+        row.className = 'api-key-row';
+        row.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding: 8px; background: var(--bg-secondary, #f1f5f9); border-radius: 8px;';
+        row.innerHTML = `
+            <span class="api-key-mask" style="flex: 1; font-family: monospace; font-size: 13px;">${maskKey(key)}</span>
+            <button type="button" class="btn btn-secondary btn-small validate-key-at" data-index="${index}">Validate</button>
+            <button type="button" class="btn btn-danger-outline btn-small remove-key-at" data-index="${index}">Remove</button>
+        `;
+        row.querySelector('.validate-key-at').addEventListener('click', async () => {
+            const statusEl = document.getElementById('api-keys-status');
+            setStatus(statusEl, 'Validating...', 'loading');
+            const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash';
+            const result = await window.AIClient.validateApiKey(key, model);
+            if (result.valid) setStatus(statusEl, `✓ Key ${index + 1} is valid`, 'success');
+            else setStatus(statusEl, `✗ Key ${index + 1}: ${result.error}`, 'error');
+        });
+        row.querySelector('.remove-key-at').addEventListener('click', () => {
+            const updated = keys.filter((_, i) => i !== index);
+            saveApiKeysToStorage(updated);
+            renderApiKeysList(updated);
             updateDataStatus();
-        } else {
-            setStatus(statusEl, `✗ ${result.error}`, 'error');
-        }
-
-        validateBtn.disabled = false;
+        });
+        listEl.appendChild(row);
     });
+}
+
+async function saveApiKeysToStorage(keys) {
+    const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash';
+    if (window.AIClient?.saveApiKeys) {
+        await window.AIClient.saveApiKeys(keys, model);
+    } else if (keys.length > 0) {
+        await window.AIClient.saveApiKey(keys[0], model);
+    }
+}
+
+function initApiKeySection() {
+    const apiModelInput = document.getElementById('api-model');
+    const addKeyBtn = document.getElementById('add-api-key-btn');
+    const newKeyInput = document.getElementById('api-key-new');
+
+    if (addKeyBtn && newKeyInput) {
+        addKeyBtn.addEventListener('click', async () => {
+            const key = newKeyInput.value.trim();
+            const statusEl = document.getElementById('api-keys-status');
+            if (!key) {
+                setStatus(statusEl, 'Enter a key to add', 'error');
+                return;
+            }
+            const keys = await window.AIClient.getApiKeys?.() || [];
+            if (keys.length >= MAX_API_KEYS_UI) {
+                setStatus(statusEl, `Maximum ${MAX_API_KEYS_UI} keys allowed`, 'error');
+                return;
+            }
+            setStatus(statusEl, 'Validating...', 'loading');
+            const model = apiModelInput?.value?.trim() || 'gemini-2.5-flash';
+            const result = await window.AIClient.validateApiKey(key, model);
+            if (result.valid) {
+                let newKeys = keys.filter(k => k !== key);
+                newKeys.push(key);
+                newKeys = newKeys.slice(0, MAX_API_KEYS_UI);
+                await window.AIClient.saveApiKeys(newKeys, model);
+                renderApiKeysList(newKeys);
+                newKeyInput.value = '';
+                setStatus(statusEl, `✓ Key added (${newKeys.length}/${MAX_API_KEYS_UI})`, 'success');
+                updateDataStatus();
+            } else {
+                setStatus(statusEl, result.error || 'Validation failed', 'error');
+            }
+        });
+    }
 }
 
 // ============================================
@@ -687,14 +727,16 @@ function initButtons() {
         });
     }
 
-    if (confirmDeleteBtn) {
+        if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener('click', async () => {
             if (deleteConfirmInput.value === 'DELETE') {
                 await window.ResumeManager.clearResumeData();
                 await window.AIClient.removeApiKey();
 
                 // Reset UI
-                document.getElementById('api-key').value = '';
+                const newKeyEl = document.getElementById('api-key-new');
+                if (newKeyEl) newKeyEl.value = '';
+                renderApiKeysList([]);
                 document.querySelectorAll('input[data-field], textarea[data-field], select[data-field]').forEach(el => {
                     if (el.type === 'radio' || el.type === 'checkbox') {
                         el.checked = false;
@@ -727,15 +769,13 @@ function initButtons() {
 
 async function loadAllData() {
     try {
-        // Load API key
-        const apiKey = await window.AIClient.getStoredApiKey();
+        // Load API keys (round-robin list)
+        const apiKeys = await window.AIClient.getApiKeys?.() || [];
         const apiModel = await window.AIClient.getStoredModel();
 
-        if (apiKey) {
-            document.getElementById('api-key').value = apiKey;
-            setStatus(document.getElementById('api-key-status'), '✓ API key configured', 'success');
+        if (apiKeys.length > 0) {
+            renderApiKeysList(apiKeys);
         }
-
         if (apiModel) {
             document.getElementById('api-model').value = apiModel;
         }
@@ -853,12 +893,11 @@ async function saveAllData() {
         // Save to storage
         await window.ResumeManager.saveResumeData(resumeData);
 
-        // Save API key if entered
-        const apiKey = document.getElementById('api-key').value.trim();
+        // Save API keys and model (keys list updated via Add Key; ensure model is saved)
         const apiModel = document.getElementById('api-model').value.trim() || 'gemini-2.5-flash';
-
-        if (apiKey) {
-            await window.AIClient.saveApiKey(apiKey, apiModel);
+        const apiKeys = await window.AIClient.getApiKeys?.() || [];
+        if (apiKeys.length > 0) {
+            await window.AIClient.saveApiKeys(apiKeys, apiModel);
         }
 
         showToast('All changes saved!', 'success');

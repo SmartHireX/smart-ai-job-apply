@@ -94,10 +94,12 @@ class FormProcessor {
         // new pipeline execution
         if (window.PipelineOrchestrator) {
             const orchestrator = new window.PipelineOrchestrator();
+            const aiStatusResult = window.AIClient?.getAIStatus ? await window.AIClient.getAIStatus() : { status: 'ok', usableKeys: 1, totalKeys: 1 };
 
             const context = {
                 resumeData,
                 smartMemory: {}, // Router accesses SmartMemoryService directly now
+                aiStatus: aiStatusResult.status, // 'ok' | 'degraded' | 'offline'
                 callbacks: {
                     // Inject Progress Callbacks
                     onBatchStart: (current, total, labels) => {
@@ -126,9 +128,19 @@ class FormProcessor {
                         if (typeof window.updateProcessingProgress === 'function') {
                             window.updateProcessingProgress(100);
                         }
+                    },
+                    onAIDegraded: (reason) => {
+                        if (typeof window.showAIDegradedBanner === 'function') {
+                            window.showAIDegradedBanner(reason);
+                        }
                     }
                 }
             };
+
+            // One-time banner when AI is offline (heuristic-only mode)
+            if (aiStatusResult.status === 'offline' && typeof window.showAIDegradedBanner === 'function') {
+                window.showAIDegradedBanner('offline');
+            }
 
             // 3. Execute Pipeline
             const results = await orchestrator.executePipeline(fields, context);
