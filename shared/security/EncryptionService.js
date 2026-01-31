@@ -17,7 +17,6 @@ const CONFIG = {
     IV_LENGTH: 12,
     PREFIX: 'enc:v1:',
     MAX_SIZE: 5 * 1024 * 1024, // 5MB safety cap
-    STORAGE_KEY: 'nova_master_manager',
     STATS_KEY: 'nova_crypto_stats'
 };
 
@@ -25,10 +24,17 @@ const CONFIG = {
  * Centralized AAD Construction
  */
 const AAD = {
-    entity: (store) => `nova:entity:${store}:v1`,
-    cache: (name) => `nova:cache:${name}:v1`,
-    aiKey: () => `nova:ai:gemini_api_key_item:v1`,
-    internal: () => `nova:internal:test:v1`
+    entity: (store) => `nova:vault:identity:${store}:v1`,
+    cache: (name) => `nova:vault:memory:${name}:v1`,
+    aiKey: () => `nova:vault:ai:keys:v1`,
+    internal: () => `nova:vault:system:test:v1`,
+
+    // Legacy Support (pre-v4)
+    legacy: {
+        entity: (store) => `nova:entity:${store}:v1`,
+        cache: (name) => `nova:cache:${name}:v1`,
+        aiKey: () => `nova:ai:gemini_api_key_item:v1`
+    }
 };
 
 class EncryptionService {
@@ -60,7 +66,7 @@ class EncryptionService {
 
                 if (!activeKeyData) throw new EncryptionError('Active key missing from manager');
 
-                // Load key into WebCrypto
+                // 4. Load key into WebCrypto
                 this.masterKey = await crypto.subtle.importKey(
                     'jwk',
                     activeKeyData.jwk,
@@ -69,14 +75,24 @@ class EncryptionService {
                     ['encrypt', 'decrypt']
                 );
 
-                // Integrity Self-Test
-                await this._runSelfTest();
-
+                // 5. Allow recursive calls during self-test (Important to avoid deadlock)
                 this.isReady = true;
+
+                // 6. Integrity Self-Test
+                try {
+                    await this._runSelfTest();
+                    console.log('🛡️ [EncryptionService] System ready.');
+                } catch (error) {
+                    this.isReady = false;
+                    throw error;
+                }
+
                 return true;
             } catch (error) {
-                console.error('❌ [EncryptionService] FAST-FAIL: Initialization aborted.', error);
-                throw error; // Fail closed
+                this.initPromise = null; // Allow retry on failure
+                this.isReady = false;
+                console.error('❌ [EncryptionService] Initialization failed.', error);
+                throw error;
             }
         })();
 
@@ -168,6 +184,26 @@ class EncryptionService {
     }
 
     /**
+     * Recovery Helper: Attempt decryption with multiple possible AADs (for migration)
+     */
+    async decryptWithFallback(token, primaryContext, fallbackContexts = []) {
+        try {
+            return await this.decrypt(token, primaryContext);
+        } catch (e) {
+            if (!(e instanceof AADMismatchError)) throw e;
+
+            for (const context of fallbackContexts) {
+                try {
+                    return await this.decrypt(token, context);
+                } catch (err) {
+                    if (!(err instanceof AADMismatchError)) throw err;
+                }
+            }
+            throw e; // Re-throw if all failed
+        }
+    }
+
+    /**
      * Check if string is encrypted
      */
     isEncrypted(val) {
@@ -179,7 +215,7 @@ class EncryptionService {
     async _bootstrapManager() {
         const key = await crypto.subtle.generateKey(
             { name: CONFIG.ALGORITHM, length: CONFIG.KEY_LENGTH },
-            true, // Exportable for storage
+            true, // Exportable for internal recovery
             ['encrypt', 'decrypt']
         );
         const jwk = await crypto.subtle.exportKey('jwk', key);
@@ -198,22 +234,42 @@ class EncryptionService {
             }
         };
 
-        const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
-        if (vault) {
-            await vault.bucket('system').set('master_manager', manager, false);
-        } else {
-            await chrome.storage.local.set({ 'nova_master_manager_legacy': manager });
-        }
+        // Improved Isolation: Store Master Key in a DEDICATED storage key, separate from the Vault
+        await chrome.storage.local.set({ 'nova_master_lock': manager });
         return manager;
     }
 
     async _getManagerFromStorage() {
+        // 1. Check Isolated Key (New Standard)
+        const isolated = await chrome.storage.local.get('nova_master_lock');
+        if (isolated.nova_master_lock) return isolated.nova_master_lock;
+
+        // 2. Recovery: Check if it was accidentally put in the Vault system bucket
         const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
         if (vault) {
-            return await vault.bucket('system').get('master_manager');
+            const inVault = await vault.bucket('system').get('master_manager');
+            if (inVault) {
+                console.log('🛡️ [EncryptionService] Migrating Master Key from Vault to Isolated Storage...');
+                await chrome.storage.local.set({ 'nova_master_lock': inVault });
+                return inVault;
+            }
         }
-        const res = await chrome.storage.local.get(CONFIG.STORAGE_KEY);
-        return res[CONFIG.STORAGE_KEY];
+
+        // 2. Check Legacy Storage (Migration Path)
+        const legacy = await chrome.storage.local.get(['nova_master_manager', 'master_manager']);
+        const manager = legacy.nova_master_manager || legacy.master_manager;
+
+        if (manager && manager.activeKeyId) {
+            console.log('🛡️ [EncryptionService] Recovered Legacy Master Key Manager.');
+
+            // Port to new vault immediately if possible
+            if (vault) {
+                await vault.bucket('system').set('master_manager', manager, false);
+            }
+            return manager;
+        }
+
+        return null;
     }
 
     async _runSelfTest() {
@@ -228,64 +284,11 @@ class EncryptionService {
         const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
         if (!vault) return;
 
-        await window.StorageVault.bucket('system').update('stats', async (current) => {
+        await vault.bucket('system').update('stats', async (current) => {
             const stats = current || { aadMismatchCount: 0, corruptionCount: 0, oversizedCount: 0 };
             stats[key] = (stats[key] || 0) + 1;
             return stats;
         }, false);
-    }
-
-    /**
-     * Run a global migration of all sensitive stores
-     * This forces a Read -> Encrypt -> Save cycle for legacy data.
-     */
-    async runGlobalMigration() {
-        if (!this.isReady) await this.init();
-
-        const marker = await chrome.storage.local.get('nova_encryption_migrated');
-        if (marker.nova_encryption_migrated) return;
-
-        console.log('🛡️ [EncryptionService] Starting One-Time Global Migration...');
-
-        try {
-            // 1. Resume Manager (resumeData)
-            if (window.ResumeManager && window.ResumeManager.getResumeData) {
-                const resume = await window.ResumeManager.getResumeData();
-                if (resume) await window.ResumeManager.saveResumeData(resume);
-            }
-
-            // 2. Entity Store (smart_history_profile)
-            if (window.EntityStore && window.EntityStore.init) {
-                // EntityStore.init() already has migration logic that calls save()
-                const store = new window.EntityStore();
-                await store.init();
-            }
-
-            // 3. AI Client (gemini_api_keys)
-            if (window.AIClient && window.AIClient.getApiKeys) {
-                const keys = await window.AIClient.getApiKeys();
-                if (keys.length > 0) {
-                    const model = await window.AIClient.getStoredModel();
-                    await window.AIClient.saveApiKeys(keys, model);
-                }
-            }
-
-            // 4. Global Memory (ATOMIC_SINGLE)
-            const memory = globalThis.GlobalMemory || (typeof GlobalMemory !== 'undefined' ? GlobalMemory : null);
-            if (memory && memory.getCache) {
-                const cache = await memory.getCache();
-                if (Object.keys(cache).length > 0) {
-                    await memory.updateCache({}); // Empty update triggers re-save of current
-                }
-            }
-
-            // Set Marker
-            await chrome.storage.local.set({ 'nova_encryption_migrated': true });
-            console.log('✅ [EncryptionService] Global Migration Complete.');
-
-        } catch (err) {
-            console.error('❌ [EncryptionService] Global Migration FAILED:', err);
-        }
     }
 
     _bufToBase64(buf) {
