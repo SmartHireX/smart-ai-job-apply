@@ -122,7 +122,15 @@ class AutofillScanner {
         }
 
         // --- STEP 4: ARBITRATION ---
-        const best = candidates.getBestCandidate(0.15); // Min margin 0.15
+        // Relax margin for high-priority legal fields (Work Auth, Sponsorship)
+        // These often have confused neural signals but strong heuristics.
+        let minMargin = 0.15;
+        const topHypothesis = candidates.getBestCandidate(0.00); // Probe without margin filter
+        if (['work_auth', 'sponsorship'].includes(topHypothesis.label)) {
+            minMargin = 0.02;
+        }
+
+        const best = candidates.getBestCandidate(minMargin);
 
         // --- STEP 5: FILLABILITY POLICY (Phase 4) ---
         if (this.policy) {
@@ -142,6 +150,19 @@ class AutofillScanner {
         // Fallback (Legacy/Simple)
         if (best.label === 'unknown') {
             return this._createResult(field, 'ignore', best.score, 'unknown', best.reason);
+        }
+
+        // --- STEP 6: BOOLEAN FALLBACK (Workday/Custom Widgets) ---
+        // If it's a legal question with sparse options, inject standard Yes/No candidates
+        if (['work_auth', 'sponsorship'].includes(best.label)) {
+            field.options = field.options || [];
+            const hasYes = field.options.some(opt => /yes/i.test(opt.text || opt.value));
+            const hasNo = field.options.some(opt => /no/i.test(opt.text || opt.value));
+
+            if (!hasYes) field.options.push({ value: 'yes', text: 'Yes' });
+            if (!hasNo) field.options.push({ value: 'no', text: 'No' });
+
+            // console.log(`🛠️ [Scanner] Injected boolean fallback for ${best.label}`);
         }
 
         return this._createResult(field, 'fill', best.score, best.label, 'candidates_consensus');

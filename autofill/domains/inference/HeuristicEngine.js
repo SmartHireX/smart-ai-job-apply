@@ -1345,6 +1345,13 @@ class HeuristicEngine {
             let baseConfidence = HeuristicEngine.FIELD_THRESHOLDS[bestMatch.label] || bestMatch.config.confidence;
 
             let finalConfidence = baseConfidence;
+
+            // NEW: Priority-Based Confidence Boost
+            // If a field has a high static priority, boost its confidence to help break ties in arbitration
+            const priority = HeuristicEngine.PRIORITIES[bestMatch.label] || 1;
+            if (priority > 10) finalConfidence = Math.min(0.99, finalConfidence + 0.05);
+            if (priority < 5) finalConfidence *= 0.95; // Slightly penalize generic low-priority patterns
+
             if (bestScore < 0.8) finalConfidence *= 0.9; // Penalty for weak source
             if (bestScore < 0.7) finalConfidence *= 0.8; // Penalty for ID-only
 
