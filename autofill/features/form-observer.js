@@ -19,13 +19,6 @@ class FormObserver {
         this.isPaused = false;
     }
 
-    stop() {
-        if (!this.isListening) return;
-        document.removeEventListener('change', this.handleChange, true);
-        document.removeEventListener('input', this.handleInputDebounced, true);
-        this.isListening = false;
-    }
-
     pause() {
         this.isPaused = true;
         // console.log('⏸️ [FormObserver] Paused');

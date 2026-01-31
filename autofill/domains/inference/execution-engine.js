@@ -154,6 +154,11 @@ class ExecutionEngine {
     }
 
     _handleUserEdit(element, fieldMetadata) {
+        // RESPECT GLOBAL PAUSE (e.g. during Undo)
+        if (window.FormObserver && window.FormObserver.isPaused) {
+            console.log('[ExecutionEngine] 🛡️ Ignored User Edit during PAUSE');
+            return;
+        }
 
         if (!fieldMetadata) return;
 
