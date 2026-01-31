@@ -16,6 +16,8 @@ const SCRIPT_QUEUE = [
     'autofill/services/extraction/form-detector.js',
 
     // Metadata & Data Managers
+    'shared/security/StorageVault.js',
+    'shared/security/EncryptionService.js',
     'shared/utils/ai-client.js',
     'shared/utils/resume-manager.js',
     'shared/utils/form-extractor.js',
@@ -414,6 +416,14 @@ async function loadAllScripts() {
         if (response && response.success) {
             window.__NOVA_LOADED = true;
             window.__NOVA_LOADING = false;
+
+            // SECURITY: Trigger One-Time Global Migration for Encrypted Storage
+            if (window.EncryptionService && window.EncryptionService.runGlobalMigration) {
+                window.EncryptionService.runGlobalMigration().catch(err => {
+                    console.error('[Bootstrap] Encryption migration failed:', err);
+                });
+            }
+
             // console.log(`✅ All ${response.count} scripts loaded successfully!`);
             return true;
         } else {
