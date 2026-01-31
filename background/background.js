@@ -5,7 +5,7 @@
  */
 
 // Import utility modules
-importScripts('../shared/utils/ai-client.js', '../shared/utils/resume-manager.js');
+importScripts('../shared/security/StorageVault.js', '../shared/security/EncryptionService.js', '../shared/utils/ai-client.js', '../shared/utils/resume-manager.js');
 
 
 console.log('Smart AI Job Apply background service worker started');
@@ -15,7 +15,9 @@ const CONTENT_SCRIPTS = [
     // THE BRAIN (Visual Label Extraction) - MUST BE FIRST
     'autofill/services/extraction/form-detector.js',
 
-    // Shared Utils
+    // Shared Utils & Security
+    'shared/security/StorageVault.js',
+    'shared/security/EncryptionService.js',
     'shared/utils/ai-client.js',
     'shared/utils/resume-manager.js',
     'shared/utils/form-extractor.js',

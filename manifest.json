@@ -50,6 +50,8 @@
     "web_accessible_resources": [
         {
             "resources": [
+                "shared/security/StorageVault.js",
+                "shared/security/EncryptionService.js",
                 "autofill/core/constants.js",
                 "shared/utils/ai-client.js",
                 "shared/utils/resume-manager.js",
