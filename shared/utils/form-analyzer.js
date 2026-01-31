@@ -444,8 +444,15 @@ async function extractFieldsFromDOM(source) {
 
                         const isTechnical = /cards\[|\[.*\]|^field[-_]?\d|unknown field|[0-9a-f-]{20,}|indicates a required field|required field|^required$|^optional$/i.test(field.label);
 
+                        // NEW: Also check for "Value-like" labels on widgets (e.g. "Yes Required", "Select...")
+                        // These usually indicate the label was incorrectly pulled from the current selection.
+                        const isValueLike = field.type === 'select' && (
+                            field.label.length < 15 ||
+                            /(yes|no|select|choose|required|optional)/i.test(field.label)
+                        );
+
                         // Promotion
-                        if (isTechnical && rawContext.length > 5 && rawContext.length < 150 && !isRedundant) {
+                        if ((isTechnical || isValueLike) && rawContext.length > 5 && rawContext.length < 200 && !isRedundant) {
                             // console.log(`✨ [SmartLabel] Promoted context to label: "${rawContext}" (was "${field.label}")`);
                             field.label = rawContext;
                         }

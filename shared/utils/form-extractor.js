@@ -184,6 +184,14 @@ class FormExtractor {
 
         if (['select', 'select-one', 'select-multiple'].includes(type)) {
             field.options = this.extractOptions(element);
+
+            // FALLBACK for Workday Buttons: If no <option> children found, use button text as current value/option
+            if (field.options.length === 0 && element.tagName === 'BUTTON') {
+                const btnText = element.innerText.replace(/Required|Optional/i, '').trim();
+                if (btnText && btnText.length > 0) {
+                    field.options = [{ value: btnText, text: btnText }];
+                }
+            }
         } else if (['radio', 'checkbox'].includes(type)) {
             const { options, groupElements } = this.extractStructuredGroupData(element, container);
             field.options = options;
