@@ -772,46 +772,28 @@ async function getOptimizedContext(mode = 'full') {
 }
 
 // Export for use in other modules
-if (typeof window !== 'undefined') {
-    window.ResumeManager = {
-        getResumeData,
-        saveResumeData,
-        updateSection,
-        addItem,
-        updateItem,
-        deleteItem,
-        exportResumeJSON,
-        importResumeJSON,
-        clearResumeData,
-        getFlattenedResumeData,
-        getResumeAsText,
-        getOptimizedContext,
-        parseResumeText,
-        parseResumeFile,
-        generateId,
-        DEFAULT_RESUME_SCHEMA,
-        RESUME_STORAGE_KEY
-    };
-}
+const manager = {
+    getResumeData,
+    saveResumeData,
+    updateSection,
+    addItem,
+    updateItem,
+    deleteItem,
+    exportResumeJSON,
+    importResumeJSON,
+    clearResumeData,
+    getFlattenedResumeData,
+    getResumeAsText,
+    getOptimizedContext,
+    parseResumeText,
+    parseResumeFile,
+    generateId,
+    DEFAULT_RESUME_SCHEMA,
+    RESUME_STORAGE_KEY
+};
 
-if (typeof self !== 'undefined' && typeof self.ResumeManager === 'undefined') {
-    self.ResumeManager = {
-        getResumeData,
-        saveResumeData,
-        updateSection,
-        addItem,
-        updateItem,
-        deleteItem,
-        exportResumeJSON,
-        importResumeJSON,
-        clearResumeData,
-        getFlattenedResumeData,
-        getResumeAsText,
-        getOptimizedContext,
-        parseResumeText,
-        parseResumeFile,
-        generateId,
-        DEFAULT_RESUME_SCHEMA,
-        RESUME_STORAGE_KEY
-    };
+globalThis.ResumeManager = manager;
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = manager;
 }

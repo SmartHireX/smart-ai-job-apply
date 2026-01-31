@@ -59,8 +59,9 @@ function hashKey(apiKey) {
  * @returns {Promise<Object>} Map of keyHash -> { status, retryAfterTs, lastError, lastErrorCode }
  */
 async function getKeyState() {
-    if (window.StorageVault) {
-        const data = await window.StorageVault.bucket('ai').get('key_state');
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (vault) {
+        const data = await vault.bucket('ai').get('key_state');
         return data || {};
     }
     const result = await chrome.storage.local.get([STORAGE_KEYS.AI_KEY_STATE]);
@@ -76,8 +77,9 @@ async function getKeyState() {
  * @param {string} [lastErrorCode]
  */
 async function updateKeyState(keyHash, status, retryAfterTs = null, lastError = null, lastErrorCode = null) {
-    if (window.StorageVault) {
-        await window.StorageVault.bucket('ai').update('key_state', async (state = {}) => {
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (vault) {
+        await vault.bucket('ai').update('key_state', async (state = {}) => {
             const entry = state[keyHash] || { status: 'ok', retryAfterTs: 0, lastError: null, lastErrorCode: null };
             entry.status = status;
             if (retryAfterTs != null) entry.retryAfterTs = retryAfterTs;
@@ -129,8 +131,9 @@ function classifyError(status, message) {
  * @returns {Promise<string[]>}
  */
 async function getApiKeys() {
-    if (window.StorageVault) {
-        const keys = await window.StorageVault.bucket('ai').get('keys');
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (vault) {
+        const keys = await vault.bucket('ai').get('keys');
         return keys || [];
     }
 
@@ -147,13 +150,16 @@ async function getApiKeys() {
 
     // Encryption Integration
     const finalKeys = [];
+    const encryptionService = globalThis.EncryptionService || (typeof EncryptionService !== 'undefined' ? EncryptionService : null);
+    const encryptionAAD = globalThis.EncryptionAAD || (typeof EncryptionAAD !== 'undefined' ? EncryptionAAD : null);
+
     for (const k of keys) {
         if (typeof k !== 'string') continue;
 
-        if (window.EncryptionService && window.EncryptionService.isEncrypted(k)) {
+        if (encryptionService && encryptionService.isEncrypted(k)) {
             try {
-                const aad = window.EncryptionAAD.aiKey();
-                const decrypted = await window.EncryptionService.decrypt(k, aad);
+                const aad = encryptionAAD.aiKey();
+                const decrypted = await encryptionService.decrypt(k, aad);
                 if (decrypted) finalKeys.push(decrypted);
             } catch (err) {
                 console.error('[AIClient] Failed to decrypt API key. Data might be corrupted.', err);
@@ -177,8 +183,9 @@ async function getNextApiKey() {
     const state = await getKeyState();
     let lastUsed = -1;
 
-    if (window.StorageVault) {
-        const sys = await window.StorageVault.bucket('system').get('ai_meta');
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (vault) {
+        const sys = await vault.bucket('system').get('ai_meta');
         lastUsed = sys?.last_used_index ?? -1;
     } else {
         lastUsed = (await chrome.storage.local.get([STORAGE_KEYS.LAST_USED_INDEX]))[STORAGE_KEYS.LAST_USED_INDEX] ?? -1;
@@ -195,8 +202,9 @@ async function getNextApiKey() {
         if (entry?.status === 'revoked') continue;
         if (entry?.status === 'cooldown' && entry.retryAfterTs > now) continue;
 
-        if (window.StorageVault) {
-            await window.StorageVault.bucket('system').update('ai_meta', async (meta = {}) => {
+        const currentVault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+        if (currentVault) {
+            await currentVault.bucket('system').update('ai_meta', async (meta = {}) => {
                 meta.last_used_index = idx;
                 return meta;
             }, false);
@@ -214,8 +222,9 @@ async function getNextApiKey() {
  */
 async function markKeySuccess(apiKey) {
     const keyHash = hashKey(apiKey);
-    if (window.StorageVault) {
-        await window.StorageVault.bucket('ai').update('key_state', async (state = {}) => {
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (vault) {
+        await vault.bucket('ai').update('key_state', async (state = {}) => {
             const entry = state[keyHash];
             if (entry && entry.status === 'cooldown') {
                 entry.status = 'ok';
@@ -287,11 +296,14 @@ async function saveApiKeys(apiKeys, model = DEFAULT_GEMINI_MODEL) {
 
     // Encrypt Keys if service is available
     let keysToSave = list;
-    if (window.EncryptionService) {
-        const aad = window.EncryptionAAD.aiKey();
+    const encryptionService = globalThis.EncryptionService || (typeof EncryptionService !== 'undefined' ? EncryptionService : null);
+    const encryptionAAD = globalThis.EncryptionAAD || (typeof EncryptionAAD !== 'undefined' ? EncryptionAAD : null);
+
+    if (encryptionService) {
+        const aad = encryptionAAD.aiKey();
         try {
             keysToSave = await Promise.all(
-                list.map(k => window.EncryptionService.encrypt(k, aad))
+                list.map(k => encryptionService.encrypt(k, aad))
             );
         } catch (err) {
             console.error('[AIClient] Encryption failed during save:', err);
@@ -635,9 +647,8 @@ const AIClientExport = {
     MAX_API_KEYS
 };
 
-if (typeof window !== 'undefined') {
-    window.AIClient = AIClientExport;
-}
-if (typeof self !== 'undefined' && typeof self.AIClient === 'undefined') {
-    self.AIClient = AIClientExport;
+globalThis.AIClient = AIClientExport;
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = AIClientExport;
 }

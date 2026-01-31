@@ -41,9 +41,10 @@ class StorageVault {
         // Transparent Decryption
         // We only decrypt if it looks like an encrypted string AND it's not the system bucket's master key 
         // (which is handled specially by EncryptionService to avoid circularity if it were encrypted)
-        if (typeof raw === 'string' && window.EncryptionService?.isEncrypted?.(raw)) {
+        const encryptionService = globalThis.EncryptionService || (typeof EncryptionService !== 'undefined' ? EncryptionService : null);
+        if (typeof raw === 'string' && encryptionService?.isEncrypted?.(raw)) {
             const aad = `nova:vault:${bucket}:${key}:v1`;
-            return await window.EncryptionService.decrypt(raw, aad);
+            return await encryptionService.decrypt(raw, aad);
         }
 
         return raw;
@@ -67,10 +68,11 @@ class StorageVault {
                 let currentVal = currentRaw;
 
                 // 1. Decrypt if needed before transform
-                if (typeof currentRaw === 'string' && window.EncryptionService?.isEncrypted?.(currentRaw)) {
+                const encryptionService = globalThis.EncryptionService || (typeof EncryptionService !== 'undefined' ? EncryptionService : null);
+                if (typeof currentRaw === 'string' && encryptionService?.isEncrypted?.(currentRaw)) {
                     const aad = `nova:vault:${bucket}:${key}:v1`;
                     try {
-                        currentVal = await window.EncryptionService.decrypt(currentRaw, aad);
+                        currentVal = await encryptionService.decrypt(currentRaw, aad);
                     } catch (err) {
                         console.error('[StorageVault] Decryption failed during update transaction:', err);
                         throw err; // Fail-closed
@@ -85,9 +87,9 @@ class StorageVault {
                     delete vault[bucket][key];
                 } else {
                     let finalToSave = newVal;
-                    if (encrypt && window.EncryptionService) {
+                    if (encrypt && encryptionService) {
                         const aad = `nova:vault:${bucket}:${key}:v1`;
-                        finalToSave = await window.EncryptionService.encrypt(newVal, aad);
+                        finalToSave = await encryptionService.encrypt(newVal, aad);
                     }
                     vault[bucket][key] = finalToSave;
                 }
@@ -104,8 +106,6 @@ class StorageVault {
         // Update the lock chain
         this.writeLock = operationPromise.catch(err => {
             console.error('[StorageVault] Write operation failed in FIFO queue:', err);
-            // Allow the next operation in the chain to proceed, but the current operation's promise
-            // will still reject to the caller.
             return Promise.resolve();
         });
 
@@ -192,9 +192,10 @@ class StorageVault {
 }
 
 // Global Export
-if (typeof window !== 'undefined') {
-    const vault = new StorageVault();
-    window.StorageVault = vault;
-    // Auto-trigger migration after a short delay to ensure EncryptionService is ready
-    setTimeout(() => vault.runMigrationV2(), 1000);
-}
+const vault = new StorageVault();
+globalThis.StorageVault = vault;
+
+// Auto-trigger migration after a short delay to ensure EncryptionService is ready
+setTimeout(() => {
+    vault.runMigrationV2().catch(err => console.error('[StorageVault] Migration failed:', err));
+}, 1000);

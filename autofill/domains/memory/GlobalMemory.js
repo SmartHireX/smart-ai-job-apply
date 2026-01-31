@@ -290,9 +290,7 @@ window.updateSmartMemoryCache = GlobalMemory.updateCache.bind(GlobalMemory);
 window.normalizeSmartMemoryKey = GlobalMemory.normalizeKey.bind(GlobalMemory);
 
 // Export for use
-if (typeof window !== 'undefined') {
-    window.GlobalMemory = GlobalMemory;
-}
+globalThis.GlobalMemory = GlobalMemory;
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = GlobalMemory;

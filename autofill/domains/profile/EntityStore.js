@@ -17,9 +17,10 @@ class EntityStore {
     async init() {
         if (this.isInitialized) return;
         try {
-            if (window.StorageVault) {
+            const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+            if (vault) {
                 // Use the new Centralized Vault
-                const bucket = window.StorageVault.bucket('identity');
+                const bucket = vault.bucket('identity');
                 const data = await bucket.get('profile');
                 if (data) {
                     this.profile = { ...this.profile, ...data };
@@ -28,7 +29,9 @@ class EntityStore {
                 // Legacy Fallback (Migration will handle moving this to the vault later)
                 const result = await chrome.storage.local.get(['smart_history_profile']);
                 const rawData = result.smart_history_profile;
-                if (rawData && typeof rawData === 'object' && !window.EncryptionService?.isEncrypted?.(rawData)) {
+                const encryptionService = globalThis.EncryptionService || (typeof EncryptionService !== 'undefined' ? EncryptionService : null);
+
+                if (rawData && typeof rawData === 'object' && !encryptionService?.isEncrypted?.(rawData)) {
                     this.profile = { ...this.profile, ...rawData };
                 }
             }
@@ -44,8 +47,9 @@ class EntityStore {
      */
     async save() {
         try {
-            if (window.StorageVault) {
-                await window.StorageVault.bucket('identity').set('profile', this.profile);
+            const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+            if (vault) {
+                await vault.bucket('identity').set('profile', this.profile);
             } else {
                 // Emergency Fallback
                 await chrome.storage.local.set({ 'smart_history_profile': this.profile });
@@ -137,6 +141,8 @@ class EntityStore {
     }
 }
 
-if (typeof window !== 'undefined') {
-    window.EntityStore = new EntityStore();
+globalThis.EntityStore = new EntityStore();
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = EntityStore;
 }

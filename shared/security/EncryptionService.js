@@ -198,8 +198,9 @@ class EncryptionService {
             }
         };
 
-        if (window.StorageVault) {
-            await window.StorageVault.bucket('system').set('master_manager', manager, false);
+        const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+        if (vault) {
+            await vault.bucket('system').set('master_manager', manager, false);
         } else {
             await chrome.storage.local.set({ 'nova_master_manager_legacy': manager });
         }
@@ -207,8 +208,9 @@ class EncryptionService {
     }
 
     async _getManagerFromStorage() {
-        if (window.StorageVault) {
-            return await window.StorageVault.bucket('system').get('master_manager');
+        const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+        if (vault) {
+            return await vault.bucket('system').get('master_manager');
         }
         const res = await chrome.storage.local.get(CONFIG.STORAGE_KEY);
         return res[CONFIG.STORAGE_KEY];
@@ -223,7 +225,8 @@ class EncryptionService {
     }
 
     async _incrementStat(key) {
-        if (!window.StorageVault) return;
+        const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+        if (!vault) return;
 
         await window.StorageVault.bucket('system').update('stats', async (current) => {
             const stats = current || { aadMismatchCount: 0, corruptionCount: 0, oversizedCount: 0 };
@@ -268,10 +271,11 @@ class EncryptionService {
             }
 
             // 4. Global Memory (ATOMIC_SINGLE)
-            if (window.GlobalMemory && window.GlobalMemory.getCache) {
-                const cache = await window.GlobalMemory.getCache();
+            const memory = globalThis.GlobalMemory || (typeof GlobalMemory !== 'undefined' ? GlobalMemory : null);
+            if (memory && memory.getCache) {
+                const cache = await memory.getCache();
                 if (Object.keys(cache).length > 0) {
-                    await window.GlobalMemory.updateCache({}); // Empty update triggers re-save of current
+                    await memory.updateCache({}); // Empty update triggers re-save of current
                 }
             }
 
@@ -294,9 +298,7 @@ class EncryptionService {
 }
 
 // Global Export
-if (typeof window !== 'undefined') {
-    window.EncryptionService = new EncryptionService();
-    window.EncryptionAAD = AAD;
-    window.EncryptedDataCorruptionError = EncryptedDataCorruptionError;
-    window.AADMismatchError = AADMismatchError;
-}
+globalThis.EncryptionService = new EncryptionService();
+globalThis.EncryptionAAD = AAD;
+globalThis.EncryptedDataCorruptionError = EncryptedDataCorruptionError;
+globalThis.AADMismatchError = AADMismatchError;
