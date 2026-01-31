@@ -548,6 +548,28 @@ function showAccordionSidebar(allFields) {
             left: rect.left + scrollLeft
         };
 
+        if (item.options && item.options.length > 0) {
+            try {
+                element.setAttribute('data-nova-options', JSON.stringify(item.options));
+            } catch (e) { }
+        }
+
+        // Retrieve options from Attribute (Primary) or Pipeline Item (Fallback)
+        let resolvedOptions = item.options || [];
+        const cachedOptionsAttr = element.getAttribute('data-nova-options');
+        if (cachedOptionsAttr) {
+            try {
+                const parsed = JSON.parse(cachedOptionsAttr);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    resolvedOptions = parsed;
+                }
+            } catch (e) { }
+        }
+
+        if (item.options || resolvedOptions.length > 0) {
+            console.log(`🔍 [Sidebar-Trace-Options] Field "${label}" (${fieldType}): Item Options=${item.options?.length}, Resolved=${resolvedOptions.length}`);
+        }
+
         const fieldInfo = {
             field: element,
             selector: item.selector,
@@ -563,18 +585,25 @@ function showAccordionSidebar(allFields) {
             filled: hasValue,
             isFileUpload,
             indexBadge, // Add indexBadge to fieldInfo
-            domPosition // DOM position for sorting
+            domPosition, // DOM position for sorting
+            cache_label: element.getAttribute('cache_label') || '', // Capture cache_label for regeneration context
+            options: resolvedOptions // Capture options from DOM or Pipeline
         };
 
         // Add options for select (so Regenerate AI can return only allowed values)
         if (fieldType === 'select' || fieldType === 'select-one' || fieldType === 'select-multiple' || element.tagName === 'SELECT') {
             try {
-                fieldInfo.options = Array.from(element.options || []).map(o => ({ value: (o.value || '').trim(), text: (o.text || o.value || '').trim() })).filter(o => o.value !== undefined);
-            } catch (e) { fieldInfo.options = []; }
+                if (!fieldInfo.options || fieldInfo.options.length === 0) {
+                    fieldInfo.options = Array.from(element.options || []).map(o => ({ value: (o.value || '').trim(), text: (o.text || o.value || '').trim() })).filter(o => o.value !== undefined);
+                }
+            } catch (e) { }
         }
 
         // Separate radio/checkbox/select from other fields
         if (fieldType === 'radio' || fieldType === 'checkbox') {
+            if (fieldType === 'checkbox') {
+                console.log(`🔍 [Sidebar-Trace] Found Checkbox: name="${element.name}", value="${element.value}", label="${label}"`);
+            }
             radioCheckboxFields.push(fieldInfo);
         } else if (fieldType === 'select' || fieldType === 'select-one' || fieldType === 'select-multiple' || element.tagName === 'SELECT') {
             selectFields.push(fieldInfo);
@@ -720,14 +749,26 @@ function showAccordionSidebar(allFields) {
                     try {
                         const labelEl = document.querySelector(`label[for="${CSS.escape(r.field.id)}"]`);
                         if (labelEl) return labelEl.textContent.trim();
-                    } catch (e) {}
+                    } catch (e) { }
                 }
                 if (r.field.parentElement?.tagName === 'LABEL') return r.field.parentElement.textContent.trim();
                 if (r.field.nextElementSibling) { const t = r.field.nextElementSibling.textContent?.trim(); if (t && t.length < 150) return t; }
                 if (r.field.previousElementSibling) { const t = r.field.previousElementSibling.textContent?.trim(); if (t && t.length < 150) return t; }
                 return text;
             }
-            const radioOptions = radios.map(r => ({ value: r.field.value, text: getRadioOptionLabel(r) }));
+            let radioOptions = radios.map(r => ({ value: r.field.value, text: getRadioOptionLabel(r) }));
+
+            // FALLBACK: Pipeline Options for Radio Group
+            if (radios.length === 1) {
+                const candidateOptions = radios[0].options;
+                if (candidateOptions && candidateOptions.length > 1) {
+                    console.log(`📋 [Sidebar-AutoGroup] Using Pipeline options for Radio "${name}"`);
+                    radioOptions = candidateOptions.map(o => ({
+                        value: o.value || o,
+                        text: o.text || o.label || o.value || o
+                    }));
+                }
+            }
 
             if (liveChecked && selectedValue) {
                 const matchingField = radios.find(r =>
@@ -773,6 +814,7 @@ function showAccordionSidebar(allFields) {
 
         // Process checkbox groups
         Object.entries(checkboxGroups).forEach(([name, checkboxes]) => {
+            console.log(`📦 [Sidebar-Trace] Grouping Checkbox "${name}": Found ${checkboxes.length} items`);
             // FIX: Re-query live DOM for Checkboxes too
             const checkedBoxes = checkboxes.filter(c => {
                 // 1. Try Live Element Check
@@ -825,17 +867,31 @@ function showAccordionSidebar(allFields) {
                 });
 
                 // Options for Regenerate AI (value + text per checkbox)
-                const checkboxOptions = checkboxes.map(cb => {
+                let checkboxOptions = checkboxes.map(cb => {
                     let text = cb.field.value;
                     if (cb.field.id) {
                         try {
                             const labelEl = document.querySelector(`label[for="${CSS.escape(cb.field.id)}"]`);
                             if (labelEl) text = labelEl.textContent.trim();
-                        } catch (e) {}
+                        } catch (e) { }
                     }
                     if (cb.field.parentElement?.tagName === 'LABEL') text = cb.field.parentElement.textContent.trim();
                     return { value: cb.field.value, text };
                 });
+
+                // FALLBACK: If Sidebar only sees 1 checkbox (Group Object from Pipeline), use its preserved options
+                if (checkboxes.length === 1) {
+                    const candidateOptions = checkboxes[0].options;
+                    console.log(`📦 [Sidebar-Debug] Group "${name}" has 1 item. Candidate options:`, candidateOptions);
+
+                    if (candidateOptions && candidateOptions.length > 1) {
+                        console.log(`📋 [Sidebar-AutoGroup] Using Pipeline options for "${name}" (${candidateOptions.length} items)`);
+                        checkboxOptions = candidateOptions.map(o => ({
+                            value: o.value || o,
+                            text: o.text || o.label || o.value || o
+                        }));
+                    }
+                }
                 groupedFields.push({
                     ...checkedBoxes[0],
                     label: groupLabel,
@@ -848,17 +904,30 @@ function showAccordionSidebar(allFields) {
                     options: checkboxOptions
                 });
             } else {
-                const checkboxOptions = checkboxes.map(cb => {
+                // Options for Regenerate AI (value + text per checkbox)
+                let checkboxOptions = checkboxes.map(cb => {
                     let text = cb.field.value;
                     if (cb.field.id) {
                         try {
                             const labelEl = document.querySelector(`label[for="${CSS.escape(cb.field.id)}"]`);
                             if (labelEl) text = labelEl.textContent.trim();
-                        } catch (e) {}
+                        } catch (e) { }
                     }
                     if (cb.field.parentElement?.tagName === 'LABEL') text = cb.field.parentElement.textContent.trim();
                     return { value: cb.field.value, text };
                 });
+
+                // FALLBACK: If Sidebar only sees 1 checkbox (Group Object from Pipeline), use its preserved options
+                if (checkboxes.length === 1) {
+                    const candidateOptions = checkboxes[0].options;
+                    if (candidateOptions && candidateOptions.length > 1) {
+                        console.log(`📋 [Sidebar-AutoGroup] Using Pipeline options for "${name}" (${candidateOptions.length} items)`);
+                        checkboxOptions = candidateOptions.map(o => ({
+                            value: o.value || o,
+                            text: o.text || o.label || o.value || o
+                        }));
+                    }
+                }
                 groupedFields.push({
                     ...firstCheckbox,
                     label: groupLabel,
@@ -1200,7 +1269,7 @@ function showAccordionSidebar(allFields) {
             })()}${item.indexBadge ? `<span class="sh-nova-9x-index-badge">#${item.indexBadge}</span>` : ''}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
                              
                              <div style="display: flex; align-items: center; gap: 8px;">
-                                <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${(item.label || '').replace(/"/g, '&quot;')}" data-field-type="${(item.fieldType || 'text').replace(/"/g, '&quot;')}" data-options="${(item.options ? JSON.stringify(item.options) : '[]').replace(/"/g, '&quot;')}" data-parent-context="${(item.parentContext || '').replace(/"/g, '&quot;')}" data-sibling-context="${(item.siblingContext || '').replace(/"/g, '&quot;')}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
+                                <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${(item.label || '').replace(/"/g, '&quot;')}" data-field-type="${(item.fieldType || 'text').replace(/"/g, '&quot;')}" data-options="${(item.options ? JSON.stringify(item.options) : '[]').replace(/"/g, '&quot;')}" data-parent-context="${(item.parentContext || '').replace(/"/g, '&quot;')}" data-sibling-context="${(item.siblingContext || '').replace(/"/g, '&quot;')}" data-cache-label="${(item.cache_label || item.field?.getAttribute?.('cache_label') || '').replace(/"/g, '&quot;')}" data-group-name="${(item.groupName || '').replace(/"/g, '&quot;')}" data-is-checkbox-group="${item.isCheckboxGroup || false}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
                                 </button>
                             </div>
@@ -1240,7 +1309,7 @@ function showAccordionSidebar(allFields) {
                                     ${statusIcon} ${confidence}%
                                 </div>
                                 
-                                <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${(item.label || '').replace(/"/g, '&quot;')}" data-field-type="${(item.fieldType || 'text').replace(/"/g, '&quot;')}" data-options="${(item.options ? JSON.stringify(item.options) : '[]').replace(/"/g, '&quot;')}" data-parent-context="${(item.parentContext || '').replace(/"/g, '&quot;')}" data-sibling-context="${(item.siblingContext || '').replace(/"/g, '&quot;')}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
+                                <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${(item.label || '').replace(/"/g, '&quot;')}" data-field-type="${(item.fieldType || 'text').replace(/"/g, '&quot;')}" data-options="${(item.options ? JSON.stringify(item.options) : '[]').replace(/"/g, '&quot;')}" data-parent-context="${(item.parentContext || '').replace(/"/g, '&quot;')}" data-sibling-context="${(item.siblingContext || '').replace(/"/g, '&quot;')}" data-cache-label="${(item.cache_label || item.field?.getAttribute?.('cache_label') || '').replace(/"/g, '&quot;')}" data-group-name="${(item.groupName || '').replace(/"/g, '&quot;')}" data-is-checkbox-group="${item.isCheckboxGroup || false}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
                                 </button>
                             </div>
@@ -1278,7 +1347,7 @@ function showAccordionSidebar(allFields) {
                             </div>
                             
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${(item.label || '').replace(/"/g, '&quot;')}" data-field-type="${(item.fieldType || 'text').replace(/"/g, '&quot;')}" data-options="${(item.options ? JSON.stringify(item.options) : '[]').replace(/"/g, '&quot;')}" data-parent-context="${(item.parentContext || '').replace(/"/g, '&quot;')}" data-sibling-context="${(item.siblingContext || '').replace(/"/g, '&quot;')}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
+                                <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${(item.label || '').replace(/"/g, '&quot;')}" data-field-type="${(item.fieldType || 'text').replace(/"/g, '&quot;')}" data-options="${(item.options ? JSON.stringify(item.options) : '[]').replace(/"/g, '&quot;')}" data-parent-context="${(item.parentContext || '').replace(/"/g, '&quot;')}" data-sibling-context="${(item.siblingContext || '').replace(/"/g, '&quot;')}" data-cache-label="${(item.cache_label || item.field?.getAttribute?.('cache_label') || '').replace(/"/g, '&quot;')}" data-group-name="${(item.groupName || '').replace(/"/g, '&quot;')}" data-is-checkbox-group="${item.isCheckboxGroup || false}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
                                 </button>
                             </div>
@@ -1427,21 +1496,72 @@ function showAccordionSidebar(allFields) {
             e.stopPropagation();
             const selector = btn.dataset.selector;
             const label = btn.dataset.label || '';
+            const cacheLabel = btn.dataset.cacheLabel || '';
+            const groupName = btn.dataset.groupName || '';
+            const isCheckboxGroup = btn.dataset.isCheckboxGroup === 'true';
+
             let options = [];
             try {
                 const optStr = btn.getAttribute('data-options');
                 if (optStr) options = JSON.parse(optStr.replace(/&quot;/g, '"'));
-            } catch (e) {}
+            } catch (e) { }
+
             const fieldMeta = {
                 fieldType: btn.dataset.fieldType || 'text',
                 options: Array.isArray(options) ? options : [],
                 parentContext: btn.dataset.parentContext || '',
-                siblingContext: btn.dataset.siblingContext || ''
+                siblingContext: btn.dataset.siblingContext || '',
+                cacheLabel: cacheLabel,
+                groupName: groupName,
+                isCheckboxGroup: isCheckboxGroup
             };
 
             try {
                 const element = safeQuerySelector(selector);
-                const currentValue = element?.value ?? element?.textContent ?? '';
+                let currentValue = '';
+
+                // For checkbox groups, get all checked checkbox values
+                if (isCheckboxGroup && groupName) {
+                    try {
+                        const allCheckboxes = document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(groupName)}"]`);
+                        const checkedValues = [];
+                        allCheckboxes.forEach(cb => {
+                            if (cb.checked) {
+                                // Try to get the label text for this checkbox
+                                let valueText = cb.value;
+                                if (cb.id) {
+                                    const labelEl = document.querySelector(`label[for="${CSS.escape(cb.id)}"]`);
+                                    if (labelEl) valueText = labelEl.textContent.trim();
+                                }
+                                if (!valueText && cb.parentElement?.tagName === 'LABEL') {
+                                    valueText = cb.parentElement.textContent.trim();
+                                }
+                                checkedValues.push(valueText || cb.value);
+                            }
+                        });
+                        currentValue = checkedValues.join(', ');
+                        console.log(`📋 [Nova Regenerate] Checkbox group "${groupName}" - Checked values:`, checkedValues);
+                    } catch (cbErr) {
+                        console.warn('[Nova Regenerate] Error getting checkbox group values:', cbErr);
+                        currentValue = element?.value ?? '';
+                    }
+                } else if (element) {
+                    currentValue = element.value ?? element.textContent ?? '';
+                }
+
+                // Log the field data being sent to Nova Chat
+                console.log('🔄 [Nova Regenerate] Field data:', {
+                    selector,
+                    label,
+                    cacheLabel,
+                    currentValue,
+                    fieldType: fieldMeta.fieldType,
+                    options: fieldMeta.options,
+                    parentContext: fieldMeta.parentContext,
+                    siblingContext: fieldMeta.siblingContext,
+                    groupName,
+                    isCheckboxGroup
+                });
 
                 initNovaTabForRegeneration(selector, label, currentValue, fieldMeta);
             } catch (err) {
@@ -2161,7 +2281,10 @@ function createRegenerationContext(selector, label, currentValue, fieldMeta = {}
         fieldType: fieldMeta.fieldType || 'text',
         options: fieldMeta.options || [],
         parentContext: fieldMeta.parentContext || '',
-        siblingContext: fieldMeta.siblingContext || ''
+        siblingContext: fieldMeta.siblingContext || '',
+        cacheLabel: fieldMeta.cacheLabel || '',
+        groupName: fieldMeta.groupName || '',
+        isCheckboxGroup: fieldMeta.isCheckboxGroup || false
     };
 }
 
@@ -2425,9 +2548,15 @@ async function handleNovaSubmit() {
         const options = context.options || [];
         const parentContext = context.parentContext || '';
         const siblingContext = context.siblingContext || '';
+        const cacheLabel = context.cacheLabel || '';
         const hasOptions = options.length > 0;
         const isSelectOrRadio = fieldType === 'select' || fieldType === 'select-one' || fieldType === 'radio';
-        const isCheckbox = fieldType === 'checkbox';
+        const isCheckbox = fieldType === 'checkbox' || context.isCheckboxGroup;
+
+        // Format options list for display
+        const optionListFormatted = hasOptions
+            ? options.map(o => (o.text || o.value || o).toString()).filter(Boolean).join(', ')
+            : '';
 
         // Strict return rules by field type (so AI returns only allowed values)
         let strictRules = '';
@@ -2444,8 +2573,10 @@ async function handleNovaSubmit() {
         const systemPrompt = `JOB APPLICATION FIELD (use existing extracted field info only)
 
 FIELD_LABEL: ${context.label}
+CACHE_LABEL: ${cacheLabel || context.label}
 FIELD_TYPE: ${fieldType}
 CURRENT_VALUE: ${context.currentValue || '(empty)'}
+${hasOptions ? `AVAILABLE_OPTIONS: ${optionListFormatted}` : ''}
 ${parentContext ? `PARENT_CONTEXT: ${parentContext}` : ''}
 ${siblingContext ? `SIBLING_CONTEXT: ${siblingContext}` : ''}
 
@@ -2456,6 +2587,20 @@ USER_INSTRUCTION: ${userInstruction}
 ${strictRules}
 
 TASK: Regenerate the field value according to the user instruction and the rules above. Professional tone. Use resume facts when relevant.`;
+
+        // Log the data being sent to AI for debugging
+        console.log('🤖 [Nova AI Call] Sending to AI:', {
+            label: context.label,
+            cacheLabel: cacheLabel,
+            fieldType: fieldType,
+            currentValue: context.currentValue,
+            options: options,
+            parentContext: parentContext,
+            siblingContext: siblingContext,
+            isCheckbox: isCheckbox,
+            userInstruction: userInstruction
+        });
+        console.log('📝 [Nova AI Call] System Prompt:', systemPrompt);
 
         const result = await window.AIClient.callAI(
             'Regenerate value:',
@@ -2625,25 +2770,106 @@ async function applyNovaRegeneration() {
         context.previousValue = context.currentValue;
         context.undoStack.push(context.currentValue);
 
-        // Apply with ghosting animation if available
-        if (typeof showGhostingAnimation === 'function') {
-            await showGhostingAnimation(element, context.pendingValue, 0.95);
-        } else {
-            // Fallback: Robust native setter for React/Angular support
-            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-            const nativeTextAreaSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+        // Handle checkbox groups specially
+        if (context.isCheckboxGroup && context.groupName) {
+            console.log('✅ [Nova Apply] Applying checkbox group values:', context.pendingValue);
 
-            if (element.tagName === 'TEXTAREA' && nativeTextAreaSetter) {
-                nativeTextAreaSetter.call(element, context.pendingValue);
-            } else if (nativeInputValueSetter) {
-                nativeInputValueSetter.call(element, context.pendingValue);
-            } else {
-                element.value = context.pendingValue;
+            try {
+                // Parse the comma-separated values from AI response
+                const selectedValues = context.pendingValue
+                    .split(',')
+                    .map(v => v.trim().toLowerCase())
+                    .filter(Boolean);
+
+                console.log('📋 [Nova Apply] Parsed checkbox values:', selectedValues);
+
+                // Get all checkboxes in the group
+                const allCheckboxes = document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(context.groupName)}"]`);
+
+                allCheckboxes.forEach(cb => {
+                    // Get the label text for this checkbox
+                    let checkboxLabel = cb.value;
+                    if (cb.id) {
+                        const labelEl = document.querySelector(`label[for="${CSS.escape(cb.id)}"]`);
+                        if (labelEl) checkboxLabel = labelEl.textContent.trim();
+                    }
+                    if (!checkboxLabel && cb.parentElement?.tagName === 'LABEL') {
+                        checkboxLabel = cb.parentElement.textContent.trim();
+                    }
+
+                    // Check if this checkbox should be selected (fuzzy match)
+                    const labelLower = (checkboxLabel || cb.value).toLowerCase();
+                    const shouldCheck = selectedValues.some(sv =>
+                        labelLower.includes(sv) || sv.includes(labelLower) || labelLower === sv
+                    );
+
+                    console.log(`🔘 [Nova Apply] Checkbox "${checkboxLabel}" (value: ${cb.value}) - Should check: ${shouldCheck}, Currently: ${cb.checked}`);
+
+                    if (cb.checked !== shouldCheck) {
+                        cb.checked = shouldCheck;
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
+                        cb.dispatchEvent(new Event('click', { bubbles: true }));
+                    }
+                });
+
+            } catch (cbErr) {
+                console.error('[Nova Apply] Error applying checkbox values:', cbErr);
+                addNovaChatMessage('error', `Failed to apply checkbox values: ${cbErr.message}`);
+                return;
             }
+        } else if (context.isRadioGroup && context.groupName) {
+            console.log('✅ [Nova Apply] Applying Radio group value:', context.pendingValue);
+            try {
+                const targetValue = (context.pendingValue || '').trim().toLowerCase();
+                const allRadios = document.querySelectorAll(`input[type="radio"][name="${CSS.escape(context.groupName)}"]`);
 
-            element.dispatchEvent(new Event('input', { bubbles: true }));
-            element.dispatchEvent(new Event('change', { bubbles: true }));
-            element.dispatchEvent(new Event('blur', { bubbles: true }));
+                // Find the radio button that matches the AI value
+                const match = Array.from(allRadios).find(r => {
+                    let radioLabel = r.value;
+                    if (r.id) {
+                        const labelEl = document.querySelector(`label[for="${CSS.escape(r.id)}"]`);
+                        if (labelEl) radioLabel = labelEl.textContent.trim();
+                    }
+                    if (r.parentElement?.tagName === 'LABEL') radioLabel = r.parentElement.textContent.trim();
+
+                    const labelLower = (radioLabel || r.value).toLowerCase();
+                    return labelLower === targetValue || labelLower.includes(targetValue) || targetValue.includes(labelLower);
+                });
+
+                if (match) {
+                    console.log(`🔘 [Nova Apply] Checking Radio button: "${match.value}"`);
+                    if (!match.checked) {
+                        match.checked = true;
+                        match.dispatchEvent(new Event('change', { bubbles: true }));
+                        match.dispatchEvent(new Event('click', { bubbles: true }));
+                    }
+                } else {
+                    console.warn(`⚠️ [Nova Apply] No matching radio found for "${targetValue}"`);
+                }
+            } catch (rErr) {
+                console.error('[Nova Apply] Error applying radio value:', rErr);
+            }
+        } else {
+            // Apply with ghosting animation if available (for text/select fields)
+            if (typeof showGhostingAnimation === 'function') {
+                await showGhostingAnimation(element, context.pendingValue, 0.95);
+            } else {
+                // Fallback: Robust native setter for React/Angular support
+                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                const nativeTextAreaSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+
+                if (element.tagName === 'TEXTAREA' && nativeTextAreaSetter) {
+                    nativeTextAreaSetter.call(element, context.pendingValue);
+                } else if (nativeInputValueSetter) {
+                    nativeInputValueSetter.call(element, context.pendingValue);
+                } else {
+                    element.value = context.pendingValue;
+                }
+
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+                element.dispatchEvent(new Event('change', { bubbles: true }));
+                element.dispatchEvent(new Event('blur', { bubbles: true }));
+            }
         }
 
         // Active Learning: Attach trigger for future manual corrections
