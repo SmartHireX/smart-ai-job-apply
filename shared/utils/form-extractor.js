@@ -40,7 +40,7 @@ class FormExtractor {
     /**
      * Recursive DOM Walker that pierces Shadow Roots and same-origin Iframes.
      */
-    collectDeepFields(root, types = ['input', 'select', 'textarea']) {
+    collectDeepFields(root, types = ['input', 'select', 'textarea', 'button']) {
         const WALKER_BUDGET = { MAX_NODES: 200000, MAX_TIME: 10000 };
         const ctx = { count: 0, start: performance.now() };
         const visited = new WeakSet();
@@ -135,7 +135,11 @@ class FormExtractor {
         const processedGroups = new Set();
 
         resultNodes.forEach(node => {
-            const type = node.type || node.tagName.toLowerCase();
+            let type = node.type || node.tagName.toLowerCase();
+            // Workday Custom Widget Type Promotion
+            if (node.tagName === 'BUTTON' && node.getAttribute('aria-haspopup') === 'listbox') {
+                type = 'select';
+            }
 
             // Deduplication for Radio/Checkbox Groups
             if (['radio', 'checkbox'].includes(type)) {
@@ -152,7 +156,11 @@ class FormExtractor {
     }
 
     buildFieldObject(element, container) {
-        const type = (element.type || element.tagName).toLowerCase();
+        let type = (element.type || element.tagName).toLowerCase();
+        // Workday Custom Widget Type Promotion
+        if (element.tagName === 'BUTTON' && element.getAttribute('aria-haspopup') === 'listbox') {
+            type = 'select';
+        }
         const id = element.id || '';
         const name = element.name || id || `field_${this.fieldCounter++}`;
 
@@ -219,7 +227,15 @@ class FormExtractor {
     }
 
     isUsableField(el) {
-        if (!el.isConnected || el.disabled || el.readOnly) return false;
+        if (!el.isConnected) return false;
+
+        // Buttons must have ARIA popup attributes to be considered fields
+        if (el.tagName === 'BUTTON') {
+            const isPopup = el.getAttribute('aria-haspopup') === 'listbox' || el.hasAttribute('aria-expanded');
+            if (!isPopup) return false;
+        }
+
+        if (el.disabled || el.readOnly) return false;
         const style = window.getComputedStyle(el);
         if (style.display === 'none' || style.visibility === 'hidden') return false;
         const rect = el.getBoundingClientRect();
