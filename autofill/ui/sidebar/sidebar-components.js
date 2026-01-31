@@ -602,7 +602,7 @@ function showAccordionSidebar(allFields) {
         // Separate radio/checkbox/select from other fields
         if (fieldType === 'radio' || fieldType === 'checkbox') {
             if (fieldType === 'checkbox') {
-                console.log(`🔍 [Sidebar-Trace] Found Checkbox: name="${element.name}", value="${element.value}", label="${label}"`);
+                // console.log(`🔍 [Sidebar-Trace] Found Checkbox: name="${element.name}", value="${element.value}", label="${label}"`);
             }
             radioCheckboxFields.push(fieldInfo);
         } else if (fieldType === 'select' || fieldType === 'select-one' || fieldType === 'select-multiple' || element.tagName === 'SELECT') {
@@ -814,7 +814,7 @@ function showAccordionSidebar(allFields) {
 
         // Process checkbox groups
         Object.entries(checkboxGroups).forEach(([name, checkboxes]) => {
-            console.log(`📦 [Sidebar-Trace] Grouping Checkbox "${name}": Found ${checkboxes.length} items`);
+            // console.log(`📦 [Sidebar-Trace] Grouping Checkbox "${name}": Found ${checkboxes.length} items`);
             // FIX: Re-query live DOM for Checkboxes too
             const checkedBoxes = checkboxes.filter(c => {
                 // 1. Try Live Element Check
@@ -882,7 +882,7 @@ function showAccordionSidebar(allFields) {
                 // FALLBACK: If Sidebar only sees 1 checkbox (Group Object from Pipeline), use its preserved options
                 if (checkboxes.length === 1) {
                     const candidateOptions = checkboxes[0].options;
-                    console.log(`📦 [Sidebar-Debug] Group "${name}" has 1 item. Candidate options:`, candidateOptions);
+                    // console.log(`📦 [Sidebar-Debug] Group "${name}" has 1 item. Candidate options:`, candidateOptions);
 
                     if (candidateOptions && candidateOptions.length > 1) {
                         console.log(`📋 [Sidebar-AutoGroup] Using Pipeline options for "${name}" (${candidateOptions.length} items)`);

@@ -525,6 +525,11 @@ function generateSemanticKey(fieldOrElement, label) {
         };
     }
 
+    // FIX: Respect explicit cache_label on POJO (passed from CompositeFieldManager)
+    if (field.cache_label) {
+        return { key: field.cache_label, isML: true, fallbackKey: field.cache_label };
+    }
+
     // 0. Pre-process Label: Avoid "Generic Labels" (Yes/No/Male/Female)
     let targetLabel = label || '';
     const isGeneric = /^(yes|no|male|female|other|m|f|true|false)$/i.test(targetLabel.trim());
@@ -669,7 +674,9 @@ async function getCachedValue(fieldOrSelector, labelArg) {
 
     // 2. Select Cache Bucket
     const targetBucket = determineCacheStrategy(semanticType, field);
+
     let cache = await getCache(targetBucket);
+
     let cached = null;
 
     // A. SECTIONAL LOOKUP
