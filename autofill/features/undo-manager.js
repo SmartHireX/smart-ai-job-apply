@@ -42,11 +42,24 @@ class UndoManager {
 
         // console.log(`🔄 Reverting ${this.history.length} fields...`);
 
-        this.history.forEach(state => {
-            FieldUtils.restoreFieldState(state);
-        });
+        // PAUSE OBSERVER: Prevent cache pollution during undo
+        if (window.FormObserver && typeof window.FormObserver.pause === 'function') {
+            window.FormObserver.pause();
+        }
 
-        this.clear();
+        try {
+            this.history.forEach(state => {
+                FieldUtils.restoreFieldState(state);
+            });
+            this.clear();
+        } finally {
+            // RESUME OBSERVER
+            if (window.FormObserver && typeof window.FormObserver.resume === 'function') {
+                setTimeout(() => {
+                    window.FormObserver.resume();
+                }, 500); // Small delay to let all events settle
+            }
+        }
 
         // Show toast notification (if available)
         if (typeof window.showUndoToast === 'function') {

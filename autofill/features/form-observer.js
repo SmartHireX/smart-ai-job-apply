@@ -6,24 +6,38 @@
 class FormObserver {
     constructor() {
         this.handleChange = this.handleChange.bind(this);
+        this.handleInputDebounced = this.handleInputDebounced.bind(this); // Fix: Bind once
         this.isListening = false;
+        this.isPaused = false;
     }
 
     start() {
         if (this.isListening) return;
-        document.addEventListener('change', this.handleChange, true); // Capture phase to ensure we catch it
-        document.addEventListener('input', this.handleInputDebounced.bind(this), true);
+        document.addEventListener('change', this.handleChange, true);
+        document.addEventListener('input', this.handleInputDebounced, true);
         this.isListening = true;
-        // console.log('👁️ [FormObserver] Started listening for manual inputs');
+        this.isPaused = false;
     }
 
     stop() {
         if (!this.isListening) return;
         document.removeEventListener('change', this.handleChange, true);
+        document.removeEventListener('input', this.handleInputDebounced, true);
         this.isListening = false;
     }
 
+    pause() {
+        this.isPaused = true;
+        // console.log('⏸️ [FormObserver] Paused');
+    }
+
+    resume() {
+        this.isPaused = false;
+        // console.log('▶️ [FormObserver] Resumed');
+    }
+
     async handleChange(event) {
+        if (this.isPaused) return; // Respect pause state
         const target = event.target;
         if (!this.isValidTarget(target)) return;
 
@@ -34,13 +48,15 @@ class FormObserver {
 
     // Debounce input events to avoid thrashing cache on every keystroke
     handleInputDebounced(event) {
+        if (this.isPaused) return; // Respect pause state
         const target = event.target;
         if (!this.isValidTarget(target)) return;
 
         if (target._debounceTimer) clearTimeout(target._debounceTimer);
         target._debounceTimer = setTimeout(() => {
+            if (this.isPaused) return; // Double check in case paused during wait
             this.handleChange(event);
-        }, 1000); // 1-second debounce for text inputs
+        }, 1000);
     }
 
     isValidTarget(element) {
