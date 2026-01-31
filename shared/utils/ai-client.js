@@ -59,6 +59,10 @@ function hashKey(apiKey) {
  * @returns {Promise<Object>} Map of keyHash -> { status, retryAfterTs, lastError, lastErrorCode }
  */
 async function getKeyState() {
+    if (window.StorageVault) {
+        const data = await window.StorageVault.bucket('ai').get('key_state');
+        return data || {};
+    }
     const result = await chrome.storage.local.get([STORAGE_KEYS.AI_KEY_STATE]);
     return result[STORAGE_KEYS.AI_KEY_STATE] || {};
 }
@@ -72,6 +76,18 @@ async function getKeyState() {
  * @param {string} [lastErrorCode]
  */
 async function updateKeyState(keyHash, status, retryAfterTs = null, lastError = null, lastErrorCode = null) {
+    if (window.StorageVault) {
+        await window.StorageVault.bucket('ai').update('key_state', async (state = {}) => {
+            const entry = state[keyHash] || { status: 'ok', retryAfterTs: 0, lastError: null, lastErrorCode: null };
+            entry.status = status;
+            if (retryAfterTs != null) entry.retryAfterTs = retryAfterTs;
+            if (lastError != null) entry.lastError = lastError;
+            if (lastErrorCode != null) entry.lastErrorCode = lastErrorCode;
+            state[keyHash] = entry;
+            return state;
+        });
+        return;
+    }
     const state = await getKeyState();
     const entry = state[keyHash] || { status: 'ok', retryAfterTs: 0, lastError: null, lastErrorCode: null };
     entry.status = status;
@@ -113,16 +129,41 @@ function classifyError(status, message) {
  * @returns {Promise<string[]>}
  */
 async function getApiKeys() {
+    if (window.StorageVault) {
+        const keys = await window.StorageVault.bucket('ai').get('keys');
+        return keys || [];
+    }
+
     const data = await chrome.storage.local.get([STORAGE_KEYS.API_KEYS, STORAGE_KEYS.API_KEY]);
-    const keys = data[STORAGE_KEYS.API_KEYS];
-    if (Array.isArray(keys) && keys.length > 0) {
-        return keys.filter(k => typeof k === 'string' && k.trim().length > 0);
+    let keys = data[STORAGE_KEYS.API_KEYS];
+
+    // Normalize to array
+    if (!Array.isArray(keys) || keys.length === 0) {
+        const single = data[STORAGE_KEYS.API_KEY];
+        keys = (single && typeof single === 'string' && single.trim()) ? [single.trim()] : [];
     }
-    const single = data[STORAGE_KEYS.API_KEY];
-    if (single && typeof single === 'string' && single.trim()) {
-        return [single.trim()];
+
+    if (keys.length === 0) return [];
+
+    // Encryption Integration
+    const finalKeys = [];
+    for (const k of keys) {
+        if (typeof k !== 'string') continue;
+
+        if (window.EncryptionService && window.EncryptionService.isEncrypted(k)) {
+            try {
+                const aad = window.EncryptionAAD.aiKey();
+                const decrypted = await window.EncryptionService.decrypt(k, aad);
+                if (decrypted) finalKeys.push(decrypted);
+            } catch (err) {
+                console.error('[AIClient] Failed to decrypt API key. Data might be corrupted.', err);
+            }
+        } else {
+            finalKeys.push(k.trim());
+        }
     }
-    return [];
+
+    return finalKeys.filter(k => k.length > 0);
 }
 
 /**
@@ -134,7 +175,15 @@ async function getNextApiKey() {
     if (keys.length === 0) return null;
 
     const state = await getKeyState();
-    const lastUsed = (await chrome.storage.local.get([STORAGE_KEYS.LAST_USED_INDEX]))[STORAGE_KEYS.LAST_USED_INDEX] ?? -1;
+    let lastUsed = -1;
+
+    if (window.StorageVault) {
+        const sys = await window.StorageVault.bucket('system').get('ai_meta');
+        lastUsed = sys?.last_used_index ?? -1;
+    } else {
+        lastUsed = (await chrome.storage.local.get([STORAGE_KEYS.LAST_USED_INDEX]))[STORAGE_KEYS.LAST_USED_INDEX] ?? -1;
+    }
+
     const now = Date.now();
 
     for (let i = 0; i < keys.length; i++) {
@@ -146,7 +195,14 @@ async function getNextApiKey() {
         if (entry?.status === 'revoked') continue;
         if (entry?.status === 'cooldown' && entry.retryAfterTs > now) continue;
 
-        await chrome.storage.local.set({ [STORAGE_KEYS.LAST_USED_INDEX]: idx });
+        if (window.StorageVault) {
+            await window.StorageVault.bucket('system').update('ai_meta', async (meta = {}) => {
+                meta.last_used_index = idx;
+                return meta;
+            }, false);
+        } else {
+            await chrome.storage.local.set({ [STORAGE_KEYS.LAST_USED_INDEX]: idx });
+        }
         return { key: key, index: idx };
     }
     return null;
@@ -158,6 +214,17 @@ async function getNextApiKey() {
  */
 async function markKeySuccess(apiKey) {
     const keyHash = hashKey(apiKey);
+    if (window.StorageVault) {
+        await window.StorageVault.bucket('ai').update('key_state', async (state = {}) => {
+            const entry = state[keyHash];
+            if (entry && entry.status === 'cooldown') {
+                entry.status = 'ok';
+                entry.retryAfterTs = 0;
+            }
+            return state;
+        });
+        return;
+    }
     const state = await getKeyState();
     const entry = state[keyHash];
     if (entry && entry.status === 'cooldown') {
@@ -196,15 +263,12 @@ async function saveApiKey(apiKey, model = DEFAULT_GEMINI_MODEL) {
     const keys = await getApiKeys();
     const trimmed = (apiKey || '').trim();
     if (!trimmed) return;
+
     let newKeys = keys.filter(k => k !== trimmed);
     newKeys.unshift(trimmed);
     newKeys = newKeys.slice(0, MAX_API_KEYS);
-    await chrome.storage.local.set({
-        [STORAGE_KEYS.API_KEYS]: newKeys,
-        [STORAGE_KEYS.API_KEY]: newKeys[0],
-        [STORAGE_KEYS.MODEL]: model || DEFAULT_GEMINI_MODEL,
-        [STORAGE_KEYS.PROVIDER]: 'gemini'
-    });
+
+    await saveApiKeys(newKeys, model);
 }
 
 /**
@@ -218,10 +282,26 @@ async function saveApiKeys(apiKeys, model = DEFAULT_GEMINI_MODEL) {
         .map(k => (k && typeof k === 'string' ? k.trim() : ''))
         .filter(Boolean)
         .slice(0, MAX_API_KEYS);
+
     if (list.length === 0) return;
+
+    // Encrypt Keys if service is available
+    let keysToSave = list;
+    if (window.EncryptionService) {
+        const aad = window.EncryptionAAD.aiKey();
+        try {
+            keysToSave = await Promise.all(
+                list.map(k => window.EncryptionService.encrypt(k, aad))
+            );
+        } catch (err) {
+            console.error('[AIClient] Encryption failed during save:', err);
+            throw err;
+        }
+    }
+
     await chrome.storage.local.set({
-        [STORAGE_KEYS.API_KEYS]: list,
-        [STORAGE_KEYS.API_KEY]: list[0],
+        [STORAGE_KEYS.API_KEYS]: keysToSave,
+        [STORAGE_KEYS.API_KEY]: keysToSave[0],
         [STORAGE_KEYS.MODEL]: model || DEFAULT_GEMINI_MODEL,
         [STORAGE_KEYS.PROVIDER]: 'gemini'
     });
@@ -485,7 +565,7 @@ function parseAIJson(text) {
         if (jsonMatch) {
             try {
                 return JSON.parse(jsonMatch[1].trim());
-            } catch (e2) {}
+            } catch (e2) { }
         }
         const firstBrace = trimmedText.indexOf('{');
         const lastBrace = trimmedText.lastIndexOf('}');

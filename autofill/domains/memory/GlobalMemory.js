@@ -103,8 +103,18 @@ class GlobalMemory {
      */
     static async getCache() {
         try {
+            if (window.StorageVault) {
+                const data = await window.StorageVault.bucket('memory').get('atomic_single');
+                return data || {};
+            }
+
+            // Legacy Fallback
             const result = await chrome.storage.local.get('ATOMIC_SINGLE');
-            return result.ATOMIC_SINGLE || {};
+            const data = result.ATOMIC_SINGLE;
+            if (data && typeof data === 'object' && !window.EncryptionService?.isEncrypted?.(data)) {
+                return data;
+            }
+            return {};
         } catch (error) {
             console.warn('Failed to load ATOMIC_SINGLE for GlobalMemory:', error);
             return {};
@@ -118,28 +128,38 @@ class GlobalMemory {
      */
     static async updateCache(newEntries) {
         try {
-            const result = await chrome.storage.local.get('ATOMIC_SINGLE');
-            const currentMemory = result.ATOMIC_SINGLE || {};
-
-            // Format alignment: GlobalMemory uses {answer, timestamp}
-            // InteractionLog uses {value, lastUsed, useCount, source}
-            const alignedEntries = {};
-            Object.entries(newEntries).forEach(([k, v]) => {
-                const val = v.answer || v.value;
-                alignedEntries[k] = {
-                    value: val,
-                    lastUsed: Date.now(),
-                    useCount: (currentMemory[k]?.useCount || 0) + 1,
-                    source: 'global_memory',
-                    variants: currentMemory[k]?.variants || []
-                };
-            });
-
-            const updatedMemory = { ...currentMemory, ...alignedEntries };
-
-            await chrome.storage.local.set({ ATOMIC_SINGLE: updatedMemory });
-            console.log(`💾 [GlobalMemory] Saved to ATOMIC_SINGLE:`, Object.keys(alignedEntries));
-
+            if (window.StorageVault) {
+                await window.StorageVault.bucket('memory').update('atomic_single', async (currentMemory = {}) => {
+                    const alignedEntries = {};
+                    Object.entries(newEntries).forEach(([k, v]) => {
+                        const val = v.answer || v.value;
+                        alignedEntries[k] = {
+                            value: val,
+                            lastUsed: Date.now(),
+                            useCount: (currentMemory[k]?.useCount || 0) + 1,
+                            source: 'global_memory',
+                            variants: currentMemory[k]?.variants || []
+                        };
+                    });
+                    return { ...currentMemory, ...alignedEntries };
+                });
+            } else {
+                // Legacy Fallback
+                const result = await chrome.storage.local.get('ATOMIC_SINGLE');
+                const currentMemory = result.ATOMIC_SINGLE || {};
+                const alignedEntries = {};
+                Object.entries(newEntries).forEach(([k, v]) => {
+                    const val = v.answer || v.value;
+                    alignedEntries[k] = {
+                        value: val,
+                        lastUsed: Date.now(),
+                        useCount: (currentMemory[k]?.useCount || 0) + 1,
+                        source: 'global_memory',
+                        variants: currentMemory[k]?.variants || []
+                    };
+                });
+                await chrome.storage.local.set({ ATOMIC_SINGLE: { ...currentMemory, ...alignedEntries } });
+            }
         } catch (error) {
             console.warn('Failed to update ATOMIC_SINGLE:', error);
         }
@@ -147,11 +167,15 @@ class GlobalMemory {
 
     /**
      * Clear Smart Memory cache (Maps to ATOMIC_SINGLE)
-     * @returns {Promise<Object>} Smart memory cache
+     * @returns {Promise<void>}
      */
     static async clearCache() {
         try {
-            await chrome.storage.local.remove('ATOMIC_SINGLE');
+            if (window.StorageVault) {
+                await window.StorageVault.bucket('memory').remove('atomic_single');
+            } else {
+                await chrome.storage.local.remove('ATOMIC_SINGLE');
+            }
         } catch (error) {
             console.warn('Failed to clear ATOMIC_SINGLE:', error);
         }

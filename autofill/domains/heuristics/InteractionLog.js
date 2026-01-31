@@ -118,8 +118,30 @@ function isMultiCacheType(semanticKey, field) {
 
 async function getCache(cacheKey) {
     try {
+        if (window.StorageVault) {
+            // Map legacy keys to vault sub-keys in the memory bucket
+            const vaultKey = cacheKey.toLowerCase();
+            const data = await window.StorageVault.bucket('memory').get(vaultKey);
+            return data || {};
+        }
+
         const result = await chrome.storage.local.get(cacheKey);
-        return result[cacheKey] || {};
+        const data = result[cacheKey];
+
+        if (!data) return {};
+
+        // Encryption Integration
+        if (window.EncryptionService && window.EncryptionService.isEncrypted(data)) {
+            try {
+                const aad = window.EncryptionAAD.cache(cacheKey);
+                return await window.EncryptionService.decrypt(data, aad);
+            } catch (err) {
+                console.error(`[InteractionLog] Decryption FAILED for ${cacheKey}:`, err);
+                throw err; // Fail closed
+            }
+        }
+
+        return data || {};
     } catch (error) {
         console.error(`[InteractionLog] Error loading ${cacheKey}:`, error);
         return {};
@@ -128,7 +150,21 @@ async function getCache(cacheKey) {
 
 async function saveCache(cacheKey, cacheData) {
     try {
-        await chrome.storage.local.set({ [cacheKey]: cacheData });
+        if (window.StorageVault) {
+            const vaultKey = cacheKey.toLowerCase();
+            await window.StorageVault.bucket('memory').set(vaultKey, cacheData);
+            return;
+        }
+
+        let dataToSave = cacheData;
+
+        // Encrypt if service is available
+        if (window.EncryptionService) {
+            const aad = window.EncryptionAAD.cache(cacheKey);
+            dataToSave = await window.EncryptionService.encrypt(cacheData, aad);
+        }
+
+        await chrome.storage.local.set({ [cacheKey]: dataToSave });
     } catch (error) {
         console.error(`[InteractionLog] Error saving ${cacheKey}:`, error);
     }
@@ -136,6 +172,10 @@ async function saveCache(cacheKey, cacheData) {
 
 async function getMetadata() {
     try {
+        if (window.StorageVault) {
+            const result = await window.StorageVault.bucket('system').get('selection_metadata');
+            return result || { version: 1, lastCleanup: Date.now(), totalEntries: 0 };
+        }
         const result = await chrome.storage.local.get(METADATA_KEY);
         return result[METADATA_KEY] || { version: 1, lastCleanup: Date.now(), totalEntries: 0 };
     } catch (e) { return { version: 1, lastCleanup: Date.now(), totalEntries: 0 }; }
@@ -144,6 +184,10 @@ async function getMetadata() {
 async function saveMetadata(metadata) {
     try {
         metadata.checksum_version = 1; // Infrastructure Versioning
+        if (window.StorageVault) {
+            await window.StorageVault.bucket('system').set('selection_metadata', metadata, false);
+            return;
+        }
         await chrome.storage.local.set({ [METADATA_KEY]: metadata });
     } catch (e) { }
 }
@@ -1199,9 +1243,16 @@ async function getCacheStats() {
 
 async function clearCache() {
     // Clears: All 3 buckets + Metadata + SmartMemory
+    if (window.StorageVault) {
+        const bucket = window.StorageVault.bucket('memory');
+        await bucket.remove('atomic_single');
+        await bucket.remove('atomic_multi');
+        await bucket.remove('section_repeater');
+        await window.StorageVault.bucket('system').remove('selection_metadata');
+        return;
+    }
     const keysToRemove = [...Object.values(CACHE_KEYS), METADATA_KEY, 'smartMemory'];
     await chrome.storage.local.remove(keysToRemove);
-    // console.log('[InteractionLog] 🗑️ All Caches Cleared');
 }
 
 // Export
