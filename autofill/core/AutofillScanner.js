@@ -101,10 +101,8 @@ class AutofillScanner {
             const extractor = new window.ContextFeatureExtractor();
             field.contextFeatures = extractor.extract(field, this.scanState, neighbors);
         }
-        console.log('in get auto fill scanner')
         // --- STEP 3: HYPOTHESIS COLLECTION ---
         // Get raw signals from ML/Heuristics
-        // Use getHypotheses if available, otherwise fallback to classify (legacy support)
         if (this.classifier.getHypotheses) {
             const { heuristic, neural } = await this.classifier.getHypotheses(field);
             candidates.addCandidate(heuristic.label, heuristic.confidence, heuristic.source);
@@ -117,22 +115,30 @@ class AutofillScanner {
         // --- STEP 3: SCAN STATE SIGNALS ---
         const stateLabel = this.scanState.getDateLabel(sectionInfo.type);
         if (stateLabel && stateLabel !== 'unknown') {
-            // High confidence signal from structural position
             candidates.addCandidate(stateLabel, 0.95, 'scan_sequence');
         }
 
         // --- STEP 4: ARBITRATION ---
-        // Relax margin for high-priority legal fields (Work Auth, Sponsorship)
-        // These often have confused neural signals but strong heuristics.
         let minMargin = 0.15;
-        const topHypothesis = candidates.getBestCandidate(0.00); // Probe without margin filter
+        const topHypothesis = candidates.getBestCandidate(0.00);
         if (['work_auth', 'sponsorship'].includes(topHypothesis.label)) {
             minMargin = 0.02;
         }
 
         const best = candidates.getBestCandidate(minMargin);
 
-        // --- STEP 5: FILLABILITY POLICY (Phase 4) ---
+        // --- STEP 5: BOOLEAN FALLBACK (Workday/Custom Widgets) ---
+        // If it's a legal question with sparse options, inject standard Yes/No candidates
+        if (['work_auth', 'sponsorship'].includes(best.label)) {
+            field.options = field.options || [];
+            const hasYes = field.options.some(opt => /yes/i.test(opt.text || opt.value));
+            const hasNo = field.options.some(opt => /no/i.test(opt.text || opt.value));
+
+            if (!hasYes) field.options.push({ value: 'yes', text: 'Yes' });
+            if (!hasNo) field.options.push({ value: 'no', text: 'No' });
+        }
+
+        // --- STEP 6: FILLABILITY POLICY (Phase 4) ---
         if (this.policy) {
             const labelQuality = field.contextFeatures?.labelQuality ?? 1.0;
 
@@ -150,19 +156,6 @@ class AutofillScanner {
         // Fallback (Legacy/Simple)
         if (best.label === 'unknown') {
             return this._createResult(field, 'ignore', best.score, 'unknown', best.reason);
-        }
-
-        // --- STEP 6: BOOLEAN FALLBACK (Workday/Custom Widgets) ---
-        // If it's a legal question with sparse options, inject standard Yes/No candidates
-        if (['work_auth', 'sponsorship'].includes(best.label)) {
-            field.options = field.options || [];
-            const hasYes = field.options.some(opt => /yes/i.test(opt.text || opt.value));
-            const hasNo = field.options.some(opt => /no/i.test(opt.text || opt.value));
-
-            if (!hasYes) field.options.push({ value: 'yes', text: 'Yes' });
-            if (!hasNo) field.options.push({ value: 'no', text: 'No' });
-
-            // console.log(`🛠️ [Scanner] Injected boolean fallback for ${best.label}`);
         }
 
         return this._createResult(field, 'fill', best.score, best.label, 'candidates_consensus');

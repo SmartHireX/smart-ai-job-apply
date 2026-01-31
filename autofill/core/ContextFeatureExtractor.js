@@ -102,17 +102,17 @@ class ContextFeatureExtractor {
     }
 
     _calculateLabelQuality(field) {
+        const labelText = (field.label || field.ariaLabel || field.placeholder || '').trim();
+        const isLegalQuestion = /sponsorship|authorization|right.*to.*work|visa/i.test(labelText);
+
         let score = 0.4;
         if (field.label && field.element && field.element.labels && field.element.labels.length > 0) score = 1.0; // Explicit
         else if (field.ariaLabel) score = 0.9;
+        else if (isLegalQuestion && labelText.length > 5) score = 0.95; // Strong boost for verified legal semantic labels
         else if (field.placeholder) score = 0.6;
-
-        const labelText = (field.label || field.ariaLabel || field.placeholder || '').trim();
 
         // Question Penalty: Full questions are usually NOT atomic fields
         // EXCEPTION: Legal questions (Work Auth, Sponsorship) are naturally questions
-        const isLegalQuestion = /sponsorship|authorization|right[_\-\s]?to[_\-\s]?work|visa/i.test(labelText);
-
         if (!isLegalQuestion && (labelText.includes('?') || /^(do|are|have|will|can|please)\b/i.test(labelText))) {
             score *= 0.7;
         }
