@@ -186,6 +186,9 @@ class StorageVault {
             return true;
         }, false);
     }
+    async _saveToStorage(vault) {
+        await chrome.storage.local.set({ [VAULT_KEY]: vault });
+    }
 }
 
 // Global Export
