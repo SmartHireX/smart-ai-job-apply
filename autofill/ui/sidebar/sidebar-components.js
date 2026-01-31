@@ -555,6 +555,7 @@ function showAccordionSidebar(allFields) {
             mlLabel: formattedMlLabel,
             mlConfidence: ml?.confidence || 0,
             parentContext: item.fieldData?.parentContext || item.parentContext || '',
+            siblingContext: item.fieldData?.siblingContext || item.siblingContext || '',
             confidence: item.confidence,
             fieldType: fieldType,
             source: source,
@@ -564,6 +565,13 @@ function showAccordionSidebar(allFields) {
             indexBadge, // Add indexBadge to fieldInfo
             domPosition // DOM position for sorting
         };
+
+        // Add options for select (so Regenerate AI can return only allowed values)
+        if (fieldType === 'select' || fieldType === 'select-one' || fieldType === 'select-multiple' || element.tagName === 'SELECT') {
+            try {
+                fieldInfo.options = Array.from(element.options || []).map(o => ({ value: (o.value || '').trim(), text: (o.text || o.value || '').trim() })).filter(o => o.value !== undefined);
+            } catch (e) { fieldInfo.options = []; }
+        }
 
         // Separate radio/checkbox/select from other fields
         if (fieldType === 'radio' || fieldType === 'checkbox') {
@@ -705,8 +713,23 @@ function showAccordionSidebar(allFields) {
                 groupLabel = getGroupQuestionLabel(firstRadio?.field);
             }
 
+            // Build options list for radio group (for Regenerate AI strict return)
+            function getRadioOptionLabel(r) {
+                let text = r.field.value;
+                if (r.field.id) {
+                    try {
+                        const labelEl = document.querySelector(`label[for="${CSS.escape(r.field.id)}"]`);
+                        if (labelEl) return labelEl.textContent.trim();
+                    } catch (e) {}
+                }
+                if (r.field.parentElement?.tagName === 'LABEL') return r.field.parentElement.textContent.trim();
+                if (r.field.nextElementSibling) { const t = r.field.nextElementSibling.textContent?.trim(); if (t && t.length < 150) return t; }
+                if (r.field.previousElementSibling) { const t = r.field.previousElementSibling.textContent?.trim(); if (t && t.length < 150) return t; }
+                return text;
+            }
+            const radioOptions = radios.map(r => ({ value: r.field.value, text: getRadioOptionLabel(r) }));
+
             if (liveChecked && selectedValue) {
-                // Find matching fieldInfo or create a wrapper
                 const matchingField = radios.find(r =>
                     r.field?.id === liveChecked.id ||
                     r.field?.value === liveChecked.value
@@ -719,7 +742,8 @@ function showAccordionSidebar(allFields) {
                     displayValue: selectedValue,
                     isRadioGroup: true,
                     filled: true,
-                    groupName: name
+                    groupName: name,
+                    options: radioOptions
                 });
             } else {
                 const firstRadio = radios[0];
@@ -730,7 +754,6 @@ function showAccordionSidebar(allFields) {
                 if (firstRadio.mlLabel && firstRadio.mlConfidence > 0.8) {
                     groupLabel = firstRadio.mlLabel;
                 } else if (parentContext && parentContext.length > 5) {
-                    // Use parentContext directly as label
                     groupLabel = parentContext;
                 } else {
                     groupLabel = getGroupQuestionLabel(firstRadio.field);
@@ -742,7 +765,8 @@ function showAccordionSidebar(allFields) {
                     displayValue: null,
                     isRadioGroup: true,
                     filled: false,
-                    groupName: name
+                    groupName: name,
+                    options: radioOptions
                 });
             }
         });
@@ -800,6 +824,18 @@ function showAccordionSidebar(allFields) {
                     return value;
                 });
 
+                // Options for Regenerate AI (value + text per checkbox)
+                const checkboxOptions = checkboxes.map(cb => {
+                    let text = cb.field.value;
+                    if (cb.field.id) {
+                        try {
+                            const labelEl = document.querySelector(`label[for="${CSS.escape(cb.field.id)}"]`);
+                            if (labelEl) text = labelEl.textContent.trim();
+                        } catch (e) {}
+                    }
+                    if (cb.field.parentElement?.tagName === 'LABEL') text = cb.field.parentElement.textContent.trim();
+                    return { value: cb.field.value, text };
+                });
                 groupedFields.push({
                     ...checkedBoxes[0],
                     label: groupLabel,
@@ -808,9 +844,21 @@ function showAccordionSidebar(allFields) {
                     filled: true,
                     groupName: name,
                     checkedCount: checkedBoxes.length,
-                    totalCount: checkboxes.length
+                    totalCount: checkboxes.length,
+                    options: checkboxOptions
                 });
             } else {
+                const checkboxOptions = checkboxes.map(cb => {
+                    let text = cb.field.value;
+                    if (cb.field.id) {
+                        try {
+                            const labelEl = document.querySelector(`label[for="${CSS.escape(cb.field.id)}"]`);
+                            if (labelEl) text = labelEl.textContent.trim();
+                        } catch (e) {}
+                    }
+                    if (cb.field.parentElement?.tagName === 'LABEL') text = cb.field.parentElement.textContent.trim();
+                    return { value: cb.field.value, text };
+                });
                 groupedFields.push({
                     ...firstCheckbox,
                     label: groupLabel,
@@ -819,7 +867,8 @@ function showAccordionSidebar(allFields) {
                     filled: false,
                     groupName: name,
                     checkedCount: 0,
-                    totalCount: checkboxes.length
+                    totalCount: checkboxes.length,
+                    options: checkboxOptions
                 });
             }
         });
@@ -1151,9 +1200,9 @@ function showAccordionSidebar(allFields) {
             })()}${item.indexBadge ? `<span class="sh-nova-9x-index-badge">#${item.indexBadge}</span>` : ''}${(item.isRadioGroup || item.isCheckboxGroup || item.isSelectGroup) && item.displayValue ? `: <span style="color: #10b981; font-weight: 500;">${item.displayValue}</span>` : ''}</div>
                              
                              <div style="display: flex; align-items: center; gap: 8px;">
-                                ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
+                                <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${(item.label || '').replace(/"/g, '&quot;')}" data-field-type="${(item.fieldType || 'text').replace(/"/g, '&quot;')}" data-options="${(item.options ? JSON.stringify(item.options) : '[]').replace(/"/g, '&quot;')}" data-parent-context="${(item.parentContext || '').replace(/"/g, '&quot;')}" data-sibling-context="${(item.siblingContext || '').replace(/"/g, '&quot;')}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                                </button>` : ''}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1161,7 +1210,7 @@ function showAccordionSidebar(allFields) {
                 ${finalAppFillFields.length === 0 ? '<div class="sh-nova-9x-empty-state">No app-filled fields</div>' : ''}
             </div>
 
-            <!-- AI Tab (Name + confidence, with recalculate for text fields only) -->
+            <!-- AI Tab (Name + confidence, with Regenerate using AI for all fields) -->
             <div class="sh-nova-9x-tab-content" data-tab="ai" style="display: none;">
                 ${finalAiFields.map(item => {
                 // Enterprise Logic: Exclude selects explicitly + other non-text types
@@ -1191,9 +1240,9 @@ function showAccordionSidebar(allFields) {
                                     ${statusIcon} ${confidence}%
                                 </div>
                                 
-                                ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
+                                <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${(item.label || '').replace(/"/g, '&quot;')}" data-field-type="${(item.fieldType || 'text').replace(/"/g, '&quot;')}" data-options="${(item.options ? JSON.stringify(item.options) : '[]').replace(/"/g, '&quot;')}" data-parent-context="${(item.parentContext || '').replace(/"/g, '&quot;')}" data-sibling-context="${(item.siblingContext || '').replace(/"/g, '&quot;')}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                                </button>` : ''}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1229,9 +1278,9 @@ function showAccordionSidebar(allFields) {
                             </div>
                             
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                ${isTextBased ? `<button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${item.label}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
+                                <button class="recalculate-btn" data-selector="${item.selector.replace(/"/g, '&quot;')}" data-label="${(item.label || '').replace(/"/g, '&quot;')}" data-field-type="${(item.fieldType || 'text').replace(/"/g, '&quot;')}" data-options="${(item.options ? JSON.stringify(item.options) : '[]').replace(/"/g, '&quot;')}" data-parent-context="${(item.parentContext || '').replace(/"/g, '&quot;')}" data-sibling-context="${(item.siblingContext || '').replace(/"/g, '&quot;')}" data-tooltip="Regenerate using AI" title="Regenerate using AI" style="border: none; background: transparent; padding: 4px;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                                </button>` : ''}
+                                </button>
                             </div>
                         </div>
                         ${item.isFileUpload ? '<div class="sh-nova-9x-field-note">File upload required</div>' : '<div class="sh-nova-9x-field-note">Not filled</div>'}
@@ -1377,15 +1426,24 @@ function showAccordionSidebar(allFields) {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const selector = btn.dataset.selector;
-            const label = btn.dataset.label;
-
-            // Get current value from the field
+            const label = btn.dataset.label || '';
+            let options = [];
             try {
-                const element = document.querySelector(selector);
-                const currentValue = element?.value || element?.textContent || '';
+                const optStr = btn.getAttribute('data-options');
+                if (optStr) options = JSON.parse(optStr.replace(/&quot;/g, '"'));
+            } catch (e) {}
+            const fieldMeta = {
+                fieldType: btn.dataset.fieldType || 'text',
+                options: Array.isArray(options) ? options : [],
+                parentContext: btn.dataset.parentContext || '',
+                siblingContext: btn.dataset.siblingContext || ''
+            };
 
-                // Open Nova Chat tab with regeneration context
-                initNovaTabForRegeneration(selector, label, currentValue);
+            try {
+                const element = safeQuerySelector(selector);
+                const currentValue = element?.value ?? element?.textContent ?? '';
+
+                initNovaTabForRegeneration(selector, label, currentValue, fieldMeta);
             } catch (err) {
                 console.error('[Nova] Failed to get field value:', err);
                 showErrorToast('Could not open regeneration chat');
@@ -2088,9 +2146,9 @@ const NOVA_STATUS_MESSAGES = [
 let novaStatusInterval = null;
 
 /**
- * Create regeneration context object
+ * Create regeneration context object (uses existing extracted field: type, options, parent/sibling context)
  */
-function createRegenerationContext(selector, label, currentValue) {
+function createRegenerationContext(selector, label, currentValue, fieldMeta = {}) {
     return {
         selector,
         label,
@@ -2099,27 +2157,27 @@ function createRegenerationContext(selector, label, currentValue) {
         previousValue: null,
         pendingValue: null,
         history: [],
-        undoStack: []
+        undoStack: [],
+        fieldType: fieldMeta.fieldType || 'text',
+        options: fieldMeta.options || [],
+        parentContext: fieldMeta.parentContext || '',
+        siblingContext: fieldMeta.siblingContext || ''
     };
 }
 
 /**
- * Initialize Nova Chat tab for field regeneration
+ * Initialize Nova Chat tab for field regeneration (fieldMeta = fieldType, options, parentContext, siblingContext from extracted field)
  */
-function initNovaTabForRegeneration(selector, label, currentValue) {
+function initNovaTabForRegeneration(selector, label, currentValue, fieldMeta = {}) {
     const panel = document.getElementById('smarthirex-accordion-sidebar');
     if (!panel) {
         console.error('[Nova] Sidebar panel not found');
         return;
     }
 
-    // Show Nova tab button
     const novaTabBtn = panel.querySelector('[data-tab="nova"]');
-    if (novaTabBtn) {
-        novaTabBtn.style.display = 'flex';
-    }
+    if (novaTabBtn) novaTabBtn.style.display = 'flex';
 
-    // Switch to Nova tab
     const allTabs = panel.querySelectorAll('.sh-nova-9x-tab');
     allTabs.forEach(t => t.classList.remove('active'));
     novaTabBtn?.classList.add('active');
@@ -2128,23 +2186,19 @@ function initNovaTabForRegeneration(selector, label, currentValue) {
     allContents.forEach(c => c.style.display = 'none');
 
     const novaContent = panel.querySelector('.sh-nova-9x-tab-content[data-tab="nova"]');
-    if (novaContent) {
-        novaContent.style.display = 'block';
-    }
+    if (novaContent) novaContent.style.display = 'block';
 
-    // Render chat UI
-    renderNovaChatForField(selector, label, currentValue);
+    renderNovaChatForField(selector, label, currentValue, fieldMeta);
 }
 
 /**
- * Render Nova Chat UI for a specific field
+ * Render Nova Chat UI for a specific field (fieldMeta from existing extracted field)
  */
-function renderNovaChatForField(selector, label, currentValue) {
+function renderNovaChatForField(selector, label, currentValue, fieldMeta = {}) {
     const container = document.getElementById('nova-chat-container');
     if (!container) return;
 
-    // Create regeneration context
-    window._novaRegenerationContext = createRegenerationContext(selector, label, currentValue);
+    window._novaRegenerationContext = createRegenerationContext(selector, label, currentValue, fieldMeta);
 
     // Truncate long values for display
     const displayValue = currentValue.length > 200
@@ -2366,19 +2420,42 @@ async function handleNovaSubmit() {
             resumeSection = `RESUME_DATA: (Not available. Please rely on general professional standards and the user instruction.)`;
         }
 
-        // Optimized Concise Prompt (Token Saver)
-        const systemPrompt = `CONTEXT: Job Application Field "${context.label}"
-CURRENT_VALUE: ${context.currentValue}
+        // Field metadata from existing extracted field (type, options, parent/sibling context)
+        const fieldType = (context.fieldType || 'text').toLowerCase();
+        const options = context.options || [];
+        const parentContext = context.parentContext || '';
+        const siblingContext = context.siblingContext || '';
+        const hasOptions = options.length > 0;
+        const isSelectOrRadio = fieldType === 'select' || fieldType === 'select-one' || fieldType === 'radio';
+        const isCheckbox = fieldType === 'checkbox';
+
+        // Strict return rules by field type (so AI returns only allowed values)
+        let strictRules = '';
+        if (isSelectOrRadio && hasOptions) {
+            const optionList = options.map(o => (o.text || o.value || o).toString()).filter(Boolean).join(' | ');
+            strictRules = `STRICT: This field is ${fieldType}. You MUST return exactly ONE value from this list (use the exact text or value):\n${optionList}\nDo NOT invent new options. Output only that single value, nothing else.`;
+        } else if (isCheckbox && hasOptions) {
+            const optionList = options.map(o => (o.text || o.value || o).toString()).filter(Boolean).join(', ');
+            strictRules = `STRICT: This field is checkbox. You MAY return one or more values from this list (comma-separated if multiple):\n${optionList}\nDo NOT invent new options. Output only value(s) from the list.`;
+        } else {
+            strictRules = `STRICT: This field is ${fieldType}. Output plain text only. No quotes, no preamble, no code. One value only.`;
+        }
+
+        const systemPrompt = `JOB APPLICATION FIELD (use existing extracted field info only)
+
+FIELD_LABEL: ${context.label}
+FIELD_TYPE: ${fieldType}
+CURRENT_VALUE: ${context.currentValue || '(empty)'}
+${parentContext ? `PARENT_CONTEXT: ${parentContext}` : ''}
+${siblingContext ? `SIBLING_CONTEXT: ${siblingContext}` : ''}
+
 ${resumeSection}
 
-INSTRUCTION: ${userInstruction}
+USER_INSTRUCTION: ${userInstruction}
 
-TASK: Regenerate the field value based on the instruction.
-RULES:
-1. Professional tone.
-2. Use resume facts only (if available).
-3. Do not be concise unless asked. Write comprehensive, complete responses.
-4. OUTPUT: New value ONLY. No quotes/preamble.`;
+${strictRules}
+
+TASK: Regenerate the field value according to the user instruction and the rules above. Professional tone. Use resume facts when relevant.`;
 
         const result = await window.AIClient.callAI(
             'Regenerate value:',
