@@ -2806,9 +2806,21 @@ async function applyNovaRegeneration() {
                     console.log(`🔘 [Nova Apply] Checkbox "${checkboxLabel}" (value: ${cb.value}) - Should check: ${shouldCheck}, Currently: ${cb.checked}`);
 
                     if (cb.checked !== shouldCheck) {
-                        cb.checked = shouldCheck;
+                        try {
+                            // Use robust setter if available, or native prototype hack
+                            if (window.setNativeChecked) {
+                                window.setNativeChecked(cb, shouldCheck);
+                            } else {
+                                const nativeCheckedSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "checked").set;
+                                nativeCheckedSetter.call(cb, shouldCheck);
+                            }
+                        } catch (e) {
+                            cb.checked = shouldCheck;
+                        }
+
                         cb.dispatchEvent(new Event('change', { bubbles: true }));
                         cb.dispatchEvent(new Event('click', { bubbles: true }));
+                        cb.dispatchEvent(new Event('input', { bubbles: true }));
                     }
                 });
 
@@ -2839,9 +2851,19 @@ async function applyNovaRegeneration() {
                 if (match) {
                     console.log(`🔘 [Nova Apply] Checking Radio button: "${match.value}"`);
                     if (!match.checked) {
-                        match.checked = true;
+                        try {
+                            if (window.setNativeChecked) {
+                                window.setNativeChecked(match, true);
+                            } else {
+                                const nativeCheckedSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "checked").set;
+                                nativeCheckedSetter.call(match, true);
+                            }
+                        } catch (e) {
+                            match.checked = true;
+                        }
                         match.dispatchEvent(new Event('change', { bubbles: true }));
                         match.dispatchEvent(new Event('click', { bubbles: true }));
+                        match.dispatchEvent(new Event('input', { bubbles: true }));
                     }
                 } else {
                     console.warn(`⚠️ [Nova Apply] No matching radio found for "${targetValue}"`);
