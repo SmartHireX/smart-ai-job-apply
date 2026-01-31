@@ -2797,11 +2797,19 @@ async function applyNovaRegeneration() {
                         checkboxLabel = cb.parentElement.textContent.trim();
                     }
 
-                    // Check if this checkbox should be selected (fuzzy match)
+                    // Check if this checkbox should be selected (Strict Match > Word Boundary)
                     const labelLower = (checkboxLabel || cb.value).toLowerCase();
-                    const shouldCheck = selectedValues.some(sv =>
-                        labelLower.includes(sv) || sv.includes(labelLower) || labelLower === sv
-                    );
+                    const shouldCheck = selectedValues.some(sv => {
+                        if (labelLower === sv) return true;
+                        // Strict Word Boundary Match (prevents "Java" matching "JavaScript")
+                        try {
+                            const escapedSv = sv.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`\\b${escapedSv}\\b`, 'i');
+                            return regex.test(labelLower);
+                        } catch (e) {
+                            return labelLower === sv;
+                        }
+                    });
 
                     console.log(`🔘 [Nova Apply] Checkbox "${checkboxLabel}" (value: ${cb.value}) - Should check: ${shouldCheck}, Currently: ${cb.checked}`);
 
@@ -2845,7 +2853,14 @@ async function applyNovaRegeneration() {
                     if (r.parentElement?.tagName === 'LABEL') radioLabel = r.parentElement.textContent.trim();
 
                     const labelLower = (radioLabel || r.value).toLowerCase();
-                    return labelLower === targetValue || labelLower.includes(targetValue) || targetValue.includes(labelLower);
+                    // Strict Word Boundary Match
+                    try {
+                        const escapedVal = targetValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const regex = new RegExp(`\\b${escapedVal}\\b`, 'i');
+                        return labelLower === targetValue || regex.test(labelLower);
+                    } catch (e) {
+                        return labelLower === targetValue;
+                    }
                 });
 
                 if (match) {
