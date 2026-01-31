@@ -110,14 +110,17 @@ class ContextFeatureExtractor {
         const labelText = (field.label || field.ariaLabel || field.placeholder || '').trim();
 
         // Question Penalty: Full questions are usually NOT atomic fields
-        if (labelText.includes('?') || /^(do|are|have|will|can|please)\b/i.test(labelText)) {
+        // EXCEPTION: Legal questions (Work Auth, Sponsorship) are naturally questions
+        const isLegalQuestion = /sponsorship|authorization|right[_\-\s]?to[_\-\s]?work|visa/i.test(labelText);
+
+        if (!isLegalQuestion && (labelText.includes('?') || /^(do|are|have|will|can|please)\b/i.test(labelText))) {
             score *= 0.7;
         }
 
         // Length Penalty: Atomic fields shouldn't have paragraph-long labels
-        if (labelText.length > 100) {
+        if (!isLegalQuestion && labelText.length > 100) {
             score *= 0.5; // High penalty for clauses
-        } else if (labelText.length > 60) {
+        } else if (!isLegalQuestion && labelText.length > 60) {
             score *= 0.8; // Moderate penalty for long questions
         }
 

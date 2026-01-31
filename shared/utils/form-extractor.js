@@ -188,8 +188,9 @@ class FormExtractor {
             // FALLBACK for Workday Buttons: If no <option> children found, use button text as current value/option
             if (field.options.length === 0 && element.tagName === 'BUTTON') {
                 const btnText = element.innerText.replace(/Required|Optional/i, '').trim();
+                const btnValue = element.value || field.value || btnText; // Use UUID if available
                 if (btnText && btnText.length > 0) {
-                    field.options = [{ value: btnText, text: btnText }];
+                    field.options = [{ value: btnValue, text: btnText }];
                 }
             }
         } else if (['radio', 'checkbox'].includes(type)) {

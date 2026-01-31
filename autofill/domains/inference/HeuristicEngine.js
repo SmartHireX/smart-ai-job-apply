@@ -83,7 +83,10 @@ class HeuristicEngine {
         'first_name': 5, // Specificity
         'last_name': 5,
         'email': 10,
-        'password': 10
+        'password': 10,
+        'work_auth': 15,
+        'sponsorship': 15,
+        'country': 2
     };
 
     // Stop Words (Noise Filter)
@@ -255,7 +258,8 @@ class HeuristicEngine {
                 /\blocation[_\-\s]?country\b/i
             ],
             confidence: 0.96,
-            category: 'location'
+            category: 'location',
+            negative: /\b(right[_\-\s]?to[_\-\s]?work|unrestricted[_\-\s]?right|authorized[_\-\s]?to[_\-\s]?work|visa[_\-\s]?sponsorship|require[_\-\s]?sponsorship)\b/i
         },
 
         // ======================== WORK HISTORY ========================
@@ -480,7 +484,8 @@ class HeuristicEngine {
                 /\b(work[_\-\s]?authorization|work[_\-\s]?auth)\b/i,
                 /\b(legal[_\-\s]?authorization|authorized[_\-\s]?to[_\-\s]?work)\b/i,
                 /\b(right[_\-\s]?to[_\-\s]?work|employment[_\-\s]?authorization)\b/i,
-                /\b(eligib(le|ility)[_\-\s]?to[_\-\s]?work)\b/i
+                /\b(eligib(le|ility)[_\-\s]?to[_\-\s]?work)\b/i,
+                /\bunrestricted[_\-\s]?right[_\-\s]?to[_\-\s]?work\b/i
             ],
             confidence: 0.98,
             category: 'legal'

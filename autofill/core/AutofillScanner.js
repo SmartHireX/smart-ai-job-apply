@@ -157,6 +157,15 @@ class AutofillScanner {
             field.ariaLabel
         ].filter(Boolean).join(' ');
 
+        // Guard: 'optional' and 'skip' should only veto if they are the primary intent of the field
+        // If they are part of a longer descriptive label (e.g. "Github Profile (Optional)"), they should not veto.
+        const softVetoPattern = /\b(optional|skip|later)\b/i;
+        if (softVetoPattern.test(textToCheck) && textToCheck.length > 20) {
+            // Filter patterns to check everything EXCEPT the soft veto markers
+            const otherVetoes = this.VETO_PATTERNS.filter(p => p.toString() !== softVetoPattern.toString());
+            return otherVetoes.some(p => p.test(textToCheck));
+        }
+
         return this.VETO_PATTERNS.some(p => p.test(textToCheck));
     }
 
