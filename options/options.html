@@ -107,7 +107,8 @@
 
                         <div class="form-group" id="multi-keys-section">
                             <label>Gemini API Keys (Round-Robin rotation, max 5)</label>
-                            <p class="field-hint">Add up to 5 keys for automatic rotation and fallback when one hits rate limit or fails.</p>
+                            <p class="field-hint">Add up to 5 keys for automatic rotation and fallback when one hits
+                                rate limit or fails.</p>
                             <div id="api-keys-list" class="api-keys-list"></div>
                             <div class="input-with-button" style="margin-top: 8px;">
                                 <input type="password" id="api-key-new" placeholder="Paste a new key and click Add">
@@ -584,6 +585,8 @@
     </div>
 
     <!-- Scripts -->
+    <script src="../shared/security/StorageVault.js"></script>
+    <script src="../shared/security/EncryptionService.js"></script>
     <script src="../shared/utils/ai-client.js"></script>
     <script src="../shared/utils/resume-manager.js"></script>
     <script src="options.js"></script>

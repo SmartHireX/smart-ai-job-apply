@@ -60,12 +60,10 @@ function hashKey(apiKey) {
  */
 async function getKeyState() {
     const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
-    if (vault) {
-        const data = await vault.bucket('ai').get('key_state');
-        return data || {};
-    }
-    const result = await chrome.storage.local.get([STORAGE_KEYS.AI_KEY_STATE]);
-    return result[STORAGE_KEYS.AI_KEY_STATE] || {};
+    if (!vault) return {};
+    await vault.waitUntilReady?.();
+    const data = await vault.bucket('ai').get('key_state');
+    return data || {};
 }
 
 /**
@@ -78,26 +76,17 @@ async function getKeyState() {
  */
 async function updateKeyState(keyHash, status, retryAfterTs = null, lastError = null, lastErrorCode = null) {
     const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
-    if (vault) {
-        await vault.bucket('ai').update('key_state', async (state = {}) => {
-            const entry = state[keyHash] || { status: 'ok', retryAfterTs: 0, lastError: null, lastErrorCode: null };
-            entry.status = status;
-            if (retryAfterTs != null) entry.retryAfterTs = retryAfterTs;
-            if (lastError != null) entry.lastError = lastError;
-            if (lastErrorCode != null) entry.lastErrorCode = lastErrorCode;
-            state[keyHash] = entry;
-            return state;
-        });
-        return;
-    }
-    const state = await getKeyState();
-    const entry = state[keyHash] || { status: 'ok', retryAfterTs: 0, lastError: null, lastErrorCode: null };
-    entry.status = status;
-    if (retryAfterTs != null) entry.retryAfterTs = retryAfterTs;
-    if (lastError != null) entry.lastError = lastError;
-    if (lastErrorCode != null) entry.lastErrorCode = lastErrorCode;
-    state[keyHash] = entry;
-    await chrome.storage.local.set({ [STORAGE_KEYS.AI_KEY_STATE]: state });
+    if (!vault) return;
+
+    await vault.bucket('ai').update('key_state', async (state = {}) => {
+        const entry = state[keyHash] || { status: 'ok', retryAfterTs: 0, lastError: null, lastErrorCode: null };
+        entry.status = status;
+        if (retryAfterTs != null) entry.retryAfterTs = retryAfterTs;
+        if (lastError != null) entry.lastError = lastError;
+        if (lastErrorCode != null) entry.lastErrorCode = lastErrorCode;
+        state[keyHash] = entry;
+        return state;
+    });
 }
 
 /**
@@ -132,44 +121,11 @@ function classifyError(status, message) {
  */
 async function getApiKeys() {
     const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
-    if (vault) {
-        const keys = await vault.bucket('ai').get('keys');
-        return keys || [];
-    }
+    if (!vault) return [];
 
-    const data = await chrome.storage.local.get([STORAGE_KEYS.API_KEYS, STORAGE_KEYS.API_KEY]);
-    let keys = data[STORAGE_KEYS.API_KEYS];
-
-    // Normalize to array
-    if (!Array.isArray(keys) || keys.length === 0) {
-        const single = data[STORAGE_KEYS.API_KEY];
-        keys = (single && typeof single === 'string' && single.trim()) ? [single.trim()] : [];
-    }
-
-    if (keys.length === 0) return [];
-
-    // Encryption Integration
-    const finalKeys = [];
-    const encryptionService = globalThis.EncryptionService || (typeof EncryptionService !== 'undefined' ? EncryptionService : null);
-    const encryptionAAD = globalThis.EncryptionAAD || (typeof EncryptionAAD !== 'undefined' ? EncryptionAAD : null);
-
-    for (const k of keys) {
-        if (typeof k !== 'string') continue;
-
-        if (encryptionService && encryptionService.isEncrypted(k)) {
-            try {
-                const aad = encryptionAAD.aiKey();
-                const decrypted = await encryptionService.decrypt(k, aad);
-                if (decrypted) finalKeys.push(decrypted);
-            } catch (err) {
-                console.error('[AIClient] Failed to decrypt API key. Data might be corrupted.', err);
-            }
-        } else {
-            finalKeys.push(k.trim());
-        }
-    }
-
-    return finalKeys.filter(k => k.length > 0);
+    await vault.waitUntilReady?.();
+    const keys = await vault.bucket('ai').get('keys');
+    return keys || [];
 }
 
 /**
@@ -184,12 +140,10 @@ async function getNextApiKey() {
     let lastUsed = -1;
 
     const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
-    if (vault) {
-        const sys = await vault.bucket('system').get('ai_meta');
-        lastUsed = sys?.last_used_index ?? -1;
-    } else {
-        lastUsed = (await chrome.storage.local.get([STORAGE_KEYS.LAST_USED_INDEX]))[STORAGE_KEYS.LAST_USED_INDEX] ?? -1;
-    }
+    if (!vault) return null;
+
+    const sys = await vault.bucket('system').get('ai_meta');
+    lastUsed = sys?.last_used_index ?? -1;
 
     const now = Date.now();
 
@@ -202,15 +156,11 @@ async function getNextApiKey() {
         if (entry?.status === 'revoked') continue;
         if (entry?.status === 'cooldown' && entry.retryAfterTs > now) continue;
 
-        const currentVault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
-        if (currentVault) {
-            await currentVault.bucket('system').update('ai_meta', async (meta = {}) => {
-                meta.last_used_index = idx;
-                return meta;
-            }, false);
-        } else {
-            await chrome.storage.local.set({ [STORAGE_KEYS.LAST_USED_INDEX]: idx });
-        }
+        await vault.bucket('system').update('ai_meta', async (meta = {}) => {
+            meta.last_used_index = idx;
+            return meta;
+        }, false);
+
         return { key: key, index: idx };
     }
     return null;
@@ -223,25 +173,16 @@ async function getNextApiKey() {
 async function markKeySuccess(apiKey) {
     const keyHash = hashKey(apiKey);
     const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
-    if (vault) {
-        await vault.bucket('ai').update('key_state', async (state = {}) => {
-            const entry = state[keyHash];
-            if (entry && entry.status === 'cooldown') {
-                entry.status = 'ok';
-                entry.retryAfterTs = 0;
-            }
-            return state;
-        });
-        return;
-    }
-    const state = await getKeyState();
-    const entry = state[keyHash];
-    if (entry && entry.status === 'cooldown') {
-        entry.status = 'ok';
-        entry.retryAfterTs = 0;
-        state[keyHash] = entry;
-        await chrome.storage.local.set({ [STORAGE_KEYS.AI_KEY_STATE]: state });
-    }
+    if (!vault) return;
+
+    await vault.bucket('ai').update('key_state', async (state = {}) => {
+        const entry = state[keyHash];
+        if (entry && entry.status === 'cooldown') {
+            entry.status = 'ok';
+            entry.retryAfterTs = 0;
+        }
+        return state;
+    });
 }
 
 /**
@@ -258,8 +199,12 @@ async function getStoredApiKey() {
  * @returns {Promise<string>}
  */
 async function getStoredModel() {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.MODEL]);
-    return result[STORAGE_KEYS.MODEL] || DEFAULT_GEMINI_MODEL;
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (vault) {
+        const config = await vault.bucket('system').get('config');
+        return config?.ai_model || DEFAULT_GEMINI_MODEL;
+    }
+    return DEFAULT_GEMINI_MODEL;
 }
 
 /**
@@ -292,31 +237,23 @@ async function saveApiKeys(apiKeys, model = DEFAULT_GEMINI_MODEL) {
         .filter(Boolean)
         .slice(0, MAX_API_KEYS);
 
-    if (list.length === 0) return;
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (!vault) return false;
 
-    // Encrypt Keys if service is available
-    let keysToSave = list;
-    const encryptionService = globalThis.EncryptionService || (typeof EncryptionService !== 'undefined' ? EncryptionService : null);
-    const encryptionAAD = globalThis.EncryptionAAD || (typeof EncryptionAAD !== 'undefined' ? EncryptionAAD : null);
+    await vault.waitUntilReady?.();
 
-    if (encryptionService) {
-        const aad = encryptionAAD.aiKey();
-        try {
-            keysToSave = await Promise.all(
-                list.map(k => encryptionService.encrypt(k, aad))
-            );
-        } catch (err) {
-            console.error('[AIClient] Encryption failed during save:', err);
-            throw err;
-        }
-    }
+    // Save to AI bucket (Encryption handled by Vault)
+    // We allow an empty list if the user wants to clear all keys
+    await vault.bucket('ai').set('keys', list);
 
-    await chrome.storage.local.set({
-        [STORAGE_KEYS.API_KEYS]: keysToSave,
-        [STORAGE_KEYS.API_KEY]: keysToSave[0],
-        [STORAGE_KEYS.MODEL]: model || DEFAULT_GEMINI_MODEL,
-        [STORAGE_KEYS.PROVIDER]: 'gemini'
+    // Save model to System bucket
+    await vault.bucket('system').update('config', async (config = {}) => {
+        config.ai_model = model || DEFAULT_GEMINI_MODEL;
+        return config;
     });
+
+    console.log(`[AIClient] Saved ${list.length} API keys to vault.`);
+    return true;
 }
 
 /**
@@ -324,14 +261,15 @@ async function saveApiKeys(apiKeys, model = DEFAULT_GEMINI_MODEL) {
  * @returns {Promise<void>}
  */
 async function removeApiKey() {
-    await chrome.storage.local.remove([
-        STORAGE_KEYS.API_KEY,
-        STORAGE_KEYS.API_KEYS,
-        STORAGE_KEYS.MODEL,
-        STORAGE_KEYS.PROVIDER,
-        STORAGE_KEYS.AI_KEY_STATE,
-        STORAGE_KEYS.LAST_USED_INDEX
-    ]);
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (!vault) return;
+
+    await vault.bucket('ai').remove('keys');
+    await vault.bucket('ai').remove('key_state');
+    await vault.bucket('system').update('ai_meta', async (meta = {}) => {
+        meta.last_used_index = -1;
+        return meta;
+    }, false);
 }
 
 /**
@@ -345,6 +283,9 @@ async function validateApiKey(apiKey, modelName = DEFAULT_GEMINI_MODEL) {
         return { valid: false, error: 'API key is empty' };
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     try {
         const response = await fetch(
             `${GEMINI_API_BASE}/models/${modelName}:generateContent?key=${apiKey}`,
@@ -354,9 +295,12 @@ async function validateApiKey(apiKey, modelName = DEFAULT_GEMINI_MODEL) {
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: 'Say "OK"' }] }],
                     generationConfig: { maxOutputTokens: 5 }
-                })
+                }),
+                signal: controller.signal
             }
         );
+
+        clearTimeout(timeoutId);
 
         if (response.ok) return { valid: true };
 
@@ -368,7 +312,7 @@ async function validateApiKey(apiKey, modelName = DEFAULT_GEMINI_MODEL) {
             if (errorMessage.includes('not found')) return { valid: false, error: `Model '${modelName}' not found or not supported` };
         }
         if (response.status === 403) return { valid: false, error: 'API key is invalid or has been revoked' };
-        if (response.status === 429) return { valid: false, error: 'Rate limit exceeded. Try again later.' };
+        if (response.status === 429) return { valid: false, error: `Rate limit: ${errorMessage}` };
 
         return { valid: false, error: errorMessage };
     } catch (error) {
@@ -406,15 +350,29 @@ async function getAIStatus() {
  * @returns {Promise<{ready: boolean, hasApiKey: boolean, hasResume: boolean}>}
  */
 async function checkSetupStatus() {
-    const keys = await getApiKeys();
-    const { resumeData } = await chrome.storage.local.get(['resumeData']);
-    const hasApiKey = keys.length > 0;
-    const hasResume = !!(resumeData && Object.keys(resumeData).length > 0);
-    return {
-        ready: hasApiKey && hasResume,
-        hasApiKey,
-        hasResume
-    };
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (!vault) return { ready: false, hasApiKey: false, hasResume: false, error: 'Vault not found' };
+
+    try {
+        await vault.waitUntilReady?.();
+
+        const keys = await getApiKeys();
+        const resumeData = await vault.bucket('identity').get('resumeData');
+        const profile = await vault.bucket('identity').get('profile');
+
+        const hasApiKey = Array.isArray(keys) && keys.length > 0;
+        const hasResume = (resumeData && Object.keys(resumeData).length > 0) || (profile && Object.keys(profile).length > 0);
+
+        return {
+            ready: hasApiKey && hasResume,
+            hasApiKey,
+            hasResume,
+            vaultReady: vault.initialized
+        };
+    } catch (err) {
+        console.error('[AIClient] checkSetupStatus failed:', err);
+        return { ready: false, hasApiKey: false, hasResume: false, error: err.message };
+    }
 }
 
 /**

@@ -98,7 +98,7 @@ function renderApiKeysList(keys) {
             const statusEl = document.getElementById('api-keys-status');
             setStatus(statusEl, 'Validating...', 'loading');
             const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash';
-            const result = await window.AIClient.validateApiKey(key, model);
+            const result = await globalThis.AIClient.validateApiKey(key, model);
             if (result.valid) setStatus(statusEl, `✓ Key ${index + 1} is valid`, 'success');
             else setStatus(statusEl, `✗ Key ${index + 1}: ${result.error}`, 'error');
         });
@@ -114,10 +114,10 @@ function renderApiKeysList(keys) {
 
 async function saveApiKeysToStorage(keys) {
     const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash';
-    if (window.AIClient?.saveApiKeys) {
-        await window.AIClient.saveApiKeys(keys, model);
+    if (globalThis.AIClient?.saveApiKeys) {
+        await globalThis.AIClient.saveApiKeys(keys, model);
     } else if (keys.length > 0) {
-        await window.AIClient.saveApiKey(keys[0], model);
+        await globalThis.AIClient.saveApiKey(keys[0], model);
     }
 }
 
@@ -134,19 +134,19 @@ function initApiKeySection() {
                 setStatus(statusEl, 'Enter a key to add', 'error');
                 return;
             }
-            const keys = await window.AIClient.getApiKeys?.() || [];
+            const keys = await globalThis.AIClient.getApiKeys?.() || [];
             if (keys.length >= MAX_API_KEYS_UI) {
                 setStatus(statusEl, `Maximum ${MAX_API_KEYS_UI} keys allowed`, 'error');
                 return;
             }
             setStatus(statusEl, 'Validating...', 'loading');
             const model = apiModelInput?.value?.trim() || 'gemini-2.5-flash';
-            const result = await window.AIClient.validateApiKey(key, model);
+            const result = await globalThis.AIClient.validateApiKey(key, model);
             if (result.valid) {
                 let newKeys = keys.filter(k => k !== key);
                 newKeys.push(key);
                 newKeys = newKeys.slice(0, MAX_API_KEYS_UI);
-                await window.AIClient.saveApiKeys(newKeys, model);
+                await globalThis.AIClient.saveApiKeys(newKeys, model);
                 renderApiKeysList(newKeys);
                 newKeyInput.value = '';
                 setStatus(statusEl, `✓ Key added (${newKeys.length}/${MAX_API_KEYS_UI})`, 'success');
@@ -375,7 +375,7 @@ function showExperienceModal(index = null) {
     // Save handler
     document.getElementById('modal-save').onclick = () => {
         const newData = {
-            id: data.id || window.ResumeManager.generateId(),
+            id: data.id || globalThis.ResumeManager.generateId(),
             title: document.getElementById('modal-title-input').value.trim(),
             company: document.getElementById('modal-company').value.trim(),
             location: document.getElementById('modal-location').value.trim(),
@@ -515,7 +515,7 @@ function showEducationModal(index = null) {
 
     document.getElementById('modal-save').onclick = () => {
         const newData = {
-            id: data.id || window.ResumeManager.generateId(),
+            id: data.id || globalThis.ResumeManager.generateId(),
             school: document.getElementById('modal-school').value.trim(),
             degree: document.getElementById('modal-degree').value.trim(),
             field: document.getElementById('modal-field').value.trim(),
@@ -642,7 +642,7 @@ function showProjectModal(index = null) {
     document.getElementById('modal-save').onclick = () => {
         const techInput = document.getElementById('modal-tech').value;
         const newData = {
-            id: data.id || window.ResumeManager.generateId(),
+            id: data.id || globalThis.ResumeManager.generateId(),
             name: document.getElementById('modal-name').value.trim(),
             description: document.getElementById('modal-description').value.trim(),
             technologies: techInput ? techInput.split(',').map(s => s.trim()).filter(s => s) : [],
@@ -727,11 +727,11 @@ function initButtons() {
         });
     }
 
-        if (confirmDeleteBtn) {
+    if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener('click', async () => {
             if (deleteConfirmInput.value === 'DELETE') {
-                await window.ResumeManager.clearResumeData();
-                await window.AIClient.removeApiKey();
+                await globalThis.ResumeManager.clearResumeData();
+                await globalThis.AIClient.removeApiKey();
 
                 // Reset UI
                 const newKeyEl = document.getElementById('api-key-new');
@@ -770,8 +770,8 @@ function initButtons() {
 async function loadAllData() {
     try {
         // Load API keys (round-robin list)
-        const apiKeys = await window.AIClient.getApiKeys?.() || [];
-        const apiModel = await window.AIClient.getStoredModel();
+        const apiKeys = await globalThis.AIClient.getApiKeys?.() || [];
+        const apiModel = await globalThis.AIClient.getStoredModel();
 
         if (apiKeys.length > 0) {
             renderApiKeysList(apiKeys);
@@ -781,7 +781,7 @@ async function loadAllData() {
         }
 
         // Load resume data
-        const data = await window.ResumeManager.getResumeData();
+        const data = await globalThis.ResumeManager.getResumeData();
 
         if (!data) {
             console.log('No existing resume data found');
@@ -891,13 +891,13 @@ async function saveAllData() {
         };
 
         // Save to storage
-        await window.ResumeManager.saveResumeData(resumeData);
+        await globalThis.ResumeManager.saveResumeData(resumeData);
 
         // Save API keys and model (keys list updated via Add Key; ensure model is saved)
         const apiModel = document.getElementById('api-model').value.trim() || 'gemini-2.5-flash';
-        const apiKeys = await window.AIClient.getApiKeys?.() || [];
+        const apiKeys = await globalThis.AIClient.getApiKeys?.() || [];
         if (apiKeys.length > 0) {
-            await window.AIClient.saveApiKeys(apiKeys, apiModel);
+            await globalThis.AIClient.saveApiKeys(apiKeys, apiModel);
         }
 
         showToast('All changes saved!', 'success');
@@ -933,7 +933,7 @@ function getRadioValue(name) {
 }
 
 async function updateDataStatus() {
-    const status = await window.AIClient.checkSetupStatus();
+    const status = await globalThis.AIClient.checkSetupStatus();
     const statusEl = document.getElementById('data-status');
 
     const parts = [];
@@ -1043,7 +1043,7 @@ function initAIImport() {
 
         startLoading();
         try {
-            const result = await window.ResumeManager.parseResumeFile(selectedFileBase64);
+            const result = await globalThis.ResumeManager.parseResumeFile(selectedFileBase64);
 
             if (result && result.success) {
                 await distributeParsedData(result.data);
