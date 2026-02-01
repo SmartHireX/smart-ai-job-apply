@@ -27,17 +27,17 @@ function loadData() {
 }
 
 async function evaluate() {
-    console.log('📊 Starting Detailed Evaluation of Neural Classifier V8...');
+    // console.log('📊 Starting Detailed Evaluation of Neural Classifier V8...');
 
     // Load Model
     const weights = loadModel();
     const classifier = new NeuralClassifierV8({ fieldTypes: FieldTypes });
     classifier.loadWeights(weights);
-    console.log('✅ Model loaded.');
+    // console.log('✅ Model loaded.');
 
     // Load Data
     const data = loadData();
-    console.log(`✅ Data loaded: ${data.length} samples.`);
+    // console.log(`✅ Data loaded: ${data.length} samples.`);
 
     // Metrics Containers
     const globalMetrics = { total: 0, top1: 0, top3: 0 };
@@ -51,7 +51,7 @@ async function evaluate() {
         });
     }
 
-    console.log('🚀 Running inference...');
+    // console.log('🚀 Running inference...');
 
     // Evaluate
     for (const sample of data) {
@@ -102,18 +102,18 @@ async function evaluate() {
     }
 
     // Report
-    console.log('\n=============================================================');
-    console.log('🌍 OVERALL METRICS (Full Balanced Dataset)');
-    console.log('=============================================================');
-    console.log(`Total Samples: ${globalMetrics.total}`);
-    console.log(`Top-1 Accuracy: ${((globalMetrics.top1 / globalMetrics.total) * 100).toFixed(2)}%`);
-    console.log(`Top-3 Accuracy: ${((globalMetrics.top3 / globalMetrics.total) * 100).toFixed(2)}%`);
+    // console.log('\n=============================================================');
+    // console.log('🌍 OVERALL METRICS (Full Balanced Dataset)');
+    // console.log('=============================================================');
+    // console.log(`Total Samples: ${globalMetrics.total}`);
+    // console.log(`Top-1 Accuracy: ${((globalMetrics.top1 / globalMetrics.total) * 100).toFixed(2)}%`);
+    // console.log(`Top-3 Accuracy: ${((globalMetrics.top3 / globalMetrics.total) * 100).toFixed(2)}%`);
 
-    console.log('\n=============================================================');
-    console.log('📋 PER-CLASS BREAKDOWN (Sorted by Top-1 Accuracy)');
-    console.log('=============================================================');
-    console.log(`| ${'Field Class'.padEnd(30)} | ${'Count'.padStart(5)} | ${'Top-1'.padStart(7)} | ${'Top-3'.padStart(7)} |`);
-    console.log('|' + '-'.repeat(32) + '|' + '-'.repeat(7) + '|' + '-'.repeat(9) + '|' + '-'.repeat(9) + '|');
+    // console.log('\n=============================================================');
+    // console.log('📋 PER-CLASS BREAKDOWN (Sorted by Top-1 Accuracy)');
+    // console.log('=============================================================');
+    // console.log(`| ${'Field Class'.padEnd(30)} | ${'Count'.padStart(5)} | ${'Top-1'.padStart(7)} | ${'Top-3'.padStart(7)} |`);
+    // console.log('|' + '-'.repeat(32) + '|' + '-'.repeat(7) + '|' + '-'.repeat(9) + '|' + '-'.repeat(9) + '|');
 
     const sortedClasses = Object.entries(classMetrics)
         .map(([cls, m]) => ({
@@ -126,7 +126,7 @@ async function evaluate() {
         .sort((a, b) => b.acc1 - a.acc1);
 
     for (const item of sortedClasses) {
-        console.log(
+        // console.log(
             `| ${item.cls.padEnd(30)} | ` +
             `${item.total.toString().padStart(5)} | ` +
             `${item.acc1.toFixed(1).padStart(6)}% | ` +
@@ -137,8 +137,8 @@ async function evaluate() {
     // Low performance alert
     const weakClasses = sortedClasses.filter(x => x.acc1 < 50);
     if (weakClasses.length > 0) {
-        console.log('\n⚠️  Classes below 50% Top-1 Accuracy:');
-        weakClasses.forEach(c => console.log(`   - ${c.cls}: ${c.acc1.toFixed(1)}%`));
+        // console.log('\n⚠️  Classes below 50% Top-1 Accuracy:');
+        weakClasses.forEach(c => // console.log(`   - ${c.cls}: ${c.acc1.toFixed(1)}%`));
     }
 }
 

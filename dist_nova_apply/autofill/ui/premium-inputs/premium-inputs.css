@@ -1,0 +1,89 @@
+/* Premium Radio, Checkbox, Select Styles - Elite Enterprise */
+.sh-nova-9x-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sh-nova-9x-radio-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    /* rounded-sm */
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+}
+
+.sh-nova-9x-radio-option:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.sh-nova-9x-radio-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #0a66c2;
+    cursor: pointer;
+}
+
+.sh-nova-9x-radio-label {
+    font-size: 13px;
+    color: #475569;
+}
+
+/* Premium Checkbox */
+.sh-nova-9x-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    /* rounded-sm */
+    cursor: pointer;
+    background: white;
+    transition: all 0.2s;
+}
+
+.sh-nova-9x-checkbox:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.sh-nova-9x-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #0a66c2;
+    cursor: pointer;
+}
+
+.sh-nova-9x-checkbox-label {
+    font-size: 13px;
+    color: #475569;
+    font-weight: 500;
+}
+
+/* Premium Select */
+.sh-nova-9x-select,
+.sh-nova-9x-date,
+.sh-nova-9x-number,
+.sh-nova-9x-textarea {
+    padding: 8px 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 4px !important;
+    /* rounded-sm */
+    font-size: 13px !important;
+    background: white !important;
+}
+
+.sh-nova-9x-select:focus,
+.sh-nova-9x-date:focus,
+.sh-nova-9x-number:focus,
+.sh-nova-9x-textarea:focus {
+    /* No focus styles */
+    outline: none !important;
+}

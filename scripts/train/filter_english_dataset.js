@@ -29,7 +29,7 @@ function isEnglish(text) {
 }
 
 function cleanDataset() {
-    console.log('🧹 Filtering Dataset for English-Only compliance...');
+    // console.log('🧹 Filtering Dataset for English-Only compliance...');
 
     if (!fs.existsSync(DATA_PATH)) {
         console.error('❌ Dataset not found:', DATA_PATH);
@@ -51,11 +51,11 @@ function cleanDataset() {
     });
 
     const removedCount = initialCount - filteredData.length;
-    console.log(`✅ Removed ${removedCount} non-English samples.`);
-    console.log(`📉 Dataset reduced: ${initialCount} -> ${filteredData.length}`);
+    // console.log(`✅ Removed ${removedCount} non-English samples.`);
+    // console.log(`📉 Dataset reduced: ${initialCount} -> ${filteredData.length}`);
 
     fs.writeFileSync(DATA_PATH, JSON.stringify(filteredData, null, 2));
-    console.log('💾 Saved cleaned dataset.');
+    // console.log('💾 Saved cleaned dataset.');
 }
 
 cleanDataset();

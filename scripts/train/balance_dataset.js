@@ -29,7 +29,7 @@ if (!fs.existsSync(INPUT_PATH)) {
 }
 
 const data = JSON.parse(fs.readFileSync(INPUT_PATH, 'utf8'));
-console.log(`📂 Loaded ${data.length} samples`);
+// console.log(`📂 Loaded ${data.length} samples`);
 
 // Normalization Map to align with FieldTypes.ORDERED_CLASSES
 const LABEL_MAP = {
@@ -57,7 +57,7 @@ data.forEach(s => {
     buckets[label].push(s);
 });
 
-console.log(`📊 Found ${Object.keys(buckets).length} classes`);
+// console.log(`📊 Found ${Object.keys(buckets).length} classes`);
 
 let balanced = [];
 let oversampledCount = 0;
@@ -89,16 +89,16 @@ for (const [label, samples] of Object.entries(buckets)) {
     }
 
     balanced = balanced.concat(selected);
-    console.log(`   ${label.padEnd(30)}: ${count.toString().padStart(4)} -> ${selected.length.toString().padStart(4)}`);
+    // console.log(`   ${label.padEnd(30)}: ${count.toString().padStart(4)} -> ${selected.length.toString().padStart(4)}`);
 }
 
 // Final shuffle of the entire dataset
 balanced = shuffleArray(balanced);
 
-console.log('-----------------------------------');
-console.log(`✅ Balanced dataset size: ${balanced.length}`);
-console.log(`   Oversampled added: ${oversampledCount}`);
-console.log(`   Undersampled removed: ${undersampledCount}`);
+// console.log('-----------------------------------');
+// console.log(`✅ Balanced dataset size: ${balanced.length}`);
+// console.log(`   Oversampled added: ${oversampledCount}`);
+// console.log(`   Undersampled removed: ${undersampledCount}`);
 
 fs.writeFileSync(OUTPUT_PATH, JSON.stringify(balanced, null, 2));
-console.log(`💾 Saved to: ${OUTPUT_PATH}`);
+// console.log(`💾 Saved to: ${OUTPUT_PATH}`);

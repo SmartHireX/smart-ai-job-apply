@@ -52,7 +52,7 @@ const CONFIG = {
 // ============================================================================
 
 function loadData() {
-    console.log('📂 Loading training data...');
+    // console.log('📂 Loading training data...');
 
     if (!fs.existsSync(CONFIG.trainDataPath)) {
         console.error(`❌ Data file not found: ${CONFIG.trainDataPath}`);
@@ -60,11 +60,11 @@ function loadData() {
     }
 
     const data = JSON.parse(fs.readFileSync(CONFIG.trainDataPath, 'utf8'));
-    console.log(`   Loaded ${data.length} samples`);
+    // console.log(`   Loaded ${data.length} samples`);
 
     // Vectorize Features
     const featureExtractor = new FeatureExtractor();
-    console.log('   Vectorizing features...');
+    // console.log('   Vectorizing features...');
 
     data.forEach(sample => {
         // sample.features is currently raw { name, id, label... }
@@ -93,7 +93,7 @@ function splitData(data) {
     const valData = shuffled.slice(trainSize, trainSize + valSize);
     const testData = shuffled.slice(trainSize + valSize);
 
-    console.log(`   Train: ${trainData.length}, Validation: ${valData.length}, Test: ${testData.length}`);
+    // console.log(`   Train: ${trainData.length}, Validation: ${valData.length}, Test: ${testData.length}`);
     return { trainData, valData, testData };
 }
 
@@ -186,12 +186,12 @@ function evaluate(classifier, data) {
 // ============================================================================
 
 async function train() {
-    console.log('\n🧠 NeuralClassifier V8 Training (Multi-Label / Weighted BCE)');
-    console.log('============================================================');
-    console.log(`  • Learning Rate: ${CONFIG.learningRate}`);
-    console.log(`  • Loss Weights: Pos=${CONFIG.w_pos}, Neg=${CONFIG.w_neg}`);
-    console.log(`  • Batch Size: ${CONFIG.batchSize}`);
-    console.log(`  • Validation: Top-3 Accuracy Focus\n`);
+    // console.log('\n🧠 NeuralClassifier V8 Training (Multi-Label / Weighted BCE)');
+    // console.log('============================================================');
+    // console.log(`  • Learning Rate: ${CONFIG.learningRate}`);
+    // console.log(`  • Loss Weights: Pos=${CONFIG.w_pos}, Neg=${CONFIG.w_neg}`);
+    // console.log(`  • Batch Size: ${CONFIG.batchSize}`);
+    // console.log(`  • Validation: Top-3 Accuracy Focus\n`);
 
     const data = loadData();
     const { trainData, valData, testData } = splitData(data);
@@ -214,7 +214,7 @@ async function train() {
     let patienceCounter = 0;
     const outputSize = classifier._W3[0].length;
 
-    console.log(`\n🚀 Starting training for ${CONFIG.epochs} epochs...\n`);
+    // console.log(`\n🚀 Starting training for ${CONFIG.epochs} epochs...\n`);
     const startTime = Date.now();
 
     for (let epoch = 0; epoch < CONFIG.epochs; epoch++) {
@@ -298,7 +298,7 @@ async function train() {
 
         // Log
         const epochTime = ((Date.now() - epochStart) / 1000).toFixed(1);
-        console.log(
+        // console.log(
             `E${String(epoch + 1).padStart(3)} | ` +
             `Loss: ${avgTrainLoss.toFixed(4)} | ` +
             `Val Loss: ${valMetrics.loss.toFixed(4)} | ` +
@@ -319,13 +319,13 @@ async function train() {
             bestValTop3 = valMetrics.top3Acc; // Keep tracking for info
             bestWeights = classifier.exportWeights();
             patienceCounter = 0;
-            console.log('   ⭐ New Best Model (Lowest Loss)');
+            // console.log('   ⭐ New Best Model (Lowest Loss)');
         } else {
             patienceCounter++;
         }
 
         if (patienceCounter >= CONFIG.patience) {
-            console.log('\n⏹️  Early stopping triggered.');
+            // console.log('\n⏹️  Early stopping triggered.');
             break;
         }
     }
@@ -333,16 +333,16 @@ async function train() {
     // Final Save
     if (bestWeights) {
         classifier.loadWeights(bestWeights);
-        console.log(`\n💾 Saving best model (Top-3: ${(bestValTop3 * 100).toFixed(2)}%)...`);
+        // console.log(`\n💾 Saving best model (Top-3: ${(bestValTop3 * 100).toFixed(2)}%)...`);
     }
     fs.writeFileSync(CONFIG.outputPath, JSON.stringify(classifier.exportWeights(), null, 2));
 
     // Test Set Evaluation
-    console.log('\n📊 Final Test Evaluation:');
+    // console.log('\n📊 Final Test Evaluation:');
     const testMetrics = evaluate(classifier, testData);
-    console.log(`   Top-1 Accuracy: ${(testMetrics.top1Acc * 100).toFixed(2)}%`);
-    console.log(`   Top-3 Accuracy: ${(testMetrics.top3Acc * 100).toFixed(2)}%  <-- PRIMARY METRIC`);
-    console.log(`   Test Loss:      ${testMetrics.loss.toFixed(4)}`);
+    // console.log(`   Top-1 Accuracy: ${(testMetrics.top1Acc * 100).toFixed(2)}%`);
+    // console.log(`   Top-3 Accuracy: ${(testMetrics.top3Acc * 100).toFixed(2)}%  <-- PRIMARY METRIC`);
+    // console.log(`   Test Loss:      ${testMetrics.loss.toFixed(4)}`);
 }
 
 train().catch(console.error);

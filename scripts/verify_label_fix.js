@@ -46,7 +46,7 @@ function getVisualLabel(element, domWalk) {
 }
 
 async function runTests() {
-    console.log('🔍 Starting Workday Labeling Verification...\n');
+    // console.log('🔍 Starting Workday Labeling Verification...\n');
 
     // Mock Workday Start Date Input
     const mockInput = {
@@ -70,12 +70,12 @@ async function runTests() {
         }
     };
 
-    console.log('Testing labeling for Start Date Year input...');
+    // console.log('Testing labeling for Start Date Year input...');
     const label = getVisualLabel(mockInput, domWalk);
-    console.log('Final Label:', label);
+    // console.log('Final Label:', label);
 
     if (label.includes('From')) {
-        console.log('✅ MATCH: Label successfully climbed to "From"');
+        // console.log('✅ MATCH: Label successfully climbed to "From"');
     } else {
         console.error('❌ FAIL: Label stuck on noise or fallback (Got: ' + label + ')');
     }

@@ -12,7 +12,7 @@ const FILES_TO_CHECK = [
 ];
 
 async function cleanFiles() {
-    console.log('🧹 Starting cleanup of "work_style" from dataset files...');
+    // console.log('🧹 Starting cleanup of "work_style" from dataset files...');
     let totalRemoved = 0;
 
     // 1. Process batch files in train-dataset/
@@ -33,7 +33,7 @@ async function cleanFiles() {
         }
     }
 
-    console.log(`\n✨ Cleanup complete. Removed ${totalRemoved} samples labeled "work_style".`);
+    // console.log(`\n✨ Cleanup complete. Removed ${totalRemoved} samples labeled "work_style".`);
 
     function processFile(filePath) {
         try {
@@ -47,9 +47,9 @@ async function cleanFiles() {
                 const removed = originalLength - cleanedData.length;
                 totalRemoved += removed;
                 fs.writeFileSync(filePath, JSON.stringify(cleanedData, null, 2));
-                console.log(`   ✅ Cleaned ${path.basename(filePath)}: Removed ${removed} samples`);
+                // console.log(`   ✅ Cleaned ${path.basename(filePath)}: Removed ${removed} samples`);
             } else {
-                // console.log(`   (No changes) ${path.basename(filePath)}`);
+                // // console.log(`   (No changes) ${path.basename(filePath)}`);
             }
         } catch (e) {
             console.error(`   ❌ Error processing ${path.basename(filePath)}:`, e.message);

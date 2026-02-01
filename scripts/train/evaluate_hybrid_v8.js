@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 async function evaluateHybrid() {
-    console.log('🚀 Starting HybridClassifier V8 Evaluation...');
+    // console.log('🚀 Starting HybridClassifier V8 Evaluation...');
 
     // 1. Initialize Components
     const featureExtractor = new FeatureExtractor();
@@ -19,7 +19,7 @@ async function evaluateHybrid() {
     // Load trained model
     const modelPath = path.join(__dirname, '../../autofill/domains/inference/model_v8.json');
     if (fs.existsSync(modelPath)) {
-        console.log('📦 Loading V8 Model...');
+        // console.log('📦 Loading V8 Model...');
         const modelData = JSON.parse(fs.readFileSync(modelPath, 'utf8'));
         await neuralClassifier.loadWeights(modelData);
     } else {
@@ -37,7 +37,7 @@ async function evaluateHybrid() {
 
     // 3. Load Dataset (Use Augmented Dataset for Raw Attributes)
     const datasetPath = path.join(__dirname, 'train-dataset-augmented.json');
-    console.log('📂 Loading Dataset:', datasetPath);
+    // console.log('📂 Loading Dataset:', datasetPath);
     const data = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
 
     // 4. Run Inference
@@ -57,7 +57,7 @@ async function evaluateHybrid() {
         both_failed: 0
     };
 
-    console.log(`⚡ Processing ${data.length} samples...`);
+    // console.log(`⚡ Processing ${data.length} samples...`);
 
     // Using a subset for speed if needed, but full run is better
     const samples = data;
@@ -99,15 +99,15 @@ async function evaluateHybrid() {
         // Only log Both Failed if the ground truth was ACTUALLY a specific class we missed
         if (result.agreementType === 'both_failed' && groundTruth !== 'unknown' && sourceStats.both_failed_meaningful <= 20) {
             sourceStats.both_failed_meaningful = (sourceStats.both_failed_meaningful || 0) + 1;
-            console.log(`\n❌ BOTH FAIL #${sourceStats.both_failed_meaningful} (Truth: ${groundTruth}):`);
-            console.log(`   Attributes: name="${field.name}", id="${field.id}", label="${field.label}", placeholder="${field.placeholder}"`);
+            // console.log(`\n❌ BOTH FAIL #${sourceStats.both_failed_meaningful} (Truth: ${groundTruth}):`);
+            // console.log(`   Attributes: name="${field.name}", id="${field.id}", label="${field.label}", placeholder="${field.placeholder}"`);
             // Re-run for debug
             const features = await hybrid._extractFeatures(field);
             const neuralRaw = await neuralClassifier.predict(features);
             const heuristicRaw = await heuristicEngine.classify(field);
 
-            console.log(`   Neural: ${JSON.stringify(neuralRaw)}`);
-            console.log(`   Heuristic: ${JSON.stringify(heuristicRaw)}`);
+            // console.log(`   Neural: ${JSON.stringify(neuralRaw)}`);
+            // console.log(`   Heuristic: ${JSON.stringify(heuristicRaw)}`);
         }
 
         if (total % 1000 === 0) {
@@ -116,14 +116,14 @@ async function evaluateHybrid() {
     }
 
     const duration = (Date.now() - startTime) / 1000;
-    console.log(`\n\n✅ Evaluation Complete in ${duration.toFixed(2)}s`);
-    console.log(`--------------------------------------------------`);
-    console.log(`Total Samples: ${total}`);
-    console.log(`Accuracy:      ${((correct / total) * 100).toFixed(2)}% (${correct}/${total})`);
-    console.log(`--------------------------------------------------`);
-    console.log(`Source Breakdown:`);
+    // console.log(`\n\n✅ Evaluation Complete in ${duration.toFixed(2)}s`);
+    // console.log(`--------------------------------------------------`);
+    // console.log(`Total Samples: ${total}`);
+    // console.log(`Accuracy:      ${((correct / total) * 100).toFixed(2)}% (${correct}/${total})`);
+    // console.log(`--------------------------------------------------`);
+    // console.log(`Source Breakdown:`);
     Object.entries(sourceStats).forEach(([key, val]) => {
-        if (val > 0) console.log(`  ${key.padEnd(30)}: ${val} (${((val / total) * 100).toFixed(1)}%)`);
+        if (val > 0) // console.log(`  ${key.padEnd(30)}: ${val} (${((val / total) * 100).toFixed(1)}%)`);
     });
 }
 

@@ -36,13 +36,13 @@ global.window.chrome = global.chrome;
 const InteractionLog = require('../autofill/domains/heuristics/InteractionLog.js');
 
 async function runTests() {
-    console.log('🔍 Starting Date Bug Fix Verification...\n');
+    // console.log('🔍 Starting Date Bug Fix Verification...\n');
     let passed = 0;
     let failed = 0;
 
     function assert(condition, message) {
         if (condition) {
-            console.log(`✅ MATCH: ${message}`);
+            // console.log(`✅ MATCH: ${message}`);
             passed++;
         } else {
             console.error(`❌ FAIL: ${message}`);
@@ -74,7 +74,7 @@ async function runTests() {
     });
 
     // --- CASE 1: Fuzzy Match within Row (job_end_date vs date_end) ---
-    console.log('\n--- Case 1: Fuzzy Match within Section Row ---');
+    // console.log('\n--- Case 1: Fuzzy Match within Section Row ---');
     const fieldEnd = {
         name: 'work_1_end',
         label: 'End Date',
@@ -86,14 +86,14 @@ async function runTests() {
     };
 
     const resultEnd = await InteractionLog.getCachedValue(fieldEnd, 'End Date');
-    console.log('Result for job_end_date:', resultEnd);
+    // console.log('Result for job_end_date:', resultEnd);
 
     assert(resultEnd !== null, 'Should find a value');
     assert(resultEnd?.value === '22/11', `Value should be "22/11" (Got: ${JSON.stringify(resultEnd?.value)})`);
     assert(resultEnd?.source === 'section_row_cache_fuzzy', `Source should be "section_row_cache_fuzzy" (Got: ${resultEnd?.source})`);
 
     // --- CASE 2: No Match in Row -> Should return null (NO FALLTHROUGH) ---
-    console.log('\n--- Case 2: No Match in Row (Sectional Guard) ---');
+    // console.log('\n--- Case 2: No Match in Row (Sectional Guard) ---');
     const fieldStart = {
         name: 'work_1_start',
         label: 'Start Date',
@@ -105,12 +105,12 @@ async function runTests() {
     };
 
     const resultStart = await InteractionLog.getCachedValue(fieldStart, 'Start Date');
-    console.log('Result for job_start_date (missing in row):', resultStart);
+    // console.log('Result for job_start_date (missing in row):', resultStart);
 
     assert(resultStart === null, 'Should return null for missing field in row instead of falling through to generic matcher');
     assert(typeof resultStart !== 'object' || resultStart === null, 'Should NOT return the whole row object');
 
-    console.log(`\n🎉 Verification Complete: ${passed} Passed, ${failed} Failed`);
+    // console.log(`\n🎉 Verification Complete: ${passed} Passed, ${failed} Failed`);
     process.exit(failed > 0 ? 1 : 0);
 }
 

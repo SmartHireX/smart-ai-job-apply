@@ -19,8 +19,8 @@ try {
     const weights = JSON.parse(fs.readFileSync(weightsPath, 'utf8'));
 
     async function runDebug() {
-        console.log('🔍 Final Model Verification (V8)...');
-        console.log(`Weights Timestamp: ${weights.timestamp ? new Date(weights.timestamp).toISOString() : 'N/A'}`);
+        // console.log('🔍 Final Model Verification (V8)...');
+        // console.log(`Weights Timestamp: ${weights.timestamp ? new Date(weights.timestamp).toISOString() : 'N/A'}`);
 
         const featureExtractor = new FeatureExtractor();
         const classifier = new NeuralClassifierV8({
@@ -34,7 +34,7 @@ try {
             return;
         }
 
-        console.log('✅ Weights loaded successfully.');
+        // console.log('✅ Weights loaded successfully.');
 
         // Test Case: Last Name (Isolated)
         const field = {
@@ -47,18 +47,18 @@ try {
             type: 'text'
         };
 
-        console.log(`\n----------------------------------------`);
-        console.log(`Test Field 1: ${field.label}`);
+        // console.log(`\n----------------------------------------`);
+        // console.log(`Test Field 1: ${field.label}`);
         const features = featureExtractor.extract(field);
         const result = classifier.predict(features);
 
-        console.log(`Predicted Label: ${result.label}`);
-        console.log(`Confidence:      ${result.confidence.toFixed(4)}`);
+        // console.log(`Predicted Label: ${result.label}`);
+        // console.log(`Confidence:      ${result.confidence.toFixed(4)}`);
 
         if (result.confidence > 0.35 && result.label === 'last_name') {
-            console.log('✅ SUCCESS: Model correctly identifies Last Name without sibling context.');
+            // console.log('✅ SUCCESS: Model correctly identifies Last Name without sibling context.');
         } else {
-            console.log(`❌ FAILURE: Expected 'last_name', got '${result.label}' or low confidence.`);
+            // console.log(`❌ FAILURE: Expected 'last_name', got '${result.label}' or low confidence.`);
         }
 
         // Test Case: Email (Isolated)
@@ -72,16 +72,16 @@ try {
             type: 'email'
         };
 
-        console.log(`\n----------------------------------------`);
-        console.log(`Test Field 2: ${emailField.label}`);
+        // console.log(`\n----------------------------------------`);
+        // console.log(`Test Field 2: ${emailField.label}`);
         const emailResult = classifier.predict(featureExtractor.extract(emailField));
-        console.log(`Predicted Label: ${emailResult.label}`);
-        console.log(`Confidence:      ${emailResult.confidence.toFixed(4)}`);
+        // console.log(`Predicted Label: ${emailResult.label}`);
+        // console.log(`Confidence:      ${emailResult.confidence.toFixed(4)}`);
 
         if (emailResult.confidence > 0.35 && emailResult.label === 'email') {
-            console.log('✅ SUCCESS: Model correctly identifies Email.');
+            // console.log('✅ SUCCESS: Model correctly identifies Email.');
         } else {
-            console.log(`❌ FAILURE: Expected 'email', got '${emailResult.label}' or low confidence.`);
+            // console.log(`❌ FAILURE: Expected 'email', got '${emailResult.label}' or low confidence.`);
         }
     }
 

@@ -477,15 +477,15 @@ function generateTrainingData() {
 
 // === MAIN TRAINING FUNCTION ===
 function trainModel() {
-    console.log('🚀 Starting offline training with 10K+ examples...\n');
+    // console.log('🚀 Starting offline training with 10K+ examples...\n');
 
     const network = new TrainingNetwork();
     const trainingData = generateTrainingData();
 
-    console.log(`📊 Training data: ${trainingData.length} examples`);
-    console.log(`🏗️ Network: 56 → 20 (Leaky ReLU) → ${network.CLASSES.length}`);
-    console.log(`⚙️ Features: label + name + placeholder + parentContext`);
-    console.log(`📦 Params: ~2,001\n`);
+    // console.log(`📊 Training data: ${trainingData.length} examples`);
+    // console.log(`🏗️ Network: 56 → 20 (Leaky ReLU) → ${network.CLASSES.length}`);
+    // console.log(`⚙️ Features: label + name + placeholder + parentContext`);
+    // console.log(`📦 Params: ~2,001\n`);
 
     const EPOCHS = 600; // Optimized for performance/time trade-off
     const REPORT_INTERVAL = 50;
@@ -508,11 +508,11 @@ function trainModel() {
 
         if (epoch % REPORT_INTERVAL === 0 || epoch === 1) {
             const lr = (0.01 * Math.exp(-0.005 * epoch)).toFixed(5);
-            console.log(`Epoch ${epoch}/${EPOCHS} | Loss: ${avgLoss.toFixed(4)} | Accuracy: ${accuracy.toFixed(2)}% | LR: ${lr}`);
+            // console.log(`Epoch ${epoch}/${EPOCHS} | Loss: ${avgLoss.toFixed(4)} | Accuracy: ${accuracy.toFixed(2)}% | LR: ${lr}`);
         }
     }
 
-    console.log('\n✅ Training complete!\n');
+    // console.log('\n✅ Training complete!\n');
 
     // Export
     const weights = {
@@ -536,10 +536,10 @@ function trainModel() {
     fs.writeFileSync(outputPath, JSON.stringify(weights, null, 2));
 
     const sizeKB = (JSON.stringify(weights).length / 1024).toFixed(2);
-    console.log(`💾 Exported weights to: ${outputPath}`);
-    console.log(`📦 File size: ${sizeKB} KB`);
-    console.log(`🎯 Final Accuracy: ${((network.totalSamples > 0) ? 'See last epoch' : 'N/A')}\n`);
-    console.log('🎉 Done! Reload extension to use new baseline model.');
+    // console.log(`💾 Exported weights to: ${outputPath}`);
+    // console.log(`📦 File size: ${sizeKB} KB`);
+    // console.log(`🎯 Final Accuracy: ${((network.totalSamples > 0) ? 'See last epoch' : 'N/A')}\n`);
+    // console.log('🎉 Done! Reload extension to use new baseline model.');
 }
 
 // Run

@@ -78,7 +78,7 @@ function generateSample(label, correctClass, isWorkday = false) {
 }
 
 function generateDataset() {
-    console.log('🧬 Generating synthetic dataset V8 (Enterprise Scale)...');
+    // console.log('🧬 Generating synthetic dataset V8 (Enterprise Scale)...');
     let dataset = [];
     const targetSize = 50000; // Reduced for faster retraining
 
@@ -113,7 +113,7 @@ function generateDataset() {
     }
 
     // Shuffle and Cap
-    console.log(`   Scaling to ${targetSize} samples...`);
+    // console.log(`   Scaling to ${targetSize} samples...`);
     const finalDataset = [];
     while (finalDataset.length < targetSize) {
         const source = dataset[Math.floor(Math.random() * dataset.length)];
@@ -133,7 +133,7 @@ function generateDataset() {
     }
 
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(finalDataset, null, 2));
-    console.log(`✅ Saved ${finalDataset.length} samples to ${OUTPUT_FILE}`);
+    // console.log(`✅ Saved ${finalDataset.length} samples to ${OUTPUT_FILE}`);
 }
 
 generateDataset();

@@ -49,13 +49,13 @@ function createField(overrides = {}) {
 }
 
 async function runTests() {
-    console.log('🔍 Starting Refined Structural Routing Verification...\n');
+    // console.log('🔍 Starting Refined Structural Routing Verification...\n');
     let passed = 0;
     let failed = 0;
 
     function assert(condition, message) {
         if (condition) {
-            console.log(`✅ MATCH: ${message}`);
+            // console.log(`✅ MATCH: ${message}`);
             passed++;
         } else {
             console.error(`❌ FAIL: ${message}`);
@@ -70,7 +70,7 @@ async function runTests() {
     }
 
     // --- TEST 1: TIER 1 - STRUCTURAL REPEATER ---
-    console.log('--- Test 1: Tier 1 (Structural Multi) ---');
+    // console.log('--- Test 1: Tier 1 (Structural Multi) ---');
     const workdayJob = createField({
         label: 'Job Title',
         id: 'workExperience-0--title',
@@ -85,7 +85,7 @@ async function runTests() {
     assert(workdayJob.structuralSignalCount >= 2, `Tier 1 requires >= 2 signals (Got: ${workdayJob.structuralSignalCount})`);
 
     // --- TEST 2: TIER 2 - VERIFIED MULTI ---
-    console.log('\n--- Test 2: Tier 2 (Verified Multi) ---');
+    // console.log('\n--- Test 2: Tier 2 (Verified Multi) ---');
     const recurringEdu = createField({
         label: 'School Name',
         field_index: 0,
@@ -97,7 +97,7 @@ async function runTests() {
     assert(recurringEdu.instance_type === 'SECTION_REPEATER', `Recurring edu should be Tier 2 REPEATER (Got: ${recurringEdu.instance_type})`);
 
     // --- TEST 3: PROBATION - SECTION CANDIDATE ---
-    console.log('\n--- Test 3: Probation (Section Candidate) ---');
+    // console.log('\n--- Test 3: Probation (Section Candidate) ---');
     const solitaryEdu = createField({
         label: 'School Name',
         field_index: 0,
@@ -110,7 +110,7 @@ async function runTests() {
     assert(solitaryEdu.scope === 'SECTION', `Candidate should keep SECTION scope`);
 
     // --- TEST 4: ATOMIC FALLBACK ---
-    console.log('\n--- Test 4: Tier 3 (Atomic Fallback) ---');
+    // console.log('\n--- Test 4: Tier 3 (Atomic Fallback) ---');
     const genericField = createField({
         label: 'Tell us about yourself',
         type: 'textarea'
@@ -120,7 +120,7 @@ async function runTests() {
     assert(genericField.scope === 'GLOBAL', `Generic field is GLOBAL scope`);
 
     // --- TEST 5: CACHING & COLLISION ---
-    console.log('\n--- Test 5: Scoped Caching ---');
+    // console.log('\n--- Test 5: Scoped Caching ---');
     // Clear mock storage
     global.chrome.storage.local.storage = {};
 
@@ -136,7 +136,7 @@ async function runTests() {
     const sel = global.chrome.storage.local.storage.ATOMIC_SINGLE || {};
     const keys = Object.keys(sel);
 
-    console.log('Cache Keys:', keys);
+    // console.log('Cache Keys:', keys);
 
     const hasScoped = keys.some(k => k.toLowerCase().includes('section:education_0'));
     const hasGlobal = keys.some(k => !k.includes('SECTION:'));
@@ -145,7 +145,7 @@ async function runTests() {
     assert(hasGlobal, 'Found global key for solitary field');
     assert(keys.length === 2, 'Two distinct keys created (No collision)');
 
-    console.log(`\n🎉 Verification Complete: ${passed} Passed, ${failed} Failed`);
+    // console.log(`\n🎉 Verification Complete: ${passed} Passed, ${failed} Failed`);
     process.exit(failed > 0 ? 1 : 0);
 }
 

@@ -248,8 +248,8 @@ function mixContexts(samples, maxMixed = 2) {
 // ============================================================================
 
 function augmentDataset() {
-    console.log('🔄 Data Augmentation Pipeline');
-    console.log('==============================\n');
+    // console.log('🔄 Data Augmentation Pipeline');
+    // console.log('==============================\n');
 
     // Load original training data
     const trainFolder = path.join(__dirname, 'train-dataset');
@@ -260,7 +260,7 @@ function augmentDataset() {
         const filepath = path.join(trainFolder, file);
         const data = JSON.parse(fs.readFileSync(filepath, 'utf8'));
         originalData = originalData.concat(data);
-        console.log(`   Loaded ${data.length} samples from ${file}`);
+        // console.log(`   Loaded ${data.length} samples from ${file}`);
     }
 
     // STRIP SIBLING CONTEXT from all samples (User Request)
@@ -268,26 +268,26 @@ function augmentDataset() {
         if (sample.features) sample.features.siblingContext = '';
     });
 
-    console.log(`\n📊 Original dataset: ${originalData.length} samples\n`);
+    // console.log(`\n📊 Original dataset: ${originalData.length} samples\n`);
 
     // Step 1: Synonym expansion
-    console.log('🔤 Step 1: Generating synonym variations...');
+    // console.log('🔤 Step 1: Generating synonym variations...');
     let augmented = [];
     for (const sample of originalData) {
         const variations = augmentSample(sample, 5);  // Increased from 2 to 5
         augmented = augmented.concat(variations);
     }
-    console.log(`   Generated ${augmented.length} synonym variations\n`);
+    // console.log(`   Generated ${augmented.length} synonym variations\n`);
 
     // Step 2: Context mixing
-    console.log('🔀 Step 2: Mixing contexts...');
+    // console.log('🔀 Step 2: Mixing contexts...');
     const mixed = mixContexts(originalData, 3);   // Increased from 1 to 3
     augmented = augmented.concat(mixed);
-    console.log(`   Generated ${mixed.length} context-mixed samples\n`);
+    // console.log(`   Generated ${mixed.length} context-mixed samples\n`);
 
     // Combine original + augmented
     const finalDataset = [...originalData, ...augmented];
-    console.log(`✅ Final dataset: ${finalDataset.length} samples (${(finalDataset.length / originalData.length).toFixed(1)}x expansion)\n`);
+    // console.log(`✅ Final dataset: ${finalDataset.length} samples (${(finalDataset.length / originalData.length).toFixed(1)}x expansion)\n`);
 
     // Class distribution
     const classCounts = {};
@@ -295,19 +295,19 @@ function augmentDataset() {
         classCounts[sample.label] = (classCounts[sample.label] || 0) + 1;
     }
 
-    console.log(`📈 Class distribution:`);
-    console.log(`   Total classes: ${Object.keys(classCounts).length}`);
-    console.log(`   Avg samples/class: ${(finalDataset.length / Object.keys(classCounts).length).toFixed(1)}`);
+    // console.log(`📈 Class distribution:`);
+    // console.log(`   Total classes: ${Object.keys(classCounts).length}`);
+    // console.log(`   Avg samples/class: ${(finalDataset.length / Object.keys(classCounts).length).toFixed(1)}`);
     const counts = Object.values(classCounts).sort((a, b) => b - a);
-    console.log(`   Max: ${counts[0]}, Min: ${counts[counts.length - 1]}, Median: ${counts[Math.floor(counts.length / 2)]}\n`);
+    // console.log(`   Max: ${counts[0]}, Min: ${counts[counts.length - 1]}, Median: ${counts[Math.floor(counts.length / 2)]}\n`);
 
     // Save augmented dataset
     const outputPath = path.join(__dirname, 'train-dataset-augmented.json');
     fs.writeFileSync(outputPath, JSON.stringify(finalDataset, null, 2));
-    console.log(`💾 Saved augmented dataset to: ${outputPath}`);
-    console.log(`   Size: ${(fs.statSync(outputPath).size / 1024 / 1024).toFixed(2)} MB\n`);
+    // console.log(`💾 Saved augmented dataset to: ${outputPath}`);
+    // console.log(`   Size: ${(fs.statSync(outputPath).size / 1024 / 1024).toFixed(2)} MB\n`);
 
-    console.log('🎉 Data augmentation complete!');
+    // console.log('🎉 Data augmentation complete!');
 }
 
 // Run augmentation
