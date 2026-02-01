@@ -362,9 +362,7 @@
 .content-body {
     flex: 1;
     padding: 24px;
-    max-width: 1200px;
     width: 100%;
-    margin: 0 auto;
 }
 
 * {
@@ -569,31 +567,97 @@ body {
 }
 
 .api-keys-list {
-    margin-bottom: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.api-key-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 14px;
-    background: var(--zinc-50);
+    margin-top: 16px;
     border: 1px solid var(--zinc-200);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: white;
 }
 
-.api-key-mask {
-    font-family: monospace;
+.nova-table {
+    width: 100%;
+    border-collapse: collapse;
     font-size: 13px;
-    color: var(--zinc-600);
 }
 
-.api-key-actions {
+.nova-table th {
+    background: var(--zinc-50);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--zinc-500);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--zinc-200);
+}
+
+.nova-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--zinc-100);
+    vertical-align: middle;
+    color: var(--zinc-700);
+}
+
+.nova-table tr:last-child td {
+    border-bottom: none;
+}
+
+.nova-table tr:hover {
+    background: #fbfbfb;
+}
+
+/* Status Pills */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 550;
+}
+
+.status-pill-active {
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.status-pill-active::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    background: #22c55e;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.status-pill-invalid {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.status-pill-validating {
+    background: #f8fafc;
+    color: #64748b;
+    animation: status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes status-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .5;
+    }
+}
+
+.api-actions-cell {
     display: flex;
+    justify-content: flex-end;
     gap: 8px;
 }
 
@@ -676,25 +740,26 @@ body {
     animation: slideUp 0.35s cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* Card & Section Containers */
+/* Card & Section Containers - LinkedIn Style */
 .card {
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
+    background: white;
+    border-radius: 8px;
     padding: 0;
-    box-shadow: var(--shadow-card);
-    border: 1px solid var(--zinc-200);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+    border: none;
     overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: box-shadow 0.2s ease;
     display: flex;
     flex-direction: column;
+    margin-bottom: 16px;
 }
 
 .card:hover {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
 }
 
 .card-body {
-    padding: 32px;
+    padding: 24px;
 }
 
 /* Section Footers (New for Per-Section Saving) */
@@ -821,7 +886,7 @@ body {
     }
 }
 
-/* Inputs */
+/* Inputs - LinkedIn Style */
 input[type="text"],
 input[type="email"],
 input[type="tel"],
@@ -832,28 +897,33 @@ input[type="date"],
 select,
 textarea {
     width: 100%;
-    padding: 10px 12px;
+    padding: 12px 14px;
     font-size: 14px;
     font-family: inherit;
-    border: 1px solid var(--zinc-200);
-    border-radius: var(--radius-sm);
+    border: 1px solid #d0d5dd;
+    border-radius: 4px;
     background: white;
-    color: var(--zinc-900);
-    transition: all 0.1s ease;
-    box-shadow: var(--shadow-sm);
+    color: rgba(0, 0, 0, 0.9);
+    transition: all 0.15s ease;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+    border-color: #98a2b3;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
     outline: none;
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 0 3px var(--accent-blue-ring), var(--shadow-sm);
+    border-color: #0a66c2;
+    box-shadow: 0 0 0 1px #0a66c2;
 }
 
 input::placeholder,
 textarea::placeholder {
-    color: var(--zinc-400);
+    color: rgba(0, 0, 0, 0.4);
 }
 
 textarea {

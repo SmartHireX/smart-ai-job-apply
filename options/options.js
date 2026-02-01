@@ -209,33 +209,69 @@ function maskKey(key) {
 }
 
 function renderApiKeysList(keys) {
-    const listEl = document.getElementById('api-keys-list');
-    if (!listEl) return;
-    listEl.innerHTML = '';
-    (keys || []).forEach((key, index) => {
-        const row = document.createElement('div');
-        row.className = 'api-key-item';
-        row.innerHTML = `
-            <span class="api-key-mask">${maskKey(key)}</span>
-            <div class="api-key-actions">
-                <button type="button" class="btn btn-secondary btn-small validate-key-at" data-index="${index}">Validate</button>
-                <button type="button" class="btn btn-danger-outline btn-small remove-key-at" data-index="${index}">Remove</button>
-            </div>
+    const tbody = document.getElementById('api-keys-table-body');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    if (!keys || keys.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" style="text-align: center; padding: 32px; color: var(--zinc-400);">
+                    No API keys added yet. Use the field below to add your first key.
+                </td>
+            </tr>
         `;
+        return;
+    }
+
+    keys.forEach((key, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <span class="api-key-mask" style="font-family: monospace; font-size: 13px; color: var(--zinc-600);">${maskKey(key)}</span>
+            </td>
+            <td>
+                <span class="status-pill status-pill-active">Active</span>
+            </td>
+            <td>
+                <div class="api-actions-cell">
+                    <button type="button" class="btn btn-secondary btn-small validate-key-at" data-index="${index}">Validate</button>
+                    <button type="button" class="btn btn-danger-outline btn-small remove-key-at" data-index="${index}">Remove</button>
+                </div>
+            </td>
+        `;
+
         row.querySelector('.validate-key-at').addEventListener('click', async () => {
             const statusEl = document.getElementById('api-keys-status');
+            const statusPill = row.querySelector('.status-pill');
+
+            // Show validating state
+            statusPill.className = 'status-pill status-pill-validating';
+            statusPill.textContent = 'Validating...';
             setStatus(statusEl, 'Validating...', 'loading');
+
             const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash';
             const result = await globalThis.AIClient.validateApiKey(key, model);
-            if (result.valid) setStatus(statusEl, `✓ Key ${index + 1} is valid`, 'success');
-            else setStatus(statusEl, `✗ Key ${index + 1}: ${result.error}`, 'error');
+
+            if (result.valid) {
+                statusPill.className = 'status-pill status-pill-active';
+                statusPill.textContent = 'Active';
+                setStatus(statusEl, `✓ Key ${index + 1} is valid`, 'success');
+            } else {
+                statusPill.className = 'status-pill status-pill-invalid';
+                statusPill.textContent = 'Invalid';
+                setStatus(statusEl, `✗ Key ${index + 1}: ${result.error}`, 'error');
+            }
         });
+
         row.querySelector('.remove-key-at').addEventListener('click', () => {
             State.current.api.keys.splice(index, 1);
             renderApiKeysList(State.current.api.keys);
             checkDirty('api');
         });
-        listEl.appendChild(row);
+
+        tbody.appendChild(row);
     });
 }
 

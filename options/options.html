@@ -167,7 +167,26 @@
                                 <label>Stored API Keys</label>
                                 <p class="field-description">Multi-key rotation is active. Add up to 5 keys to
                                     automatically bypass rate limits.</p>
-                                <div id="api-keys-list" class="api-keys-list"></div>
+                                <div id="api-keys-list" class="api-keys-list">
+                                    <table class="nova-table">
+                                        <thead>
+                                            <tr>
+                                                <th>API Key</th>
+                                                <th>Status</th>
+                                                <th style="text-align: right;">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="api-keys-table-body">
+                                            <!-- API Key Rows will be injected here -->
+                                            <tr>
+                                                <td colspan="3"
+                                                    style="text-align: center; padding: 32px; color: var(--zinc-400);">
+                                                    No API keys added yet. Use the field below to add your first key.
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                                 <div class="input-with-button" style="margin-top: 12px;">
                                     <input type="password" id="api-key-new"
                                         placeholder="Paste your Gemini API key here">
