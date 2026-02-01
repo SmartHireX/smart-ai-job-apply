@@ -310,7 +310,7 @@ async function showGhostingAnimation(element, value, confidence = 0.8, fieldMeta
             element.value = '';
         }
 
-        // Moderated Typing Speed: 35-65ms per character (Natural "AI Thinking" feel)
+        // Fast Typing Speed: 5-15ms per character
         for (const char of chars) {
             const currentVal = element.value;
             if (typeof setter === 'function') {
@@ -318,8 +318,8 @@ async function showGhostingAnimation(element, value, confidence = 0.8, fieldMeta
             } else {
                 element.value = currentVal + char;
             }
-            // Increase delay for better visibility
-            await new Promise(r => setTimeout(r, Math.random() * 30 + 35));
+            // Reduced delay for faster typing
+            await new Promise(r => setTimeout(r, Math.random() * 15 + 20));
         }
     } else {
         // For non-text fields (Radio, Checkbox, Select, Date, File)
