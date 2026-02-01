@@ -19,26 +19,28 @@ flowchart TD
         Scan -->|DOM Traversal| FeatureEx[ContextFeatureExtractor]
     end
 
-    subgraph Inference [Phase 2: Hybrid Decision Orchestration]
+    subgraph Inference [Phase 2: Hybrid Ensemble Arbitration]
         direction TB
         Orch{PipelineOrchestrator}
         
-        subgraph Stack [Inference Stack]
+        subgraph Stack [Intelligence Stack]
             direction LR
-            Neural[[Neural V8 Model]]
-            Heuristic[Heuristic Regex]
+            Heuristic[Heuristic Regex Engine]
+            Neural[[Neural V8 Confirmation Model]]
             Gemini[[Gemini AI Resolver]]
         end
 
         FeatureEx --> Orch
-        Orch --> Neural
-        Neural -- "Low Confidence Fallback" --> Heuristic
-        Heuristic -- "No Pattern Match" --> Gemini
+        Orch --> Heuristic & Neural
+        
+        Heuristic --> Arb{Ensemble Arbiter}
+        Neural --> Arb
+        
+        Arb -- "Unanimous / Weighted Win" --> Label([Final Semantic Label])
+        Arb -- "Ambiguity / Low Conf" --> Gemini
     end
 
-    Gemini --> Label([Final Semantic Label])
-    Neural -- "Conf > 85%" --> Label
-    Heuristic -- "Match Found" --> Label
+    Gemini --> Label
 
     %% Styling
     style Trigger fill:#f8fafc,stroke:#94a3b8,color:#1e293b
@@ -107,15 +109,17 @@ flowchart TB
         Context --> Vector[95-Feature Vector Generated]
     end
 
-    subgraph Phase2 [PHASE 2: HYBRID INFERENCE STACK]
+    subgraph Phase2 [PHASE 2: ENSEMBLE ARBITRATION]
         Vector --> Orch[PipelineOrchestrator]
-        Orch --> Local[Local Neural V8 Inference]
-        Local -- "Confidence < 85%" --> Fallback[Structural Heuristics]
-        Fallback -- "Ambiguous Field" --> AI[Gemini 1.5/2.0 Flash]
+        Orch --> Local[Local Neural V8 Validation]
+        Orch --> Fallback[Structural Heuristics]
         
-        Local --> Result
-        Fallback --> Result
-        AI --> Result[Classified Field Labels]
+        Local --> Arb{Hybrid Arbiter}
+        Fallback --> Arb
+        
+        Arb -- "Agreement / High Conf" --> Result[Classified Field Labels]
+        Arb -- "Ambiguity / Need Context" --> AI[Gemini Flash Synthesis]
+        AI --> Result
     end
 
     subgraph Phase3 [PHASE 3: UI SYNC & RESUME MAPPING]
@@ -160,10 +164,10 @@ flowchart TB
 ## Key Components
 
 ### 1. Hybrid Classifier
-The brain of the system. Instead of relying on a single source of truth, Nova Apply uses an ensemble approach:
-*   **Neural V8**: A local classifier running a 3-layer Dense network for sub-10ms inference.
-*   **Heuristic Regex**: A lightning-fast fallback for standard fields using industry-standard patterns.
-*   **Gemini AI**: A powerful large language model for synthesizing complex answers from resume context.
+The brain of the system. Instead of a simple serial fallback, Nova Apply uses a **Hybrid Ensemble Arbitration** strategy:
+*   **Neural V8 Validation**: A local 3-layer Dense network providing deep contextual verification. It acts as a "second opinion" to ensure structural patterns match the underlying field intent.
+*   **Heuristic Regex Engine**: Lightning-fast pattern matching based on years of industry-standard field normalization.
+*   **Gemini AI Synthesis**: A powerful LLM used for high-stakes decision arbitration when the local ensemble encounters ambiguity or requires synthesized resume data.
 
 ### 2. Pipeline Orchestrator
 The "Conductor" that manages state transitions. It ensures that data is only injected once it has passed through validation and structural mapping phases.
