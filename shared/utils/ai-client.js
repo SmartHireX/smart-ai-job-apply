@@ -1,5 +1,5 @@
 /**
- * AI Client for Smart AI Job Apply Extension
+ * AI Client for Nova Apply Extension
  *
  * Unified AI client using Google Gemini API with:
  * - Enterprise-Grade Key Rotation: Round-Robin across up to 5 API keys

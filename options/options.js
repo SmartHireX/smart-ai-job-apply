@@ -1,39 +1,154 @@
 /**
- * Options Page JavaScript for Smart AI Job Apply Extension
+ * StorageVault.js
+ * 
+ * Centralized Storage Vault for the Nova Apply Extension.
  * 
  * Handles resume data management, API key configuration, and UI interactions.
+ * Refined for Enterprise-grade UX (Per-section saving, Transactional isolation).
  */
 
-// Wait for modules to load
+// Global State Manager
+const State = {
+    initial: {},    // Snapshot from StorageVault
+    current: {},    // Live changes in UI
+    status: {
+        lastSaved: {
+            api: null,
+            personal: null,
+            experience: null,
+            education: null,
+            skills: null,
+            projects: null,
+            custom: null
+        },
+        vaultReady: true
+    }
+};
+
+// Map Bucket -> Sections (to track dirty states)
+const SECTION_MAP = {
+    ai: ['api'],
+    identity: ['personal', 'experience', 'education', 'skills', 'projects', 'custom'],
+    memory: []
+};
+
+// UI Section Config
+const SECTIONS = {
+    api: { bucket: 'ai', lastSavedEl: 'last-saved-api', dirtyBadgeEl: 'dirty-badge-api' },
+    personal: { bucket: 'identity', lastSavedEl: 'last-saved-personal', dirtyBadgeEl: 'dirty-badge-personal' },
+    experience: { bucket: 'identity', lastSavedEl: 'last-saved-experience', dirtyBadgeEl: 'dirty-badge-experience' },
+    education: { bucket: 'identity', lastSavedEl: 'last-saved-education', dirtyBadgeEl: 'dirty-badge-education' },
+    skills: { bucket: 'identity', lastSavedEl: 'last-saved-skills', dirtyBadgeEl: 'dirty-badge-skills' },
+    projects: { bucket: 'identity', lastSavedEl: 'last-saved-projects', dirtyBadgeEl: 'dirty-badge-projects' },
+    custom: { bucket: 'identity', lastSavedEl: 'last-saved-custom', dirtyBadgeEl: 'dirty-badge-custom' }
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Options page loaded');
+    console.log('Premium Options page initialized');
 
-    // Initialize tabs
+    // Initialize State from Vault logic
+    await syncStateWithVault();
+
     initTabs();
-
-    // Initialize API key section
     initApiKeySection();
-
-    // Initialize all form sections
     initPersonalSection();
     initSkillsSection();
     initExperienceSection();
     initEducationSection();
     initProjectsSection();
     initCustomFieldsSection();
-
-    // Initialize buttons
     initButtons();
-
-    // Initialize AI Import
     initAIImport();
+    initGlobalStatusHeader();
 
-    // Load existing data
     await loadAllData();
-
-    // Update status
     updateDataStatus();
 });
+
+/**
+ * Capture initial values for dirty state tracking
+ */
+async function syncStateWithVault() {
+    const rawData = await globalThis.ResumeManager.getResumeData() || {};
+    const apiKeys = await globalThis.AIClient.getApiKeys?.() || [];
+    const model = await globalThis.AIClient.getStoredModel() || 'gemini-2.5-flash';
+
+    State.initial = {
+        api: { keys: apiKeys, model: model },
+        personal: dataToProfileSubset(rawData, 'personal') || {},
+        experience: rawData.experience || [],
+        education: rawData.education || [],
+        skills: dataToProfileSubset(rawData, 'skills') || {},
+        projects: rawData.projects || [],
+        custom: dataToProfileSubset(rawData, 'customFields') || {}
+    };
+
+    // Deep copy to current
+    State.current = JSON.parse(JSON.stringify(State.initial));
+
+    // Load last saved timestamps from local storage (non-encrypted metadata)
+    const timestamps = await chrome.storage.local.get('options_last_saved');
+    if (timestamps.options_last_saved) {
+        State.status.lastSaved = { ...State.status.lastSaved, ...timestamps.options_last_saved };
+        updateLastSavedLabels();
+    }
+}
+
+function dataToProfileSubset(data, key) {
+    if (!data || !data[key]) return {};
+    return data[key];
+}
+
+/**
+ * Dirty State Logic
+ */
+function checkDirty(section) {
+    const isDirty = JSON.stringify(State.initial[section]) !== JSON.stringify(State.current[section]);
+    const badge = document.getElementById(SECTIONS[section].dirtyBadgeEl);
+    const saveBtn = document.querySelector(`.section-save-btn[data-bucket="${SECTIONS[section].bucket}"]`);
+
+    if (badge) {
+        if (isDirty) badge.classList.add('active');
+        else badge.classList.remove('active');
+    }
+
+    updateGlobalStatusChip();
+}
+
+function updateGlobalStatusChip() {
+    const dirtySections = Object.keys(SECTIONS).filter(s =>
+        JSON.stringify(State.initial[s]) !== JSON.stringify(State.current[s])
+    );
+
+    const chip = document.getElementById('global-status-chip');
+    const text = chip.querySelector('.status-text');
+    const icon = chip.querySelector('.status-icon');
+
+    if (dirtySections.length > 0) {
+        chip.className = 'status-chip unsaved';
+        icon.textContent = '🟡';
+        text.textContent = `Unsaved changes in ${dirtySections.length} section${dirtySections.length > 1 ? 's' : ''}`;
+
+        // Setup tooltip detail
+        const list = dirtySections.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
+        chip.title = `Unsaved sections: ${list}`;
+    } else {
+        chip.className = 'status-chip saved';
+        icon.textContent = '✅';
+        text.textContent = 'All changes saved';
+        chip.title = 'Everything is up to date';
+    }
+}
+
+function updateLastSavedLabels() {
+    Object.entries(SECTIONS).forEach(([name, config]) => {
+        const el = document.getElementById(config.lastSavedEl);
+        if (el && State.status.lastSaved[name]) {
+            const date = new Date(State.status.lastSaved[name]);
+            el.textContent = `Last saved to device: ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} today`;
+        }
+    });
+}
 
 // ============================================
 // TABS
@@ -42,32 +157,44 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initTabs() {
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
+    const indicator = document.querySelector('.sidebar-indicator');
 
-    // Tab switching
+    function updateIndicator(activeTab) {
+        if (!indicator || !activeTab) return;
+        const tabRect = activeTab.getBoundingClientRect();
+        const navRect = activeTab.parentElement.getBoundingClientRect();
+        const top = activeTab.offsetTop + (activeTab.offsetHeight - indicator.offsetHeight) / 2;
+        indicator.style.transform = `translateY(${top}px)`;
+    }
+
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            const targetTab = tab.getAttribute('data-tab');
-            const targetSection = document.getElementById(`tab-${targetTab}`);
-            const tabTitle = document.getElementById('current-tab-title');
+            const target = tab.getAttribute('data-tab');
 
-            if (targetSection) {
-                // Update tabs
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
+            // UI updates
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
 
-                // Update sections
-                tabContents.forEach(content => content.classList.remove('active'));
-                targetSection.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${target}`).classList.add('active'); // Changed to `tab-${target}` for consistency with HTML
 
-                // Update header title
-                if (tabTitle) {
-                    tabTitle.textContent = tab.querySelector('.tab-text') ?
-                        tab.querySelector('.tab-text').textContent :
-                        tab.textContent.replace(/[^\w\s]/g, '').trim();
-                }
+            const titleEl = document.getElementById('current-tab-title');
+            if (titleEl) {
+                const tabText = tab.querySelector('.tab-text')?.textContent;
+                titleEl.textContent = tabText || target;
             }
+
+            updateIndicator(tab);
         });
     });
+
+    // Initial position
+    const activeTab = document.querySelector('.tab.active');
+    if (activeTab) {
+        setTimeout(() => updateIndicator(activeTab), 100);
+    }
 }
 
 // ============================================
@@ -87,12 +214,13 @@ function renderApiKeysList(keys) {
     listEl.innerHTML = '';
     (keys || []).forEach((key, index) => {
         const row = document.createElement('div');
-        row.className = 'api-key-row';
-        row.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding: 8px; background: var(--bg-secondary, #f1f5f9); border-radius: 8px;';
+        row.className = 'api-key-item';
         row.innerHTML = `
-            <span class="api-key-mask" style="flex: 1; font-family: monospace; font-size: 13px;">${maskKey(key)}</span>
-            <button type="button" class="btn btn-secondary btn-small validate-key-at" data-index="${index}">Validate</button>
-            <button type="button" class="btn btn-danger-outline btn-small remove-key-at" data-index="${index}">Remove</button>
+            <span class="api-key-mask">${maskKey(key)}</span>
+            <div class="api-key-actions">
+                <button type="button" class="btn btn-secondary btn-small validate-key-at" data-index="${index}">Validate</button>
+                <button type="button" class="btn btn-danger-outline btn-small remove-key-at" data-index="${index}">Remove</button>
+            </div>
         `;
         row.querySelector('.validate-key-at').addEventListener('click', async () => {
             const statusEl = document.getElementById('api-keys-status');
@@ -103,28 +231,26 @@ function renderApiKeysList(keys) {
             else setStatus(statusEl, `✗ Key ${index + 1}: ${result.error}`, 'error');
         });
         row.querySelector('.remove-key-at').addEventListener('click', () => {
-            const updated = keys.filter((_, i) => i !== index);
-            saveApiKeysToStorage(updated);
-            renderApiKeysList(updated);
-            updateDataStatus();
+            State.current.api.keys.splice(index, 1);
+            renderApiKeysList(State.current.api.keys);
+            checkDirty('api');
         });
         listEl.appendChild(row);
     });
 }
 
-async function saveApiKeysToStorage(keys) {
-    const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash';
-    if (globalThis.AIClient?.saveApiKeys) {
-        await globalThis.AIClient.saveApiKeys(keys, model);
-    } else if (keys.length > 0) {
-        await globalThis.AIClient.saveApiKey(keys[0], model);
-    }
-}
 
 function initApiKeySection() {
     const apiModelInput = document.getElementById('api-model');
     const addKeyBtn = document.getElementById('add-api-key-btn');
     const newKeyInput = document.getElementById('api-key-new');
+
+    if (apiModelInput) {
+        apiModelInput.addEventListener('change', () => {
+            State.current.api.model = apiModelInput.value;
+            checkDirty('api');
+        });
+    }
 
     if (addKeyBtn && newKeyInput) {
         addKeyBtn.addEventListener('click', async () => {
@@ -134,27 +260,133 @@ function initApiKeySection() {
                 setStatus(statusEl, 'Enter a key to add', 'error');
                 return;
             }
-            const keys = await globalThis.AIClient.getApiKeys?.() || [];
+
+            const keys = State.current.api.keys;
             if (keys.length >= MAX_API_KEYS_UI) {
                 setStatus(statusEl, `Maximum ${MAX_API_KEYS_UI} keys allowed`, 'error');
                 return;
             }
+
             setStatus(statusEl, 'Validating...', 'loading');
             const model = apiModelInput?.value?.trim() || 'gemini-2.5-flash';
             const result = await globalThis.AIClient.validateApiKey(key, model);
+
             if (result.valid) {
-                let newKeys = keys.filter(k => k !== key);
-                newKeys.push(key);
-                newKeys = newKeys.slice(0, MAX_API_KEYS_UI);
-                await globalThis.AIClient.saveApiKeys(newKeys, model);
-                renderApiKeysList(newKeys);
+                if (!State.current.api.keys.includes(key)) {
+                    State.current.api.keys.push(key);
+                }
+                renderApiKeysList(State.current.api.keys);
                 newKeyInput.value = '';
-                setStatus(statusEl, `✓ Key added (${newKeys.length}/${MAX_API_KEYS_UI})`, 'success');
-                updateDataStatus();
+                setStatus(statusEl, `✓ Key added (${State.current.api.keys.length}/${MAX_API_KEYS_UI})`, 'success');
+                checkDirty('api');
             } else {
                 setStatus(statusEl, result.error || 'Validation failed', 'error');
             }
         });
+    }
+}
+
+function initGlobalStatusHeader() {
+    const chip = document.getElementById('global-status-chip');
+    if (chip) {
+        chip.addEventListener('click', () => {
+            const dirtySections = Object.keys(SECTIONS).filter(s =>
+                JSON.stringify(State.initial[s]) !== JSON.stringify(State.current[s])
+            );
+            if (dirtySections.length > 0) {
+                const list = dirtySections.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('\n• ');
+                alert(`Unsaved changes in:\n• ${list}`);
+            }
+        });
+    }
+}
+
+/**
+ * Enhanced Button Initialization
+ */
+function initButtons() {
+    // Per-section Save Buttons
+    document.querySelectorAll('.section-save-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const bucket = btn.dataset.bucket;
+
+            // Find which UI sections map to this bucket
+            const sections = Object.keys(SECTIONS).filter(s => SECTIONS[s].bucket === bucket);
+
+            await performSectionSave(bucket, sections, btn);
+        });
+    });
+
+    // Old global save button (optional, can be hidden or keep for legacy)
+    const globalSave = document.getElementById('save-btn');
+    if (globalSave) {
+        globalSave.addEventListener('click', async () => {
+            const buckets = ['ai', 'identity'];
+            for (const b of buckets) {
+                const sections = Object.keys(SECTIONS).filter(s => SECTIONS[s].bucket === b);
+                await performSectionSave(b, sections, globalSave);
+            }
+        });
+    }
+
+    // Clear data logic stays similar but we use State.initial for reset
+    initClearDataLogic();
+}
+
+async function performSectionSave(bucket, sections, buttonEl) {
+    const originalText = buttonEl.textContent;
+
+    try {
+        buttonEl.disabled = true;
+        buttonEl.innerHTML = '<span class="spinner-small"></span> Saving...';
+
+        // Prepare data for the bucket
+        let success = false;
+        if (bucket === 'ai') {
+            await globalThis.AIClient.saveApiKeys(State.current.api.keys, State.current.api.model);
+            success = true;
+        } else if (bucket === 'identity') {
+            const profileData = {
+                personal: State.current.personal,
+                summary: State.current.personal.summary, // Summary is root level in vault for legacy
+                experience: State.current.experience,
+                education: State.current.education,
+                skills: State.current.skills,
+                projects: State.current.projects,
+                customFields: State.current.custom
+            };
+            await globalThis.ResumeManager.saveResumeData(profileData);
+            success = true;
+        }
+
+        if (success) {
+            // Update initial state to match current
+            sections.forEach(s => {
+                State.initial[s] = JSON.parse(JSON.stringify(State.current[s]));
+                State.status.lastSaved[s] = Date.now();
+                checkDirty(s);
+            });
+
+            // Persist timestamps
+            await chrome.storage.local.set({ 'options_last_saved': State.status.lastSaved });
+            updateLastSavedLabels();
+
+            // Success state
+            buttonEl.innerHTML = '✓ Saved';
+            buttonEl.classList.add('btn-success');
+            setTimeout(() => {
+                buttonEl.textContent = originalText;
+                buttonEl.classList.remove('btn-success');
+                buttonEl.disabled = false;
+            }, 2000);
+
+            showToast('Changes saved to device', 'success');
+        }
+    } catch (error) {
+        console.error(`Save failed for bucket ${bucket}:`, error);
+        buttonEl.innerHTML = '❌ Retry';
+        buttonEl.disabled = false;
+        showToast(`❌ Save failed. Your changes are still safe. (${error.message})`, 'error');
     }
 }
 
@@ -163,12 +395,22 @@ function initApiKeySection() {
 // ============================================
 
 function initPersonalSection() {
-    // All inputs with data-field attribute auto-save on change
     const inputs = document.querySelectorAll('#tab-personal input, #tab-personal textarea');
 
     inputs.forEach(input => {
-        input.addEventListener('change', () => {
-            // Auto-save handled by saveAllData on explicit save button
+        input.addEventListener('input', () => {
+            const fieldPath = input.dataset.field;
+            if (!fieldPath) return;
+
+            const [bucket, key] = fieldPath.includes('.') ? fieldPath.split('.') : ['personal', fieldPath];
+
+            if (bucket === 'personal') {
+                State.current.personal[key] = input.value;
+            } else {
+                State.current.personal[bucket] = input.value;
+            }
+
+            checkDirty('personal');
         });
     });
 }
@@ -179,38 +421,47 @@ function initPersonalSection() {
 
 function initSkillsSection() {
     const skillFields = [
-        { input: 'technical-skills', container: 'technical-skills-tags', field: 'skills.technical' },
-        { input: 'soft-skills', container: 'soft-skills-tags', field: 'skills.soft' },
-        { input: 'languages', container: 'languages-tags', field: 'skills.languages' },
-        { input: 'certifications', container: 'certifications-tags', field: 'skills.certifications' }
+        { id: 'technical-skills', container: 'technical-skills-tags', key: 'technical' },
+        { id: 'soft-skills', container: 'soft-skills-tags', key: 'soft' },
+        { id: 'languages', container: 'languages-tags', key: 'languages' },
+        { id: 'certifications', container: 'certifications-tags', key: 'certifications' }
     ];
 
-    skillFields.forEach(({ input, container }) => {
-        const inputEl = document.getElementById(input);
+    skillFields.forEach(({ id, container, key }) => {
+        const inputEl = document.getElementById(id);
         const containerEl = document.getElementById(container);
+
+        if (!inputEl) return;
 
         inputEl.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ',') {
                 e.preventDefault();
-                addTagFromInput(inputEl, containerEl);
+                const items = addTagFromInput(inputEl, containerEl);
+                if (items) {
+                    State.current.skills[key] = getTagsFromContainer(container);
+                    checkDirty('skills');
+                }
             }
         });
 
         inputEl.addEventListener('blur', () => {
-            addTagFromInput(inputEl, containerEl);
+            const items = addTagFromInput(inputEl, containerEl);
+            if (items) {
+                State.current.skills[key] = getTagsFromContainer(container);
+                checkDirty('skills');
+            }
         });
     });
 }
 
 function addTagFromInput(inputEl, containerEl) {
     const value = inputEl.value.trim().replace(/,+$/, '');
-    if (!value) return;
+    if (!value) return null;
 
-    // Split by comma for multiple entries
     const items = value.split(',').map(s => s.trim()).filter(s => s);
+    let added = false;
 
     items.forEach(item => {
-        // Check for duplicates
         const existing = containerEl.querySelectorAll('.tag');
         const isDuplicate = Array.from(existing).some(tag =>
             tag.textContent.replace('×', '').trim().toLowerCase() === item.toLowerCase()
@@ -219,10 +470,12 @@ function addTagFromInput(inputEl, containerEl) {
         if (!isDuplicate) {
             const tag = createTag(item, containerEl);
             containerEl.appendChild(tag);
+            added = true;
         }
     });
 
     inputEl.value = '';
+    return added ? items : null;
 }
 
 function createTag(text, container) {
@@ -234,7 +487,21 @@ function createTag(text, container) {
     `;
 
     tag.querySelector('.tag-remove').addEventListener('click', () => {
+        const containerId = container.id;
         tag.remove();
+
+        // Find which skill key this belongs to
+        const skillFields = [
+            { container: 'technical-skills-tags', key: 'technical' },
+            { container: 'soft-skills-tags', key: 'soft' },
+            { container: 'languages-tags', key: 'languages' },
+            { container: 'certifications-tags', key: 'certifications' }
+        ];
+        const field = skillFields.find(f => f.container === containerId);
+        if (field) {
+            State.current.skills[field.key] = getTagsFromContainer(containerId);
+            checkDirty('skills');
+        }
     });
 
     return tag;
@@ -397,18 +664,25 @@ function showExperienceModal(index = null) {
         }
 
         renderExperienceList();
+
+        // Sync with state
+        State.current.experience = [...experienceData];
+        checkDirty('experience');
+
         hideModal();
         showToast(isEdit ? 'Experience updated' : 'Experience added', 'success');
     };
 }
 
-
-
-
 function deleteExperience(index) {
     showConfirmationModal(() => {
         experienceData.splice(index, 1);
         renderExperienceList();
+
+        // Sync with state
+        State.current.experience = [...experienceData];
+        checkDirty('experience');
+
         showToast('Experience deleted', 'success');
     });
 }
@@ -536,17 +810,25 @@ function showEducationModal(index = null) {
         }
 
         renderEducationList();
+
+        // Sync with state
+        State.current.education = [...educationData];
+        checkDirty('education');
+
         hideModal();
         showToast(isEdit ? 'Education updated' : 'Education added', 'success');
     };
 }
 
-
-
 function deleteEducation(index) {
     showConfirmationModal(() => {
         educationData.splice(index, 1);
         renderEducationList();
+
+        // Sync with state
+        State.current.education = [...educationData];
+        checkDirty('education');
+
         showToast('Education deleted', 'success');
     });
 }
@@ -661,17 +943,25 @@ function showProjectModal(index = null) {
         }
 
         renderProjectsList();
+
+        // Sync with state
+        State.current.projects = [...projectsData];
+        checkDirty('projects');
+
         hideModal();
         showToast(isEdit ? 'Project updated' : 'Project added', 'success');
     };
 }
 
-
-
 function deleteProject(index) {
     showConfirmationModal(() => {
         projectsData.splice(index, 1);
         renderProjectsList();
+
+        // Sync with state
+        State.current.projects = [...projectsData];
+        checkDirty('projects');
+
         showToast('Project deleted', 'success');
     });
 }
@@ -681,11 +971,34 @@ function deleteProject(index) {
 // ============================================
 
 function initCustomFieldsSection() {
-    // Handle radio buttons for boolean fields
-    document.querySelectorAll('input[type="radio"]').forEach(radio => {
-        radio.addEventListener('change', () => {
-            // Auto-save handled by saveAllData
-        });
+    const inputs = document.querySelectorAll('#tab-custom input, #tab-custom select');
+
+    inputs.forEach(input => {
+        const handler = () => {
+            const fieldPath = input.dataset.field;
+            if (!fieldPath) return;
+
+            const [bucket, key] = fieldPath.includes('.') ? fieldPath.split('.') : ['custom', fieldPath];
+
+            if (bucket === 'customFields') {
+                if (input.type === 'radio') {
+                    if (input.checked) {
+                        State.current.custom[key] = input.value === 'true';
+                    }
+                } else {
+                    State.current.custom[key] = input.value;
+                }
+            } else {
+                State.current.custom[bucket] = input.value;
+            }
+
+            checkDirty('custom');
+        };
+
+        input.addEventListener('input', handler);
+        if (input.tagName === 'SELECT' || input.type === 'radio') {
+            input.addEventListener('change', handler);
+        }
     });
 }
 
@@ -694,70 +1007,82 @@ function initCustomFieldsSection() {
 // ============================================
 
 function initButtons() {
-    // Save button
-    document.getElementById('save-btn').addEventListener('click', saveAllData);
-
-    // Clear data button initialization
-    const clearDataBtn = document.getElementById('clear-data-btn');
-    const clearDataModal = document.getElementById('clear-data-modal');
-    const clearDataCloseBtn = clearDataModal.querySelector('.modal-close');
-    const deleteConfirmInput = document.getElementById('delete-confirmation-input');
-    const confirmDeleteBtn = document.getElementById('modal-confirm-delete');
-    const cancelClearBtn = document.getElementById('modal-cancel-clear');
-
-    if (clearDataBtn) {
-        clearDataBtn.addEventListener('click', () => {
-            clearDataModal.classList.remove('hidden');
-            deleteConfirmInput.value = '';
-            confirmDeleteBtn.disabled = true;
+    // Global Save button (Legacy support / Bulk save)
+    const globalSave = document.getElementById('save-btn');
+    if (globalSave) {
+        globalSave.addEventListener('click', async () => {
+            const buckets = ['ai', 'identity'];
+            for (const b of buckets) {
+                const sections = Object.keys(SECTIONS).filter(s => SECTIONS[s].bucket === b);
+                await performSectionSave(b, sections, globalSave);
+            }
         });
     }
 
-    const hideClearDataModal = () => {
-        clearDataModal.classList.add('hidden');
-        deleteConfirmInput.value = '';
+    // Per-section Save Buttons
+    document.querySelectorAll('.section-save-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const bucket = btn.dataset.bucket;
+            const sections = Object.keys(SECTIONS).filter(s => SECTIONS[s].bucket === bucket);
+            await performSectionSave(bucket, sections, btn);
+        });
+    });
+
+    initClearDataLogic();
+}
+
+/**
+ * Handle "Clear All Data" logic with confirmation modal
+ */
+function initClearDataLogic() {
+    const clearBtn = document.getElementById('clear-data-btn');
+    const modal = document.getElementById('clear-data-modal');
+    if (!clearBtn || !modal) return;
+
+    const closeBtns = modal.querySelectorAll('.modal-close');
+    const cancelBtn = document.getElementById('modal-cancel-clear');
+    const confirmBtn = document.getElementById('modal-confirm-delete');
+    const confirmInput = document.getElementById('delete-confirmation-input');
+
+    const closeModal = () => {
+        modal.classList.add('hidden');
+        if (confirmInput) confirmInput.value = '';
+        if (confirmBtn) confirmBtn.disabled = true;
     };
 
-    if (clearDataCloseBtn) clearDataCloseBtn.addEventListener('click', hideClearDataModal);
-    if (cancelClearBtn) cancelClearBtn.addEventListener('click', hideClearDataModal);
+    clearBtn.addEventListener('click', () => {
+        modal.classList.remove('hidden');
+        if (confirmInput) confirmInput.focus();
+    });
 
-    if (deleteConfirmInput) {
-        deleteConfirmInput.addEventListener('input', (e) => {
-            confirmDeleteBtn.disabled = e.target.value !== 'DELETE';
+    closeBtns.forEach(btn => btn.addEventListener('click', closeModal));
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    if (confirmInput) {
+        confirmInput.addEventListener('input', () => {
+            confirmBtn.disabled = confirmInput.value.toUpperCase() !== 'DELETE';
         });
     }
 
-    if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener('click', async () => {
-            if (deleteConfirmInput.value === 'DELETE') {
-                await globalThis.ResumeManager.clearResumeData();
-                await globalThis.AIClient.removeApiKey();
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', async () => {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Clearing...';
 
-                // Reset UI
-                const newKeyEl = document.getElementById('api-key-new');
-                if (newKeyEl) newKeyEl.value = '';
-                renderApiKeysList([]);
-                document.querySelectorAll('input[data-field], textarea[data-field], select[data-field]').forEach(el => {
-                    if (el.type === 'radio' || el.type === 'checkbox') {
-                        el.checked = false;
-                    } else {
-                        el.value = '';
-                    }
-                });
-                experienceData = [];
-                educationData = [];
-                projectsData = [];
-                renderExperienceList();
-                renderEducationList();
-                renderProjectsList();
-                ['technical-skills-tags', 'soft-skills-tags', 'languages-tags', 'certifications-tags'].forEach(id => {
-                    const container = document.getElementById(id);
-                    if (container) container.innerHTML = '';
-                });
+            try {
+                // Clear all buckets in StorageVault
+                const vault = globalThis.StorageVault;
+                if (vault) {
+                    await vault.clearAllBuckets();
+                }
 
-                clearDataModal.classList.add('hidden');
                 showToast('All data has been cleared', 'success');
-                updateDataStatus();
+                setTimeout(() => window.location.reload(), 1000);
+            } catch (error) {
+                console.error('Clear data failed:', error);
+                showToast('Failed to clear data', 'error');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Delete Everything';
             }
         });
     }
@@ -846,106 +1171,97 @@ async function loadAllData() {
     }
 }
 
-async function saveAllData() {
+// Replaced by State-driven per-section saves
+
+async function updateDataStatus() {
+    const statusEl = document.getElementById('data-status');
+    const apiStatusChip = document.querySelector('.api-status-indicator');
+    const apiStatusText = document.getElementById('api-status-text');
+
+    if (!statusEl || !apiStatusChip) return;
+
     try {
-        const saveBtn = document.getElementById('save-btn');
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<span class="loading-spinner"></span> Saving...';
-
-        // Collect all data
-        const resumeData = {
-            personal: {
-                firstName: document.getElementById('firstName')?.value.trim() || '',
-                lastName: document.getElementById('lastName')?.value.trim() || '',
-                email: document.getElementById('email')?.value.trim() || '',
-                phone: document.getElementById('phone')?.value.trim() || '',
-                location: document.getElementById('location')?.value.trim() || '',
-                linkedin: document.getElementById('linkedin')?.value.trim() || '',
-                github: document.getElementById('github')?.value.trim() || '',
-                portfolio: document.getElementById('portfolio')?.value.trim() || ''
-            },
-            summary: document.getElementById('summary')?.value.trim() || '',
-            experience: experienceData,
-            education: educationData,
-            skills: {
-                technical: getTagsFromContainer('technical-skills-tags'),
-                soft: getTagsFromContainer('soft-skills-tags'),
-                languages: getTagsFromContainer('languages-tags'),
-                certifications: getTagsFromContainer('certifications-tags')
-            },
-            projects: projectsData,
-            customFields: {
-                salaryExpectation: document.getElementById('salaryExpectation')?.value.trim() || '',
-                noticePeriod: document.getElementById('noticePeriod')?.value.trim() || '',
-                workAuthorization: document.getElementById('workAuthorization')?.value || '',
-                sponsorshipRequired: getRadioValue('sponsorshipRequired'),
-                willingToRelocate: getRadioValue('willingToRelocate'),
-                preferredLocation: document.getElementById('preferredLocation')?.value.trim() || '',
-                veteranStatus: document.getElementById('veteranStatus')?.value || '',
-
-                disabilityStatus: document.getElementById('disabilityStatus')?.value || '',
-                gender: document.getElementById('gender')?.value || '',
-                ethnicity: document.getElementById('ethnicity')?.value || '',
-                referralSource: document.getElementById('referralSource')?.value.trim() || ''
-            }
-        };
-
-        // Save to storage
-        await globalThis.ResumeManager.saveResumeData(resumeData);
-
-        // Save API keys and model (keys list updated via Add Key; ensure model is saved)
-        const apiModel = document.getElementById('api-model').value.trim() || 'gemini-2.5-flash';
+        const setup = await globalThis.AIClient.checkSetupStatus();
         const apiKeys = await globalThis.AIClient.getApiKeys?.() || [];
-        if (apiKeys.length > 0) {
-            await globalThis.AIClient.saveApiKeys(apiKeys, apiModel);
+        const model = await globalThis.AIClient.getStoredModel();
+
+        // 1. Update Global Resume Status (Header)
+        const parts = [];
+        if (setup.hasResume) parts.push('✓ Resume Profile Loaded');
+        else parts.push('✗ No Resume Profile');
+        statusEl.textContent = parts.join(' • ');
+        statusEl.style.color = setup.hasResume ? 'var(--success-green)' : 'var(--warning-yellow)';
+
+        // 2. Update API Status Indicator (Detailed)
+        if (apiKeys.length === 0) {
+            updateApiUiState('invalid', 'Missing Key', 'No API keys configured. Autofill is disabled.');
+        } else {
+            // Validate the first key as a proxy for usability
+            const result = await globalThis.AIClient.validateApiKey(apiKeys[0], model);
+            if (result.valid) {
+                updateApiUiState('usable', 'Usable', 'API key is active and ready for requests.');
+            } else if (result.error && result.error.includes('rate limit')) {
+                updateApiUiState('limited', 'Rate-limited', 'Quota exceeded. Autofill will degrade temporarily.');
+            } else {
+                updateApiUiState('invalid', 'Invalid', result.error || 'Key rejected by provider.');
+            }
         }
-
-        showToast('All changes saved!', 'success');
-        updateDataStatus();
-
-        // Show save status
-        const statusEl = document.getElementById('save-status');
-        statusEl.textContent = 'Saved!';
-        statusEl.classList.add('visible');
-        setTimeout(() => statusEl.classList.remove('visible'), 3000);
-
     } catch (error) {
-        console.error('Error saving data:', error);
-        showToast('Error saving data: ' + error.message, 'error');
-    } finally {
-        const saveBtn = document.getElementById('save-btn');
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                <polyline points="7 3 7 8 15 8"></polyline>
-            </svg>
-            Save All Changes
-        `;
+        console.error('Status update failed:', error);
+        updateApiUiState('invalid', 'Error', 'Failed to check API status.');
     }
 }
 
-function getRadioValue(name) {
-    const checked = document.querySelector(`input[name="${name}"]:checked`);
-    if (!checked) return null;
-    return checked.value === 'true';
+function updateApiUiState(state, label, tooltip) {
+    const chip = document.querySelector('.api-status-indicator');
+    const text = document.getElementById('api-status-text');
+    if (!chip || !text) return;
+
+    chip.className = `api-status-indicator status-${state}`;
+    text.textContent = label;
+
+    // Update tooltip
+    const tooltipEl = chip.querySelector('.api-status-tooltip');
+    if (tooltipEl) tooltipEl.textContent = tooltip;
 }
 
-async function updateDataStatus() {
-    const status = await globalThis.AIClient.checkSetupStatus();
-    const statusEl = document.getElementById('data-status');
+/**
+ * Read-After-Write Consistency Test
+ * Verifies that the UI state matches the StorageVault after a save.
+ */
+async function runConsistencyTest() {
+    console.log('--- Starting Read-After-Write Consistency Test ---');
+    const results = [];
 
-    const parts = [];
-    if (status.hasApiKey) parts.push('✓ API Key');
-    else parts.push('✗ No API Key');
+    const vaultData = await globalThis.ResumeManager.getResumeData();
+    const vaultKeys = await globalThis.AIClient.getApiKeys?.();
 
-    if (status.hasResume) parts.push('✓ Resume Data');
-    else parts.push('✗ No Resume');
+    // Check API Keys
+    const apiKeysMatch = JSON.stringify(State.initial.api.keys) === JSON.stringify(vaultKeys);
+    results.push({ area: 'API Keys', match: apiKeysMatch });
 
-    statusEl.textContent = parts.join(' • ');
-    statusEl.style.color = status.ready ? 'var(--success)' : 'var(--warning)';
+    // Check Personal Info
+    const personalMatch = JSON.stringify(State.initial.personal) === JSON.stringify(vaultData.personal);
+    results.push({ area: 'Personal', match: personalMatch });
+
+    // Check Experience
+    const expMatch = JSON.stringify(State.initial.experience) === JSON.stringify(vaultData.experience);
+    results.push({ area: 'Experience', match: expMatch });
+
+    console.table(results);
+    const allPass = results.every(r => r.match);
+    if (allPass) {
+        console.log('✅ Consistency Check: PASSED');
+        showToast('System Integrity Verified: All data consistent.', 'success');
+    } else {
+        console.error('❌ Consistency Check: FAILED');
+        showToast('System Integrity Warning: Data mismatch detected!', 'error');
+    }
+    return allPass;
 }
+
+// Attach to window for diagnostic use
+window.runConsistencyTest = runConsistencyTest;
 
 // ============================================
 // AI IMPORT
@@ -1094,14 +1410,22 @@ async function distributeParsedData(data) {
     if (data.personal) {
         Object.entries(data.personal).forEach(([key, value]) => {
             const el = document.querySelector(`[data-field="personal.${key}"]`);
-            if (el && value) el.value = value;
+            if (el && value) {
+                el.value = value;
+                State.current.personal[key] = value;
+            }
         });
+        checkDirty('personal');
     }
 
     // Summary
     if (data.summary) {
         const el = document.querySelector('[data-field="summary"]');
-        if (el) el.value = data.summary;
+        if (el) {
+            el.value = data.summary;
+            State.current.personal.summary = data.summary;
+            checkDirty('personal');
+        }
     }
 
     // Skills
@@ -1112,10 +1436,27 @@ async function distributeParsedData(data) {
         const languages = skillsData.languages || skillsData.spokenLanguages || [];
         const certifications = skillsData.certifications || skillsData.courses || [];
 
-        if (technical.length > 0) setTagsInContainer('technical-skills-tags', Array.isArray(technical) ? technical : [technical]);
-        if (soft.length > 0) setTagsInContainer('soft-skills-tags', Array.isArray(soft) ? soft : [soft]);
-        if (languages.length > 0) setTagsInContainer('languages-tags', Array.isArray(languages) ? languages : [languages]);
-        if (certifications.length > 0) setTagsInContainer('certifications-tags', Array.isArray(certifications) ? certifications : [certifications]);
+        if (technical.length > 0) {
+            const list = Array.isArray(technical) ? technical : [technical];
+            setTagsInContainer('technical-skills-tags', list);
+            State.current.skills.technical = list;
+        }
+        if (soft.length > 0) {
+            const list = Array.isArray(soft) ? soft : [soft];
+            setTagsInContainer('soft-skills-tags', list);
+            State.current.skills.soft = list;
+        }
+        if (languages.length > 0) {
+            const list = Array.isArray(languages) ? languages : [languages];
+            setTagsInContainer('languages-tags', list);
+            State.current.skills.languages = list;
+        }
+        if (certifications.length > 0) {
+            const list = Array.isArray(certifications) ? certifications : [certifications];
+            setTagsInContainer('certifications-tags', list);
+            State.current.skills.certifications = list;
+        }
+        checkDirty('skills');
     }
 
     // Experience
@@ -1123,13 +1464,15 @@ async function distributeParsedData(data) {
     if (expData.length > 0) {
         const newExp = Array.isArray(expData) ? expData : [expData];
         experienceData = [...newExp, ...experienceData];
-        // Remove duplicates based on title and company
+        // Remove duplicates
         experienceData = experienceData.reduce((acc, current) => {
             const x = acc.find(item => item.title === current.title && item.company === current.company);
             if (!x) return acc.concat([current]);
             else return acc;
         }, []);
         renderExperienceList();
+        State.current.experience = [...experienceData];
+        checkDirty('experience');
     }
 
     // Education
@@ -1143,6 +1486,8 @@ async function distributeParsedData(data) {
             else return acc;
         }, []);
         renderEducationList();
+        State.current.education = [...educationData];
+        checkDirty('education');
     }
 
     // Projects
@@ -1154,6 +1499,8 @@ async function distributeParsedData(data) {
             else return acc;
         }, []);
         renderProjectsList();
+        State.current.projects = [...projectsData];
+        checkDirty('projects');
     }
 
     // Custom Fields
@@ -1161,24 +1508,25 @@ async function distributeParsedData(data) {
         Object.entries(data.customFields).forEach(([key, value]) => {
             if (value === null || value === undefined) return;
 
-            // Find all matching elements (could be a single input or a group of radios)
             const elements = document.querySelectorAll(`[data-field="customFields.${key}"]`);
-
             elements.forEach(el => {
                 if (el.type === 'radio') {
-                    // For radios, check if the value matches (handling both string and boolean)
                     const val = String(value).toLowerCase();
                     const elVal = String(el.value).toLowerCase();
-                    if (val === elVal) el.checked = true;
+                    if (val === elVal) {
+                        el.checked = true;
+                        State.current.custom[key] = value === 'true';
+                    }
                 } else if (el.tagName === 'SELECT') {
-                    // For selects, find the matching option
                     el.value = value || '';
+                    State.current.custom[key] = value;
                 } else {
-                    // Default for text, tel, email, textarea
                     el.value = value || '';
+                    State.current.custom[key] = value;
                 }
             });
         });
+        checkDirty('custom');
     }
 }
 
@@ -1210,23 +1558,18 @@ function setStatus(el, message, type) {
 
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
+    if (!container) return;
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
 
-    const icons = {
-        success: '✓',
-        error: '✗',
-        warning: '⚠'
-    };
+    // Icon based on type
+    const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
 
     toast.innerHTML = `
-        <span class="toast-icon">${icons[type] || ''}</span>
+        <span class="toast-icon">${icon}</span>
         <span class="toast-message">${message}</span>
-        <button class="toast-close">&times;</button>
     `;
-
-    toast.querySelector('.toast-close').onclick = () => toast.remove();
 
     container.appendChild(toast);
 

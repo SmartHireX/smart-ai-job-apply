@@ -18,23 +18,16 @@ class EntityStore {
         if (this.isInitialized) return;
         try {
             const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
-            if (vault) {
-                // Use the new Centralized Vault
-                const bucket = vault.bucket('identity');
-                const data = await bucket.get('profile');
-                if (data) {
-                    this.profile = { ...this.profile, ...data };
-                }
-            } else {
-                // Legacy Fallback (Migration will handle moving this to the vault later)
-                const result = await chrome.storage.local.get(['smart_history_profile']);
-                const rawData = result.smart_history_profile;
-                const encryptionService = globalThis.EncryptionService || (typeof EncryptionService !== 'undefined' ? EncryptionService : null);
+            if (!vault) return;
 
-                if (rawData && typeof rawData === 'object' && !encryptionService?.isEncrypted?.(rawData)) {
-                    this.profile = { ...this.profile, ...rawData };
-                }
+            await vault.waitUntilReady?.();
+            // Use the new Centralized Vault
+            const bucket = vault.bucket('identity');
+            const data = await bucket.get('profile');
+            if (data) {
+                this.profile = { ...this.profile, ...data };
             }
+
             this.isInitialized = true;
         } catch (e) {
             console.warn('[EntityStore] Init failed:', e);
@@ -48,12 +41,9 @@ class EntityStore {
     async save() {
         try {
             const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
-            if (vault) {
-                await vault.bucket('identity').set('profile', this.profile);
-            } else {
-                // Emergency Fallback
-                await chrome.storage.local.set({ 'smart_history_profile': this.profile });
-            }
+            if (!vault) return;
+
+            await vault.bucket('identity').set('profile', this.profile);
         } catch (e) {
             console.error('[EntityStore] Save failed:', e);
         }

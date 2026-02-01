@@ -1,7 +1,7 @@
 /**
  * StorageVault.js
  * 
- * Centralized Storage Vault for the Smart AI Extension.
+ * Centralized Storage Vault for the Nova Apply Extension.
  * Enforces atomic transactions, FIFO write-locks, and transparent encryption.
  */
 

@@ -65,8 +65,9 @@ class GlobalMemory {
         }
 
         // 3. JACCARD SIMILARITY FALLBACK
-        if (window.KeyMatcher && window.KeyMatcher.findBestKeyMatch) {
-            const match = window.KeyMatcher.findBestKeyMatch(primaryKey, cache, 0.6);
+        const matcher = globalThis.KeyMatcher || (typeof KeyMatcher !== 'undefined' ? KeyMatcher : null);
+        if (matcher && matcher.findBestKeyMatch) {
+            const match = matcher.findBestKeyMatch(primaryKey, cache, 0.6);
             if (match && (match.value.value || match.value.answer)) {
                 const val = match.value.value || match.value.answer;
                 return { value: val, confidence: match.similarity * 0.8 };
@@ -103,20 +104,14 @@ class GlobalMemory {
      */
     static async getCache() {
         try {
-            if (window.StorageVault) {
-                const data = await window.StorageVault.bucket('memory').get('atomic_single');
-                return data || {};
-            }
+            const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+            if (!vault) return {};
 
-            // Legacy Fallback
-            const result = await chrome.storage.local.get('ATOMIC_SINGLE');
-            const data = result.ATOMIC_SINGLE;
-            if (data && typeof data === 'object' && !window.EncryptionService?.isEncrypted?.(data)) {
-                return data;
-            }
-            return {};
+            await vault.waitUntilReady?.();
+            const data = await vault.bucket('memory').get('atomic_single');
+            return data || {};
         } catch (error) {
-            console.warn('Failed to load ATOMIC_SINGLE for GlobalMemory:', error);
+            console.warn('Failed to load atomic_single from vault:', error);
             return {};
         }
     }
@@ -128,25 +123,11 @@ class GlobalMemory {
      */
     static async updateCache(newEntries) {
         try {
-            if (window.StorageVault) {
-                await window.StorageVault.bucket('memory').update('atomic_single', async (currentMemory = {}) => {
-                    const alignedEntries = {};
-                    Object.entries(newEntries).forEach(([k, v]) => {
-                        const val = v.answer || v.value;
-                        alignedEntries[k] = {
-                            value: val,
-                            lastUsed: Date.now(),
-                            useCount: (currentMemory[k]?.useCount || 0) + 1,
-                            source: 'global_memory',
-                            variants: currentMemory[k]?.variants || []
-                        };
-                    });
-                    return { ...currentMemory, ...alignedEntries };
-                });
-            } else {
-                // Legacy Fallback
-                const result = await chrome.storage.local.get('ATOMIC_SINGLE');
-                const currentMemory = result.ATOMIC_SINGLE || {};
+            const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+            if (!vault) return;
+
+            await vault.waitUntilReady?.();
+            await vault.bucket('memory').update('atomic_single', async (currentMemory = {}) => {
                 const alignedEntries = {};
                 Object.entries(newEntries).forEach(([k, v]) => {
                     const val = v.answer || v.value;
@@ -158,10 +139,10 @@ class GlobalMemory {
                         variants: currentMemory[k]?.variants || []
                     };
                 });
-                await chrome.storage.local.set({ ATOMIC_SINGLE: { ...currentMemory, ...alignedEntries } });
-            }
+                return { ...currentMemory, ...alignedEntries };
+            });
         } catch (error) {
-            console.warn('Failed to update ATOMIC_SINGLE:', error);
+            console.warn('Failed to update atomic_single in vault:', error);
         }
     }
 
@@ -171,13 +152,12 @@ class GlobalMemory {
      */
     static async clearCache() {
         try {
-            if (window.StorageVault) {
-                await window.StorageVault.bucket('memory').remove('atomic_single');
-            } else {
-                await chrome.storage.local.remove('ATOMIC_SINGLE');
-            }
+            const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+            if (!vault) return;
+
+            await vault.bucket('memory').remove('atomic_single');
         } catch (error) {
-            console.warn('Failed to clear ATOMIC_SINGLE:', error);
+            console.warn('Failed to clear atomic_single in vault:', error);
         }
     }
 
@@ -188,24 +168,27 @@ class GlobalMemory {
      * @returns {boolean} True if label is cacheable
      */
     static isCacheable(label) {
-        if (!label || label.length <= window.NovaConstants.CACHE_LIMITS.MIN_LABEL_LENGTH) {
+        const constants = globalThis.NovaConstants || (typeof NovaConstants !== 'undefined' ? NovaConstants : null);
+        if (!constants) return true; // Fail open if constants missing? Or false?
+
+        if (!label || label.length <= constants.CACHE_LIMITS.MIN_LABEL_LENGTH) {
             return false;
         }
 
         // Check for generic values
-        if (window.NovaConstants.VALIDATION.GENERIC_VALUES.test(label)) {
+        if (constants.VALIDATION.GENERIC_VALUES.test(label)) {
             return false;
         }
 
         // Check single-word quality
         const isSingleWord = !label.includes(' ');
-        if (isSingleWord && label.length < window.NovaConstants.VALIDATION.SINGLE_WORD_MIN_LENGTH) {
+        if (isSingleWord && label.length < constants.VALIDATION.SINGLE_WORD_MIN_LENGTH) {
             return false;
         }
 
         // Check number-heavy labels
         const numberCount = (label.match(/\d/g) || []).length;
-        const isNumberHeavy = numberCount > label.length * window.NovaConstants.CACHE_LIMITS.MAX_NUMBER_RATIO;
+        const isNumberHeavy = numberCount > label.length * constants.CACHE_LIMITS.MAX_NUMBER_RATIO;
         if (isNumberHeavy) {
             return false;
         }
@@ -221,8 +204,11 @@ class GlobalMemory {
      * @returns {boolean} True if field should skip smart memory
      */
     static isHistoryField(normalizedLabel, prediction, historyLabels) {
+        const constants = globalThis.NovaConstants || (typeof NovaConstants !== 'undefined' ? NovaConstants : null);
+        if (!constants) return false;
+
         const isHistoryType = historyLabels.includes(prediction?.label);
-        const isSafeOverride = window.NovaConstants.SAFE_OVERRIDE_PATTERN.test(normalizedLabel);
+        const isSafeOverride = constants.SAFE_OVERRIDE_PATTERN.test(normalizedLabel);
 
         return isHistoryType && !isSafeOverride;
     }
@@ -276,8 +262,11 @@ class GlobalMemory {
     static async import(jsonString) {
         try {
             const cache = JSON.parse(jsonString);
-            await chrome.storage.local.set({ ATOMIC_SINGLE: cache });
-            // console.log('✅ Global Memory imported successfully to ATOMIC_SINGLE');
+            const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+            if (!vault) return;
+
+            await vault.bucket('memory').set('atomic_single', cache);
+            console.log('✅ Global Memory imported successfully to vault');
         } catch (error) {
             console.error('❌ Failed to import global memory:', error);
             throw error;
@@ -285,9 +274,12 @@ class GlobalMemory {
     }
 }
 
-// Legacy compatibility - expose globally
-window.updateSmartMemoryCache = GlobalMemory.updateCache.bind(GlobalMemory);
-window.normalizeSmartMemoryKey = GlobalMemory.normalizeKey.bind(GlobalMemory);
+/**
+ * Legacy compatibility - expose globally
+ * Note: These should eventually be removed in favor of direct GlobalMemory usage
+ */
+globalThis.updateSmartMemoryCache = GlobalMemory.updateCache.bind(GlobalMemory);
+globalThis.normalizeSmartMemoryKey = GlobalMemory.normalizeKey.bind(GlobalMemory);
 
 // Export for use
 globalThis.GlobalMemory = GlobalMemory;

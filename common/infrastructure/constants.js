@@ -1,6 +1,6 @@
 /**
  * constants.js
- * Centralized constants and configuration values for the Smart AI Job Apply extension
+ * Centralized constants and configuration values for the Nova Apply extension
  */
 
 // ============ MESSAGE TYPES ============
@@ -146,12 +146,12 @@ const BATCH_CONFIG = {
 
 // ============ CSS CLASSES ============
 const CSS_CLASSES = {
-    FILLED: 'smarthirex-filled',
-    FILLED_HIGH: 'smarthirex-filled-high',
-    FILLED_MEDIUM: 'smarthirex-filled-medium',
-    FILLED_LOW: 'smarthirex-filled-low',
-    FIELD_HIGHLIGHT: 'smarthirex-field-highlight',
-    TYPING: 'smarthirex-typing'
+    FILLED: 'nova-filled',
+    FILLED_HIGH: 'nova-filled-high',
+    FILLED_MEDIUM: 'nova-filled-medium',
+    FILLED_LOW: 'nova-filled-low',
+    FIELD_HIGHLIGHT: 'nova-field-highlight',
+    TYPING: 'nova-typing'
 };
 
 // ============ VALIDATION PATTERNS ============

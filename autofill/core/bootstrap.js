@@ -417,10 +417,11 @@ async function loadAllScripts() {
             window.__NOVA_LOADED = true;
             window.__NOVA_LOADING = false;
 
-            // SECURITY: Trigger One-Time Global Migration for Encrypted Storage
-            if (window.EncryptionService && window.EncryptionService.runGlobalMigration) {
-                window.EncryptionService.runGlobalMigration().catch(err => {
-                    console.error('[Bootstrap] Encryption migration failed:', err);
+            // SECURITY: Trigger Vault Initialization
+            const vault = window.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+            if (vault && vault.initialize) {
+                vault.initialize().catch(err => {
+                    console.error('[Bootstrap] Vault initialization failed:', err);
                 });
             }
 

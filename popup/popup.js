@@ -1,5 +1,5 @@
 /**
- * Popup JavaScript for Smart AI Job Apply Extension
+ * Popup JavaScript for Nova Apply Extension
  * 
  * Handles popup UI, form detection, and triggers form filling.
  * Uses local AI client and resume manager instead of backend.
@@ -16,7 +16,7 @@ let isReady = false;
 
 // Initialize popup
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Smart AI Job Apply popup loaded');
+    console.log('Nova Apply popup loaded');
 
     // Get DOM elements
     setupSection = document.getElementById('setup-section');

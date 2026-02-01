@@ -1,5 +1,5 @@
 /**
- * Resume Manager for Smart AI Job Apply Extension
+ * Resume Manager for Nova Apply Extension
  * 
  * Handles all resume data operations using Chrome local storage.
  * Provides CRUD operations and import/export functionality.
@@ -106,33 +106,50 @@ function generateId() {
  * @returns {Promise<Object>}
  */
 async function getResumeData() {
-    if (window.StorageVault) {
-        // Use Centralized Vault
-        const data = await window.StorageVault.bucket('identity').get(RESUME_STORAGE_KEY);
-        if (!data) return null;
-        return deepMerge(JSON.parse(JSON.stringify(DEFAULT_RESUME_SCHEMA)), data);
-    }
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (!vault) return null;
 
-    // Legacy Fallback
-    const result = await chrome.storage.local.get([RESUME_STORAGE_KEY]);
-    const rawData = result[RESUME_STORAGE_KEY];
+    await vault.waitUntilReady?.();
+    let data = await vault.bucket('identity').get(RESUME_STORAGE_KEY);
 
-    if (!rawData) {
-        return null;
-    }
+    // --- BRIDGING LOGIC: Fallback to EntityStore (Profile) within Vault ---
+    if (!data || (!data.experience?.length && !data.education?.length)) {
+        const profile = await vault.bucket('identity').get('profile');
+        if (profile) {
+            data = data || JSON.parse(JSON.stringify(DEFAULT_RESUME_SCHEMA));
 
-    let data = rawData;
-    if (window.EncryptionService && window.EncryptionService.isEncrypted(rawData)) {
-        try {
-            const aad = window.EncryptionAAD.entity(RESUME_STORAGE_KEY);
-            data = await window.EncryptionService.decrypt(rawData, aad);
-        } catch (err) {
-            console.error('[ResumeManager] Decryption failed:', err);
-            throw err;
+            if (profile.work && !data.experience?.length) {
+                data.experience = profile.work.map(w => ({
+                    id: w.id || Math.random().toString(36).substr(2, 9),
+                    company: w.company || w.employer || '',
+                    title: w.title || w.role || '',
+                    location: w.location || '',
+                    startDate: w.startDate || '',
+                    endDate: w.endDate || '',
+                    description: w.description || '',
+                    current: w.current || false
+                }));
+            }
+
+            if (profile.education && !data.education?.length) {
+                data.education = profile.education.map(e => ({
+                    id: e.id || Math.random().toString(36).substr(2, 9),
+                    school: e.school || e.institution || '',
+                    degree: e.degree || '',
+                    major: e.major || e.fieldOfStudy || '',
+                    startDate: e.startDate || '',
+                    endDate: e.endDate || '',
+                    gpa: e.gpa || ''
+                }));
+            }
+
+            if (profile.personal && !data.personal?.email) {
+                data.personal = { ...data.personal, ...profile.personal };
+            }
         }
-    } else if (typeof rawData !== 'object') {
-        return null;
     }
+
+    if (!data) return null;
 
     return deepMerge(JSON.parse(JSON.stringify(DEFAULT_RESUME_SCHEMA)), data);
 }
@@ -150,19 +167,10 @@ async function saveResumeData(data) {
     data.meta.updatedAt = now;
     data.meta.version = (data.meta.version || 0) + 1;
 
-    if (window.StorageVault) {
-        await window.StorageVault.bucket('identity').set(RESUME_STORAGE_KEY, data);
-        return;
-    }
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (!vault) return;
 
-    // Legacy Fallback
-    let dataToSave = data;
-    if (window.EncryptionService) {
-        const aad = window.EncryptionAAD.entity(RESUME_STORAGE_KEY);
-        dataToSave = await window.EncryptionService.encrypt(data, aad);
-    }
-
-    await chrome.storage.local.set({ [RESUME_STORAGE_KEY]: dataToSave });
+    await vault.bucket('identity').set(RESUME_STORAGE_KEY, data);
 }
 
 /**

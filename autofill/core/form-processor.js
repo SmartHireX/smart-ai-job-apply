@@ -62,14 +62,17 @@ class FormProcessor {
 
         // Get context
         const [resumeData, smartMemory] = await Promise.all([
-            window.ResumeManager.getResumeData(),
-            window.GlobalMemory ? window.GlobalMemory.getCache() : {}
+            globalThis.ResumeManager.getResumeData(),
+            globalThis.GlobalMemory ? globalThis.GlobalMemory.getCache() : {}
         ]);
 
         // Ensure SmartMemoryService is ready (it initializes itself usually, but good to check)
 
-        if (!resumeData) throw new Error('Resume data missing');
-        this.normalizeResumeSchema(resumeData);
+        if (!resumeData) {
+            console.warn('⚠️ [FormProcessor] Resume data missing. Proceeding with Memory/Cache only.');
+        } else {
+            this.normalizeResumeSchema(resumeData);
+        }
 
         // Extract fields
         let formSource = null;
