@@ -554,6 +554,8 @@ if (typeof window !== 'undefined') {
  * Priority 3: Robust Tokenization (synonyms, stemming, priority tokens)
  */
 function generateSemanticKey(fieldOrElement, label) {
+    if (!fieldOrElement) return { key: 'unknown_field', isML: false, fallbackKey: 'unknown_field' };
+
     // Normalize field/element
     let field = fieldOrElement;
     if (typeof HTMLElement !== 'undefined' && fieldOrElement instanceof HTMLElement) {
@@ -568,6 +570,8 @@ function generateSemanticKey(fieldOrElement, label) {
             section_type: fieldOrElement.getAttribute('section_type')
         };
     }
+
+    if (!field) return { key: 'unknown_field', isML: false, fallbackKey: 'unknown_field' };
 
     // FIX: Respect explicit cache_label on POJO (passed from CompositeFieldManager)
     if (field.cache_label) {
@@ -646,9 +650,8 @@ function generateSemanticKey(fieldOrElement, label) {
         const cleanName = (field.name || '').replace(stripPattern, '');
         const cleanId = (field.id || '').replace(stripPattern, '');
 
-        // 2. Detect Sub-Field Context via DateHandler (if available)
+        // Detect Sub-Field Context via DateHandler (if available)
         let subContext = '';
-        // ... preserved logic ...
         const lowerName = (field.name || '').toLowerCase();
         const lowerId = (field.id || '').toLowerCase();
         if (lowerName.includes('month') || lowerId.includes('month')) subContext = 'month';
@@ -711,10 +714,6 @@ async function getCachedValue(fieldOrSelector, labelArg) {
 
     // 1. Generate Semantic Key
     let { key: semanticType, isML, fallbackKey } = generateSemanticKey(field, label);
-
-    // // console.log(`🔍 [InteractionLog] Lookup Key: "${semanticType}" (isML: ${isML}, fallback: "${fallbackKey}")`);
-
-    // ... (rest of function logic)
 
     // 2. Select Cache Bucket
     const targetBucket = determineCacheStrategy(semanticType, field);
@@ -808,7 +807,6 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     }
     // B. Fuzzy Search (Secondary)
     else {
-        // ... (existing fuzzy logic) ...
         const searchTerms = [label, field.name, field.id].filter(Boolean).map(t => normalizeFieldName(t));
         for (const term of searchTerms) {
             for (const [type, entry] of Object.entries(cache)) {
@@ -849,7 +847,6 @@ async function getCachedValue(fieldOrSelector, labelArg) {
     }
 
     let resultValue = cached.value;
-    // ... (rest of array unpacking logic) ...
     if (isMultiCacheType(semanticType, field)) {
         const isRepeating = /job|work|education|employer|school|degree/.test(semanticType);
         if (isRepeating) {
@@ -1219,7 +1216,7 @@ async function cleanupCache() {
         }
         if (modified) await saveCache(key, cache);
     }
-    if (cleaned > 0) // console.log(`[InteractionLog] Cleaned ${cleaned} entries.`);
+    // if (cleaned > 0) console.log(`[InteractionLog] Cleaned ${cleaned} entries.`);
 }
 
 async function getCacheStats() {
