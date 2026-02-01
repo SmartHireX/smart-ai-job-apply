@@ -249,6 +249,44 @@ const forms = await cache.listSavedForms();
 
 ---
 
+# Cache System (The Hippocampus) 💾
+
+The **InteractionLog** is the memory center of Nova Apply. It transforms a simple autofill tool into a learning agent by remembering user choices across different job portals.
+
+## 3-Bucket Architecture
+
+We don't just dump everything into a key-value store. Fields are routed into 3 distinct buckets based on their behavior:
+
+### 1. ATOMIC_SINGLE (Scalar Values)
+*   **What**: Simple, one-to-one fields.
+*   **Examples**: `email`, `first_name`, `linkedin_url`, `gender`.
+*   **Storage**: Key-Value pair with confidence score.
+
+### 2. ATOMIC_MULTI (Collections)
+*   **What**: Sets of values where multiple choices are valid.
+*   **Examples**: `skills` (Python, React), `interests`, `languages`.
+*   **Storage**: `Set<String>` (Handles Add/Remove operations).
+
+### 3. SECTION_REPEATER (Row-Based)
+*   **What**: Structured data that repeats (Job 1, Job 2).
+*   **Examples**: `work_experience`, `education_history`.
+*   **Storage**: Indexed Array of Objects.
+    *   `work_experience[0]` = Google (Job 1)
+    *   `work_experience[1]` = Meta (Job 2)
+
+## The Learning Loop (Jaccard Similarity)
+
+When a user manually corrects a field, we don't just save it. We perform **Fuzzy Key Matching** using Weighted Jaccard Similarity to map the platform-specific label (e.g., "Authorized?") to our canonical key (`work_auth`).
+
+```mermaid
+graph LR
+    User[User Clicks 'No'] --> Obs[FormObserver]
+    Obs --> Fuzzy[Fuzzy Matcher]
+    Fuzzy -->|Jaccard > 0.7| Cache[Update 'work_auth']
+```
+
+---
+
 ## Security & Privacy
 
 ### Encryption

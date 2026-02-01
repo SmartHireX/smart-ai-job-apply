@@ -75,10 +75,65 @@ TIER 3: Visual Heuristics (40-70% confidence)
 
 ### Pipeline Flow
 
+```text
+┌─────────────────┐       ┌──────────────────┐
+│  USER VISITS    │────►│  MUTATION OBSERVER │
+│  JOB PORTAL     │       │  (Detects Inputs)  │
+└─────────────────┘       └─────────┬────────┘
+                                    │
+                                    ▼
+                          ┌──────────────────┐
+                          │  AUTOFILL SCANNER  │
+                          │ (Shadow DOM Aware) │
+                          └─────────┬────────┘
+                                    │
+                                    ▼
+                          ┌──────────────────┐
+                          │ FEATURE EXTRACTION │
+                          │ (95-dim Vector)    │
+                          └─────────┬────────┘
+                                    │
+            ┌───────────────────────┴───────────────────────┐
+            │                                               │
+            ▼                                               ▼
+┌───────────────────────┐                       ┌───────────────────────┐
+│   HEURISTIC ENGINE    │                       │    NEURAL V8 MODEL    │
+│   (Regex Patterns)    │                       │   (Sigmoid Network)   │
+└───────────┬───────────┘                       └───────────┬───────────┘
+            │                                               │
+            └───────────────────────┬───────────────────────┘
+                                    │
+                                    ▼
+                          ┌──────────────────┐
+                          │  5-TIER ARBITER  │
+                          │ (Decision Logic) │
+                          └─────────┬────────┘
+                                    │
+                  ┌─────────────────┴─────────────────┐
+                  ▼                                   ▼
+        (High Confidence)                       (Ambiguous)
+                  │                                   │
+                  │                         ┌───────────────────┐
+                  │                         │  GEMINI AI FLASH  │
+                  │                         └─────────┬─────────┘
+                  │                                   │
+                  ▼                                   ▼
+        ┌──────────────────┐               ┌──────────────────┐
+        │   FINAL LABEL    │◄──────────────│   RESOLVED LABEL   │
+        └─────────┬────────┘               └──────────────────┘
+                  │
+                  ▼
+        ┌──────────────────┐
+        │ EXECUTION ENGINE │
+        │ (Stealth Inject) │
+        └─────────┬────────┘
+                  │
+                  ▼
+        ┌──────────────────┐       ┌──────────────────┐
+        │  FORM OBSERVER   │──────►│  INTERACTION LOG │
+        │ (Learns Changes) │       │ (Update Cache)   │
+        └─────────────────┘       └──────────────────┘
 ```
-Form Detection → Label Extraction → ML Classification → Data Resolution → Execution
-                                          ↓
-                    InteractionLog → RuleEngine → AI (Gemini)
 ```
 
 ### Classification Accuracy

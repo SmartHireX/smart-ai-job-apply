@@ -1,27 +1,11 @@
 # Neural Classifier Documentation
 
-## Overview
+## Neural Classifier (V8) 🧠
 
-The Neural Classifier is a deep learning-based field type classification system that uses a 3-layer neural network to identify form field types based on extracted features. It achieves **65.22% accuracy** on test data and serves as a backup classifier in the hybrid ensemble.
-
----
+The **Neural Classifier V8** is the "Right Brain" of our hybrid system, designed to handle ambiguity and context that regex patterns miss.
 
 ## Architecture
 
-### Network Structure
-
-**Neural V5 Architecture:**
-```
-Input Layer:       84 features
-  ↓ (W1: 84×512, He initialization)
-Hidden Layer 1:    512 neurons (Leaky ReLU + Dropout 0.3)
-  ↓ (W2: 512×256, He initialization)
-Hidden Layer 2:    256 neurons (Leaky ReLU + Dropout 0.3)
-  ↓ (W3: 256×128, He initialization)
-Hidden Layer 3:    128 neurons (Leaky ReLU + Dropout 0.3)
-  ↓ (W4: 128×135, Xavier initialization)
-Output Layer:      135 field types (Softmax)
-```
 
 **Total Parameters:** ~233,000  
 **Model Size:** 2.5 MB  

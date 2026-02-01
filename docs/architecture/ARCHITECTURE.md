@@ -1,74 +1,58 @@
 # 🏛️ SmartHireX Enterprise Architecture v2.0
 
 ## 🌟 Philosophy: Enterprise-Grade Form Intelligence
+# Nova Apply Browser Extension Architecture
 
-This system is designed to match or exceed the sophistication of **Chrome Autofill**, **1Password**, and **LastPass**. We implement industry-standard techniques with our own optimizations.
+## *The neural-heuristic hybrid engine that solves job applications forever*
 
-### Core Principles
-1. **Privacy First**: All data stays in browser local storage. No cloud sync.
-2. **3-Tier Resolution**: Explicit HTML → Semantic Hints → Visual Heuristics
-3. **Zero Dependencies**: Pure JavaScript, no TensorFlow or heavy frameworks
-4. **Self-Learning**: The system remembers user corrections and improves over time
+The system follows a strict **"Scan → Think → Act"** pipeline, ensuring high accuracy and natural behavior.
+
+## ⚙️ How It Works: Under the Hood
+
+The extension operates as a sophisticated orchestrator for browser events. Here is the technical breakdown of a single autofill determination:
+
+### 1. The Scanning Layer (Shadow DOM Aware)
+Most autofillers fail on modern apps because of Shadow DOMs and iframes. Nova Apply uses a recursive `AutofillScanner` that:
+*   Pierces Shadow DOM boundaries.
+*   Extracts 3 distinct signals per field: **HTML attributes** (id, name), **Semantic hints** (placeholder, label), and **Visual context** (nearby text).
+
+### 2. The Hybrid Classification Engine
+We don't trust a single model. Every field is analyzed by two parallel engines:
+*   **The Heuristic Engine (Left Brain)**:
+    *   Uses 45+ Chrome-inspired regex patterns.
+    *   Extremely fast (<2ms) and accurate for standard fields (email, phone, git_url).
+    *   *Example*: `matches /^(?=.*billing)(?=.*zip).*$/i` → `billing_zip_code`
+*   **The Neural Network V8 (Right Brain)**:
+    *   A custom Tensorflow.js model (87 classes, Sigmoid output).
+    *   Analyzes 95-dimensional feature vectors (context, depth, siblings).
+    *   Solves ambiguity (e.g., "Start Date" - is it for Job 1 or Education?).
+
+### 3. The 5-Tier Arbitration Matrix
+When the engines disagree, who wins? We use a weighted arbitration matrix:
+*   **Tier 1**: Unanimous Agreement (Both say "Email").
+*   **Tier 2**: Strong Heuristic Override (Regex finds specific "CVV" pattern).
+*   **Tier 3**: Neural Contextual Win (Neural sees "School" nearby, overrides "Company" guess).
+*   **Tier 4**: Weighted Probability Voting.
+*   **Tier 5**: Scanner Veto (Hardcoded safety blocks).
+
+### 4. Stealth Execution
+To bypass anti-bot protections (like in Workday or React apps), we don't just set `value`. We use a stealth injection technique:
+```javascript
+const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+nativeSetter.call(element, value); // Bypass React's virtual DOM tracker
+element.dispatchEvent(new Event('input', { bubbles: true })); // Trigger framework state updates
+```
+
+### 5. The Learning Loop
+If you manually correct a field, `FormObserver` captures the change. It uses **fuzzy key matching** (Jaccard Similarity) to map that specific field ID to the correct label in your local cache, ensuring next time it fills correctly.
+│   └── messaging/               # Message router
+└── docs/                        # Documentation
 
 ---
 
 ## 🏗️ System Architecture Overview
 
-```mermaid
-graph TB
-    subgraph User ["👤 User Interaction"]
-        Popup[Extension Popup]
-        Sidebar[Sidebar UI]
-    end
-
-    subgraph Core ["🎯 Core Engine"]
-        Bootstrap[Bootstrap Loader]
-        Pipeline[PipelineOrchestrator]
-        Router[MessageRouter]
-    end
-
-    subgraph Extraction ["📋 Form Extraction"]
-        FormDetector[FormDetector]
-        LabelExtractor[3-Tier Label Extractor]
-        SectionGrouper[SectionGrouper]
-    end
-
-    subgraph Classification ["🧠 AI Classification"]
-        Hybrid[HybridClassifier]
-        Heuristic[HeuristicEngine]
-        Neural[NeuralClassifier v8]
-    end
-
-    subgraph Resolution ["💾 Data Resolution"]
-        InteractionLog[InteractionLog]
-        RuleEngine[RuleEngine]
-        GlobalMemory[GlobalMemory]
-        CopilotClient[CopilotClient AI]
-    end
-
-    subgraph Execution ["🚀 Execution"]
-        ExecutionEngine[ExecutionEngine]
-        DateHandler[DateHandler]
-        SectionController[SectionController]
-    end
-
-    Popup --> Bootstrap
-    Sidebar --> Router
-    Bootstrap --> Pipeline
-    Pipeline --> FormDetector
-    FormDetector --> LabelExtractor
-    LabelExtractor --> SectionGrouper
-    SectionGrouper --> Hybrid
-    Hybrid --> Heuristic
-    Hybrid --> Neural
-    Pipeline --> InteractionLog
-    Pipeline --> RuleEngine
-    Pipeline --> GlobalMemory
-    Pipeline --> CopilotClient
-    Pipeline --> ExecutionEngine
-    ExecutionEngine --> DateHandler
-    ExecutionEngine --> SectionController
-```
+![System Architecture](https://mermaid.ink/img/Zmxvd2NoYXJ0IFRECiAgICBEaXNjb3ZlcnkoW0Zvcm0gRGlzY292ZXJ5IFRyaWdnZXJdKSAtLT4gU2lnbmFsCiAgICAKICAgIHN1YmdyYXBoIERldGVjdGlvbiBbUGhhc2UgMTogRGlzY292ZXJ5ICYgT2JzZXJ2YXRpb25dCiAgICAgICAgZGlyZWN0aW9uIExSCiAgICAgICAgU2lnbmFse011dGF0aW9uL1VSTCBPYnNlcnZlcn0gLS0-fFNjb3V0IEV2ZW50fCBTY2FuW0F1dG9maWxsU2Nhbm5lcl0KICAgICAgICBTY2FuIC0tPnxET00gVHJhdmVyc2FsfCBGZWF0dXJlRXhbQ29udGV4dEZlYXR1cmVFeHRyYWN0b3JdCiAgICBlbmQKCiAgICBzdWJncmFwaCBJbmZlcmVuY2UgW1BoYXNlIDI6IEh5YnJpZCBFbnNlbWJsZSBBcmJpdHJhdGlvbl0KICAgICAgICBkaXJlY3Rpb24gVEIKICAgICAgICBPcmNoe1BpcGVsaW5lT3JjaGVzdHJhdG9yfQogICAgICAgIAogICAgICAgIHN1YmdyYXBoIFN0YWNrIFtJbnRlbGxpZ2VuY2UgU3RhY2tdCiAgICAgICAgICAgIGRpcmVjdGlvbiBMUgogICAgICAgICAgICBIZXVyaXN0aWNbSGV1cmlzdGljIFJlZ2V4IEVuZ2luZV0KICAgICAgICAgICAgTmV1cmFsW1tOZXVyYWwgVjggQ29uZmlybWF0aW9uIE1vZGVsXV0KICAgICAgICAgICAgR2VtaW5pW1tHZW1pbmkgQUkgUmVzb2x2ZXJdXQogICAgICAgIGVuZAoKICAgICAgICBGZWF0dXJlRXggLS0-IE9yY2gKICAgICAgICBPcmNoIC0tPiBIZXVyaXN0aWMgJiBOZXVyYWwKICAgICAgICAKICAgICAgICBIZXVyaXN0aWMgLS0-IEFyYntFbnNlbWJsZSBBcmJpdGVyfQogICAgICAgIE5ldXJhbCAtLT4gQXJiCiAgICAgICAgCiAgICAgICAgQXJiIC0tICdVbmFuaW1vdXMgLyBXZWlnaHRlZCBXaW4nIC0tPiBMYWJlbChbRmluYWwgU2VtYW50aWMgTGFiZWxdKQogICAgICAgIEFyYiAtLSAnQW1iaWd1aXR5IC8gTG93IENvbmYnIC0tPiBHZW1pbmkKICAgIGVuZAoKICAgIEdlbWluaSAtLT4gTGFiZWwKCiAgICBzdHlsZSBUcmlnZ2VyIGZpbGw6I2Y4ZmFmYyxzdHJva2U6Izk0YTNiOCxjb2xvcjojMWUyOTNiCiAgICBzdHlsZSBPcmNoIGZpbGw6IzYzNjZmMSxzdHJva2U6IzQzMzhjYSxjb2xvcjojZmZmLHN0cm9rZS13aWR0aDoycHgKICAgIHN0eWxlIE5ldXJhbCBmaWxsOiMxMGI5ODEsc3Ryb2tlOiMwNTk2NjksY29sb3I6I2ZmZgogICAgc3R5bGUgR2VtaW5pIGZpbGw6IzhiNWNmNixzdHJva2U6IzdjM2FlZCxjb2xvcjojZmZmCiAgICBzdHlsZSBMYWJlbCBmaWxsOiMxZjI5Mzcsc3Ryb2tlOiMxMTE4MjcsY29sb3I6I2ZmZixzdHJva2Utd2lkdGg6MnB4CiAgICAKICAgIGxpbmtTdHlsZSBkZWZhdWx0IHN0cm9rZTojY2JkNWUxLHN0cm9rZS13aWR0aDoxcHgKICAgIGxpbmtTdHlsZSA1LDYsNyBzdHJva2U6IzYzNjZmMSxzdHJva2Utd2lkdGg6MnB4LGNvbG9yOiM2MzY2ZjE=)
 
 ---
 
@@ -267,22 +251,7 @@ InteractionLog (cached) → RuleEngine (resume) → AI (generated)
 
 ## 🔄 Message Flow
 
-```mermaid
-sequenceDiagram
-    participant Popup
-    participant Background
-    participant ContentScript
-    participant Pipeline
-    participant DOM
-
-    Popup->>ContentScript: ACTIVATE_EXTENSION
-    ContentScript->>Pipeline: Load lazy scripts
-    Popup->>ContentScript: START_LOCAL_PROCESSING
-    ContentScript->>Pipeline: executePipeline(fields)
-    Pipeline->>DOM: Fill fields
-    DOM->>Pipeline: User corrections
-    Pipeline->>Pipeline: Cache corrections
-```
+![Message Flow](https://mermaid.ink/img/c2VxdWVuY2VEaWFncmFtCiAgICBwYXJ0aWNpcGFudCBQb3B1cAogICAgcGFydGljaXBhbnQgQmFja2dyb3VuZAogICAgcGFydGljaXBhbnQgQ29udGVudFNjcmlwdAogICAgcGFydGljaXBhbnQgUGlwZWxpbmUKICAgIHBhcnRpY2lwYW50IERPTQoKICAgIFBvcHVwLT4-Q29udGVudFNjcmlwdDogQUNUSVZBVEVfRVhURU5TSU9OCiAgICBDb250ZW50U2NyaXB0LT4-UGlwZWxpbmU6IExvYWQgbGF6eSBzY3JpcHRzCiAgICBQb3B1cC0-PkNvbnRlbnRTY3JpcHQ6IFNUQVJUX0xPQ0FMX1BST0NFU1NJTkcKICAgIENvbnRlbnRTY3JpcHQtPj5QaXBlbGluZTogZXhlY3V0ZVBpcGVsaW5lKGZpZWxkcykKICAgIFBpcGVsaW5lLT4-RE9NOiBGaWxsIGZpZWxkcwogICAgRE9NLT4-UGlwZWxpbmU6IFVzZXIgY29ycmVjdGlvbnMKICAgIFBpcGVsaW5lLT4-UGlwZWxpbmU6IENhY2hlIGNvcnJlY3Rpb25z)
 
 ---
 

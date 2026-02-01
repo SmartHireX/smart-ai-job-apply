@@ -272,18 +272,35 @@ const HEURISTIC_CONFIG = {
 };
 ```
 
-### Neural Classifier
+# Autofill System Overview
 
-```javascript
-const NEURAL_CONFIG = {
-    modelPath: 'model_v4_baseline.json',
-    inputSize: 84,              // Feature dimensions
-    hiddenLayers: [512, 256, 128],
-    dropout: 0.3,               // Dropout rate (training only)
-    confidenceThreshold: 0.15,  // Minimum prediction confidence
-    batchSize: 1                // Online learning
-};
+The core of SmartHireX is a sophisticated **Neural-Heuristic Hybrid Engine** designed to solve the problem of "Form Fatigue."
+
+## The Core Pipeline
+
+The system follows a strict **"Scan → Think → Act"** pipeline:
+
+1.  **Discovery (Scan)**: `AutofillScanner` recursively traverses the DOM, piercing Shadow DOM boundaries to find every interactable field.
+2.  **Classification (Think)**: Two engines run in parallel:
+    *   **HeuristicEngine**: Chrome-style regex for 45+ standard fields.
+    *   **NeuralClassifier (V8)**: 87-class Sigmoid network for context.
+3.  **Arbitration**: A 5-tier matrix decides the winner (Heuristics > Neural for contact; Neural > Heuristics for job/context).
+4.  **Execution (Act)**: `ExecutionEngine` injects values using stealth techniques to bypass React/Angular anti-bot protections.
+
+## Data Flow
+
 ```
+DOM Mutation → Scanner → Feature Extraction → Hybrid Classification → Resolution → Injection
+                                                      ↓
+                                                Arbitration Matrix
+```
+
+## Key Modules
+
+*   **AutofillScanner**: DOM traversal and field discovery.
+*   **HybridClassifier**: Orchestrates the Heuristic and Neural engines.
+*   **InteractionLog**: The "Memory" of the system (semantic cache).
+*   **ExecutionEngine**: Handles the physical filling and event dispatching.
 
 ### Cache System
 
