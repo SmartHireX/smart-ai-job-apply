@@ -824,23 +824,17 @@ body {
     background: var(--warning-light);
 }
 
-/* Form Groups */
+/* Form Groups - LinkedIn Spacing */
 .form-group {
-    margin-bottom: 20px;
-}
-
-.form-group:last-child {
-    margin-bottom: 24px;
-    display: flex;
-    flex-direction: column;
+    margin-bottom: var(--space-xl);
 }
 
 .form-group label {
     display: block;
     font-size: 14px;
     font-weight: 600;
-    color: var(--zinc-900);
-    margin-bottom: 8px;
+    color: var(--black-90);
+    margin-bottom: var(--space-sm);
 }
 
 .mb-30 {
