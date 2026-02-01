@@ -9,8 +9,8 @@
  */
 
 // Gemini API Configuration
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
 const MAX_API_KEYS = 5;
 const KEY_COOLDOWN_MS = 60 * 1000; // 1 min default for rate limit
 
@@ -208,7 +208,13 @@ async function getStoredModel() {
     const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
     if (vault) {
         const config = await vault.bucket('system').get('config');
-        return config?.ai_model || DEFAULT_GEMINI_MODEL;
+        let model = config?.ai_model || DEFAULT_GEMINI_MODEL;
+        // Force upgrade to gemini-2.5-flash if on older or problematic models
+        const legacyModels = ['gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash-exp'];
+        if (!model || legacyModels.includes(model)) {
+            model = DEFAULT_GEMINI_MODEL;
+        }
+        return model;
     }
     return DEFAULT_GEMINI_MODEL;
 }
@@ -313,6 +319,19 @@ async function validateApiKey(apiKey, modelName = DEFAULT_GEMINI_MODEL) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error?.message || `HTTP ${response.status}`;
 
+        if (response.status === 404) {
+            // Attempt to list models to help the user debug
+            try {
+                const listResp = await fetch(`${GEMINI_API_BASE}/models?key=${apiKey}`);
+                if (listResp.ok) {
+                    const listData = await listResp.json();
+                    const names = (listData.models || []).map(m => m.name.split('/').pop());
+                    console.warn(`[AIClient] Model '${modelName}' not found. Available models:`, names);
+                    return { valid: false, error: `Model '${modelName}' not found. Available models: ${names.slice(0, 5).join(', ')}... (check console for full list)` };
+                }
+            } catch (e) { }
+            return { valid: false, error: `Model '${modelName}' not found on endpoint ${GEMINI_API_BASE}.` };
+        }
         if (response.status === 400) {
             if (errorMessage.includes('API key')) return { valid: false, error: 'Invalid API key format' };
             if (errorMessage.includes('not found')) return { valid: false, error: `Model '${modelName}' not found or not supported` };

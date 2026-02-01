@@ -81,6 +81,10 @@ function maskKey(key) {
     return key.slice(0, 6) + '••••••••' + key.slice(-4);
 }
 
+function getModelValue() {
+    return document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash';
+}
+
 function renderApiKeysList(keys) {
     const listEl = document.getElementById('api-keys-list');
     if (!listEl) return;
@@ -97,7 +101,7 @@ function renderApiKeysList(keys) {
         row.querySelector('.validate-key-at').addEventListener('click', async () => {
             const statusEl = document.getElementById('api-keys-status');
             setStatus(statusEl, 'Validating...', 'loading');
-            const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash-lite';
+            const model = getModelValue();
             const result = await window.AIClient.validateApiKey(key, model);
             if (result.valid) setStatus(statusEl, `✓ Key ${index + 1} is valid`, 'success');
             else setStatus(statusEl, `✗ Key ${index + 1}: ${result.error}`, 'error');
@@ -113,7 +117,7 @@ function renderApiKeysList(keys) {
 }
 
 async function saveApiKeysToStorage(keys) {
-    const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash-lite';
+    const model = getModelValue();
     if (window.AIClient?.saveApiKeys) {
         await window.AIClient.saveApiKeys(keys, model);
     } else if (keys.length > 0) {
@@ -140,7 +144,7 @@ function initApiKeySection() {
                 return;
             }
             setStatus(statusEl, 'Validating...', 'loading');
-            const model = apiModelInput?.value?.trim() || 'gemini-2.5-flash-lite';
+            const model = getModelValue();
             const result = await window.AIClient.validateApiKey(key, model);
             if (result.valid) {
                 let newKeys = keys.filter(k => k !== key);
@@ -784,14 +788,9 @@ async function loadAllData() {
         if (apiKeys.length > 0) {
             renderApiKeysList(apiKeys);
         }
-        if (apiModel) {
-            const select = document.getElementById('api-model');
-            const options = Array.from(select.options).map(o => o.value);
-            if (options.includes(apiModel)) {
-                select.value = apiModel;
-            } else {
-                select.value = 'gemini-2.5-flash-lite'; // Default fallback
-            }
+        const modelInput = document.getElementById('api-model');
+        if (modelInput) {
+            modelInput.value = apiModel || 'gemini-2.5-flash';
         }
 
         // Load resume data
@@ -907,11 +906,15 @@ async function saveAllData() {
         // Save to storage
         await window.ResumeManager.saveResumeData(resumeData);
 
-        // Save API keys and model (keys list updated via Add Key; ensure model is saved)
-        const apiModel = document.getElementById('api-model').value.trim() || 'gemini-2.0-flash';
+        // Save API keys and model
+        const apiModel = getModelValue();
         const apiKeys = await window.AIClient.getApiKeys?.() || [];
-        if (apiKeys.length > 0) {
+
+        // Always save model even if keys are empty (for future use or custom config)
+        if (window.AIClient?.saveApiKeys) {
             await window.AIClient.saveApiKeys(apiKeys, apiModel);
+        } else if (apiKeys.length > 0) {
+            await window.AIClient.saveApiKey(apiKeys[0], apiModel);
         }
 
         showToast('All changes saved!', 'success');
