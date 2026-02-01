@@ -1,20 +1,17 @@
 # 🏛️ SmartHireX Enterprise Architecture v2.0
 
-## 🌟 Philosophy: Enterprise-Grade Form Intelligence
-# Nova Apply Browser Extension Architecture
+## 🌟 Philosophy: The Left & Right Brain Ensemble
 
-## *The neural-heuristic hybrid engine that solves job applications forever*
-
-The system follows a strict **"Scan → Think → Act"** pipeline, ensuring high accuracy and natural behavior.
+SmartHireX solves job application forms by combining deterministic precision with neural context. The system follows a strict **"Scan → Think → Act"** pipeline.
 
 ## ⚙️ How It Works: Under the Hood
 
 The extension operates as a sophisticated orchestrator for browser events. Here is the technical breakdown of a single autofill determination:
 
 ### 1. The Scanning Layer (Shadow DOM Aware)
-Most autofillers fail on modern apps because of Shadow DOMs and iframes. Nova Apply uses a recursive `AutofillScanner` that:
-*   Pierces Shadow DOM boundaries.
-*   Extracts 3 distinct signals per field: **HTML attributes** (id, name), **Semantic hints** (placeholder, label), and **Visual context** (nearby text).
+SmartHireX uses a recursive `AutofillScanner` that:
+*   Pierces Shadow DOM boundaries and iframes.
+*   Extracts 3 distinct signals per field: **HTML attributes**, **Semantic hints**, and **Visual context**.
 
 ### 2. The Hybrid Classification Engine
 We don't trust a single model. Every field is analyzed by two parallel engines:
@@ -52,7 +49,37 @@ If you manually correct a field, `FormObserver` captures the change. It uses **f
 
 ## 🏗️ System Architecture Overview
 
-![System Architecture](https://mermaid.ink/img/Zmxvd2NoYXJ0IFRECiAgICBEaXNjb3ZlcnkoW0Zvcm0gRGlzY292ZXJ5IFRyaWdnZXJdKSAtLT4gU2lnbmFsCiAgICAKICAgIHN1YmdyYXBoIERldGVjdGlvbiBbUGhhc2UgMTogRGlzY292ZXJ5ICYgT2JzZXJ2YXRpb25dCiAgICAgICAgZGlyZWN0aW9uIExSCiAgICAgICAgU2lnbmFse011dGF0aW9uL1VSTCBPYnNlcnZlcn0gLS0-fFNjb3V0IEV2ZW50fCBTY2FuW0F1dG9maWxsU2Nhbm5lcl0KICAgICAgICBTY2FuIC0tPnxET00gVHJhdmVyc2FsfCBGZWF0dXJlRXhbQ29udGV4dEZlYXR1cmVFeHRyYWN0b3JdCiAgICBlbmQKCiAgICBzdWJncmFwaCBJbmZlcmVuY2UgW1BoYXNlIDI6IEh5YnJpZCBFbnNlbWJsZSBBcmJpdHJhdGlvbl0KICAgICAgICBkaXJlY3Rpb24gVEIKICAgICAgICBPcmNoe1BpcGVsaW5lT3JjaGVzdHJhdG9yfQogICAgICAgIAogICAgICAgIHN1YmdyYXBoIFN0YWNrIFtJbnRlbGxpZ2VuY2UgU3RhY2tdCiAgICAgICAgICAgIGRpcmVjdGlvbiBMUgogICAgICAgICAgICBIZXVyaXN0aWNbSGV1cmlzdGljIFJlZ2V4IEVuZ2luZV0KICAgICAgICAgICAgTmV1cmFsW1tOZXVyYWwgVjggQ29uZmlybWF0aW9uIE1vZGVsXV0KICAgICAgICAgICAgR2VtaW5pW1tHZW1pbmkgQUkgUmVzb2x2ZXJdXQogICAgICAgIGVuZAoKICAgICAgICBGZWF0dXJlRXggLS0-IE9yY2gKICAgICAgICBPcmNoIC0tPiBIZXVyaXN0aWMgJiBOZXVyYWwKICAgICAgICAKICAgICAgICBIZXVyaXN0aWMgLS0-IEFyYntFbnNlbWJsZSBBcmJpdGVyfQogICAgICAgIE5ldXJhbCAtLT4gQXJiCiAgICAgICAgCiAgICAgICAgQXJiIC0tICdVbmFuaW1vdXMgLyBXZWlnaHRlZCBXaW4nIC0tPiBMYWJlbChbRmluYWwgU2VtYW50aWMgTGFiZWxdKQogICAgICAgIEFyYiAtLSAnQW1iaWd1aXR5IC8gTG93IENvbmYnIC0tPiBHZW1pbmkKICAgIGVuZAoKICAgIEdlbWluaSAtLT4gTGFiZWwKCiAgICBzdHlsZSBUcmlnZ2VyIGZpbGw6I2Y4ZmFmYyxzdHJva2U6Izk0YTNiOCxjb2xvcjojMWUyOTNiCiAgICBzdHlsZSBPcmNoIGZpbGw6IzYzNjZmMSxzdHJva2U6IzQzMzhjYSxjb2xvcjojZmZmLHN0cm9rZS13aWR0aDoycHgKICAgIHN0eWxlIE5ldXJhbCBmaWxsOiMxMGI5ODEsc3Ryb2tlOiMwNTk2NjksY29sb3I6I2ZmZgogICAgc3R5bGUgR2VtaW5pIGZpbGw6IzhiNWNmNixzdHJva2U6IzdjM2FlZCxjb2xvcjojZmZmCiAgICBzdHlsZSBMYWJlbCBmaWxsOiMxZjI5Mzcsc3Ryb2tlOiMxMTE4MjcsY29sb3I6I2ZmZixzdHJva2Utd2lkdGg6MnB4CiAgICAKICAgIGxpbmtTdHlsZSBkZWZhdWx0IHN0cm9rZTojY2JkNWUxLHN0cm9rZS13aWR0aDoxcHgKICAgIGxpbmtTdHlsZSA1LDYsNyBzdHJva2U6IzYzNjZmMSxzdHJva2Utd2lkdGg6MnB4LGNvbG9yOiM2MzY2ZjE=)
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                HIGH-LEVEL SYSTEM ARCHITECTURE               │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────────────┐        ┌──────────────────────┐   │
+│  │  DOM EVENT / SCROLL  │───────►│    MUTATION OBSERVER │   │
+│  └──────────┬───────────┘        └──────────┬───────────┘   │
+│             │                               │               │
+│             └───────────────┬───────────────┘               │
+│                             ▼                               │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │               AUTOFILL ORCHESTRATOR                   │  │
+│  │ ┌───────────────────────────────────────────────────┐ │  │
+│  │ │ 1. SCAN: Shadows & Iframes → Signal Extraction    │ │  │
+│  │ │ 2. THINK: Heuristic + Neural Classification       │ │  │
+│  │ │ 3. ARBITRATE: 5-Tier Decision Matrix              │ │  │
+│  │ │ 4. ACT: Stealth Value Injection                   │ │  │
+│  │ └────────────────────────┬──────────────────────────┘ │  │
+│  └──────────────────────────┼────────────────────────────┘  │
+│                             ▼                               │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │              LOCAL PERSISTENCE LAYER                  │  │
+│  │ ┌─────────────────┬────────────────┬────────────────┐ │  │
+│  │ │ InteractionLog  │  GlobalMemory  │  RuleEngine    │ │  │
+│  │ └─────────────────┴────────────────┴────────────────┘ │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
 
 ---
 
@@ -120,15 +147,18 @@ smartHireX/
 
 The `PipelineOrchestrator` is the heart of the autofill system. It coordinates the entire pipeline:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     PIPELINE EXECUTION                          │
-├─────────────────────────────────────────────────────────────────┤
-│  1. INGESTION    │  Raw fields → ML enrichment → Metadata      │
-│  2. GROUPING     │  Fields → ATOMIC_SINGLE/MULTI/SECTION       │
-│  3. RESOLUTION   │  InteractionLog → RuleEngine → AI           │
-│  4. EXECUTION    │  Fill fields → Cache results → Human jitter │
-└─────────────────────────────────────────────────────────────────┘
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    PIPELINE EXECUTION FLOW                  │
+├─────────────────────────────────────────────────────────────┤
+│  1. INGESTION  │  Extract fields → Inject ML Metadata       │
+├────────────────┼────────────────────────────────────────────┤
+│  2. GROUPING   │  Detect ATOMIC / MULTI / SECTION           │
+├────────────────┼────────────────────────────────────────────┤
+│  3. RESOLVE    │  InteractionLog → RuleEngine → Hybrid AI   │
+├────────────────┼────────────────────────────────────────────┤
+│  4. EXECUTE    │  Stealth Inject → Human Jitter             │
+└────────────────┴────────────────────────────────────────────┘
 ```
 
 ### Field Instance Types
@@ -145,35 +175,27 @@ The `PipelineOrchestrator` is the heart of the autofill system. It coordinates t
 
 Based on research of Chrome Autofill, 1Password, and LastPass techniques:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                     TIER 1: EXPLICIT (100% Confidence)          │
+│              TIER 1: EXPLICIT HTML (100% Quality)               │
 ├─────────────────────────────────────────────────────────────────┤
-│  1. autocomplete attribute    (developer intent)                │
-│  2. element.labels           (native HTML association)          │
-│  3. label[for="id"]          (explicit selector)                │
-│  4. aria-labelledby          (visible DOM text - FIRST!)        │
-│  5. aria-label               (direct attribute)                 │
-│  6. aria-describedby         (secondary description)            │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ (if empty)
+│  • autocomplete (Explicit)     • aria-labelledby (Visual Hint)  │
+│  • element.labels (Internal)   • aria-label (Accessibility)     │
+│  • label[for="id"] (Pointer)   • aria-describedby (Context)     │
+└────────────────────────────────┬────────────────────────────────┘
+                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                     TIER 2: SEMANTIC (80-95% Confidence)        │
+│              TIER 2: SEMANTIC HINTS (80-95% Qual)               │
 ├─────────────────────────────────────────────────────────────────┤
-│  1. data-label, data-field-name, data-testid                   │
-│  2. Fieldset legend (radio/checkbox groups only)               │
-│  3. Table column headers                                        │
-│  4. placeholder attribute                                       │
-│  5. title attribute                                             │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ (if empty)
+│  • data-label / data-testid    • placeholder / title            │
+│  • fieldset legend (Groups)    • table column headers           │
+└────────────────────────────────┬────────────────────────────────┘
+                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                     TIER 3: VISUAL HEURISTICS (40-70%)          │
+│              TIER 3: VISUAL HEURISTICS (40-70%)                 │
 ├─────────────────────────────────────────────────────────────────┤
-│  1. Structural boundary search (within .form-group)            │
-│  2. Previous sibling text (with field boundary detection)      │
-│  3. Parent text nodes (with section heading blacklist)         │
-│  4. Humanized name/id (last resort)                            │
+│  • Structural boundary search  • Previous sibling text          │
+│  • Parent context nodes        • Humanized name/id fallback     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -249,9 +271,29 @@ InteractionLog (cached) → RuleEngine (resume) → AI (generated)
 
 ---
 
-## 🔄 Message Flow
+## 🔄 Message Flow Logic
 
-![Message Flow](https://mermaid.ink/img/c2VxdWVuY2VEaWFncmFtCiAgICBwYXJ0aWNpcGFudCBQb3B1cAogICAgcGFydGljaXBhbnQgQmFja2dyb3VuZAogICAgcGFydGljaXBhbnQgQ29udGVudFNjcmlwdAogICAgcGFydGljaXBhbnQgUGlwZWxpbmUKICAgIHBhcnRpY2lwYW50IERPTQoKICAgIFBvcHVwLT4-Q29udGVudFNjcmlwdDogQUNUSVZBVEVfRVhURU5TSU9OCiAgICBDb250ZW50U2NyaXB0LT4-UGlwZWxpbmU6IExvYWQgbGF6eSBzY3JpcHRzCiAgICBQb3B1cC0-PkNvbnRlbnRTY3JpcHQ6IFNUQVJUX0xPQ0FMX1BST0NFU1NJTkcKICAgIENvbnRlbnRTY3JpcHQtPj5QaXBlbGluZTogZXhlY3V0ZVBpcGVsaW5lKGZpZWxkcykKICAgIFBpcGVsaW5lLT4-RE9NOiBGaWxsIGZpZWxkcwogICAgRE9NLT4-UGlwZWxpbmU6IFVzZXIgY29ycmVjdGlvbnMKICAgIFBpcGVsaW5lLT4-UGlwZWxpbmU6IENhY2hlIGNvcnJlY3Rpb25z)
+```text
+┌────────┐      ┌────────────┐      ┌────────────┐     ┌──────┐
+│ POPUP  │      │ BACKGROUND │      │ CONTENT_S  │     │ DOM  │
+└───┬────┘      └─────┬──────┘      └─────┬──────┘     └──┬───┘
+    │  Activate       │                   │               │
+    │────────────────►│     Inject        │               │
+    │                 │──────────────────►│    Scan       │
+    │    Start        │                   │──────────────►│
+    │────────────────►│     Resolve       │               │
+    │                 │◄──────────────────│    Values     │
+    │                 │                   │◄──────────────│
+    │                 │     Execute       │               │
+    │                 │──────────────────►│    Inject     │
+    │                 │                   │──────────────►│
+    │                 │◄──────────────────│    Learn      │
+    │    Done         │     Cache         │               │
+    │◄────────────────│◄──────────────────│               │
+┌───┴────┐      ┌─────┴──────┐      ┌─────┴──────┐     ┌──┴───┘
+│ POPUP  │      │ BACKGROUND │      │ CONTENT_S  │     │ DOM  │
+└────────┘      └────────────┘      └────────────┘     └──────┘
+```
 
 ---
 

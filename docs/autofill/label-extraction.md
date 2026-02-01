@@ -10,9 +10,9 @@ SmartHireX v2.0 implements an enterprise-grade label extraction system based on 
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     TIER 1: EXPLICIT (100% Confidence)          │
+```text
+┌─────────────────────────────────────────────────────────────┐
+│             TIER 1: EXPLICIT (100% Confidence)              │
 │  Developer-provided semantics - always check first              │
 ├─────────────────────────────────────────────────────────────────┤
 │  1. autocomplete attribute    → "given-name" → "First Name"    │
@@ -195,44 +195,6 @@ if (/H[1-3]/.test(tag)) score -= 40;
 
 ---
 
-## Label Extraction System 🏷️
-
-Garbage In, Garbage Out. If we can't read the form label, we can't classify the field. Our **3-Tier Label Extraction System** treats the DOM as a visual hierarchy, not just code.
-
-## The 3 Tiers of Confidence
-
-We extract labels from multiple sources and assign a confidence score:
-
-### Tier 1: Explicit Identity (100% Confidence)
-*   **Sources**: `autocomplete`, `name`, `id` attributes.
-*   **Logic**: Standard HTML5 attributes are the "Gold Standard".
-    *   `<input name="email">` → Label: "email"
-
-### Tier 2: Semantic Hints (85% Confidence)
-*   **Sources**: `<label>`, `aria-label`, `placeholder`, `data-testid`.
-*   **Logic**: Accessible labels and developer hints.
-    *   `<input placeholder="Enter your mobile">` → Label: "Enter your mobile"
-
-### Tier 3: Visual Proximity (50% Confidence)
-*   **Sources**: Nearby text nodes, previous siblings.
-*   **Logic**: If no attributes exist, look for text visually above or to the left of the input.
-    *   `<div>First Name</div><input>` → Label: "First Name"
-
-## Code Implementation
-
-```javascript
-function getFieldLabel(element) {
-    // TIER 1
-    if (element.autocomplete) return { text: element.autocomplete, tier: 1 };
-    
-    // TIER 2
-    const label = getSemanticLabel(element); 
-    if (label) return { text: label, tier: 2 };
-    
-    // TIER 3 (Recursive Scan)
-    return scanVisualContext(element);
-}
-```
 ### 4. PRECEDING vs FOLLOWING
 Fixed bug: Labels must be BEFORE inputs, not after.
 ```javascript

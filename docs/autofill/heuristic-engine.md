@@ -10,17 +10,26 @@ The HeuristicEngine is a pattern-based field type classification system that ach
 
 ### Classification Strategy
 
-```mermaid
-graph TD
-    A[Input Field] --> B{HTML Attributes?}
-    B -->|autocomplete| C[Return Autocomplete Type]
-    B -->|No| D{Regex Match?}
-    D -->|Yes| E[Return Pattern Match]
-    D -->|No| F{Keyword Match?}
-    F -->|Yes| G[Return Keyword Match]
-    F -->|No| H{Alias Resolution?}
-    H -->|Yes| I[Apply Canonical Form]
-    H -->|No| J[Return 'unknown']
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                 CLASSIFICATION STRATEGY                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  [Input Field] ───► { HTML Attributes? } ───► [Autocomplete]│
+│                           │                                 │
+│                           ▼ (No)                            │
+│                  { Regex Pattern? } ────► [Pattern Match]   │
+│                           │                                 │
+│                           ▼ (No)                            │
+│                  { Keyword Match? } ────► [Keyword Match]   │
+│                           │                                 │
+│                           ▼ (No)                            │
+│                  { Alias Resolve? } ────► [Canonical Form]  │
+│                           │                                 │
+│                           ▼ (No)                            │
+│                       [Unknown]                             │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Core Components
@@ -117,15 +126,23 @@ if (field.placeholder && PATTERNS[fieldType].test(field.placeholder)) {
 
 ### HTML5 Autocomplete Support
 
-```mermaid
-graph LR
-    A[HTML Field] --> B{autocomplete?}
-    B -->|"given-name"| C[first_name]
-    B -->|"family-name"| D[last_name]
-    B -->|"email"| E[email]
-    B -->|"tel"| F[phone]
-    B -->|"address-line1"| G[address_line_1]
-    B -->|No| H[Continue to Pattern Match]
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                AUTOCOMPLETE ATTRIBUTE PARSING               │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   [HTML Field] ──────► { has autocomplete? }                │
+│                                │                            │
+│            ┌───────────────────┴───────────────────┐        │
+│            ▼                                       ▼        │
+│     (Mapping Found)                         (No Mapping)    │
+│            │                                       │        │
+│    ┌───────┴──────┐                        ┌───────┴──────┐ │
+│    │ first_name   │                        │ Continue to  │ │
+│    │ phone, email │                        │ Regex Match  │ │
+│    └──────────────┘                        └──────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 **Supported Values**:
@@ -190,13 +207,22 @@ const FIELD_ALIASES = {
 
 ### Resolution Flow
 
-```mermaid
-graph LR
-    A[Predicted Label] --> B{In Aliases?}
-    B -->|Yes| C[Resolve to Canonical]
-    B -->|No| D[Keep Original]
-    C --> E[Return Result]
-    D --> E
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    ALIAS RESOLUTION FLOW                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  [Predicted Label] ───► { In Aliases? }                     │
+│                                │                            │
+│            ┌───────────────────┴───────────────────┐        │
+│            ▼ (Yes)                                 ▼ (No)   │
+│   [Resolve to Canonical]                  [Keep Original]   │
+│            │                                       │        │
+│            └──────────┬────────────────────────────┘        │
+│                       ▼                                     │
+│                [Final Result]                               │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 **Example**:
@@ -287,17 +313,31 @@ function calculateConfidence(matches) {
 
 HeuristicEngine is the **primary classifier** due to its superior accuracy (77.87% vs Neural's 65.22%).
 
-```mermaid
-graph TD
-    A[Field Input] -->|First| B[HeuristicEngine]
-    A -->|Parallel| C[NeuralClassifier]
-    B --> D{Conf > 0.5?}
-    D -->|Yes| E[Use Heuristic]
-    D -->|No| F{Consensus?}
-    F -->|Yes| G[Use Consensus]
-    F -->|No| H{Neural Conf > 0.85?}
-    H -->|Yes| I[Use Neural]
-    H -->|No| E
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                   ENSEMBLE ARBITRATION                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  [Field Input] ────┬────► [Heuristic Engine] (Primary)      │
+│                    │                                        │
+│                    └────► [Neural Classifier] (Backup)      │
+│                                                             │
+│          ┌───────────────────────────────────┐              │
+│          │        Coordination Logic         │              │
+│          └─────────────────┬─────────────────┘              │
+│                            │                                │
+│          ┌─────────────────┴─────────────────┐              │
+│          ▼                                   ▼              │
+│   { Heuristics High }                { Heuristics Low }     │
+│          │                                   │              │
+│          ▼                                   ▼              │
+│    [FAST RETURN]                   { Neural Agreement? }    │
+│                                              │              │
+│                                    ┌─────────┴─────────┐    │
+│                                    ▼                   ▼    │
+│                            [Use Consensus]       [Weighted] │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Usage Strategy

@@ -19,17 +19,22 @@ The **Neural Classifier V8** is the "Right Brain" of our hybrid system, designed
 
 The [FeatureExtractor](file:///Users/karan-sayaji.kadam/my_app/smart-hirex/smart-ai-job-apply/autofill/domains/inference/feature-extractor.js) converts raw field data into an 84-dimensional feature vector:
 
-```mermaid
-graph LR
-    A[Field Object] --> B[Feature Extractor]
-    B --> C[Structural: 5 dims]
-    B --> D[Heuristic: 4 dims]
-    B --> E[Textual: 65 dims]
-    B --> F[Semantic: 5 dims]
-    C --> G[84D Vector]
-    D --> G
-    E --> G
-    F --> G
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                   FEATURE EXTRACTION PIPELINE               │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  [Field Object] ───► [Feature Extractor] ───► [84D Vector]  │
+│                                                             │
+│           ┌───────────────────┼───────────────────┐         │
+│           ▼                   ▼                   ▼         │
+│   [Structural: 5D]     [Heuristic: 4D]     [Semantic: 5D]   │
+│           │                   │                   │         │
+│           └──────────┬────────┴────────┬──────────┘         │
+│                      ▼                 ▼                    │
+│               [Textual: 65D] ───► [Input Layer]             │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 **Feature Breakdown (84 dimensions):**
@@ -53,30 +58,37 @@ graph LR
 
 ### 2. Forward Propagation
 
-```mermaid
-graph TD
-    A[Input 84D] --> B[Matrix Multiply W1]
-    B --> C[Add Bias b1]
-    C --> D[Leaky ReLU]
-    D --> E[Dropout 0.3]
-    E --> F[Hidden1: 512D]
-    
-    F --> G[Matrix Multiply W2]
-    G --> H[Add Bias b2]
-    H --> I[Leaky ReLU]
-    I --> J[Dropout 0.3]
-    J --> K[Hidden2: 256D]
-    
-    K --> L[Matrix Multiply W3]
-    L --> M[Add Bias b3]
-    M --> N[Leaky ReLU]
-    N --> O[Dropout 0.3]
-    O --> P[Hidden3: 128D]
-    
-    P --> Q[Matrix Multiply W4]
-    Q --> R[Add Bias b4]
-    R --> S[Softmax]
-    S --> T[Output: 135 probabilities]
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                  MODEL RECOVERY & PROPAGATION               │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   [Input 84D]                                               │
+│        │                                                    │
+│        ▼                                                    │
+│   ┌──────────────┐                                          │
+│   │   Layer 1    │───► [Matrix W1 + Bias b1]                │
+│   │   (512D)     │───► [Leaky ReLU + Dropout]               │
+│   └──────┬───────┘                                          │
+│          ▼                                                  │
+│   ┌──────────────┐                                          │
+│   │   Layer 2    │───► [Matrix W2 + Bias b2]                │
+│   │   (256D)     │───► [Leaky ReLU + Dropout]               │
+│   └──────┬───────┘                                          │
+│          ▼                                                  │
+│   ┌──────────────┐                                          │
+│   │   Layer 3    │───► [Matrix W3 + Bias b3]                │
+│   │   (128D)     │───► [Leaky ReLU + Dropout]               │
+│   └──────┬───────┘                                          │
+│          ▼                                                  │
+│   ┌──────────────┐                                          │
+│   │   Output     │───► [Matrix W4 + Bias b4]                │
+│   │   (135D)     │───► [Softmax Activation]                 │
+│   └──────┬───────┘                                          │
+│          ▼                                                  │
+│   [Probabilities]                                           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 **Mathematical Operations:**
@@ -130,15 +142,34 @@ return {
 
 ### Data Pipeline
 
-```mermaid
-graph LR
-    A[Training Dataset<br/>6,455 samples] --> B[80/20 Split]
-    B --> C[Training: 5,164]
-    B --> D[Validation: 1,291]
-    C --> E[Class Balancing]
-    E --> F[Balanced: 5,699]
-    F --> G[SGD Training<br/>500k iterations]
-    G --> H[Model Weights<br/>2.5 MB]
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    TRAINING DATA PIPELINE                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  [Raw Dataset] ─────► [80/20 Train-Val Split]               │
+│  (6,455 samples)             │                              │
+│                              ▼                              │
+│                     ┌────────────────┐                      │
+│                     │ Validation Set │ (1,291 samples)      │
+│                     └────────────────┘                      │
+│                              │                              │
+│                              ▼                              │
+│                     ┌────────────────┐                      │
+│                     │ Training Set   │ (5,164 samples)      │
+│                     └───────┬────────┘                      │
+│                             ▼                               │
+│                     ┌────────────────┐                      │
+│                     │ Class Balance  │ (5,699 samples)      │
+│                     └───────┬────────┘                      │
+│                             ▼                               │
+│                     ┌────────────────┐                      │
+│                     │  SGD Optimizer │ (500k iterations)    │
+│                     └───────┬────────┘                      │
+│                             ▼                               │
+│                     [Final Weights] (2.5 MB JSON)           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Training Algorithm
@@ -206,16 +237,23 @@ autofill/domains/inference/model_v4_baseline.json
 
 ### Loading Process
 
-```mermaid
-graph TD
-    A[Classifier Init] --> B{User Weights?}
-    B -->|Yes| C[Load from Storage]
-    B -->|No| D{Baseline Weights?}
-    D -->|Yes| E[Load model_v4_baseline.json]
-    D -->|No| F[Random Initialization]
-    C --> G[Ready for Inference]
-    E --> G
-    F --> G
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    WEIGHT LOADING LOGIC                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  [Classifier Init]                                          │
+│          │                                                  │
+│          ▼                                                  │
+│   { User Weights? } ────► [Load from IndexedDB] ───┐        │
+│          │                                         │        │
+│          ▼ (No)                                    ▼        │
+│   { Baseline? } ────► [Load model_v4_baseline.json] ──► [READY]│
+│          │                                         ▲        │
+│          ▼ (No)                                    │        │
+│   [Random Init] ───────────────────────────────────┘        │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -261,20 +299,28 @@ graph TD
 
 The Neural Classifier works alongside [HeuristicEngine](./heuristic-engine.md) in a 5-tier hybrid arbitration system:
 
-```mermaid
-graph TD
-    A[Input Field] --> B[HeuristicEngine]
-    A --> C[NeuralClassifier]
-    B --> D[Arbitration Logic]
-    C --> D
-    D --> E{Tier 1: Consensus?}
-    E -->|Yes| F[Return Consensus]
-    E -->|No| G{Tier 2: Heuristic Strong?}
-    G -->|Yes conf>0.95| H[Return Heuristic]
-    G -->|No| I{Tier 3: Neural Strong?}
-    I -->|Yes conf>0.85| J[Return Neural]
-    I -->|No| K{Tier 4: Weighted Vote}
-    K --> L[Return Higher Confidence]
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                 HYBRID ARBITRATION MATRIX                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  [Heuristic Engine] ─────┐       ┌───── [Neural Classifier] │
+│                          ▼       ▼                          │
+│               ┌─────────────────────────────┐               │
+│               │      Decision Arbiter       │               │
+│               └──────────────┬──────────────┘               │
+│                              │                              │
+│               ┌──────────────┴──────────────┐               │
+│               ▼                             ▼               │
+│      { Unanimous Win }             { Conflict / Low Conf }  │
+│               │                             │               │
+│               ▼                             ▼               │
+│        [Final Result]              [Weighted Vote / AI]     │
+│                                             │               │
+│                                             ▼               │
+│                                       [Return Winner]       │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Usage Strategy

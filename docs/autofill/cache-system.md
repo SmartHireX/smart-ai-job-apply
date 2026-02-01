@@ -1,325 +1,160 @@
-# Autofill Cache System Documentation
+# 💾 SmartHireX Cache & Persistence System
 
-## Overview
-
-The cache system stores user data and field predictions to enable instant form filling and improve performance across job applications. It consists of three main components:
-
-1. **Data Cache** - User profile information
-2. **Prediction Cache** - Previously classified field types
-3. **Form Cache** - Saved form states and progress
+## 🧠 Overview: The Persistent Memory Layer
+SmartHireX implements a sophisticated, multi-tier persistence layer that transforms it from a static autofiller into a dynamic learning agent. The system observes user interactions, classifies data into semantic categories, and securely persists it across sessions.
 
 ---
 
-## Architecture
+## 🏗️ 3-Bucket Architecture
+At the core of the persistence layer is the **3-Bucket Model**. Fields are not stored in a flat list; instead, they are routed to specific buckets based on their behavioral profile and data complexity.
 
-```mermaid
-graph TD
-    A[User Data] --> B[Chrome Storage API]
-    B --> C{Cache Type}
-    C -->|Profile| D[Data Cache]
-    C -->|Predictions| E[Prediction Cache]
-    C -->|Form State| F[Form Cache]
-    
-    D --> G[IndexedDB]
-    E --> H[LocalStorage]
-    F --> H
-    
-    G --> I[Quick Access]
-    H --> I
+```text
+┌───────────────────────────────────────────────────────────────────┐
+│                    CACHE ORCHESTRATION ARCHITECTURE               │
+├───────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  [Interaction] ───► [Semantic Classifier] ───► [Vault Router]     │
+│                                                   │               │
+│         ┌──────────────────┬──────────────────────┴┐              │
+│         ▼                  ▼                       ▼              │
+│  ┌──────────────┐   ┌──────────────┐       ┌──────────────┐       │
+│  │ ATOMIC SINGLE│   │ ATOMIC MULTI │       │ SECTION REP. │       │
+│  ├──────────────┤   ├──────────────┤       ├──────────────┤       │
+│  │ Scalar Data  │   │ Set-Based    │       │ Row-Based    │       │
+│  │ (Phone/Email)│   │ (Skills/Langs)       │ (Jobs/Edu)   │       │
+│  └──────┬───────┘   └──────┬───────┘       └──────┬───────┘       │
+│         │                  │                      │               │
+│         └──────────────────┼──────────────────────┘               │
+│                            ▼                                      │
+│                 [Encryption Service (AES)]                        │
+│                            │                                      │
+│                            ▼                                      │
+│                 [Chrome Storage / Vault]                          │
+│                                                                   │
+└───────────────────────────────────────────────────────────────────┘
 ```
-
----
-
-## Data Cache
-
-### Purpose
-Stores user profile information for autofilling forms.
-
-### Structure
-
-```javascript
-{
-  "profile": {
-    // Personal Info
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "john.doe@example.com",
-    "phone": "+1-555-123-4567",
-    
-    // Location
-    "address_line_1": "123 Main St",
-    "city": "San Francisco",
-    "state": "CA",
-    "zip_code": "94105",
-    "country": "United States",
-    
-    // Work Experience
-    "current_company": "TechCorp Inc",
-    "current_title": "Senior Software Engineer",
-    "years_experience": "8",
-    
-    // Education
-    "institution_name": "Stanford University",
-    "degree_type": "Bachelor of Science",
-    "field_of_study": "Computer Science",
-    "graduation_date": "2016-05",
-    
-    // Social Media
-    "linkedin_url": "https://linkedin.com/in/johndoe",
-    "github_url": "https://github.com/johndoe",
-    "portfolio_url": "https://johndoe.dev",
-    
-    // ... 135+ field types
-  },
-  "timestamp": "2026-01-16T00:00:00Z",
-  "version": "1.0"
-}
-```
-
-### Storage
-- **Location**: Chrome Storage (Sync)
-- **Size Limit**: 100 KB per profile
-- **Sync**: Across Chrome browsers
-- **Encryption**: User data at rest
-
----
-
-## Prediction Cache
-
-### Purpose
-Cache field type predictions to avoid re-classification and improve performance.
-
-### Structure
-
-```javascript
-{
-  "predictions": {
-    "form_hash_123abc": {
-      "fields": {
-        "user_email": {
-          "label": "email",
-          "confidence": 0.95,
-          "timestamp": 1705363200000
-        },
-        "first_name_input": {
-          "label": "first_name",
-          "confidence": 0.90,
-          "timestamp": 1705363200000
-        }
-      },
-      "url": "https://example.com/apply",
-      "expires": 1705449600000  // 24 hours
-    }
-  }
-}
-```
-
-### Cache Strategy
-
-```mermaid
-graph LR
-    A[Field Detected] --> B{In Cache?}
-    B -->|Yes| C{Expired?}
-    C -->|No| D[Use Cached]
-    C -->|Yes| E[Re-classify]
-    B -->|No| E
-    E --> F[Store in Cache]
-    D --> G[Autofill]
-    F --> G
-```
-
-### Cache Invalidation
-
-- **Time-based**: 24 hours TTL
-- **Form-based**: When form structure changes
-- **Manual**: User can clear cache
-
----
-
-## Form Cache
-
-### Purpose
-Save partially completed forms and application progress.
-
-### Structure
-
-```javascript
-{
-  "saved_forms": {
-    "job_123_company_xyz": {
-      "url": "https://xyz.com/careers/job/123",
-      "company": "XYZ Corp",
-      "position": "Software Engineer",
-      "filled_fields": {
-        "email": "john.doe@example.com",
-        "phone": "+1-555-123-4567",
-        "years_experience": "8"
-      },
-      "completion": 65,  // percentage
-      "last_saved": 1705363200000,
-      "status": "in_progress"
-    }
-  }
-}
-```
-
-### Auto-Save
-
-```mermaid
-graph TD
-    A[Field Change] --> B[Debounce 1s]
-    B --> C[Collect Field Data]
-    C --> D[Generate Form Hash]
-    D --> E{Exists in Cache?}
-    E -->|Yes| F[Update Entry]
-    E -->|No| G[Create Entry]
-    F --> H[Save to Storage]
-    G --> H
-```
-
----
-
-## Cache Performance
-
-### Hit Rates
-
-| Cache Type | Hit Rate | Benefit |
-|------------|----------|---------|
-| **Prediction Cache** | ~85% | Avoid re-classification (3ms saved) |
-| **Data Cache** | ~95% | Instant field fill (< 1ms) |
-| **Form Cache** | ~40% | Resume applications |
-
-### Storage Usage
-
-| Component | Average Size | Max Size |
-|-----------|--------------|----------|
-| **Data Cache** | ~50 KB | 100 KB |
-| **Prediction Cache** | ~20 KB | 500 KB |
-| **Form Cache** | ~100 KB | 5 MB |
-| **Total** | ~170 KB | 5.6 MB |
-
----
-
-## API Reference
-
-### Data Cache
-
-```javascript
-// Get cached profile data
-const profile = await cache.getProfile();
-
-// Update profile field
-await cache.updateField('email', 'new.email@example.com');
-
-// Clear all profile data
-await cache.clearProfile();
-```
-
-### Prediction Cache
-
-```javascript
-// Get cached prediction
-const prediction = await cache.getPrediction(formHash, fieldId);
-
-// Store prediction
-await cache.storePrediction(formHash, fieldId, {
-    label: 'email',
-    confidence: 0.95
-});
-
-// Clear old predictions
-await cache.clearExpiredPredictions();
-```
-
-### Form Cache
-
-```javascript
-// Save form progress
-await cache.saveFormProgress(formId, {
-    filled_fields: {...},
-    completion: 65
-});
-
-// Load saved form
-const savedForm = await cache.getFormProgress(formId);
-
-// List all saved forms
-const forms = await cache.listSavedForms();
-```
-
----
-
-# Cache System (The Hippocampus) 💾
-
-The **InteractionLog** is the memory center of Nova Apply. It transforms a simple autofill tool into a learning agent by remembering user choices across different job portals.
-
-## 3-Bucket Architecture
-
-We don't just dump everything into a key-value store. Fields are routed into 3 distinct buckets based on their behavior:
 
 ### 1. ATOMIC_SINGLE (Scalar Values)
-*   **What**: Simple, one-to-one fields.
-*   **Examples**: `email`, `first_name`, `linkedin_url`, `gender`.
-*   **Storage**: Key-Value pair with confidence score.
+*   **Purpose**: Stores one-to-one, singular data points.
+*   **Data Model**: `{ key: { value: "...", confidence: 0.9, lastUsed: timestamp } }`
+*   **Routing Logic**: Used for fields where a single "Correct" answer exists (e.g., `first_name`, `email`, `linkedin_url`).
+*   **Resolution Strategy**: If a user corrects a value, the system updates the entry and increments the `useCount`.
 
 ### 2. ATOMIC_MULTI (Collections)
-*   **What**: Sets of values where multiple choices are valid.
-*   **Examples**: `skills` (Python, React), `interests`, `languages`.
-*   **Storage**: `Set<String>` (Handles Add/Remove operations).
+*   **Purpose**: Stores sets of values where multiple entries are additive.
+*   **Data Model**: `{ key: Set<String> }`
+*   **Routing Logic**: Used for fields where multiple choices are valid simultaneously (e.g., `skills`, `interests`, `languages`).
+*   **Resolution Strategy**: Values are added to the existing set (deduplicated).
 
 ### 3. SECTION_REPEATER (Row-Based)
-*   **What**: Structured data that repeats (Job 1, Job 2).
-*   **Examples**: `work_experience`, `education_history`.
-*   **Storage**: Indexed Array of Objects.
-    *   `work_experience[0]` = Google (Job 1)
-    *   `work_experience[1]` = Meta (Job 2)
+*   **Purpose**: Stores complex, structured data that repeats in "Rows".
+*   **Data Model**: `{ section_key: [ { field_a: val, field_b: val }, ... ] }`
+*   **Routing Logic**: Used for Work Experience, Education, and Certifications.
+*   **Resolution Strategy**: Uses `field_index` to map DOM elements to specific array indices, preserving row-level integrity.
 
-## The Learning Loop (Jaccard Similarity)
+---
 
-When a user manually corrects a field, we don't just save it. We perform **Fuzzy Key Matching** using Weighted Jaccard Similarity to map the platform-specific label (e.g., "Authorized?") to our canonical key (`work_auth`).
+## 🔄 The Learning Loop: Cache Key Matching
+SmartHireX uses the `KeyMatcher` engine to bridge the gap between site-specific labels (e.g., "Enter your Mail", "E-mail Address") and global canonical keys (`email`). This process is known as **Cache Key Matching**.
 
-```mermaid
-graph LR
-    User[User Clicks 'No'] --> Obs[FormObserver]
-    Obs --> Fuzzy[Fuzzy Matcher]
-    Fuzzy -->|Jaccard > 0.7| Cache[Update 'work_auth']
+### 📐 The Algorithm: Weighted Jaccard Similarity
+We utilize the **Weighted Jaccard Similarity** algorithm because traditional string matching (like Levenshtein distance) fails on semantic variations. 
+
+#### Why Jaccard Similarity?
+*   **Set-Based Comparison**: Jaccard compares sets of tokens rather than character sequences, making it robust against word-order changes (e.g., "First Name" vs "Name First").
+*   **Semantic Robustness**: By splitting labels into tokens and applying weights, we focus on the "Signal" (e.g., `phone`) while ignoring the "Noise" (e.g., `please`).
+*   **Intersection Over Union (IoU)**: It provides a clean 0 to 1 score representing the overlap between the current field signals and our stored knowledge.
+
+**The Formula**:
+```text
+Similarity(A, B) = Σ Weight(Intersection Tokens) / Σ Weight(Union Tokens)
+```
+Where `A` is the set of tokens from the field label and `B` is the set of tokens from a cached key.
+
+### 🛣️ Algorithm Pipeline Diagram
+```text
+┌───────────────────────────────────────────────────────────────────┐
+│                    ALGORITHM EXECUTION FLOW                       │
+├───────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  [Raw Label] ────┐                                                │
+│                  ▼                                                │
+│  [Tokenization] ─► Split by underscores/spaces                    │
+│                  │                                                │
+│  [Normalization] ─► lowercase(), strip_special_chars()            │
+│                  │                                                │
+│  [Stemming]      ─► employment → employ, education → educat       │
+│                  │                                                │
+│  [Expansion]     ─► zip → postal, telephone → phone               │
+│                  │                                                │
+│  [Weighting]     ─► salary (3.0), phone (3.0), first (3.0)        │
+│                  │  please (0.2), enter (0.2), select (0.2)      │
+│                  ▼                                                │
+│  [Similarity]    ─► Match Found! (Score > 0.70)                   │
+│                                                                   │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+### 💡 Matching Example: "Work Phone" vs "phone_number"
+To clarify how SmartHireX matches keys, consider a field with the label **"Primary Work Phone"**:
+
+1.  **Tokenization**: `["primary", "work", "phone"]`
+2.  **Weighting**:
+    *   `phone`: **3.0** (High Signal)
+    *   `work`: **1.0** (Standard)
+    *   `primary`: **0.5** (Low Signal)
+3.  **Comparison**: The engine compares these tokens against the cached key `phone_number` (`tokens: ["phone", "number"]`).
+4.  **Result**: Because `phone` matches perfectly and carries a high weight, the similarity score exceeds **0.70**, resulting in a successful cache hit even though the keys are not identical.
+
+---
+
+**Key Features**:
+*   **Token Stemming**: Reduces `employment` and `employer` to the same root (`employ`).
+*   **Synonym Expansion**: Maps `zip` to `postal` and `telephone` to `phone` using `SYNONYM_MAP`.
+*   **Weighted Tokens**: Priority tokens (`TOKEN_WEIGHTS`) carry more weight than noise tokens.
+
+---
+
+## 🔒 Security & Persistence Details
+
+### Storage Layers
+1.  **Vault Memory**: Active cache stored in `StorageVault` (accessible to the background and content scripts).
+2.  **Chrome Storage Local**: Persistent storage for predictions and session state.
+3.  **Encrypted Profiles**: Personal profile data is encrypted at rest using AES-256-GCM.
+
+### Quality Guards
+The `GlobalMemory.isCacheable()` service prevents memory noise by filtering out:
+*   **Short Labels**: Minimum length requirements.
+*   **Generic Values**: "Yes/No", "True/False" are not cached as global facts.
+*   **Number Heavy**: Prevents caching of purely numerical IDs as semantic labels.
+
+---
+
+## 📁 Technical Glossary
+
+| Key | Implementation | Role |
+|:---|:---|:---|
+| `InteractionLog` | `InteractionLog.js` | The "Hippocampus" - tracks all user selections and corrections. |
+| `GlobalMemory` | `GlobalMemory.js` | The manager for `ATOMIC_SINGLE` data consistency and quality. |
+| `KeyMatcher` | `InteractionLog.js` | The fuzzy logic core for semantic alignment. |
+| `StorageVault` | Core Infrastructure | Multi-bucket abstraction layer over Chrome Storage. |
+
+---
+
+## 🛠️ API Reference (Internal)
+
+#### Get Cached Value
+```javascript
+const result = await InteractionLog.getCachedValue(field, label);
+// Returns: { value, confidence, source, semanticType }
+```
+
+#### Resolve Global Batch
+```javascript
+const batchResults = await GlobalMemory.resolveBatch(fields);
+// Optimized batch lookup for ATOMIC_SINGLE fields
 ```
 
 ---
-
-## Security & Privacy
-
-### Encryption
-- Profile data encrypted at rest
-- AES-256-GCM encryption
-- Key derived from user's Chrome profile
-
-### Privacy Controls
-- User can view all cached data
-- One-click cache clearing
-- Incognito mode: no caching
-
-### Data Retention
-- Profile data: Indefinite (until cleared)
-- Predictions: 24 hours
-- Form progress: 30 days
-
----
-
-## Files
-
-| File | Purpose |
-|------|---------|
-| `cache-manager.js` | Cache orchestration and API |
-| `storage-adapter.js` | Chrome Storage abstraction |
-| `encryption-helper.js` | Data encryption/decryption |
-| `cache-cleaner.js` | Periodic cleanup and maintenance |
-
----
-
-## Future Improvements
-
-1. **Smart Expiration**: ML-based cache eviction
-2. **Compression**: Reduce storage footprint
-3. **Sync Conflict Resolution**: Better multi-device handling
-4. **Prediction Confidence Decay**: Lower confidence over time
+**Version**: 2.2  
+**Status**: [ENTERPRISE READY]
