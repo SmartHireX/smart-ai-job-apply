@@ -66,7 +66,6 @@
                 "autofill/domains/profile/EntityStore.js",
                 "autofill/services/indexing/field-indexing-service.js",
                 "autofill/domains/model/FieldRoutingPatterns.js",
-                "autofill/domains/model/FieldRoutingPatterns.js",
                 "autofill/core/ScanState.js",
                 "autofill/core/FieldCandidates.js",
                 "autofill/core/FillabilityPolicy.js",

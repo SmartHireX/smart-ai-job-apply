@@ -417,9 +417,6 @@
 
 #smarthirex-accordion-sidebar .sh-nova-9x-field-item:hover {
     background: #f8fafc;
-    border-left: 3px solid #0a66c2;
-    padding-left: 17px;
-    /* Compensate for border */
 }
 
 #smarthirex-accordion-sidebar .sh-nova-9x-field-item:last-child {
@@ -653,7 +650,7 @@
     user-select: none;
     background: #f8fafc;
     border: 1px solid rgba(10, 102, 194, 0.15);
-    border-left: 3px solid #0a66c2;
+    border-left: 3px solid transparent;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
@@ -717,7 +714,7 @@
     padding: 12px 20px;
     cursor: pointer;
     transition: all 0.2s;
-    border-left: 3px solid transparent;
+    border-left: none;
     border-bottom: 1px solid #f3f4f6;
     background: #f9fafb;
 }

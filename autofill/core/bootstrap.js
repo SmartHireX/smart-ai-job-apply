@@ -59,7 +59,6 @@ const SCRIPT_QUEUE = [
     'autofill/domains/profile/SectionController.js',
     'autofill/services/indexing/field-indexing-service.js',
     'autofill/domains/model/FieldRoutingPatterns.js',
-    'autofill/domains/model/FieldRoutingPatterns.js',
 
     // Enterprise Core (Phase 1-4)
     'autofill/core/ScanState.js',
