@@ -10,7 +10,7 @@
 
 // Gemini API Configuration
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
 const MAX_API_KEYS = 5;
 const KEY_COOLDOWN_MS = 60 * 1000; // 1 min default for rate limit
 

@@ -97,7 +97,7 @@ function renderApiKeysList(keys) {
         row.querySelector('.validate-key-at').addEventListener('click', async () => {
             const statusEl = document.getElementById('api-keys-status');
             setStatus(statusEl, 'Validating...', 'loading');
-            const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.0-flash';
+            const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash-lite';
             const result = await window.AIClient.validateApiKey(key, model);
             if (result.valid) setStatus(statusEl, `✓ Key ${index + 1} is valid`, 'success');
             else setStatus(statusEl, `✗ Key ${index + 1}: ${result.error}`, 'error');
@@ -113,7 +113,7 @@ function renderApiKeysList(keys) {
 }
 
 async function saveApiKeysToStorage(keys) {
-    const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.0-flash';
+    const model = document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash-lite';
     if (window.AIClient?.saveApiKeys) {
         await window.AIClient.saveApiKeys(keys, model);
     } else if (keys.length > 0) {
@@ -140,7 +140,7 @@ function initApiKeySection() {
                 return;
             }
             setStatus(statusEl, 'Validating...', 'loading');
-            const model = apiModelInput?.value?.trim() || 'gemini-2.0-flash';
+            const model = apiModelInput?.value?.trim() || 'gemini-2.5-flash-lite';
             const result = await window.AIClient.validateApiKey(key, model);
             if (result.valid) {
                 let newKeys = keys.filter(k => k !== key);
@@ -790,7 +790,7 @@ async function loadAllData() {
             if (options.includes(apiModel)) {
                 select.value = apiModel;
             } else {
-                select.value = 'gemini-2.0-flash'; // Default fallback
+                select.value = 'gemini-2.5-flash-lite'; // Default fallback
             }
         }
 
