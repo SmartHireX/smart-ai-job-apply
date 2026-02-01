@@ -190,7 +190,9 @@ class HybridClassifier {
                     const response = await fetch(url);
                     const weights = await response.json();
                     await classifier.loadWeights(weights);
-                    if (this._debug) // console.log('✅ [Hybrid] Neural V8 Weights Loaded');
+                    if (this._debug) {
+                        // console.log('✅ [Hybrid] Neural V8 Weights Loaded');
+                    }
                 } catch (e) {
                     console.error('❌ [Hybrid] Failed to load Neural V8 weights:', e);
                 }
@@ -514,7 +516,7 @@ class HybridClassifier {
             if (window.NeuralClassifierV8) {
                 this._neuralClassifier = new window.NeuralClassifierV8();
                 if (this._debug) // console.log('[HybridClassifier] Using NeuralClassifierV8');
-                return this._neuralClassifier;
+                    return this._neuralClassifier;
             }
             // Fallback to V7 (legacy)
             if (window.NeuralClassifier) {

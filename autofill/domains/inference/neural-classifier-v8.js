@@ -484,7 +484,9 @@ class NeuralClassifierV8 {
     }
 
     _log(msg) {
-        if (this._debug) // console.log(`[NeuralClassifierV8] ${msg}`);
+        if (this._debug) {
+            // console.log(`[NeuralClassifierV8] ${msg}`);
+        }
     }
 }
 
