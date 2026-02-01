@@ -1,5 +1,5 @@
 /**
- * AI Client for Nova Apply Extension
+ * AI Client for Smart AI Job Apply Extension
  *
  * Unified AI client using Google Gemini API with:
  * - Enterprise-Grade Key Rotation: Round-Robin across up to 5 API keys
@@ -10,7 +10,7 @@
 
 // Gemini API Configuration
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash';
 const MAX_API_KEYS = 5;
 const KEY_COOLDOWN_MS = 60 * 1000; // 1 min default for rate limit
 
@@ -125,7 +125,13 @@ async function getApiKeys() {
 
     await vault.waitUntilReady?.();
     const keys = await vault.bucket('ai').get('keys');
-    return keys || [];
+
+    // Legacy support: if stored as string, wrap in array
+    if (typeof keys === 'string' && keys.trim().length > 0) {
+        return [keys];
+    }
+
+    return Array.isArray(keys) ? keys : [];
 }
 
 /**

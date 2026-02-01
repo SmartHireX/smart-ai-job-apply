@@ -1,184 +1,143 @@
-/* Nova Apply - LinkedIn-Level Professional Design */
+/* Smart AI Job Apply - Options Page Styles */
+/* Premium FANG-inspired design */
 
 :root {
-    /* LinkedIn Professional Color Palette */
-    --linkedin-blue: #0a66c2;
-    --linkedin-blue-hover: #004182;
-    --linkedin-blue-light: #e8f4fd;
-
-    /* Grayscale - Professional LinkedIn Tones */
-    --black-90: rgba(0, 0, 0, 0.9);
-    --black-75: rgba(0, 0, 0, 0.75);
-    --black-60: rgba(0, 0, 0, 0.6);
-    --black-40: rgba(0, 0, 0, 0.4);
-
-    --border-light: #e0e0e0;
-    --border-lighter: #f3f3f3;
-    --bg-hover: #f9fafb;
-    --bg-subtle: #f3f6f8;
-
-    /* Status Colors */
-    --success: #16a34a;
-    --success-light: #f0fdf4;
-    --warning: #ca8a04;
-    --danger: #dc2626;
-    --danger-light: #fef2f2;
-
-    /* Typography */
-    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-
-    /* Spacing Scale (8px base) */
-    --space-xs: 4px;
-    --space-sm: 8px;
-    --space-md: 12px;
-    --space-lg: 16px;
-    --space-xl: 20px;
-    --space-2xl: 24px;
-    --space-3xl: 32px;
-
-    /* Border Radius - Subtle */
-    --radius-sm: 4px;
+    --primary: #0a66c2;
+    --primary-hover: #084e96;
+    --primary-light: #e8f4fd;
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    --radius-sm: 6px;
     --radius-md: 8px;
-
-    /* Shadows - Extremely Subtle */
-    --shadow-subtle: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
-    --shadow-hover: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
 }
 
+/* Layout & App Structure */
 .app-layout {
     display: flex;
     min-height: 100vh;
-    background: white;
+    background: #f8fafc;
 }
 
-/* Sidebar - LinkedIn Style */
+/* Sidebar Styling */
 .sidebar {
     width: 280px;
     background: white;
-    border-right: 1px solid var(--border-light);
+    border-right: 1px solid var(--gray-200);
     display: flex;
     flex-direction: column;
     position: sticky;
     top: 0;
     height: 100vh;
+    z-index: 100;
 }
 
 .sidebar .logo {
-    padding: var(--space-2xl);
+    padding: 32px 24px;
     display: flex;
     align-items: center;
-    gap: var(--space-md);
+    gap: 12px;
 }
 
 .sidebar .logo-icon {
     width: 40px;
     height: 40px;
-    background: linear-gradient(135deg, var(--linkedin-blue) 0%, #004182 100%);
-    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
+    box-shadow: 0 4px 12px rgba(10, 102, 194, 0.2);
 }
 
 .sidebar .logo-text h1 {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--black-90);
-    margin: 0;
-    letter-spacing: -0.01em;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--gray-900);
+    margin-bottom: 2px;
 }
 
 .sidebar .logo-text .tagline {
-    font-size: 12px;
-    color: var(--black-60);
-    font-weight: 400;
-}
-
-.sidebar .logo-text .tagline {
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-weight: 700;
-    color: var(--zinc-400);
+    letter-spacing: 1px;
+    font-weight: 600;
+    color: var(--gray-400);
 }
 
-/* Sidebar Navigation - LinkedIn Style */
+/* Sidebar Navigation */
 .sidebar .tabs {
     flex: 1;
-    padding: 0 var(--space-lg);
+    padding: 0 16px;
     display: flex;
     flex-direction: column;
-    gap: var(--space-xs);
+    gap: 4px;
 }
 
 .sidebar .tab {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
-    padding: 10px 14px;
+    gap: 12px;
+    padding: 12px 16px;
     border: none;
     background: transparent;
-    border-radius: var(--radius-sm);
-    color: var(--black-60);
+    border-radius: var(--radius-md);
+    color: var(--gray-600);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     text-align: left;
     width: 100%;
 }
 
 .sidebar .tab:hover {
-    background: var(--bg-hover);
-    color: var(--black-90);
-}
-
-.tabs {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
-    padding: 0 var(--space-md);
-}
-
-.sidebar-indicator {
-    position: absolute;
-    left: 0;
-    width: 3px;
-    height: 24px;
-    background: var(--linkedin-blue);
-    border-radius: 0 4px 4px 0;
-    transition: transform 0.2s ease;
-    pointer-events: none;
+    background: var(--gray-100);
+    color: var(--gray-900);
 }
 
 .sidebar .tab.active {
-    background: var(--linkedin-blue-light);
-    color: var(--linkedin-blue);
+    background: var(--primary-light);
+    color: var(--primary);
 }
 
 .sidebar .tab-icon {
-    width: 20px;
-    height: 20px;
+    font-size: 18px;
+    width: 24px;
     display: flex;
-    align-items: center;
     justify-content: center;
-    color: currentColor;
-    opacity: 0.8;
-}
-
-.sidebar .tab:hover .tab-icon,
-.sidebar .tab.active .tab-icon {
-    opacity: 1;
 }
 
 .sidebar-footer {
-    padding: 24px 16px;
-    border-top: 1px solid var(--zinc-100);
+    padding: 20px;
+    border-top: 1px solid var(--gray-100);
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
+}
+
+.sidebar-actions {
+    padding: 0 20px 20px 20px;
 }
 
 /* Processing & Spinner */
@@ -314,11 +273,10 @@
 }
 
 .content-header {
-    height: 64px;
-    padding: 0 24px;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--zinc-200);
+    height: 80px;
+    padding: 0 40px;
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -339,10 +297,9 @@
 }
 
 .content-header h1 {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 700;
-    color: var(--zinc-900);
-    letter-spacing: -0.02em;
+    color: var(--gray-900);
 }
 
 .header-info {
@@ -353,8 +310,10 @@
 
 .content-body {
     flex: 1;
-    padding: 24px;
+    padding: 40px;
+    max-width: 1000px;
     width: 100%;
+    margin: 0 auto;
 }
 
 * {
@@ -480,55 +439,43 @@ body {
     flex-shrink: 0;
 }
 
-/* Buttons - LinkedIn Style */
 .btn {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: var(--space-sm);
-    padding: 10px 18px;
+    gap: 8px;
+    padding: 10px 16px;
     font-size: 14px;
     font-weight: 600;
     border-radius: var(--radius-sm);
-    border: 1px solid transparent;
+    border: none;
     cursor: pointer;
-    transition: all 0.15s ease;
-    user-select: none;
+    transition: all 0.2s;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .btn-primary {
-    background: var(--linkedin-blue);
+    background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
     color: white;
-    border: none;
+    box-shadow: 0 2px 8px rgba(10, 102, 194, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: var(--linkedin-blue-hover);
-}
-
-.btn-primary:active:not(:disabled) {
-    transform: scale(0.98);
-}
-
-.btn-small {
-    padding: 6px 12px;
-    font-size: 13px;
-}
-
-.btn-small svg {
-    width: 14px;
-    height: 14px;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(10, 102, 194, 0.4);
 }
 
 .btn-secondary {
-    background: white;
-    color: var(--black-75);
-    border: 1px solid var(--border-light);
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-200);
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: var(--bg-hover);
-    color: var(--black-90);
+    background: var(--gray-200);
 }
 
 .btn-danger-outline {
@@ -547,98 +494,17 @@ body {
 }
 
 .api-keys-list {
-    margin-top: 16px;
-    border: 1px solid var(--zinc-200);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    background: white;
+    margin-bottom: 8px;
 }
 
-.nova-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-.nova-table th {
-    background: var(--zinc-50);
-    padding: 10px 14px;
-    text-align: left;
-    font-weight: 600;
-    color: var(--zinc-500);
-    text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid var(--zinc-200);
-}
-
-.nova-table td {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--zinc-100);
-    vertical-align: middle;
-    color: var(--zinc-700);
-}
-
-.nova-table tr:last-child td {
-    border-bottom: none;
-}
-
-.nova-table tr:hover {
-    background: #fbfbfb;
-}
-
-/* Status Pills */
-.status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 8px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 550;
-}
-
-.status-pill-active {
-    background: #f0fdf4;
-    color: #166534;
-}
-
-.status-pill-active::before {
-    content: '';
-    width: 5px;
-    height: 5px;
-    background: #22c55e;
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
-}
-
-.status-pill-invalid {
-    background: #fef2f2;
-    color: #991b1b;
-}
-
-.status-pill-validating {
-    background: #f8fafc;
-    color: #64748b;
-    animation: status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes status-pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: .5;
-    }
-}
-
-.api-actions-cell {
+.api-key-row {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
     gap: 8px;
+    margin-bottom: 6px;
+    padding: 8px;
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
 }
 
 .btn-icon {
@@ -699,146 +565,83 @@ body {
     /* Space for footer */
 }
 
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(12px) scale(0.98);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
 .tab-content {
     display: none;
+    animation: fadeIn 0.3s ease;
 }
 
 .tab-content.active {
     display: block;
-    animation: slideUp 0.35s cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* Card & Section Containers - LinkedIn Style */
-.card {
-    background: white;
-    border-radius: 8px;
-    padding: 0;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
-    border: none;
-    overflow: hidden;
-    transition: box-shadow 0.2s ease;
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 16px;
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.card:hover {
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
-}
-
-.card-body {
-    padding: 24px;
-}
-
-/* Section Footers (New for Per-Section Saving) */
-.section-footer {
-    padding: 20px 32px;
-    background: var(--zinc-50);
-    border-top: 1px solid var(--zinc-100);
+/* Section Header */
+.section-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
-.save-scope-label {
-    display: flex;
-    flex-direction: column;
+.section-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--gray-900);
+    letter-spacing: -0.5px;
 }
 
-.save-scope-text {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--zinc-500);
-    letter-spacing: 0.01em;
-}
-
-.last-saved-text {
-    font-size: 11px;
-    color: var(--zinc-400);
+.section-header p {
+    font-size: 14px;
+    color: var(--gray-500);
     margin-top: 4px;
 }
 
-/* Dirty State Badge */
-.dirty-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--warning);
-    background: var(--warning-light);
-    padding: 2px 8px;
-    border-radius: 12px;
-    opacity: 0;
-    transform: translateY(2px);
-    transition: all 0.2s ease;
+.section-header a {
+    color: var(--primary);
+    text-decoration: none;
 }
 
-.dirty-badge.active {
-    opacity: 1;
-    transform: translateY(0);
+.section-header a:hover {
+    text-decoration: underline;
 }
 
-/* Global Status Chip */
-.status-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--zinc-50);
-    border: 1px solid var(--zinc-200);
-    border-radius: 99px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0, 0, 0.2, 1);
-    user-select: none;
+/* Card */
+.card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
 }
 
-.status-chip:hover {
-    background: var(--zinc-100);
-    border-color: var(--zinc-300);
-}
-
-.status-chip.saved {
-    color: var(--success);
-}
-
-.status-chip.unsaved {
-    color: var(--warning);
-    border-color: var(--warning);
-    background: var(--warning-light);
-}
-
-/* Form Groups - LinkedIn Spacing */
+/* Form Groups */
 .form-group {
-    margin-bottom: var(--space-xl);
+    margin-bottom: 20px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
 }
 
 .form-group label {
     display: block;
     font-size: 14px;
     font-weight: 600;
-    color: var(--black-90);
-    margin-bottom: var(--space-sm);
-}
-
-.mb-30 {
-    margin-bottom: 30px;
+    color: var(--gray-700);
+    margin-bottom: 8px;
 }
 
 .field-hint {
@@ -860,7 +663,7 @@ body {
     }
 }
 
-/* Inputs - LinkedIn Style */
+/* Inputs */
 input[type="text"],
 input[type="email"],
 input[type="tel"],
@@ -874,30 +677,24 @@ textarea {
     padding: 12px 14px;
     font-size: 14px;
     font-family: inherit;
-    border: 1px solid #d0d5dd;
-    border-radius: 4px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
     background: white;
-    color: rgba(0, 0, 0, 0.9);
-    transition: all 0.15s ease;
-}
-
-input:hover,
-select:hover,
-textarea:hover {
-    border-color: #98a2b3;
+    color: var(--gray-800);
+    transition: all 0.2s;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
     outline: none;
-    border-color: #0a66c2;
-    box-shadow: 0 0 0 1px #0a66c2;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.1);
 }
 
 input::placeholder,
 textarea::placeholder {
-    color: rgba(0, 0, 0, 0.4);
+    color: var(--gray-400);
 }
 
 textarea {
@@ -1108,52 +905,29 @@ textarea {
     text-transform: uppercase;
 }
 
-.section-header-compact {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 32px;
-}
-
-.section-title h2 {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--zinc-900);
-    letter-spacing: -0.01em;
-    margin-bottom: 4px;
-}
-
-.section-title p {
-    font-size: 14px;
-    color: var(--zinc-500);
-}
-
 /* Empty State */
 .empty-state {
     text-align: center;
-    padding: 64px 32px;
-    background: var(--zinc-50);
-    border: 2px dashed var(--zinc-200);
+    padding: 60px 20px;
+    background: white;
     border-radius: var(--radius-lg);
-    margin: 20px 0;
+    border: 2px dashed var(--gray-300);
 }
 
 .empty-icon {
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: center;
+    font-size: 48px;
+    margin-bottom: 16px;
 }
 
 .empty-state h3 {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--zinc-900);
+    font-size: 18px;
+    color: var(--gray-700);
     margin-bottom: 8px;
 }
 
 .empty-state p {
-    font-size: 13px;
-    color: var(--zinc-500);
+    font-size: 14px;
+    color: var(--gray-500);
 }
 
 .empty-state.hidden {
@@ -1296,151 +1070,15 @@ textarea {
     background: var(--gray-50);
 }
 
-/* API Onboarding & Premium Help */
-.premium-help-section {
-    margin-top: 40px;
-    padding-top: 32px;
-    border-top: 1px solid var(--zinc-100);
-}
-
-.premium-help-section .onboarding-header h3 {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--zinc-900);
-    margin-bottom: 12px;
-}
-
-/* Help Section - LinkedIn Simple Style */
-.help-section {
-    margin-top: 32px;
-    padding-top: 32px;
-    border-top: 1px solid #e0e0e0;
-}
-
-.help-header {
-    margin-bottom: 20px;
-}
-
-.help-header h3 {
-    font-size: 16px;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.9);
-    margin: 0 0 8px 0;
-}
-
-.privacy-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: rgba(0, 0, 0, 0.6);
-    padding: 4px 10px;
-    background: #f3f6f8;
-    border-radius: 4px;
-}
-
-.privacy-badge svg {
-    width: 14px;
-    height: 14px;
-    color: #0a66c2;
-}
-
-.help-steps {
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 2000;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-}
-
-.help-step {
-    display: flex;
     gap: 12px;
-    align-items: flex-start;
-}
-
-.step-number {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #e8f4fd;
-    color: #0a66c2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 600;
-    flex-shrink: 0;
-}
-
-.step-text {
-    flex: 1;
-    padding-top: 2px;
-}
-
-.step-text p {
-    font-size: 14px;
-    line-height: 1.5;
-    color: rgba(0, 0, 0, 0.9);
-    margin: 0;
-}
-
-.inline-link {
-    color: #0a66c2;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.inline-link:hover {
-    text-decoration: underline;
-}
-
-.step-text code {
-    font-family: 'Monaco', 'Menlo', monospace;
-    font-size: 13px;
-    background: #f3f6f8;
-    padding: 2px 6px;
-    border-radius: 3px;
-    color: #d73a49;
-}
-
-.premium-help-section .setup-steps {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 24px;
-}
-
-.premium-help-section .setup-step {
-    background: var(--zinc-50);
-    padding: 20px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--zinc-100);
-    transition: all var(--transition-fast);
-}
-
-.premium-help-section .setup-step:hover {
-    background: white;
-    border-color: var(--zinc-200);
-    box-shadow: var(--shadow-sm);
-}
-
-.premium-help-section .step-content h4 {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--zinc-900);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.premium-help-section .step-content p {
-    font-size: 13px;
-    color: var(--zinc-500);
-    line-height: 1.6;
-    margin-bottom: 0;
-}
-
-.premium-help-section .btn-small {
-    margin-top: 12px;
-    width: fit-content;
 }
 
 .toast {
@@ -1629,128 +1267,4 @@ textarea {
     font-size: 13px;
     color: var(--primary);
     font-weight: 500;
-}
-
-/* LinkedIn-Style Entity Cards */
-.entity-card {
-    display: flex;
-    gap: 12px;
-    padding: 16px 0;
-    border-bottom: 1px solid #e0e0e0;
-    transition: background 0.15s ease;
-}
-
-.entity-card:last-child {
-    border-bottom: none;
-}
-
-.entity-card:hover {
-    background: #f9fafb;
-    margin: 0 -12px;
-    padding: 16px 12px;
-    border-radius: 4px;
-}
-
-.entity-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 4px;
-    background: linear-gradient(135deg, #0a66c2 0%, #004182 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.entity-icon svg {
-    width: 24px;
-    height: 24px;
-    color: white;
-}
-
-.entity-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.entity-header {
-    margin-bottom: 4px;
-}
-
-.entity-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.9);
-    margin: 0 0 2px 0;
-    line-height: 1.3;
-}
-
-.entity-subtitle {
-    font-size: 14px;
-    color: rgba(0, 0, 0, 0.6);
-    margin: 0;
-    line-height: 1.4;
-}
-
-.entity-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: rgba(0, 0, 0, 0.6);
-    margin-top: 4px;
-}
-
-.entity-meta-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.entity-description {
-    font-size: 14px;
-    line-height: 1.5;
-    color: rgba(0, 0, 0, 0.9);
-    margin-top: 8px;
-}
-
-.entity-skills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-}
-
-.skill-badge {
-    font-size: 12px;
-    padding: 4px 8px;
-    background: #f3f6f8;
-    color: rgba(0, 0, 0, 0.8);
-    border-radius: 4px;
-    font-weight: 500;
-}
-
-.entity-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-.entity-actions .btn-small {
-    padding: 4px 10px;
-    font-size: 12px;
-}
-
-/* Items List Container */
-.items-list {
-    margin-top: 16px;
-}
-
-.items-list:empty+.empty-state {
-    display: flex;
-}
-
-.items-list:not(:empty)+.empty-state {
-    display: none;
 }
