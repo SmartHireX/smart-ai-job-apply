@@ -374,6 +374,31 @@ body {
     background: var(--bg);
 }
 
+.provider-toggle {
+    display: flex;
+    margin-left: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.provider-btn {
+    padding: 3px 9px;
+    font-size: 10px;
+    font-weight: 600;
+    border: none;
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+    line-height: 1.5;
+}
+
+.provider-btn + .provider-btn { border-left: 1px solid var(--border); }
+.provider-btn.active { background: var(--brand); color: white; }
+.provider-btn:not(.active):hover { background: var(--brand-light); color: var(--brand); }
+
 .toolbar-btn {
     display: inline-flex;
     align-items: center;

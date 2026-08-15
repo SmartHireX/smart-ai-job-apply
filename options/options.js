@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Initialize API key section
     initApiKeySection();
+    initGroqSection();
 
     // Initialize all form sections
     initPersonalSection();
@@ -82,7 +83,7 @@ function maskKey(key) {
 }
 
 function getModelValue() {
-    return document.getElementById('api-model')?.value?.trim() || 'gemini-2.5-flash';
+    return document.getElementById('api-model')?.value?.trim() || 'gemini-2.0-flash';
 }
 
 function renderApiKeysList(keys) {
@@ -177,6 +178,41 @@ function initApiKeySection() {
             }
         });
     }
+}
+
+// ============================================
+// GROQ SECTION
+// ============================================
+
+function initGroqSection() {
+    const validateBtn = document.getElementById('validate-groq-btn');
+    const keyInput = document.getElementById('groq-api-key');
+    const modelSelect = document.getElementById('groq-model');
+    const statusEl = document.getElementById('groq-key-status');
+    if (!validateBtn || !keyInput) return;
+
+    validateBtn.addEventListener('click', async () => {
+        const key = keyInput.value.trim();
+        if (!key) { setStatus(statusEl, 'Enter a Groq API key first', 'error'); return; }
+        setStatus(statusEl, 'Validating...', 'loading');
+        const model = modelSelect?.value || 'llama-3.1-8b-instant';
+        const result = await window.AIClient.validateGroqKey(key, model);
+        if (result.valid) {
+            await window.AIClient.saveGroqConfig(key, model);
+            setStatus(statusEl, '✓ Groq key saved — fallback active', 'success');
+        } else {
+            setStatus(statusEl, result.error || 'Validation failed', 'error');
+        }
+    });
+
+    // Re-save when model selection changes (if key already saved)
+    modelSelect?.addEventListener('change', async () => {
+        const cfg = await window.AIClient.getGroqConfig?.();
+        if (cfg?.key) {
+            await window.AIClient.saveGroqConfig(cfg.key, modelSelect.value);
+            setStatus(statusEl, '✓ Model updated', 'success');
+        }
+    });
 }
 
 // ============================================
@@ -807,7 +843,18 @@ async function loadAllData() {
         }
         const modelInput = document.getElementById('api-model');
         if (modelInput) {
-            modelInput.value = apiModel || 'gemini-2.5-flash';
+            modelInput.value = apiModel || 'gemini-2.0-flash';
+        }
+
+        // Load Groq config
+        const groqCfg = await window.AIClient.getGroqConfig?.();
+        if (groqCfg?.key) {
+            const groqKeyInput = document.getElementById('groq-api-key');
+            const groqModelSelect = document.getElementById('groq-model');
+            const groqStatus = document.getElementById('groq-key-status');
+            if (groqKeyInput) groqKeyInput.value = groqCfg.key;
+            if (groqModelSelect && groqCfg.model) groqModelSelect.value = groqCfg.model;
+            if (groqStatus) setStatus(groqStatus, '✓ Groq fallback active', 'success');
         }
 
         // Load resume data

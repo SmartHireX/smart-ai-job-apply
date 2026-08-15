@@ -208,6 +208,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         })();
         return true;
     }
+
+    // Navigate the active tab to a URL (proper MV3 pattern — avoids CSP issues)
+    if (message.type === 'NAVIGATE') {
+        (async () => {
+            try {
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (tab) await chrome.tabs.update(tab.id, { url: message.url });
+                sendResponse({ success: true });
+            } catch (error) {
+                sendResponse({ success: false, error: error.message });
+            }
+        })();
+        return true;
+    }
 });
 
 

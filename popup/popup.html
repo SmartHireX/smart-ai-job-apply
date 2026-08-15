@@ -104,13 +104,17 @@
 
             <!-- Chat toolbar -->
             <div class="chat-toolbar">
-<button class="toolbar-btn" id="open-widget-btn" title="Open floating chat on page">
+                <button class="toolbar-btn" id="open-widget-btn" title="Open floating chat on page">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <rect x="2" y="3" width="20" height="18" rx="3"/>
                         <path d="M8 10h8M8 14h5"/>
                     </svg>
                     <span>Float on page</span>
                 </button>
+                <div class="provider-toggle" id="provider-toggle">
+                    <button class="provider-btn active" id="use-gemini">Gemini</button>
+                    <button class="provider-btn" id="use-groq">Groq</button>
+                </div>
             </div>
 
             <!-- Messages -->

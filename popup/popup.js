@@ -10,6 +10,17 @@ let isThinking = false;
 let chatHistory = [];
 let currentPageContent = '';
 let currentPageTitle = '';
+let activeProvider = localStorage.getItem('nova_provider') || 'gemini';
+
+const HISTORY_KEY = 'nova_chat_history';
+const MAX_HISTORY  = 40; // messages to persist
+
+function saveHistory() {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(chatHistory.slice(-MAX_HISTORY))); } catch {}
+}
+function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+}
 
 // ─── DOM refs ────────────────────────────────────────────────────────────────
 let setupSection, tabBar, chatSection, fillSection, progressSection;
@@ -71,6 +82,19 @@ function bindEvents() {
         await detectForms();
     });
 
+    // Provider toggle
+    const geminiBtn = document.getElementById('use-gemini');
+    const groqBtn   = document.getElementById('use-groq');
+    function setProvider(p) {
+        activeProvider = p;
+        localStorage.setItem('nova_provider', p);
+        geminiBtn?.classList.toggle('active', p === 'gemini');
+        groqBtn?.classList.toggle('active', p === 'groq');
+    }
+    setProvider(activeProvider);
+    geminiBtn?.addEventListener('click', () => setProvider('gemini'));
+    groqBtn?.addEventListener('click',   () => setProvider('groq'));
+
     // floating chat widget on the page
     document.getElementById('open-widget-btn').addEventListener('click', async () => {
         try {
@@ -79,6 +103,17 @@ function bindEvents() {
                 showToast('Cannot open on this page', 'warning');
                 return;
             }
+            // Inject history into the page's window BEFORE the widget loads
+            const historyToPass = chatHistory.slice(-40);
+            const provider = activeProvider;
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: (history, prov) => {
+                    window.__novaHistory  = history;
+                    window.__novaProvider = prov;
+                },
+                args: [historyToPass, provider]
+            });
             await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
                 files: ['autofill/ui/chat/chat-widget.js']
@@ -121,6 +156,7 @@ async function checkSetup() {
         if (status.ready) {
             isReady = true;
             showReadyUI();
+            restoreHistory();
             await Promise.all([loadPageContext(), detectForms()]);
         } else {
             showSetupUI(status);
@@ -164,6 +200,20 @@ function showReadyUI() {
     setupSection.classList.add('hidden');
     tabBar.classList.remove('hidden');
     switchTab('chat');
+}
+
+// ─── Restore persisted chat history ──────────────────────────────────────────
+function restoreHistory() {
+    const saved = loadHistory();
+    if (!saved.length) return;
+    chatHistory = saved;
+    // Hide welcome message if there's real history
+    const welcome = document.getElementById('welcome-msg');
+    if (welcome) welcome.style.display = 'none';
+    quickChips.style.display = 'none';
+    saved.forEach(m => appendMessage(m.role, m.text));
+    // Scroll to bottom
+    if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
 // ─── Tab Switching ────────────────────────────────────────────────────────────
@@ -234,6 +284,7 @@ async function handleSend() {
     // Add user message
     appendMessage('user', text);
     chatHistory.push({ role: 'user', text });
+    saveHistory();
 
     // Clear input
     chatInput.value = '';
@@ -249,6 +300,7 @@ async function handleSend() {
         removeThinking(thinkingId);
         appendMessage('ai', response);
         chatHistory.push({ role: 'ai', text: response });
+        saveHistory();
     } catch (e) {
         removeThinking(thinkingId);
         appendMessage('ai', 'Something went wrong. Please check your API key and try again.');
@@ -263,7 +315,8 @@ async function callChatAI(userMessage) {
 
     const result = await window.AIClient.callAI(fullPrompt, systemPrompt, {
         maxTokens: 1024,
-        temperature: 0.7
+        temperature: 0.7,
+        provider: activeProvider
     });
 
     if (!result.success || !result.text) {

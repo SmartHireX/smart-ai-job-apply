@@ -10,9 +10,39 @@
 
 // Gemini API Configuration
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash';
+
+// Groq API Configuration
+const GROQ_API_BASE = 'https://api.groq.com/openai/v1';
+const DEFAULT_GROQ_MODEL = 'llama-3.1-8b-instant';
 const MAX_API_KEYS = 5;
 const KEY_COOLDOWN_MS = 60 * 1000; // 1 min default for rate limit
+
+// Ordered list of text-capable models to try during auto-discovery (most available first)
+const MODEL_DISCOVERY_ORDER = [
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-flash-latest',
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-flash-8b',
+    'gemini-1.5-flash-8b-latest',
+    'gemini-2.5-flash-lite',
+    'gemini-2.5-flash-8b',
+    'gemini-2.5-flash',
+    'gemini-2.5-pro',
+    'gemini-1.5-pro',
+    'gemini-1.5-pro-latest',
+    'gemini-pro',
+];
+
+// Substrings that identify non-text-chat models — skip these during discovery
+const MODEL_EXCLUDE_PATTERNS = ['video', 'tts', 'embedding', 'aqa', 'vision', 'image', 'eap', 'exp', 'preview'];
+
+function isTextModel(name) {
+    const n = (name || '').toLowerCase();
+    return n.startsWith('gemini') && !MODEL_EXCLUDE_PATTERNS.some(p => n.includes(p));
+}
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -208,11 +238,14 @@ async function getStoredModel() {
     const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
     if (vault) {
         const config = await vault.bucket('system').get('config');
-        let model = config?.ai_model || DEFAULT_GEMINI_MODEL;
-        // Force upgrade to gemini-2.5-flash if on older or problematic models
-        const legacyModels = ['gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash-exp', 'gemini-2.5-flash-preview-05-20'];
-        if (!model || legacyModels.includes(model)) {
-            model = DEFAULT_GEMINI_MODEL;
+        const model = (config?.ai_model || '').trim();
+        const legacyModels = [
+            'gemini-2.5-flash', 'gemini-2.5-flash-lite',
+            'gemini-2.5-flash-exp', 'gemini-2.5-flash-preview-05-20',
+            'gemini-1.0-pro'
+        ];
+        if (!model || legacyModels.includes(model) || !isTextModel(model)) {
+            return DEFAULT_GEMINI_MODEL;
         }
         return model;
     }
@@ -332,10 +365,8 @@ async function validateApiKey(apiKey, modelName = DEFAULT_GEMINI_MODEL) {
 
         // Step 2: confirm the target model is in the list
         if (!available.includes(modelName)) {
-            // Try a known fallback that's almost always present
-            const fallback = available.find(n => n.startsWith('gemini-2.5-flash') && !n.includes('tts')) ||
-                             available.find(n => n.startsWith('gemini-2.0-flash')) ||
-                             available[0];
+            // Pick best available from priority order
+            const fallback = MODEL_DISCOVERY_ORDER.find(m => available.includes(m)) || available[0];
             console.warn(`[AIClient] ${modelName} not in list, falling back to ${fallback}. Full list:`, available);
             return {
                 valid: true,
@@ -431,6 +462,9 @@ async function fetchWithKey(apiKey, modelName, requestBody) {
 
     const errorData = await response.json().catch(() => ({}));
     const errorMessage = errorData.error?.message || `API request failed with status ${response.status}`;
+    const errorStatus = errorData.error?.status || '';
+    const errorCode = errorData.error?.code || response.status;
+    console.error(`[AIClient] fetchWithKey ${modelName} → HTTP ${response.status} | status="${errorStatus}" | msg="${errorMessage}"`);
     const classified = classifyError(response.status, errorMessage);
     return {
         ok: false,
@@ -439,6 +473,93 @@ async function fetchWithKey(apiKey, modelName, requestBody) {
         errorCode: classified.code,
         retryAfterSeconds: classified.retryAfterSeconds
     };
+}
+
+/**
+ * Find the first model in MODEL_DISCOVERY_ORDER that actually responds to a real
+ * generateContent call. Falls back to probing models from the /models list.
+ * @param {string} apiKey
+ * @returns {Promise<string|null>}
+ */
+async function discoverWorkingModel(apiKey) {
+    const testBody = {
+        contents: [{ parts: [{ text: 'Hi' }] }],
+        generationConfig: { maxOutputTokens: 5 }
+    };
+
+    // Step 1: get the account's actual model list
+    let accountModels = [];
+    try {
+        const resp = await fetch(
+            `${GEMINI_API_BASE}/models?key=${apiKey}&pageSize=100`,
+            { signal: AbortSignal.timeout(8000) }
+        );
+        if (!resp.ok) {
+            const errData = await resp.json().catch(() => ({}));
+            console.error(`[AIClient] /models list failed: HTTP ${resp.status} | msg="${errData.error?.message}"`);
+        } else {
+            const data = await resp.json();
+            accountModels = (data.models || [])
+                .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+                .map(m => m.name.split('/').pop())
+                .filter(isTextModel);
+            console.log(`[AIClient] Account text models:`, accountModels);
+        }
+    } catch (e) {
+        console.warn(`[AIClient] Could not fetch models list:`, e);
+    }
+
+    // Step 2: build probe list — priority order intersected with account models, then extras
+    const inAccount = MODEL_DISCOVERY_ORDER.filter(m => accountModels.includes(m));
+    const notInOrder = accountModels.filter(m => !MODEL_DISCOVERY_ORDER.includes(m));
+    const probeList = [...inAccount, ...notInOrder];
+
+    if (probeList.length === 0) {
+        // Account list fetch failed or empty — probe our known list directly
+        probeList.push(...MODEL_DISCOVERY_ORDER);
+    }
+
+    console.log(`[AIClient] Probing models:`, probeList);
+
+    for (const model of probeList) {
+        try {
+            const result = await fetchWithKey(apiKey, model, testBody);
+            if (result.ok) {
+                console.log(`[AIClient] Discovered working model: ${model}`);
+                return model;
+            }
+            // 429 or 503 = model IS valid for this key, just temporarily overloaded
+            if (result.status === 429 || result.status === 503) {
+                console.log(`[AIClient] Discovered working model (busy ${result.status}): ${model}`);
+                return model;
+            }
+            // 400/401/403 = bad key — stop entirely
+            if (result.status === 401 || result.status === 403) {
+                console.error(`[AIClient] Key rejected by ${model} (${result.status}), stopping.`);
+                return null;
+            }
+            // 404 = not available for this account — skip, try next
+            console.log(`[AIClient] ${model} → ${result.status}, trying next...`);
+        } catch {
+            // network error, skip
+        }
+    }
+
+    console.error(`[AIClient] No working text model found for this key.`);
+    return null;
+}
+
+/**
+ * Persist an auto-discovered model so future calls use it.
+ * @param {string} model
+ */
+async function persistDiscoveredModel(model) {
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (!vault) return;
+    await vault.bucket('system').update('config', async (config = {}) => {
+        config.ai_model = model;
+        return config;
+    });
 }
 
 /**
@@ -477,8 +598,7 @@ async function callGemini(prompt, systemInstruction = '', options = {}) {
         contents: [{ parts }],
         generationConfig: {
             maxOutputTokens: maxTokens,
-            temperature,
-            thinkingConfig: { thinkingBudget: 0 }
+            temperature
         }
     };
     if (systemInstruction) {
@@ -491,25 +611,19 @@ async function callGemini(prompt, systemInstruction = '', options = {}) {
     const triedHashes = new Set();
     let lastError = null;
     let lastErrorCode = null;
+    let activeModelName = modelName;
 
-    while (true) {
-        const next = await getNextApiKey();
-        if (!next) {
-            return {
-                success: false,
-                error: lastError || 'All API keys are in cooldown or revoked. Try again later.',
-                errorCode: lastErrorCode || AIErrorCode.UNKNOWN
-            };
-        }
+    console.log(`[AIClient] callGemini using model: ${activeModelName}`);
 
-        const keyHash = hashKey(next.key);
-        if (triedHashes.has(keyHash)) break;
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        const keyHash = hashKey(key);
+        if (triedHashes.has(keyHash)) continue;
         triedHashes.add(keyHash);
 
-        const result = await fetchWithKey(next.key, modelName, requestBody);
+        const result = await fetchWithKey(key, activeModelName, requestBody);
 
         if (result.ok) {
-            await markKeySuccess(next.key);
             const text = result.data?.candidates?.[0]?.content?.parts?.[0]?.text;
             const finishReason = result.data?.candidates?.[0]?.finishReason;
             if (!text) {
@@ -523,21 +637,35 @@ async function callGemini(prompt, systemInstruction = '', options = {}) {
 
         lastError = result.error;
         lastErrorCode = result.errorCode;
-        const retryAfterTs = result.retryAfterSeconds
-            ? Date.now() + result.retryAfterSeconds * 1000
-            : Date.now() + KEY_COOLDOWN_MS;
-        const isRevoked = result.errorCode === AIErrorCode.INVALID_KEY || result.errorCode === AIErrorCode.UNAUTHORIZED;
-        await updateKeyState(
-            keyHash,
-            isRevoked ? 'revoked' : 'cooldown',
-            retryAfterTs,
-            result.error,
-            result.errorCode
-        );
 
-        if (isRevoked) continue;
-        if (result.status === 429) continue;
-        break;
+        // Model not available or wrong type: probe for a real working model and retry
+        const needsDiscovery = result.status === 404
+            || result.errorCode === AIErrorCode.MODEL_NOT_FOUND
+            || (result.status === 503 && !isTextModel(activeModelName));
+
+        if (needsDiscovery) {
+            console.log(`[AIClient] Model ${activeModelName} unusable (${result.status}), probing for working model...`);
+            const discovered = await discoverWorkingModel(key);
+            if (discovered) {
+                console.log(`[AIClient] Found working model: ${discovered}, retrying actual call...`);
+                activeModelName = discovered;
+                await persistDiscoveredModel(discovered);
+                const retry = await fetchWithKey(key, activeModelName, requestBody);
+                if (retry.ok) {
+                    const text = retry.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) return { success: true, text };
+                }
+                lastError = retry.error;
+                lastErrorCode = retry.errorCode;
+            } else {
+                lastError = 'No working Gemini model found for this API key.';
+                lastErrorCode = AIErrorCode.MODEL_NOT_FOUND;
+            }
+            break;
+        }
+
+        // 429/503 on a text model = valid model but overloaded; try next key if available
+        if (result.status !== 429 && result.status !== 503) break;
     }
 
     return {
@@ -547,14 +675,86 @@ async function callGemini(prompt, systemInstruction = '', options = {}) {
     };
 }
 
+// ─── Groq Provider ────────────────────────────────────────────────────────────
+
+async function getGroqConfig() {
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (!vault) return null;
+    await vault.waitUntilReady?.();
+    const cfg = await vault.bucket('ai').get('groq_config');
+    return cfg || null;
+}
+
+async function saveGroqConfig(apiKey, model = DEFAULT_GROQ_MODEL) {
+    const vault = globalThis.StorageVault || (typeof StorageVault !== 'undefined' ? StorageVault : null);
+    if (!vault) return;
+    await vault.waitUntilReady?.();
+    await vault.bucket('ai').set('groq_config', { key: apiKey.trim(), model: model || DEFAULT_GROQ_MODEL });
+}
+
+async function validateGroqKey(apiKey, model = DEFAULT_GROQ_MODEL) {
+    if (!apiKey || !apiKey.trim()) return { valid: false, error: 'API key is empty' };
+    try {
+        const resp = await fetch(`${GROQ_API_BASE}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey.trim()}` },
+            body: JSON.stringify({
+                model: model || DEFAULT_GROQ_MODEL,
+                messages: [{ role: 'user', content: 'Hi' }],
+                max_tokens: 5
+            }),
+            signal: AbortSignal.timeout(10000)
+        });
+        if (resp.ok) return { valid: true, model };
+        const err = await resp.json().catch(() => ({}));
+        const msg = err.error?.message || `HTTP ${resp.status}`;
+        if (resp.status === 401) return { valid: false, error: 'Invalid Groq API key.' };
+        return { valid: false, error: msg };
+    } catch (e) {
+        if (e.name === 'AbortError') return { valid: false, error: 'Request timed out.' };
+        return { valid: false, error: 'Network error.' };
+    }
+}
+
+async function callGroq(prompt, systemInstruction = '', options = {}) {
+    const { maxTokens = 4096, temperature = 0.7 } = options;
+    const cfg = await getGroqConfig();
+    if (!cfg?.key) return { success: false, error: 'No Groq API key configured.', errorCode: AIErrorCode.INVALID_KEY };
+
+    const messages = [];
+    if (systemInstruction) messages.push({ role: 'system', content: systemInstruction });
+    messages.push({ role: 'user', content: prompt });
+
+    try {
+        const resp = await fetch(`${GROQ_API_BASE}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.key}` },
+            body: JSON.stringify({ model: cfg.model || DEFAULT_GROQ_MODEL, messages, max_tokens: maxTokens, temperature }),
+            signal: AbortSignal.timeout(30000)
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            const text = data.choices?.[0]?.message?.content;
+            if (!text) return { success: false, error: 'No response from Groq.' };
+            console.log(`[AIClient] Groq success with model: ${cfg.model || DEFAULT_GROQ_MODEL}`);
+            return { success: true, text };
+        }
+        const err = await resp.json().catch(() => ({}));
+        const msg = err.error?.message || `HTTP ${resp.status}`;
+        console.error(`[AIClient] Groq error: ${resp.status} | ${msg}`);
+        return { success: false, error: msg, errorCode: resp.status === 429 ? AIErrorCode.RATE_LIMIT_TEMP : AIErrorCode.UNKNOWN };
+    } catch (e) {
+        return { success: false, error: e.message, errorCode: AIErrorCode.NETWORK_ERROR };
+    }
+}
+
 /**
- * Main AI call function - entry point for all AI requests
- * @param {string} prompt
- * @param {string} systemInstruction
- * @param {Object} options
- * @returns {Promise<{success: boolean, text?: string, error?: string, errorCode?: string}>}
+ * Main AI call function — uses the provider specified in options.provider
+ * ('gemini' | 'groq'), defaults to 'gemini'
  */
 async function callAI(prompt, systemInstruction = '', options = {}) {
+    const provider = options.provider || 'gemini';
+    if (provider === 'groq') return callGroq(prompt, systemInstruction, options);
     return callGemini(prompt, systemInstruction, options);
 }
 
@@ -634,6 +834,10 @@ const AIClientExport = {
     checkSetupStatus,
     callAI,
     callGemini,
+    callGroq,
+    getGroqConfig,
+    saveGroqConfig,
+    validateGroqKey,
     parseAIJson,
     getApiKeys,
     getAIStatus,
