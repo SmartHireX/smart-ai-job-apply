@@ -1,98 +1,140 @@
 /**
- * Popup JavaScript for Nova Apply Extension
- * 
- * Handles popup UI, form detection, and triggers form filling.
- * Uses local AI client and resume manager instead of backend.
+ * Nova Popup — Chat + Form Fill
+ * Two-tab popup: AI chat companion (with page summarization) + existing form fill
  */
 
-// DOM Elements
-let setupSection, mainSection, progressSection;
-let fillBtn, undoBtn, settingsBtn, openSettingsBtn;
-let formStatus, statusIcon;
-let progressFill, progressTitle, progressText;
-
-// State
+// ─── State ──────────────────────────────────────────────────────────────────
 let isReady = false;
+let activeTab = 'chat';
+let isThinking = false;
+let chatHistory = [];
+let currentPageContent = '';
+let currentPageTitle = '';
 
-// Initialize popup
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+let setupSection, tabBar, chatSection, fillSection, progressSection;
+let fillBtn, undoBtn, refreshBtn, settingsBtn, openSettingsBtn;
+let formStatus, statusIcon, progressFill, progressTitle, progressText;
+let messagesEl, chatInput, sendBtn, pageTitleText, quickChips;
+
+// ─── Init ────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-    // // console.log('Nova Apply popup loaded');
-
-    // Get DOM elements
-    setupSection = document.getElementById('setup-section');
-    mainSection = document.getElementById('main-section');
+    setupSection    = document.getElementById('setup-section');
+    tabBar          = document.getElementById('tab-bar');
+    chatSection     = document.getElementById('chat-section');
+    fillSection     = document.getElementById('fill-section');
     progressSection = document.getElementById('progress-section');
 
-    fillBtn = document.getElementById('fill-btn');
-
-    undoBtn = document.getElementById('undo-btn');
-    settingsBtn = document.getElementById('settings-btn');
+    fillBtn         = document.getElementById('fill-btn');
+    undoBtn         = document.getElementById('undo-btn');
+    refreshBtn      = document.getElementById('refresh-btn');
+    settingsBtn     = document.getElementById('settings-btn');
     openSettingsBtn = document.getElementById('open-settings-btn');
-    const refreshBtn = document.getElementById('refresh-btn');
 
-    formStatus = document.getElementById('form-status');
-    statusIcon = document.getElementById('status-icon');
+    formStatus      = document.getElementById('form-status');
+    statusIcon      = document.getElementById('status-icon');
+    progressFill    = document.getElementById('progress-fill');
+    progressTitle   = document.getElementById('progress-title');
+    progressText    = document.getElementById('progress-text');
 
-    progressFill = document.getElementById('progress-fill');
-    progressTitle = document.getElementById('progress-title');
-    progressText = document.getElementById('progress-text');
+    messagesEl      = document.getElementById('messages');
+    chatInput       = document.getElementById('chat-input');
+    sendBtn         = document.getElementById('send-btn');
+    pageTitleText   = document.getElementById('page-title-text');
+    quickChips      = document.getElementById('quick-chips');
 
-    // Add event listeners
-    fillBtn.addEventListener('click', handleFillForm);
-
-    undoBtn.addEventListener('click', handleUndo);
-    settingsBtn.addEventListener('click', openSettings);
-    openSettingsBtn.addEventListener('click', openSettings);
-
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', async () => {
-            // Spin animation
-            const svg = refreshBtn.querySelector('svg');
-            if (svg) {
-                svg.style.transition = 'transform 0.5s ease';
-                svg.style.transform = 'rotate(360deg)';
-                setTimeout(() => svg.style.transform = '', 500);
-            }
-            await detectForms();
-        });
-    }
-
-    // Check setup status
+    bindEvents();
     await checkSetup();
 });
 
-/**
- * Check if extension is properly set up
- */
+// ─── Event Binding ───────────────────────────────────────────────────────────
+function bindEvents() {
+    // tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+
+    // settings
+    settingsBtn.addEventListener('click', openSettings);
+    openSettingsBtn.addEventListener('click', openSettings);
+
+    // fill
+    fillBtn.addEventListener('click', handleFillForm);
+    undoBtn.addEventListener('click', handleUndo);
+    refreshBtn.addEventListener('click', async () => {
+        const svg = refreshBtn.querySelector('svg');
+        if (svg) {
+            svg.style.transition = 'transform 0.5s ease';
+            svg.style.transform = 'rotate(360deg)';
+            setTimeout(() => svg.style.transform = '', 500);
+        }
+        await detectForms();
+    });
+
+    // floating chat widget on the page
+    document.getElementById('open-widget-btn').addEventListener('click', async () => {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
+                showToast('Cannot open on this page', 'warning');
+                return;
+            }
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                files: ['autofill/ui/chat/chat-widget.js']
+            });
+            setTimeout(() => window.close(), 150);
+        } catch (e) {
+            showToast('Could not open chat widget', 'warning');
+        }
+    });
+
+    // chat input — auto resize + enable send
+    chatInput.addEventListener('input', () => {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = Math.min(chatInput.scrollHeight, 96) + 'px';
+        sendBtn.disabled = chatInput.value.trim().length === 0;
+    });
+
+    chatInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!sendBtn.disabled) handleSend();
+        }
+    });
+
+    sendBtn.addEventListener('click', handleSend);
+
+    // quick action chips
+    document.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => handleChipAction(chip.dataset.action));
+    });
+}
+
+// ─── Setup Check ─────────────────────────────────────────────────────────────
 async function checkSetup() {
     try {
         const status = await window.AIClient.checkSetupStatus();
-
-        // // console.log('Setup status:', status);
-
-        // Update checklist UI
         updateChecklist('check-api', status.hasApiKey);
         updateChecklist('check-resume', status.hasResume);
 
         if (status.ready) {
             isReady = true;
-            showMainSection();
-            await detectForms();
+            showReadyUI();
+            await Promise.all([loadPageContext(), detectForms()]);
         } else {
-            showSetupSection(status);
+            showSetupUI(status);
         }
-
-    } catch (error) {
-        console.error('Setup check failed:', error);
-        showSetupSection({ hasApiKey: false, hasResume: false });
+    } catch (e) {
+        console.error('Setup check failed:', e);
+        showSetupUI({ hasApiKey: false, hasResume: false });
     }
 }
 
-function updateChecklist(id, isComplete) {
+function updateChecklist(id, complete) {
     const item = document.getElementById(id);
     const icon = item.querySelector('.check-icon');
-
-    if (isComplete) {
+    if (complete) {
         item.classList.add('complete');
         icon.textContent = '✓';
     } else {
@@ -101,224 +143,363 @@ function updateChecklist(id, isComplete) {
     }
 }
 
-function showSetupSection(status) {
+function showSetupUI(status) {
     setupSection.classList.remove('hidden');
-    mainSection.classList.add('hidden');
+    tabBar.classList.add('hidden');
+    chatSection.classList.add('hidden');
+    fillSection.classList.add('hidden');
     progressSection.classList.add('hidden');
 
-    // Update message based on what's missing
-    const message = document.getElementById('setup-message');
+    const msg = document.getElementById('setup-message');
     if (!status.hasApiKey && !status.hasResume) {
-        message.textContent = 'Configure your API key and resume to get started.';
+        msg.textContent = 'Configure your API key and profile to unlock all AI features.';
     } else if (!status.hasApiKey) {
-        message.textContent = 'Add your Gemini API key to enable AI features.';
+        msg.textContent = 'Add your Gemini API key to enable AI features.';
     } else {
-        message.textContent = 'Add your resume data to auto-fill applications.';
+        msg.textContent = 'Add your profile data to enable auto-fill.';
     }
 }
 
-function showMainSection() {
+function showReadyUI() {
     setupSection.classList.add('hidden');
-    mainSection.classList.remove('hidden');
+    tabBar.classList.remove('hidden');
+    switchTab('chat');
+}
+
+// ─── Tab Switching ────────────────────────────────────────────────────────────
+function switchTab(tab) {
+    activeTab = tab;
+
+    document.querySelectorAll('.tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tab);
+    });
+
+    chatSection.classList.toggle('hidden', tab !== 'chat');
+    fillSection.classList.toggle('hidden', tab !== 'fill');
     progressSection.classList.add('hidden');
 }
 
-function showProgressSection() {
-    setupSection.classList.add('hidden');
-    mainSection.classList.add('hidden');
-    progressSection.classList.remove('hidden');
-}
-
-/**
- * Open settings/options page
- */
-function openSettings() {
-    chrome.runtime.openOptionsPage();
-}
-
-/**
- * Detect forms on current page
- */
-async function detectForms() {
-    // // console.log('Detecting forms on page...');
+// ─── Page Context ─────────────────────────────────────────────────────────────
+async function loadPageContext() {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-        if (!tab) {
-            formStatus.textContent = 'No active page';
+        if (!tab || tab.url.startsWith('chrome://')) {
+            pageTitleText.textContent = 'Browser page (no content access)';
             return;
         }
 
-        // Check if we can access this page
+        currentPageTitle = tab.title || tab.url;
+        pageTitleText.textContent = currentPageTitle;
+
+        // Extract page text for chat context
+        const result = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+                const body = document.body.cloneNode(true);
+                // Remove scripts, styles, navs for cleaner text
+                ['script', 'style', 'nav', 'footer', 'header'].forEach(tag => {
+                    body.querySelectorAll(tag).forEach(el => el.remove());
+                });
+                return (body.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 8000);
+            }
+        });
+
+        currentPageContent = result?.[0]?.result || '';
+    } catch (e) {
+        pageTitleText.textContent = 'Could not access page content';
+    }
+}
+
+// ─── Chat ─────────────────────────────────────────────────────────────────────
+function handleChipAction(action) {
+    const prompts = {
+        summarize: 'Please summarize this page for me.',
+        extract:   'Extract the key data and facts from this page into a structured list.',
+        keypoints: 'What are the most important key points on this page?'
+    };
+    chatInput.value = prompts[action] || '';
+    chatInput.dispatchEvent(new Event('input'));
+    chatInput.focus();
+    // Auto-send chip actions immediately
+    handleSend();
+}
+
+async function handleSend() {
+    const text = chatInput.value.trim();
+    if (!text || isThinking) return;
+
+    // Hide chips after first message
+    quickChips.style.display = 'none';
+
+    // Add user message
+    appendMessage('user', text);
+    chatHistory.push({ role: 'user', text });
+
+    // Clear input
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    // Show thinking
+    const thinkingId = showThinking();
+    isThinking = true;
+
+    try {
+        const response = await callChatAI(text);
+        removeThinking(thinkingId);
+        appendMessage('ai', response);
+        chatHistory.push({ role: 'ai', text: response });
+    } catch (e) {
+        removeThinking(thinkingId);
+        appendMessage('ai', 'Something went wrong. Please check your API key and try again.');
+    } finally {
+        isThinking = false;
+    }
+}
+
+async function callChatAI(userMessage) {
+    const systemPrompt = buildSystemPrompt();
+    const fullPrompt = buildFullPrompt(userMessage);
+
+    const result = await window.AIClient.callAI(fullPrompt, systemPrompt, {
+        maxTokens: 1024,
+        temperature: 0.7
+    });
+
+    if (!result.success || !result.text) {
+        throw new Error(result.error || 'AI call failed');
+    }
+
+    return result.text.trim();
+}
+
+function buildSystemPrompt() {
+    return `You are Nova, a helpful AI assistant embedded in a Chrome extension.
+You help users understand web pages, summarize content, extract information, and answer questions.
+Keep responses concise and well-structured. Use bullet points for lists.
+Current page: "${currentPageTitle}".`;
+}
+
+function buildFullPrompt(userMessage) {
+    let prompt = '';
+
+    // Include page content if relevant
+    if (currentPageContent && isPageRelatedQuery(userMessage)) {
+        prompt += `Page content:\n${currentPageContent}\n\n`;
+    }
+
+    // Include recent conversation history (last 4 turns)
+    const recentHistory = chatHistory.slice(-4);
+    if (recentHistory.length > 0) {
+        recentHistory.forEach(msg => {
+            prompt += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.text}\n`;
+        });
+        prompt += '\n';
+    }
+
+    prompt += `User: ${userMessage}`;
+    return prompt;
+}
+
+function isPageRelatedQuery(message) {
+    const pageKeywords = /summarize|summary|page|this|extract|what|key|point|content|tell me|explain|describe|find|show|list/i;
+    return pageKeywords.test(message);
+}
+
+// ─── Message Rendering ────────────────────────────────────────────────────────
+function appendMessage(role, text) {
+    const wrapper = document.createElement('div');
+    wrapper.className = `message ${role === 'ai' ? 'ai-message' : 'user-message'}`;
+
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (role === 'ai') {
+        wrapper.innerHTML = `
+            <div class="ai-avatar">N</div>
+            <div>
+                <div class="message-bubble">${formatAIText(text)}</div>
+                <div class="msg-time">${time}</div>
+            </div>`;
+    } else {
+        wrapper.innerHTML = `
+            <div>
+                <div class="message-bubble">${escapeHtml(text)}</div>
+                <div class="msg-time">${time}</div>
+            </div>`;
+    }
+
+    messagesEl.appendChild(wrapper);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function formatAIText(text) {
+    return escapeHtml(text)
+        // Bold **text**
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Inline code `text`
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        // Bullet points: lines starting with • or - or *
+        .replace(/^[•\-\*] (.+)$/gm, '<li>$1</li>')
+        // Wrap consecutive <li> in <ul>
+        .replace(/(<li>.*?<\/li>\n?)+/g, match => `<ul>${match}</ul>`)
+        // Line breaks
+        .replace(/\n/g, '<br>');
+}
+
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function showThinking() {
+    const id = 'thinking-' + Date.now();
+    const wrapper = document.createElement('div');
+    wrapper.className = 'message ai-message';
+    wrapper.id = id;
+    wrapper.innerHTML = `
+        <div class="ai-avatar">N</div>
+        <div class="thinking-bubble">
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+        </div>`;
+    messagesEl.appendChild(wrapper);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return id;
+}
+
+function removeThinking(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+// ─── Form Fill (existing logic, unchanged) ────────────────────────────────────
+async function detectForms() {
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) { formStatus.textContent = 'No active page'; return; }
+
         if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
             formStatus.textContent = 'Cannot access this page';
-            statusIcon.textContent = '⚠';
-            statusIcon.style.background = 'var(--warning)';
+            setStatusIcon('warning', '⚠');
             return;
         }
 
-        const response = await chrome.tabs.sendMessage(tab.id, {
-            type: 'DETECT_FORMS'
-        });
-
-        // // console.log('Form detection response:', response);
+        const response = await chrome.tabs.sendMessage(tab.id, { type: 'DETECT_FORMS' });
 
         if (response && response.formCount > 0) {
-            formStatus.textContent = `${response.formCount} form(s) detected`;
-            statusIcon.textContent = '✓';
-            statusIcon.style.background = 'var(--success)';
+            formStatus.textContent = `${response.formCount} form${response.formCount > 1 ? 's' : ''} detected`;
+            setStatusIcon('success', '✓');
             fillBtn.disabled = false;
-            // Hide refresh button when forms are detected
-            const refreshBtn = document.getElementById('refresh-btn');
-            if (refreshBtn) refreshBtn.style.display = 'none';
+            refreshBtn.style.display = 'none';
         } else {
             formStatus.textContent = 'No forms found on this page';
-            statusIcon.textContent = '○';
-            statusIcon.style.background = 'var(--gray-400)';
+            setStatusIcon('neutral', '○');
             fillBtn.disabled = true;
-            // Show refresh button when no forms found
-            const refreshBtn = document.getElementById('refresh-btn');
-            if (refreshBtn) refreshBtn.style.display = 'flex';
+            refreshBtn.style.display = 'flex';
         }
-
-    } catch (error) {
-        console.error('Form detection error:', error);
-
-        if (error.message.includes('Receiving end does not exist') ||
-            error.message.includes('Could not establish connection')) {
-            formStatus.textContent = 'Please refresh the page';
-        } else {
-            formStatus.textContent = 'Could not detect forms';
-        }
-
-        statusIcon.textContent = '!';
-        statusIcon.style.background = 'var(--danger)';
+    } catch (e) {
+        const msg = e.message || '';
+        formStatus.textContent = msg.includes('Receiving end') || msg.includes('Could not establish')
+            ? 'Please refresh the page'
+            : 'Could not detect forms';
+        setStatusIcon('danger', '!');
         fillBtn.disabled = true;
     }
 }
 
-/**
- * Handle fill form button click
- */
-async function handleFillForm() {
-    if (!isReady) {
-        showSetupSection({ hasApiKey: false, hasResume: false });
-        return;
+function setStatusIcon(state, symbol) {
+    const colors = {
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
+        neutral: 'var(--text-muted)'
+    };
+    statusIcon.style.background = colors[state] || colors.neutral;
+    // Replace inner SVG with symbol text when needed for warnings
+    if (state !== 'success') {
+        statusIcon.innerHTML = `<span style="font-size:16px;font-weight:700;color:white">${symbol}</span>`;
     }
+}
+
+async function handleFillForm() {
+    if (!isReady) { showSetupUI({ hasApiKey: false, hasResume: false }); return; }
 
     try {
         fillBtn.disabled = true;
-
-        // Get active tab
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) return;
 
-        if (!tab) {
-            console.error('No active tab found');
-            return;
-        }
+        formStatus.textContent = 'Loading AI engine...';
 
-        // Step 1: Activate extension (load all scripts lazily)
-        // console.log('🔄 Activating extension (loading scripts)...');
-        formStatus.textContent = 'Loading extension...';
-
-        const activationResponse = await chrome.tabs.sendMessage(tab.id, {
-            type: 'ACTIVATE_EXTENSION'
-        });
-
-        if (!activationResponse || !activationResponse.loaded) {
-            console.error('Extension activation failed');
-            showError('Failed to load extension. Please refresh page.');
+        const activation = await chrome.tabs.sendMessage(tab.id, { type: 'ACTIVATE_EXTENSION' });
+        if (!activation?.loaded) {
+            showFillError('Failed to load. Please refresh the page.');
             fillBtn.disabled = false;
             return;
         }
 
-        // console.log('✅ Extension activated and ready');
-
-        // Step 2: Trigger form processing
-        // console.log('🚀 Triggering local AI form processing...');
-        formStatus.textContent = 'Processing forms...';
-
-        chrome.tabs.sendMessage(tab.id, {
-            type: 'START_LOCAL_PROCESSING'
-        });
-
-        // Close popup to let animation take over on page
+        formStatus.textContent = 'Processing form...';
+        chrome.tabs.sendMessage(tab.id, { type: 'START_LOCAL_PROCESSING' });
         window.close();
-
-    } catch (error) {
-        console.error('Failed to start processing:', error);
+    } catch (e) {
+        console.error('Fill failed:', e);
         fillBtn.disabled = false;
-        showError('Failed to start. Please try again.');
+        showFillError('Failed to start. Please try again.');
     }
 }
 
-
-
-/**
- * Handle undo button click
- */
 async function handleUndo() {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
         if (!tab) return;
-
-        const result = await chrome.tabs.sendMessage(tab.id, {
-            type: 'UNDO_FILL'
-        });
-
-        if (result && result.success) {
+        const result = await chrome.tabs.sendMessage(tab.id, { type: 'UNDO_FILL' });
+        if (result?.success) {
             undoBtn.classList.add('hidden');
             showToast('Form fill undone');
         } else {
             showToast('Nothing to undo', 'warning');
         }
-
-    } catch (error) {
-        console.error('Undo failed:', error);
+    } catch (e) {
+        console.error('Undo failed:', e);
     }
 }
 
-/**
- * Show error message
- */
-function showError(message) {
+function showFillError(message) {
     formStatus.textContent = message;
     formStatus.style.color = 'var(--danger)';
-    statusIcon.textContent = '!';
-    statusIcon.style.background = 'var(--danger)';
+    setStatusIcon('danger', '!');
 }
 
-/**
- * Show toast notification
- */
+// ─── Settings ─────────────────────────────────────────────────────────────────
+function openSettings() {
+    chrome.runtime.openOptionsPage();
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
 function showToast(message, type = 'success') {
-    // Create toast element
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
-
     document.body.appendChild(toast);
-
-    // Animate in
     setTimeout(() => toast.classList.add('visible'), 10);
-
-    // Remove after delay
     setTimeout(() => {
         toast.classList.remove('visible');
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
 
-// Listen for messages from content script
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+// ─── Messages from content script ────────────────────────────────────────────
+chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'FILL_COMPLETE') {
         undoBtn.classList.remove('hidden');
         fillBtn.disabled = false;
     }
-
     if (message.type === 'FILL_ERROR') {
-        showError(message.error);
+        showFillError(message.error);
         fillBtn.disabled = false;
     }
 });

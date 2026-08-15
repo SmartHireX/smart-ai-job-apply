@@ -7,7 +7,8 @@
     "permissions": [
         "activeTab",
         "storage",
-        "scripting"
+        "scripting",
+        "contextMenus"
     ],
     "host_permissions": [
         "https://generativelanguage.googleapis.com/*",
@@ -74,11 +75,16 @@
                 "autofill/core/PipelineOrchestrator.js",
                 "autofill/services/extraction/section-detector.js",
                 "autofill/services/extraction/sibling-cluster.js",
+                "autofill/services/platform-adapters/platform-adapter-factory.js",
+                "autofill/services/platform-adapters/workday-adapter.js",
+                "autofill/services/platform-adapters/greenhouse-adapter.js",
+                "autofill/services/platform-adapters/lever-adapter.js",
                 "autofill/services/extraction/form-detector.js",
                 "autofill/domains/profile/CompositeFieldManager.js",
                 "autofill/services/ai/AIBatchProcessor.js",
                 "autofill/domains/inference/prefetch-engine.js",
                 "autofill/ui/animations/form-visuals.js",
+"autofill/ui/chat/chat-widget.js",
                 "autofill/ui/sidebar/drag-resize.js",
                 "autofill/ui/sidebar/sidebar-components.js",
                 "autofill/ui/premium-inputs/premium-input-renderer.js",

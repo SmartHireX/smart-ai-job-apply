@@ -729,6 +729,10 @@ textarea {
     color: var(--gray-500);
 }
 
+.input-status.warning {
+    color: var(--warning, #f59e0b);
+}
+
 /* Radio Groups */
 .radio-group {
     display: flex;

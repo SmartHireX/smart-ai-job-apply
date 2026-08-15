@@ -211,15 +211,49 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 
-// Listen for extension installation
+// ── Context menu: "Ask Nova about this" on selected text ──────────────────────
+function createContextMenu() {
+    chrome.contextMenus.removeAll(() => {
+        chrome.contextMenus.create({
+            id: 'nova-ask-selection',
+            title: 'Ask Nova: "%s"',
+            contexts: ['selection']
+        });
+    });
+}
+
 chrome.runtime.onInstalled.addListener((details) => {
+    createContextMenu();
     if (details.reason === 'install') {
-        // console.log('Smart AI Job Apply extension installed');
-        // Open options page for initial setup
         chrome.runtime.openOptionsPage();
-    } else if (details.reason === 'update') {
-        // console.log('Smart AI Job Apply extension updated to version 2.0');
-        // Could show changelog or new features here
+    }
+});
+
+// Recreate on service worker startup (context menus don't persist across restarts)
+chrome.runtime.onStartup.addListener(createContextMenu);
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+    if (info.menuItemId !== 'nova-ask-selection') return;
+    if (!tab?.id || !info.selectionText) return;
+
+    const selected = info.selectionText.trim().slice(0, 1000);
+
+    try {
+        // Inject widget if not already on the page
+        await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['autofill/ui/chat/chat-widget.js']
+        });
+
+        // Small delay to let the widget initialise, then send the selection
+        setTimeout(() => {
+            chrome.tabs.sendMessage(tab.id, {
+                type: 'NOVA_SELECTION',
+                text: selected
+            });
+        }, 300);
+    } catch (e) {
+        console.error('Nova context menu error:', e);
     }
 });
 

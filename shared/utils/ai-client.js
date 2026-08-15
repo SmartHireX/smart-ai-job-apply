@@ -210,7 +210,7 @@ async function getStoredModel() {
         const config = await vault.bucket('system').get('config');
         let model = config?.ai_model || DEFAULT_GEMINI_MODEL;
         // Force upgrade to gemini-2.5-flash if on older or problematic models
-        const legacyModels = ['gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash-exp'];
+        const legacyModels = ['gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash-exp', 'gemini-2.5-flash-preview-05-20'];
         if (!model || legacyModels.includes(model)) {
             model = DEFAULT_GEMINI_MODEL;
         }
@@ -307,52 +307,50 @@ async function validateApiKey(apiKey, modelName = DEFAULT_GEMINI_MODEL) {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
-        const response = await fetch(
-            `${GEMINI_API_BASE}/models/${modelName}:generateContent?key=${apiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: 'Say "OK"' }] }],
-                    generationConfig: { maxOutputTokens: 5 }
-                }),
-                signal: controller.signal
-            }
+        // Step 1: verify the key is valid by listing models (lightweight GET, no quota cost)
+        const listResp = await fetch(
+            `${GEMINI_API_BASE}/models?key=${apiKey}&pageSize=50`,
+            { signal: controller.signal }
         );
 
         clearTimeout(timeoutId);
 
-        if (response.ok) return { valid: true };
-
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error?.message || `HTTP ${response.status}`;
-
-        if (response.status === 404) {
-            // Attempt to list models to help the user debug
-            try {
-                const listResp = await fetch(`${GEMINI_API_BASE}/models?key=${apiKey}`);
-                if (listResp.ok) {
-                    const listData = await listResp.json();
-                    const names = (listData.models || []).map(m => m.name.split('/').pop());
-                    console.warn(`[AIClient] Model '${modelName}' not found. Available models:`, names);
-                    return { valid: false, error: `Model '${modelName}' not found. Available models: ${names.slice(0, 5).join(', ')}... (check console for full list)` };
-                }
-            } catch (e) { }
-            return { valid: false, error: `Model '${modelName}' not found on endpoint ${GEMINI_API_BASE}.` };
+        if (!listResp.ok) {
+            const errData = await listResp.json().catch(() => ({}));
+            const msg = errData.error?.message || `HTTP ${listResp.status}`;
+            if (listResp.status === 400 || listResp.status === 401 || listResp.status === 403) {
+                return { valid: false, error: 'API key is invalid or has been revoked.' };
+            }
+            return { valid: false, error: msg };
         }
-        if (response.status === 400) {
-            if (errorMessage.includes('API key')) return { valid: false, error: 'Invalid API key format' };
-            if (errorMessage.includes('not found')) return { valid: false, error: `Model '${modelName}' not found or not supported` };
-        }
-        if (response.status === 403) return { valid: false, error: 'API key is invalid or has been revoked' };
-        if (response.status === 429) return { valid: false, error: `Rate limit: ${errorMessage}` };
 
-        return { valid: false, error: errorMessage };
+        const listData = await listResp.json();
+        const available = (listData.models || []).map(m => m.name.split('/').pop());
+
+        // Step 2: confirm the target model is in the list
+        if (!available.includes(modelName)) {
+            // Try a known fallback that's almost always present
+            const fallback = available.find(n => n.startsWith('gemini-2.5-flash') && !n.includes('tts')) ||
+                             available.find(n => n.startsWith('gemini-2.0-flash')) ||
+                             available[0];
+            console.warn(`[AIClient] ${modelName} not in list, falling back to ${fallback}. Full list:`, available);
+            return {
+                valid: true,
+                warning: true,
+                resolvedModel: fallback,
+                error: `Model '${modelName}' not available. Auto-selected '${fallback}'.`
+            };
+        }
+
+        return { valid: true, resolvedModel: modelName };
+
     } catch (error) {
+        clearTimeout(timeoutId);
         console.error('API key validation error:', error);
+        if (error.name === 'AbortError') return { valid: false, error: 'Request timed out. Check your connection.' };
         return { valid: false, error: 'Network error. Check your connection.' };
     }
 }
@@ -477,7 +475,11 @@ async function callGemini(prompt, systemInstruction = '', options = {}) {
 
     const requestBody = {
         contents: [{ parts }],
-        generationConfig: { maxOutputTokens: maxTokens, temperature }
+        generationConfig: {
+            maxOutputTokens: maxTokens,
+            temperature,
+            thinkingConfig: { thinkingBudget: 0 }
+        }
     };
     if (systemInstruction) {
         requestBody.systemInstruction = { parts: [{ text: systemInstruction }] };

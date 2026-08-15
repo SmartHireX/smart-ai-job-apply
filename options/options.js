@@ -103,8 +103,17 @@ function renderApiKeysList(keys) {
             setStatus(statusEl, 'Validating...', 'loading');
             const model = getModelValue();
             const result = await window.AIClient.validateApiKey(key, model);
-            if (result.valid) setStatus(statusEl, `✓ Key ${index + 1} is valid`, 'success');
-            else setStatus(statusEl, `✗ Key ${index + 1}: ${result.error}`, 'error');
+            if (result.valid) {
+                if (result.warning) {
+                    setStatus(statusEl, `✓ Key ${index + 1} valid — ${result.error}`, 'warning');
+                    const modelEl = document.getElementById('api-model');
+                    if (result.resolvedModel && modelEl) modelEl.value = result.resolvedModel;
+                } else {
+                    setStatus(statusEl, `✓ Key ${index + 1} is valid`, 'success');
+                }
+            } else {
+                setStatus(statusEl, `✗ Key ${index + 1}: ${result.error}`, 'error');
+            }
         });
         row.querySelector('.remove-key-at').addEventListener('click', () => {
             const updated = keys.filter((_, i) => i !== index);
@@ -147,13 +156,21 @@ function initApiKeySection() {
             const model = getModelValue();
             const result = await window.AIClient.validateApiKey(key, model);
             if (result.valid) {
+                const effectiveModel = result.resolvedModel || model;
+                // If model was auto-corrected, update the UI input so the user sees the actual model being used
+                if (result.resolvedModel && result.resolvedModel !== model && apiModelInput) {
+                    apiModelInput.value = result.resolvedModel;
+                }
                 let newKeys = keys.filter(k => k !== key);
                 newKeys.push(key);
                 newKeys = newKeys.slice(0, MAX_API_KEYS_UI);
-                await window.AIClient.saveApiKeys(newKeys, model);
+                await window.AIClient.saveApiKeys(newKeys, effectiveModel);
                 renderApiKeysList(newKeys);
                 newKeyInput.value = '';
-                setStatus(statusEl, `✓ Key added (${newKeys.length}/${MAX_API_KEYS_UI})`, 'success');
+                const msg = result.warning
+                    ? `✓ Key added — ${result.error}`
+                    : `✓ Key added (${newKeys.length}/${MAX_API_KEYS_UI})`;
+                setStatus(statusEl, msg, result.warning ? 'warning' : 'success');
                 updateDataStatus();
             } else {
                 setStatus(statusEl, result.error || 'Validation failed', 'error');
