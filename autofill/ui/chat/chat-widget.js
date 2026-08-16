@@ -591,14 +591,15 @@
         try {
             chrome.storage.local.get(['nova_chat_history'], result => {
                 const saved = result.nova_chat_history;
-                if (!Array.isArray(saved) || !saved.length) return;
-                _seed.push(...saved);
-                window.__novaHistory = _seed;
-                messagesEl.innerHTML = '';
-                saved.forEach(m => renderMsg(m.role, m.text));
-                document.getElementById('nw-chips').style.display = 'none';
-                messagesEl.scrollTop = messagesEl.scrollHeight;
-                // Check if we're returning from a job scan
+                if (Array.isArray(saved) && saved.length) {
+                    _seed.push(...saved);
+                    window.__novaHistory = _seed;
+                    messagesEl.innerHTML = '';
+                    saved.forEach(m => renderMsg(m.role, m.text));
+                    document.getElementById('nw-chips').style.display = 'none';
+                    messagesEl.scrollTop = messagesEl.scrollHeight;
+                }
+                // Always check for pending scan regardless of history
                 setTimeout(() => checkPendingScanResults(), 300);
             });
         } catch {}
@@ -1245,12 +1246,21 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         const state  = stored.nova_scan_state;
         const resume = stored.nova_scan_resume;
 
-        if (!state || state.status === 'done' || !state.results?.length) return;
-        if (state.originUrl && state.originUrl !== location.href) return; // wrong page
-        if (state.status !== 'returning' && state.status !== 'running') return;
+        if (!state || state.status === 'done') return;
+        if (!state.results?.length) return;
 
-        // Clear state so it doesn't re-run on next page load
-        await new Promise(r => chrome.storage.local.remove(['nova_scan_state', 'nova_scan_resume'], r));
+        // Match on hostname + pathname only — ignore query params which may differ on return
+        if (state.originUrl) {
+            try {
+                const origin = new URL(state.originUrl);
+                const current = new URL(location.href);
+                if (origin.hostname !== current.hostname || origin.pathname !== current.pathname) return;
+            } catch { return; }
+        }
+
+        // Mark done immediately so a second widget init on the same page doesn't re-run
+        await new Promise(r => chrome.storage.local.set({ nova_scan_state: { ...state, status: 'done' } }, r));
+        await new Promise(r => chrome.storage.local.remove('nova_scan_resume', r));
 
         const scrapedJobs = state.results;
         const uid = 'nw-scan-' + Date.now();
