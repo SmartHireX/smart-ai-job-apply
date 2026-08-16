@@ -1893,7 +1893,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         } else {
             wrap.innerHTML = `
                 <div class="nw-avatar" style="background:#e5e7eb;color:#6b7280;">U</div>
-                <div>
+                <div class="nw-user-body">
                     <div class="nw-bubble">${esc(text)}</div>
                 </div>
                 <button class="nw-edit-btn" title="Edit message">
@@ -1902,7 +1902,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                 </button>`;
-            wrap.querySelector('div').appendChild(makeTimeEl(ts));
+            wrap.querySelector('.nw-user-body').appendChild(makeTimeEl(ts));
             wrap.querySelector('.nw-edit-btn').addEventListener('click', () => {
                 editMessageFrom(wrap, text);
             });
