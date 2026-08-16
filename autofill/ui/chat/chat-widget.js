@@ -37,6 +37,8 @@
 
     let state = { ...DEFAULT };
     let isThinking = false, pageContent = '';
+    // Populated after a scan completes or is restored — injected into chat prompts
+    let _lastScanResults = null;
     let activeProvider = localStorage.getItem('nova_provider') || 'gemini';
 
     if (window.__novaProvider) {
@@ -291,7 +293,7 @@
             border-radius: 12px; padding: 7px 9px 7px 13px; transition: border-color 0.15s;
         }
         .nw-input-row:focus-within { border-color: #6366f1; background: #fff; }
-        .nw-textarea { flex: 1; border: none; background: transparent; font-family: inherit; font-size: 13px; color: #111827; resize: none; outline: none; line-height: 1.4; max-height: 96px; min-height: 20px; overflow-y: auto; }
+        .nw-textarea { flex: 1; border: none !important; outline: none !important; box-shadow: none !important; background: transparent; font-family: inherit; font-size: 13px; color: #111827; resize: none; line-height: 1.4; max-height: 96px; min-height: 20px; overflow-y: auto; }
         .nw-textarea::placeholder { color: #9ca3af; }
         .nw-send { width: 30px; height: 30px; border-radius: 7px; border: none; background: #6366f1; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
         .nw-send:hover:not(:disabled) { background: #4f46e5; transform: scale(1.05); }
@@ -806,10 +808,9 @@
     if (_seed.length) {
         // History was passed directly from popup — render immediately
         messagesEl.innerHTML = '';
-        _seed.forEach(m => renderMsg(m.role, m.text, m.ts));
+        _seed.forEach(m => renderMsg(m.role, m.text, m.ts, m.records));
         document.getElementById('nw-chips').style.display = 'none';
         messagesEl.scrollTop = messagesEl.scrollHeight;
-        setTimeout(() => checkPendingScanResults(), 300);
     } else {
         // Auto-restore after navigation — load from shared chrome.storage.local
         try {
@@ -819,12 +820,10 @@
                     _seed.push(...saved);
                     window.__novaHistory = _seed;
                     messagesEl.innerHTML = '';
-                    saved.forEach(m => renderMsg(m.role, m.text, m.ts));
+                    saved.forEach(m => renderMsg(m.role, m.text, m.ts, m.records));
                     document.getElementById('nw-chips').style.display = 'none';
                     messagesEl.scrollTop = messagesEl.scrollHeight;
                 }
-                // Always check for pending scan regardless of history
-                setTimeout(() => checkPendingScanResults(), 300);
             });
         } catch {}
     }
@@ -962,6 +961,7 @@
         closeMenu();
         chatHistory.length = 0;
         window.__novaHistory = [];
+        _lastScanResults = null;
         try { chrome.storage.local.remove('nova_chat_history'); } catch {}
         messagesEl.innerHTML = `
             <div class="nw-msg ai">
@@ -1529,7 +1529,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     const SCAN_STORE_KEY = 'nova_scan_results'; // persists completed results across reloads
     let   _scanCancelled = false;
 
-    function getOrCreateScanCard(jobs, showCancel = false) {
+    function getOrCreateScanCard(jobs, showCancel = false, ts = null) {
         let card = document.getElementById(SCAN_CARD_ID);
         if (card) return card;
 
@@ -1552,7 +1552,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                     <div class="nw-scan-list" id="${uid}-list"></div>
                 </div>
             </div>`;
-        card.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(Date.now()));
+        card.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(ts || Date.now()));
         messagesEl.appendChild(card);
         messagesEl.scrollTop = messagesEl.scrollHeight;
         return card;
@@ -1847,14 +1847,11 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         _wireFilterChips(card, listEl, scoredRecords);
         if (scoredRecords.length) _appendPodium(listEl, scoredRecords);
 
-        // Summary text — only list jobs that actually scored
-        const topText = scoredRecords.length
-            ? scoredRecords.slice(0, 3).map(j => `${j.title} — ${j.score}/10`).join(', ')
-            : 'No jobs scored — check extension settings or try again.';
-        chatHistory.push({ role: 'ai', text: `Job scan complete. ${topText}`, ts: Date.now() });
+        // Make results available to chat context
+        if (scoredRecords.length) _lastScanResults = scoredRecords;
 
-        // Always persist — even if all failed, so we can restore the card on reload
-        chrome.storage.local.set({ [SCAN_STORE_KEY]: { records: allScanRecords, ts: Date.now() } });
+        // Persist scan card as a chat history entry — restores automatically with chat history
+        chatHistory.push({ role: 'scan', records: allScanRecords, ts: Date.now() });
     }
 
     function _appendPodium(listEl, results) {
@@ -1872,58 +1869,6 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     }
 
     // Restore a completed scan card from chrome.storage.local when the widget reinits.
-    async function checkPendingScanResults() {
-        chrome.storage.local.get([SCAN_STORE_KEY], data => {
-            const stored = data[SCAN_STORE_KEY];
-            if (!stored || !stored.records || !stored.records.length) return;
-
-            // Discard results older than 2 hours
-            if (Date.now() - stored.ts > 2 * 60 * 60 * 1000) {
-                chrome.storage.local.remove(SCAN_STORE_KEY);
-                return;
-            }
-
-            const records = stored.records;
-            const jobs = records.map(r => ({ url: r.url, title: r.title }));
-
-            const card    = getOrCreateScanCard(jobs, false);
-            const listEl  = card.querySelector(`#${SCAN_CARD_ID}-list`);
-            const barEl   = card.querySelector(`#${SCAN_CARD_ID}-bar`);
-            const progEl  = card.querySelector(`#${SCAN_CARD_ID}-prog`);
-            const titleEl = card.querySelector(`#${SCAN_CARD_ID}-title`);
-
-            // Rebuild every row — done rows show score ring, error rows show error state
-            records.forEach((r, i) => {
-                const row = makeJobRow({ url: r.url, title: r.title }, i);
-                listEl.appendChild(row);
-                if (r.status === 'done') {
-                    setRowState(row, 'done', { score: r.score, verdict: r.verdict, match: r.match, gap: r.gap });
-                } else {
-                    setRowState(row, 'error', {}, r.errorMsg || 'Could not load');
-                }
-            });
-
-            // Sort done rows first by score, errors at the bottom
-            Array.from(listEl.querySelectorAll('.nw-scan-row'))
-                .sort((a, b) => {
-                    const sA = parseInt(a.dataset.score) || 0;
-                    const sB = parseInt(b.dataset.score) || 0;
-                    return sB - sA;
-                })
-                .forEach(r => listEl.appendChild(r));
-
-            const scoredRecords = records.filter(r => r.status === 'done');
-            barEl.style.width = '100%';
-            barEl.classList.add('done');
-            progEl.textContent  = '';
-            titleEl.textContent = `✅ Scanned ${records.length} jobs — ${scoredRecords.length} scored`;
-
-            _wireFilterChips(card, listEl, scoredRecords);
-            if (scoredRecords.length) _appendPodium(listEl, scoredRecords);
-
-            messagesEl.scrollTop = messagesEl.scrollHeight;
-        });
-    }
 
     // ── Job Tracker (storage from Core) ──────────────────────────────────────
 
@@ -2130,7 +2075,12 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         } else {
             // chat
             const needsPage = pageContent && /\b(page|this|here|content|article|post|job|profile)\b/i.test(userText);
-            prompt = `${needsPage ? ctx : ''}${history ? history + '\n' : ''}User: ${userText}`;
+            const scanCtx = _lastScanResults && _lastScanResults.length
+                ? `--- Recent job scan results ---\n${_lastScanResults.map((j, i) =>
+                    `${i + 1}. ${j.title} — ${j.score}/10\n   Match: ${j.match || 'N/A'}\n   Gap: ${j.gap || 'N/A'}\n   URL: ${j.url}`
+                  ).join('\n')}\n---\n\n`
+                : '';
+            prompt = `${scanCtx}${needsPage ? ctx : ''}${history ? history + '\n' : ''}User: ${userText}`;
         }
 
         return callAI(prompt, NOVA_SYSTEM);
@@ -2420,8 +2370,45 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
     // ── Render helpers ────────────────────────────────────────────────────────
     // Render a message without side-effects (used when restoring history)
-    function renderMsg(role, text, ts) {
+    function renderMsg(role, text, ts, extra) {
+        if (role === 'scan') {
+            _renderScanCard(extra || [], ts);
+            return;
+        }
         appendMsg(role, text, true, ts); // instant — no ghost typing for history restore
+    }
+
+    function _renderScanCard(records, ts) {
+        const jobs = records.map(r => ({ url: r.url, title: r.title }));
+        const card = getOrCreateScanCard(jobs, false, ts);
+        const listEl  = card.querySelector(`#${SCAN_CARD_ID}-list`);
+        const barEl   = card.querySelector(`#${SCAN_CARD_ID}-bar`);
+        const progEl  = card.querySelector(`#${SCAN_CARD_ID}-prog`);
+        const titleEl = card.querySelector(`#${SCAN_CARD_ID}-title`);
+
+        records.forEach((r, i) => {
+            const row = makeJobRow({ url: r.url, title: r.title }, i);
+            listEl.appendChild(row);
+            if (r.status === 'done') {
+                setRowState(row, 'done', { score: r.score, verdict: r.verdict, match: r.match, gap: r.gap });
+            } else {
+                setRowState(row, 'error', {}, r.errorMsg || 'Could not load');
+            }
+        });
+
+        Array.from(listEl.querySelectorAll('.nw-scan-row'))
+            .sort((a, b) => (parseInt(b.dataset.score) || 0) - (parseInt(a.dataset.score) || 0))
+            .forEach(r => listEl.appendChild(r));
+
+        const scoredRecords = records.filter(r => r.status === 'done');
+        if (scoredRecords.length) _lastScanResults = scoredRecords;
+
+        barEl.style.width = '100%';
+        barEl.classList.add('done');
+        progEl.textContent  = '';
+        titleEl.textContent = `✅ Scanned ${records.length} jobs — ${scoredRecords.length} scored`;
+        _wireFilterChips(card, listEl, scoredRecords);
+        if (scoredRecords.length) _appendPodium(listEl, scoredRecords);
     }
 
     function appendMsgRaw(role, html) {
