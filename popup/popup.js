@@ -3,6 +3,13 @@
  * Two-tab popup: AI chat companion (with page summarization) + existing form fill
  */
 
+// ─── Shared core ─────────────────────────────────────────────────────────────
+const Core = window.NovaChatCore;
+if (!Core) console.error('[Nova popup] nova-chat-core.js not loaded');
+const { fmt: _fmtCore, esc: escCore, getChipsForPage, resolveKnownUrl,
+        buildClassifierPrompt,
+        JT_STATUSES, JT_LABELS, jtLoad, jtSave } = Core || {};
+
 // ─── State ──────────────────────────────────────────────────────────────────
 let isReady = false;
 let activeTab = 'chat';
@@ -10,16 +17,23 @@ let isThinking = false;
 let chatHistory = [];
 let currentPageContent = '';
 let currentPageTitle = '';
+let currentPageUrl = '';
 let activeProvider = localStorage.getItem('nova_provider') || 'gemini';
 
 const HISTORY_KEY = 'nova_chat_history';
 const MAX_HISTORY  = 40; // messages to persist
 
 function saveHistory() {
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(chatHistory.slice(-MAX_HISTORY))); } catch {}
+    try { chrome.storage.local.set({ [HISTORY_KEY]: chatHistory.slice(-MAX_HISTORY) }); } catch {}
 }
 function loadHistory() {
-    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+    return new Promise(resolve => {
+        try {
+            chrome.storage.local.get([HISTORY_KEY], result => {
+                resolve(result[HISTORY_KEY] || []);
+            });
+        } catch { resolve([]); }
+    });
 }
 
 // ─── DOM refs ────────────────────────────────────────────────────────────────
@@ -116,6 +130,10 @@ function bindEvents() {
             });
             await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
+                files: ['shared/utils/nova-chat-core.js']
+            });
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
                 files: ['autofill/ui/chat/chat-widget.js']
             });
             setTimeout(() => window.close(), 150);
@@ -140,10 +158,8 @@ function bindEvents() {
 
     sendBtn.addEventListener('click', handleSend);
 
-    // quick action chips
-    document.querySelectorAll('.chip').forEach(chip => {
-        chip.addEventListener('click', () => handleChipAction(chip.dataset.action));
-    });
+    // dynamic domain-aware chips — rendered after page context loads
+    renderPopupChips();
 }
 
 // ─── Setup Check ─────────────────────────────────────────────────────────────
@@ -203,15 +219,15 @@ function showReadyUI() {
 }
 
 // ─── Restore persisted chat history ──────────────────────────────────────────
-function restoreHistory() {
-    const saved = loadHistory();
+async function restoreHistory() {
+    const saved = await loadHistory();
     if (!saved.length) return;
     chatHistory = saved;
     // Hide welcome message if there's real history
     const welcome = document.getElementById('welcome-msg');
     if (welcome) welcome.style.display = 'none';
     quickChips.style.display = 'none';
-    saved.forEach(m => appendMessage(m.role, m.text));
+    saved.forEach(m => appendMessage(m.role, m.text, true)); // instant — no ghost typing for history
     // Scroll to bottom
     if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
 }
@@ -239,6 +255,7 @@ async function loadPageContext() {
         }
 
         currentPageTitle = tab.title || tab.url;
+        currentPageUrl   = tab.url || '';
         pageTitleText.textContent = currentPageTitle;
 
         // Extract page text for chat context
@@ -261,17 +278,24 @@ async function loadPageContext() {
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
-function handleChipAction(action) {
-    const prompts = {
-        summarize: 'Please summarize this page for me.',
-        extract:   'Extract the key data and facts from this page into a structured list.',
-        keypoints: 'What are the most important key points on this page?'
-    };
-    chatInput.value = prompts[action] || '';
-    chatInput.dispatchEvent(new Event('input'));
-    chatInput.focus();
-    // Auto-send chip actions immediately
-    handleSend();
+function renderPopupChips() {
+    if (!Core) return;
+    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        const hostname = tab?.url ? new URL(tab.url).hostname : '';
+        const chips = getChipsForPage(hostname);
+        quickChips.innerHTML = '';
+        chips.forEach(({ label, prompt }) => {
+            const btn = document.createElement('button');
+            btn.className = 'chip';
+            btn.textContent = label;
+            btn.addEventListener('click', () => {
+                chatInput.value = prompt;
+                chatInput.dispatchEvent(new Event('input'));
+                handleSend();
+            });
+            quickChips.appendChild(btn);
+        });
+    });
 }
 
 async function handleSend() {
@@ -327,10 +351,9 @@ async function callChatAI(userMessage) {
 }
 
 function buildSystemPrompt() {
-    return `You are Nova, a helpful AI assistant embedded in a Chrome extension.
-You help users understand web pages, summarize content, extract information, and answer questions.
-Keep responses concise and well-structured. Use bullet points for lists.
-Current page: "${currentPageTitle}".`;
+    return Core
+        ? Core.buildSystemPrompt(currentPageTitle, currentPageUrl || '')
+        : `You are Nova, a helpful AI assistant. Current page: "${currentPageTitle}".`;
 }
 
 function buildFullPrompt(userMessage) {
@@ -360,7 +383,7 @@ function isPageRelatedQuery(message) {
 }
 
 // ─── Message Rendering ────────────────────────────────────────────────────────
-function appendMessage(role, text) {
+function appendMessage(role, text, instant = false) {
     const wrapper = document.createElement('div');
     wrapper.className = `message ${role === 'ai' ? 'ai-message' : 'user-message'}`;
 
@@ -370,11 +393,21 @@ function appendMessage(role, text) {
         wrapper.innerHTML = `
             <div class="ai-avatar">N</div>
             <div>
-                <div class="message-bubble">${formatAIText(text)}</div>
+                <div class="message-bubble"></div>
                 <div class="msg-time">${time}</div>
             </div>`;
+        messagesEl.appendChild(wrapper);
+        const bubble = wrapper.querySelector('.message-bubble');
+        if (instant) {
+            bubble.innerHTML = formatAIText(text);
+        } else {
+            ghostTypePopup(bubble, text);
+        }
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        return;
     } else {
         wrapper.innerHTML = `
+            <div class="user-avatar" style="width:26px;height:26px;border-radius:7px;background:#e5e7eb;color:#6b7280;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">U</div>
             <div>
                 <div class="message-bubble">${escapeHtml(text)}</div>
                 <div class="msg-time">${time}</div>
@@ -385,26 +418,25 @@ function appendMessage(role, text) {
     messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-function formatAIText(text) {
-    return escapeHtml(text)
-        // Bold **text**
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        // Inline code `text`
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        // Bullet points: lines starting with • or - or *
-        .replace(/^[•\-\*] (.+)$/gm, '<li>$1</li>')
-        // Wrap consecutive <li> in <ul>
-        .replace(/(<li>.*?<\/li>\n?)+/g, match => `<ul>${match}</ul>`)
-        // Line breaks
-        .replace(/\n/g, '<br>');
+async function ghostTypePopup(bubble, text) {
+    const SPEED_MS = 18;
+    let typed = '';
+    for (const ch of text.split('')) {
+        typed += ch;
+        bubble.textContent = typed;
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        await new Promise(r => setTimeout(r, SPEED_MS));
+    }
+    bubble.innerHTML = formatAIText(text);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+// formatAIText and escapeHtml — delegate to NovaChatCore so popup stays in sync with widget
+function formatAIText(text) {
+    return Core ? _fmtCore(text) : text;
+}
 function escapeHtml(text) {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+    return Core ? escCore(text) : text;
 }
 
 function showThinking() {

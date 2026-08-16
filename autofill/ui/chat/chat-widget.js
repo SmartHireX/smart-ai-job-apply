@@ -1,10 +1,26 @@
 /**
  * Nova Floating Chat Widget
  * Draggable + resizable chat window injected into any page.
+ * Shared logic lives in shared/utils/nova-chat-core.js (NovaChatCore).
  */
 (function () {
     const WIDGET_ID = 'nova-chat-widget';
     const WIDGET_VERSION = '3.0';
+
+    function init() {
+
+    // ── Alias shared core ─────────────────────────────────────────────────────
+    const Core = window.NovaChatCore;
+    if (!Core) { console.error('[Nova] nova-chat-core.js not loaded'); return; }
+    const { esc, fmt: _fmt, getChipsForPage, resolveKnownUrl,
+            buildSystemPrompt, buildClassifierPrompt,
+            JT_STATUSES, JT_LABELS, jtLoad, jtSave,
+            spLoad, spSave } = Core;
+    // fmt needs onNavigate wired to chrome messaging — wrap it here
+    const fmt = (text) => _fmt(text, url => {
+        try { chrome.runtime.sendMessage({ type: 'NAVIGATE', url }); }
+        catch { window.location.href = url; }
+    });
 
     console.log('[Nova] widget loading version', WIDGET_VERSION);
 
@@ -23,24 +39,26 @@
     let isThinking = false, pageContent = '';
     let activeProvider = localStorage.getItem('nova_provider') || 'gemini';
 
-    // History is passed from popup via window.__novaHistory before script injection
-    // Widget saves to it in memory; popup reads it back via window.__novaHistory on next open
-    const _seed = (window.__novaHistory && Array.isArray(window.__novaHistory))
-        ? window.__novaHistory
-        : [];
-    window.__novaHistory = _seed; // keep reference live so popup can read it back
-
     if (window.__novaProvider) {
         activeProvider = window.__novaProvider;
     }
+
+    // chatHistory is filled synchronously from window.__novaHistory (popup pass-through),
+    // or async from chrome.storage.local after render (auto-restore path).
+    const _seed = (window.__novaHistory && Array.isArray(window.__novaHistory) && window.__novaHistory.length)
+        ? window.__novaHistory
+        : [];
 
     const chatHistory = new Proxy(_seed, {
         get(target, prop) {
             if (prop === 'push') {
                 return (...args) => {
                     const result = Array.prototype.push.apply(target, args);
+                    const slice = target.slice(-40);
                     // Keep window.__novaHistory in sync so popup can read it on re-open
-                    window.__novaHistory = target.slice(-40);
+                    window.__novaHistory = slice;
+                    // Persist to chrome.storage.local — shared with popup
+                    try { chrome.storage.local.set({ nova_chat_history: slice }); } catch {}
                     return result;
                 };
             }
@@ -130,12 +148,90 @@
         }
         .nw-btn:hover { background: #f3f4f6; color: #111827; border-color: #d1d5db; }
         .nw-btn.close:hover { background: #fee2e2; color: #ef4444; border-color: #fca5a5; }
+        /* ── Header menu dropdown ── */
+        .nw-menu-wrap { position: relative; }
+        .nw-menu {
+            position: absolute; top: calc(100% + 6px); right: 0;
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 170px;
+            z-index: 10; overflow: hidden;
+            opacity: 0; transform: translateY(-6px) scale(0.97);
+            transition: opacity 0.15s, transform 0.15s;
+            pointer-events: none;
+        }
+        .nw-menu.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .nw-menu-item {
+            display: flex; align-items: center; gap: 9px;
+            padding: 9px 14px; font-size: 12px; font-weight: 500;
+            color: #374151; cursor: pointer; transition: background 0.1s;
+            border: none; background: none; width: 100%; text-align: left; font-family: inherit;
+        }
+        .nw-menu-item:hover { background: #f9fafb; }
+        .nw-menu-item.danger:hover { background: #fef2f2; color: #dc2626; }
+        .nw-menu-item svg { flex-shrink: 0; }
+        .nw-menu-sep { height: 1px; background: #f3f4f6; margin: 3px 0; }
+        .nw-menu-sub {
+            padding: 6px 14px 10px; border-top: 1px solid #f3f4f6;
+        }
+        .nw-menu-sub-label { font-size: 10px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+        .nw-menu-provider {
+            display: flex; border: 1px solid #e5e7eb; border-radius: 7px; overflow: hidden;
+        }
+        .nw-menu-provider .nw-provider-btn { flex: 1; text-align: center; }
+        /* ── Saved pages panel ── */
+        .nw-sp-panel {
+            position: absolute; inset: 0; background: #fff; z-index: 5;
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+        .nw-sp-panel.open { transform: translateX(0); }
+        .nw-sp-panel-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 14px; height: 50px;
+            border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+        }
+        .nw-sp-panel-back {
+            width: 28px; height: 28px; border: 1px solid #e5e7eb;
+            border-radius: 7px; background: #fff; color: #6b7280;
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: all 0.15s; flex-shrink: 0;
+        }
+        .nw-sp-panel-back:hover { background: #f3f4f6; color: #111827; }
+        .nw-sp-panel-title { flex: 1; font-size: 13px; font-weight: 700; color: #111827; }
+        .nw-sp-panel-count { font-size: 11px; color: #9ca3af; }
+        .nw-sp-list {
+            flex: 1; overflow-y: auto; padding: 10px 12px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .nw-sp-list::-webkit-scrollbar { width: 4px; }
+        .nw-sp-list::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
+        .nw-sp-empty { font-size: 12px; color: #9ca3af; text-align: center; padding: 32px 0; line-height: 1.6; }
+        /* ── Save toast (header badge) ── */
+        .nw-save-toast {
+            position: absolute; top: 52px; left: 50%; transform: translateX(-50%);
+            background: #111827; color: #fff; font-size: 11px; font-weight: 500;
+            padding: 5px 12px; border-radius: 999px;
+            white-space: nowrap; pointer-events: none; z-index: 20;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .nw-save-toast.show { opacity: 1; }
         /* ── Context bar ── */
         .nw-context {
             display: flex; align-items: center; gap: 6px;
-            padding: 6px 14px; background: #f9fafb;
+            padding: 5px 10px 5px 14px; background: #f9fafb;
             border-bottom: 1px solid #f3f4f6; flex-shrink: 0;
         }
+        .nw-bookmark-btn {
+            margin-left: auto; flex-shrink: 0;
+            width: 24px; height: 24px; border-radius: 6px;
+            border: 1px solid #e5e7eb; background: #fff;
+            color: #9ca3af; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+        }
+        .nw-bookmark-btn:hover { background: #eef2ff; border-color: #6366f1; color: #6366f1; }
+        .nw-bookmark-btn.saved { background: #eef2ff; border-color: #6366f1; color: #6366f1; }
         .nw-context-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; flex-shrink: 0; }
         .nw-context-text { font-size: 11px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         /* ── Messages ── */
@@ -150,6 +246,8 @@
         .nw-messages::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
         .nw-msg { display: flex; gap: 8px; align-items: flex-start; }
         .nw-msg.user { flex-direction: row-reverse; }
+        .nw-msg.ai  > div:not(.nw-avatar) { max-width: 75%; }
+        .nw-msg.user > div:not(.nw-avatar) { max-width: 75%; display: flex; flex-direction: column; align-items: flex-end; }
         .nw-avatar {
             width: 26px; height: 26px; border-radius: 7px;
             background: #6366f1; color: white; font-size: 11px; font-weight: 800;
@@ -157,7 +255,7 @@
             flex-shrink: 0; margin-top: 1px;
         }
         .nw-bubble {
-            max-width: 75%; padding: 9px 12px;
+            padding: 9px 12px;
             font-size: 13px; line-height: 1.55;
             border-radius: 4px 12px 12px 12px; word-break: break-word;
         }
@@ -198,6 +296,118 @@
         .nw-send { width: 30px; height: 30px; border-radius: 7px; border: none; background: #6366f1; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
         .nw-send:hover:not(:disabled) { background: #4f46e5; transform: scale(1.05); }
         .nw-send:disabled { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
+        /* ── Copy button on AI bubbles ── */
+        .nw-msg-wrap { position: relative; }
+        .nw-copy-btn {
+            position: absolute; top: 4px;
+            width: 22px; height: 22px; border-radius: 5px;
+            border: 1px solid #e5e7eb; background: #fff;
+            color: #9ca3af; cursor: pointer; font-size: 11px;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.15s, color 0.15s;
+        }
+        .nw-msg.ai .nw-copy-btn { right: 0; }
+        .nw-msg.ai:hover .nw-copy-btn { opacity: 1; }
+        .nw-copy-btn:hover { color: #6366f1; border-color: #6366f1; }
+        .nw-copy-btn.copied { color: #10b981; border-color: #10b981; }
+        /* ── Edit button on user messages ── */
+        .nw-edit-btn {
+            width: 20px; height: 20px; border-radius: 5px;
+            border: 1px solid #e5e7eb; background: #fff;
+            color: #9ca3af; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.15s, color 0.15s;
+            flex-shrink: 0; align-self: flex-end; margin-bottom: 18px;
+        }
+        .nw-msg.user:hover .nw-edit-btn { opacity: 1; }
+        .nw-edit-btn:hover { color: #6366f1; border-color: #6366f1; }
+        /* ── Code blocks ── */
+        .nw-bubble pre {
+            background: #1e1e2e; color: #cdd6f4;
+            border-radius: 8px; padding: 10px 12px;
+            font-size: 11.5px; font-family: 'Fira Mono', 'Consolas', monospace;
+            overflow-x: auto; margin: 6px 0 2px; line-height: 1.5;
+            white-space: pre-wrap; word-break: break-all;
+        }
+        .nw-bubble pre code { background: none; padding: 0; font-size: inherit; }
+        /* ── Ordered lists ── */
+        .nw-bubble ol { padding-left: 18px; margin-top: 4px; display: flex; flex-direction: column; gap: 2px; }
+        /* ── Minimize bubble ── */
+        #nw-bubble-btn {
+            position: fixed; z-index: 2147483646;
+            width: 46px; height: 46px; border-radius: 50%;
+            background: #6366f1; color: white;
+            border: none; cursor: pointer;
+            display: none; align-items: center; justify-content: center;
+            box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+            font-size: 16px; font-weight: 800;
+            transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.15s;
+        }
+        #nw-bubble-btn:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(99,102,241,0.5); }
+        /* ── Char counter ── */
+        .nw-char-count { font-size: 10px; color: #d1d5db; align-self: flex-end; padding-bottom: 2px; flex-shrink: 0; transition: color 0.15s; }
+        .nw-char-count.warn { color: #f59e0b; }
+        .nw-char-count.danger { color: #ef4444; }
+        /* ── Job tracker ── */
+        .nw-jt-header { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 10px; }
+        .nw-jt-empty { font-size: 12px; color: #9ca3af; text-align: center; padding: 12px 0; }
+        .nw-job-card {
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+            padding: 10px 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 5px;
+        }
+        .nw-job-card:last-child { margin-bottom: 0; }
+        .nw-job-title { font-size: 12px; font-weight: 700; color: #111827; line-height: 1.3; }
+        .nw-job-meta { font-size: 11px; color: #6b7280; }
+        .nw-job-actions { display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap; }
+        .nw-status-badge {
+            padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;
+            border: none; cursor: pointer; font-family: inherit; transition: all 0.15s;
+        }
+        .nw-status-badge.saved     { background: #eef2ff; color: #6366f1; }
+        .nw-status-badge.applied   { background: #eff6ff; color: #3b82f6; }
+        .nw-status-badge.interview { background: #fffbeb; color: #d97706; }
+        .nw-status-badge.offer     { background: #f0fdf4; color: #16a34a; }
+        .nw-status-badge.rejected  { background: #fef2f2; color: #dc2626; }
+        .nw-job-link {
+            font-size: 10px; font-weight: 600; color: #6366f1; text-decoration: none;
+            padding: 2px 6px; border: 1px solid #e5e7eb; border-radius: 5px;
+            transition: all 0.15s;
+        }
+        .nw-job-link:hover { background: #eef2ff; border-color: #6366f1; }
+        .nw-job-remove {
+            margin-left: auto; font-size: 10px; color: #9ca3af; background: none;
+            border: none; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+            font-family: inherit; transition: color 0.15s;
+        }
+        .nw-job-remove:hover { color: #ef4444; }
+        /* ── Saved pages ── */
+        .nw-sp-card {
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+            padding: 10px 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px;
+        }
+        .nw-sp-card:last-child { margin-bottom: 0; }
+        .nw-sp-title { font-size: 12px; font-weight: 700; color: #111827; line-height: 1.3; }
+        .nw-sp-url {
+            font-size: 10px; color: #9ca3af; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .nw-sp-actions { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+        .nw-sp-open {
+            font-size: 10px; font-weight: 600; color: #6366f1; text-decoration: none;
+            padding: 2px 6px; border: 1px solid #e5e7eb; border-radius: 5px; transition: all 0.15s;
+        }
+        .nw-sp-open:hover { background: #eef2ff; border-color: #6366f1; }
+        .nw-sp-date { font-size: 10px; color: #9ca3af; }
+        .nw-sp-remove {
+            margin-left: auto; font-size: 10px; color: #9ca3af; background: none;
+            border: none; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+            font-family: inherit; transition: color 0.15s;
+        }
+        .nw-sp-remove:hover { color: #ef4444; }
+        .nw-sp-tag {
+            display: inline-block; padding: 1px 6px; border-radius: 999px;
+            font-size: 9px; font-weight: 600; background: #f3f4f6; color: #6b7280;
+        }
     `;
     document.head.appendChild(styleEl);
 
@@ -219,21 +429,59 @@
             <div class="nw-logo">N</div>
             <div class="nw-title">Nova <span>AI</span></div>
             <div class="nw-actions">
-                <div class="nw-provider-toggle">
-                    <button class="nw-provider-btn active" id="nw-use-gemini" title="Use Google Gemini">Gemini</button>
-                    <button class="nw-provider-btn" id="nw-use-groq" title="Use Groq (faster)">Groq</button>
+                <div class="nw-menu-wrap">
+                    <button class="nw-btn" id="nw-menu-btn" title="Menu">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <circle cx="12" cy="5" r="1.2" fill="currentColor" stroke="none"/>
+                            <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+                            <circle cx="12" cy="19" r="1.2" fill="currentColor" stroke="none"/>
+                        </svg>
+                    </button>
+                    <div class="nw-menu" id="nw-menu">
+                        <button class="nw-menu-item" id="nw-menu-pages">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                            Saved Pages
+                        </button>
+                        <button class="nw-menu-item" id="nw-menu-clear">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                            Clear chat
+                        </button>
+                        <div class="nw-menu-sep"></div>
+                        <div class="nw-menu-sub">
+                            <div class="nw-menu-sub-label">AI Provider</div>
+                            <div class="nw-menu-provider nw-provider-toggle">
+                                <button class="nw-provider-btn active" id="nw-use-gemini">Gemini</button>
+                                <button class="nw-provider-btn" id="nw-use-groq">Groq</button>
+                            </div>
+                        </div>
+                        <div class="nw-menu-sep"></div>
+                        <button class="nw-menu-item danger" id="nw-menu-close">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            Close chat
+                        </button>
+                    </div>
                 </div>
-                <button class="nw-btn close" id="nw-close" title="Close">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
             </div>
         </div>
+        <!-- Saved pages panel (slides over chat) -->
+        <div class="nw-sp-panel" id="nw-sp-panel">
+            <div class="nw-sp-panel-header">
+                <button class="nw-sp-panel-back" id="nw-sp-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="nw-sp-panel-title">🔖 Saved Pages</div>
+                <div class="nw-sp-panel-count" id="nw-sp-count"></div>
+            </div>
+            <div class="nw-sp-list" id="nw-sp-list"></div>
+        </div>
+        <div class="nw-save-toast" id="nw-save-toast"></div>
 
         <div class="nw-context">
             <div class="nw-context-dot"></div>
             <div class="nw-context-text" id="nw-page-title">Loading...</div>
+            <button class="nw-bookmark-btn" id="nw-bookmark-btn" title="Save this page">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            </button>
         </div>
 
         <div class="nw-messages" id="nw-messages">
@@ -243,16 +491,12 @@
             </div>
         </div>
 
-        <div class="nw-chips" id="nw-chips">
-            <button class="nw-chip" data-action="summarize">📄 Summarize</button>
-            <button class="nw-chip" data-action="keypoints">✦ Key points</button>
-            <button class="nw-chip" data-action="extract">⊞ Extract data</button>
-            <button class="nw-chip" data-action="translate">⊕ Translate</button>
-        </div>
+        <div class="nw-chips" id="nw-chips"></div>
 
         <div class="nw-input-area">
             <div class="nw-input-row">
                 <textarea class="nw-textarea" id="nw-input" placeholder="Ask anything about this page..." rows="1" maxlength="2000"></textarea>
+                <span class="nw-char-count" id="nw-char-count"></span>
                 <button class="nw-send" id="nw-send" disabled>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -262,6 +506,13 @@
         </div>
     `;
     document.body.appendChild(widget);
+
+    // ── Minimize bubble (lives outside widget so it survives widget.style.display = 'none') ──
+    const bubbleBtn = document.createElement('button');
+    bubbleBtn.id = 'nw-bubble-btn';
+    bubbleBtn.textContent = 'N';
+    bubbleBtn.title = 'Open Nova';
+    document.body.appendChild(bubbleBtn);
 
     // ── Apply initial size / position ─────────────────────────────────────────
     function applyState() {
@@ -286,13 +537,29 @@
         document.getElementById('nw-page-title').textContent = location.hostname;
     }
 
-    // ── Restore chat history passed from popup ────────────────────────────────
+    // ── Restore chat history ──────────────────────────────────────────────────
     const messagesEl = document.getElementById('nw-messages');
     if (_seed.length) {
-        messagesEl.innerHTML = ''; // remove default welcome message
+        // History was passed directly from popup — render immediately
+        messagesEl.innerHTML = '';
         _seed.forEach(m => renderMsg(m.role, m.text));
         document.getElementById('nw-chips').style.display = 'none';
         messagesEl.scrollTop = messagesEl.scrollHeight;
+    } else {
+        // Auto-restore after navigation — load from shared chrome.storage.local
+        try {
+            chrome.storage.local.get(['nova_chat_history'], result => {
+                const saved = result.nova_chat_history;
+                if (!Array.isArray(saved) || !saved.length) return;
+                // Splice into backing array so chatHistory is authoritative
+                _seed.push(...saved);
+                window.__novaHistory = _seed;
+                messagesEl.innerHTML = '';
+                saved.forEach(m => renderMsg(m.role, m.text));
+                document.getElementById('nw-chips').style.display = 'none';
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            });
+        } catch {}
     }
 
     // ── Drag ──────────────────────────────────────────────────────────────────
@@ -365,10 +632,30 @@
         document.body.style.userSelect = '';
     });
 
-    // ── Close ─────────────────────────────────────────────────────────────────
-    document.getElementById('nw-close').addEventListener('click', () => {
+    // ── Minimize / restore ────────────────────────────────────────────────────
+    function positionBubble() {
+        bubbleBtn.style.right = '20px';
+        bubbleBtn.style.bottom = '20px';
+    }
+    positionBubble();
+
+    function minimize() {
         widget.style.display = 'none';
-    });
+        bubbleBtn.style.display = 'flex';
+        try { localStorage.removeItem('nova_widget_open'); } catch {}
+    }
+
+    function restore() {
+        bubbleBtn.style.display = 'none';
+        widget.style.display = 'flex';
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        try { localStorage.setItem('nova_widget_open', '1'); } catch {}
+    }
+
+    // Mark widget as open on first load (it starts visible)
+    try { localStorage.setItem('nova_widget_open', '1'); } catch {}
+
+    bubbleBtn.addEventListener('click', restore);
 
     // ── Provider toggle ───────────────────────────────────────────────────────
     const geminiBtn = document.getElementById('nw-use-gemini');
@@ -380,22 +667,137 @@
         geminiBtn.classList.toggle('active', p === 'gemini');
         groqBtn.classList.toggle('active', p === 'groq');
     }
-
-    // Restore saved provider
     setProvider(activeProvider);
+    geminiBtn.addEventListener('click', () => { setProvider('gemini'); closeMenu(); });
+    groqBtn.addEventListener('click',   () => { setProvider('groq');   closeMenu(); });
 
-    geminiBtn.addEventListener('click', () => setProvider('gemini'));
-    groqBtn.addEventListener('click',   () => setProvider('groq'));
+    // ── Header menu ───────────────────────────────────────────────────────────
+    const menuBtn  = document.getElementById('nw-menu-btn');
+    const menuEl   = document.getElementById('nw-menu');
+
+    function openMenu()  { menuEl.classList.add('open'); }
+    function closeMenu() { menuEl.classList.remove('open'); }
+    function toggleMenu() { menuEl.classList.contains('open') ? closeMenu() : openMenu(); }
+
+    menuBtn.addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
+    document.addEventListener('click', e => {
+        if (!menuEl.contains(e.target) && e.target !== menuBtn) closeMenu();
+    });
+
+    document.getElementById('nw-menu-close').addEventListener('click', () => { closeMenu(); minimize(); });
+
+    document.getElementById('nw-menu-clear').addEventListener('click', () => {
+        closeMenu();
+        chatHistory.length = 0;
+        window.__novaHistory = [];
+        try { chrome.storage.local.remove('nova_chat_history'); } catch {}
+        messagesEl.innerHTML = `
+            <div class="nw-msg ai">
+                <div class="nw-avatar">N</div>
+                <div><div class="nw-bubble">Chat cleared. How can I help?</div></div>
+            </div>`;
+        chipsEl.style.display = 'flex';
+        renderChips();
+    });
+
+    // ── Saved pages panel ─────────────────────────────────────────────────────
+    const spPanel    = document.getElementById('nw-sp-panel');
+    const spList     = document.getElementById('nw-sp-list');
+    const spCount    = document.getElementById('nw-sp-count');
+    const saveToast  = document.getElementById('nw-save-toast');
+    let toastTimer   = null;
+
+    function showSaveToast(msg) {
+        saveToast.textContent = msg;
+        saveToast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => saveToast.classList.remove('show'), 2500);
+    }
+
+    function buildSpList() {
+        const pages = spLoad();
+        spCount.textContent = `${pages.length} saved`;
+        spList.innerHTML = '';
+        if (!pages.length) {
+            spList.innerHTML = `<div class="nw-sp-empty">No saved pages yet.<br>Say <strong>"save this page"</strong> or use the chip on any page.</div>`;
+            return;
+        }
+        pages.forEach(page => {
+            const card = document.createElement('div');
+            card.className = 'nw-sp-card';
+            card.innerHTML = `
+                <div class="nw-sp-title">${esc(page.title)}</div>
+                <div class="nw-sp-url">${esc(page.url)}</div>
+                <div class="nw-sp-actions">
+                    <a class="nw-sp-open" href="${esc(page.url)}" target="_blank" rel="noopener">↗ Open</a>
+                    <span class="nw-sp-tag">${esc(page.host)}</span>
+                    <span class="nw-sp-date">${esc(page.date)}</span>
+                    <button class="nw-sp-remove" title="Remove">✕</button>
+                </div>`;
+            card.querySelector('.nw-sp-remove').addEventListener('click', () => {
+                const updated = spLoad().filter(p => p.id !== page.id);
+                spSave(updated);
+                card.remove();
+                spCount.textContent = `${updated.length} saved`;
+                if (!updated.length) spList.innerHTML = `<div class="nw-sp-empty">No saved pages yet.<br>Say <strong>"save this page"</strong> or use the chip on any page.</div>`;
+            });
+            spList.appendChild(card);
+        });
+    }
+
+    function openSpPanel() {
+        closeMenu();
+        buildSpList();
+        spPanel.classList.add('open');
+    }
+
+    function closeSpPanel() { spPanel.classList.remove('open'); }
+
+    document.getElementById('nw-menu-pages').addEventListener('click', openSpPanel);
+    document.getElementById('nw-sp-back').addEventListener('click', closeSpPanel);
+
+    // ── Bookmark button in context bar ────────────────────────────────────────
+    const bookmarkBtn = document.getElementById('nw-bookmark-btn');
+
+    function syncBookmarkBtn() {
+        const already = spLoad().some(p => p.url === location.href);
+        bookmarkBtn.classList.toggle('saved', already);
+        bookmarkBtn.title = already ? 'Already saved' : 'Save this page';
+        bookmarkBtn.querySelector('svg').setAttribute('fill', already ? 'currentColor' : 'none');
+    }
+    syncBookmarkBtn();
+
+    bookmarkBtn.addEventListener('click', () => {
+        const result = saveCurrentPage();
+        if (result === '__PAGE_EXISTS__') {
+            showSaveToast('Already saved');
+        } else {
+            const page = JSON.parse(result.slice('__PAGE_SAVED__:'.length));
+            showSaveToast(`🔖 Saved: ${page.title.slice(0, 40)}${page.title.length > 40 ? '…' : ''}`);
+            if (spPanel.classList.contains('open')) buildSpList();
+        }
+        syncBookmarkBtn();
+    });
 
     // ── Input ─────────────────────────────────────────────────────────────────
-    const inputEl   = document.getElementById('nw-input');
-    const sendBtn   = document.getElementById('nw-send');
-    const chipsEl   = document.getElementById('nw-chips');
+    const inputEl    = document.getElementById('nw-input');
+    const sendBtn    = document.getElementById('nw-send');
+    const chipsEl    = document.getElementById('nw-chips');
+    const charCount  = document.getElementById('nw-char-count');
+    const MAX_CHARS  = 2000;
 
     inputEl.addEventListener('input', () => {
         inputEl.style.height = 'auto';
         inputEl.style.height = Math.min(inputEl.scrollHeight, 96) + 'px';
+        const len = inputEl.value.length;
         sendBtn.disabled = inputEl.value.trim().length === 0;
+        if (len > 1600) {
+            charCount.textContent = `${len}/${MAX_CHARS}`;
+            charCount.className = 'nw-char-count ' + (len > 1900 ? 'danger' : 'warn');
+        } else {
+            charCount.textContent = '';
+            charCount.className = 'nw-char-count';
+        }
     });
 
     inputEl.addEventListener('keydown', e => {
@@ -404,19 +806,28 @@
 
     sendBtn.addEventListener('click', doSend);
 
-    chipsEl.querySelectorAll('.nw-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            const prompts = {
-                summarize: 'Please summarize this page for me.',
-                keypoints: 'What are the most important key points on this page?',
-                extract:   'Extract the key data and facts from this page into a structured list.',
-                translate: 'Translate the main content of this page to English.'
-            };
-            inputEl.value = prompts[chip.dataset.action] || '';
-            inputEl.dispatchEvent(new Event('input'));
-            doSend();
-        });
+    // ── Escape to minimize ────────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && widget.style.display !== 'none') minimize();
     });
+
+    // ── Domain-aware chips (data from Core) ──────────────────────────────────
+    function renderChips() {
+        chipsEl.innerHTML = '';
+        getChipsForPage(location.hostname).forEach(({ label, prompt }) => {
+            const btn = document.createElement('button');
+            btn.className = 'nw-chip';
+            btn.textContent = label;
+            btn.addEventListener('click', () => {
+                inputEl.value = prompt;
+                inputEl.dispatchEvent(new Event('input'));
+                doSend();
+            });
+            chipsEl.appendChild(btn);
+        });
+    }
+
+    renderChips();
 
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -434,33 +845,9 @@
 
     // ── Step 1: Classify intent ───────────────────────────────────────────────
     async function classifyIntent(userText) {
-        const history = chatHistory.slice(-2)
-            .map(m => `${m.role === 'user' ? 'User' : 'Nova'}: ${m.text}`)
-            .join('\n') || 'none';
-
-        // Keep prompt SHORT — long prompts cause models to add explanation text
-        const prompt =
-`You are an intent classifier. Return ONLY a JSON object, nothing else.
-
-Page: ${location.href}
-History: ${history}
-User: "${userText}"
-
-Possible outputs:
-{"intent":"navigate","destination":"<plain words, e.g. my LinkedIn profile>"}
-{"intent":"search","query":"<terms>","engine":"google|youtube|linkedin|twitter|github"}
-{"intent":"summarize"}
-{"intent":"explain","topic":"<topic>"}
-{"intent":"extract","what":"<what>"}
-{"intent":"translate","language":"<lang>"}
-{"intent":"write","type":"email|message|post|other","about":"<desc>"}
-{"intent":"scroll","direction":"up|down|top|bottom"}
-{"intent":"copy","what":"url|title|text"}
-{"intent":"fill","fields":"<fields or all>"}
-{"intent":"multi","intents":[<obj>,<obj>]}
-{"intent":"chat"}
-
-JSON:`;
+        const historyLines = chatHistory.slice(-2)
+            .map(m => `${m.role === 'user' ? 'User' : 'Nova'}: ${m.text}`);
+        const prompt = buildClassifierPrompt(userText, historyLines, location.href);
 
         return new Promise(resolve => {
             chrome.runtime.sendMessage({
@@ -494,6 +881,10 @@ JSON:`;
 
     // For navigate: AI resolves destination + visible page links → full {intent, url, label}
     async function resolveUrl(destination) {
+        // Try known-URL table first — zero latency, no API call
+        const known = resolveKnownUrl(destination, location.hostname);
+        if (known) return known;
+
         // Collect anchor hrefs visible on page for SPA / internal nav context
         const pageLinks = Array.from(document.querySelectorAll('a[href]'))
             .map(a => a.href)
@@ -574,6 +965,235 @@ If "all" or no specific fields mentioned, set matchedFields to ["all"].`,
         });
     }
 
+    // For compatibility: fetches stored resume, sends job + resume to AI for fit analysis
+    async function resolveCompatibility() {
+        if (!pageContent) {
+            return 'I couldn\'t read the job description on this page. Make sure you\'re on a job posting and try again.';
+        }
+
+        // Fetch resume text from storage via background
+        const resumeText = await new Promise(resolve => {
+            chrome.runtime.sendMessage({ type: 'GET_RESUME_TEXT' }, result => {
+                if (chrome.runtime.lastError || !result?.success || !result.text) return resolve(null);
+                resolve(result.text.trim());
+            });
+        });
+
+        if (!resumeText) {
+            return '⚠️ No resume found. Please go to **Settings** and add your profile/resume first, then try again.';
+        }
+
+        const prompt =
+`You are a professional career advisor. A job seeker wants to know how well they match a job posting.
+
+--- JOB POSTING ---
+${pageContent.slice(0, 5000)}
+
+--- CANDIDATE RESUME ---
+${resumeText.slice(0, 3000)}
+
+Provide a structured compatibility analysis:
+
+**Overall Match Score: X/10**
+
+**Matching Strengths**
+• List 3-5 skills or experiences from the resume that directly match the job requirements
+
+**Gaps / Missing Requirements**
+• List 2-4 requirements in the job that are missing or weak in the resume
+
+**Verdict**
+One sentence: should they apply, and what should they emphasise or address?`;
+
+        return callAI(prompt, 'You are a career advisor. Be honest, specific, and concise. Use the exact format requested.');
+    }
+
+    // ── Job Tracker (storage from Core) ──────────────────────────────────────
+
+    function extractJobInfo() {
+        const title   = document.title.replace(/\s*[\|\-–—].*$/, '').trim() || 'Untitled Job';
+        const host    = location.hostname.replace(/^www\./, '');
+        // Try to extract company from common meta tags
+        const ogSite  = document.querySelector('meta[property="og:site_name"]')?.content?.trim();
+        const company = ogSite || host;
+        return { title, company };
+    }
+
+    function saveCurrentJob() {
+        const jobs   = jtLoad();
+        const url    = location.href;
+        const exists = jobs.find(j => j.url === url);
+        if (exists) {
+            return `**Already saved!** "${exists.title}" is already in your job tracker. Say **"show my saved jobs"** to view it.`;
+        }
+        const { title, company } = extractJobInfo();
+        const job = {
+            id:      Date.now(),
+            title,
+            company,
+            url,
+            date:    new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            status:  'saved'
+        };
+        jobs.unshift(job);
+        jtSave(jobs);
+        return `__JOB_SAVED__:${JSON.stringify(job)}`;
+    }
+
+    function renderJobSavedCard(job) {
+        const wrap = document.createElement('div');
+        wrap.className = 'nw-msg ai';
+        wrap.innerHTML = `
+            <div class="nw-avatar">N</div>
+            <div class="nw-msg-wrap">
+                <div class="nw-bubble">
+                    <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:8px;">✓ Job saved to tracker</div>
+                    <div class="nw-job-card">
+                        <div class="nw-job-title">${esc(job.title)}</div>
+                        <div class="nw-job-meta">${esc(job.company)} · ${esc(job.date)}</div>
+                        <div class="nw-job-actions">
+                            <span class="nw-status-badge saved">${JT_LABELS.saved}</span>
+                            <a class="nw-job-link" href="${esc(job.url)}" target="_blank" rel="noopener">↗ Open</a>
+                        </div>
+                    </div>
+                    <div style="font-size:11px;color:#9ca3af;margin-top:4px;">Say <strong>"show my saved jobs"</strong> to view all tracked jobs.</div>
+                </div>
+                <div class="nw-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>`;
+        messagesEl.appendChild(wrap);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function renderJobTracker() {
+        const jobs = jtLoad();
+        const wrap = document.createElement('div');
+        wrap.className = 'nw-msg ai';
+
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        if (!jobs.length) {
+            wrap.innerHTML = `
+                <div class="nw-avatar">N</div>
+                <div class="nw-msg-wrap">
+                    <div class="nw-bubble">
+                        <div class="nw-jt-header">📋 Job Tracker (0 jobs)</div>
+                        <div class="nw-jt-empty">No jobs saved yet.<br>Browse a job posting and say <strong>"save this job"</strong>.</div>
+                    </div>
+                    <div class="nw-time">${time}</div>
+                </div>`;
+            messagesEl.appendChild(wrap);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return;
+        }
+
+        const bubble = document.createElement('div');
+        bubble.className = 'nw-bubble';
+        bubble.innerHTML = `<div class="nw-jt-header">📋 Job Tracker (${jobs.length} job${jobs.length !== 1 ? 's' : ''})</div>`;
+
+        jobs.forEach(job => {
+            const card = document.createElement('div');
+            card.className = 'nw-job-card';
+            card.dataset.id = job.id;
+
+            // Status cycle button
+            const statusBtn = document.createElement('button');
+            statusBtn.className = `nw-status-badge ${job.status}`;
+            statusBtn.textContent = JT_LABELS[job.status] || job.status;
+            statusBtn.title = 'Click to update status';
+            statusBtn.addEventListener('click', () => {
+                const all   = jtLoad();
+                const entry = all.find(j => j.id === job.id);
+                if (!entry) return;
+                const idx    = JT_STATUSES.indexOf(entry.status);
+                entry.status = JT_STATUSES[(idx + 1) % JT_STATUSES.length];
+                jtSave(all);
+                statusBtn.className = `nw-status-badge ${entry.status}`;
+                statusBtn.textContent = JT_LABELS[entry.status];
+                job.status = entry.status;
+            });
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'nw-job-remove';
+            removeBtn.textContent = '✕ Remove';
+            removeBtn.addEventListener('click', () => {
+                const all = jtLoad().filter(j => j.id !== job.id);
+                jtSave(all);
+                card.style.opacity = '0';
+                card.style.transition = 'opacity 0.2s';
+                setTimeout(() => {
+                    card.remove();
+                    const header = bubble.querySelector('.nw-jt-header');
+                    const remaining = bubble.querySelectorAll('.nw-job-card').length;
+                    if (header) header.textContent = `📋 Job Tracker (${remaining} job${remaining !== 1 ? 's' : ''})`;
+                    if (remaining === 0) {
+                        bubble.innerHTML = `<div class="nw-jt-header">📋 Job Tracker (0 jobs)</div><div class="nw-jt-empty">No jobs saved yet.<br>Browse a job posting and say <strong>"save this job"</strong>.</div>`;
+                    }
+                }, 200);
+            });
+
+            card.innerHTML = `
+                <div class="nw-job-title">${esc(job.title)}</div>
+                <div class="nw-job-meta">${esc(job.company)} · ${esc(job.date)}</div>
+                <div class="nw-job-actions"></div>`;
+            const actions = card.querySelector('.nw-job-actions');
+            actions.appendChild(statusBtn);
+            actions.insertAdjacentHTML('beforeend', `<a class="nw-job-link" href="${esc(job.url)}" target="_blank" rel="noopener">↗ Open</a>`);
+            actions.appendChild(removeBtn);
+            bubble.appendChild(card);
+        });
+
+        const timeEl = document.createElement('div');
+        timeEl.className = 'nw-time';
+        timeEl.textContent = time;
+
+        const msgWrap = document.createElement('div');
+        msgWrap.className = 'nw-msg-wrap';
+        msgWrap.appendChild(bubble);
+        msgWrap.appendChild(timeEl);
+
+        const avatarEl = document.createElement('div');
+        avatarEl.className = 'nw-avatar';
+        avatarEl.textContent = 'N';
+
+        wrap.appendChild(avatarEl);
+        wrap.appendChild(msgWrap);
+        messagesEl.appendChild(wrap);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // ── Saved Pages ───────────────────────────────────────────────────────────
+
+    function saveCurrentPage() {
+        const pages = spLoad();
+        const url   = location.href;
+        if (pages.find(p => p.url === url)) {
+            return `__PAGE_EXISTS__`;
+        }
+        const title = document.title.trim() || url;
+        const host  = location.hostname.replace(/^www\./, '');
+        const page  = {
+            id:    Date.now(),
+            title,
+            host,
+            url,
+            date:  new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        };
+        pages.unshift(page);
+        spSave(pages);
+        return `__PAGE_SAVED__:${JSON.stringify(page)}`;
+    }
+
+    function renderPageSavedCard(page) {
+        showSaveToast(`🔖 Saved: ${page.title.slice(0, 40)}${page.title.length > 40 ? '…' : ''}`);
+        if (spPanel.classList.contains('open')) buildSpList();
+        syncBookmarkBtn();
+    }
+
+    function renderSavedPages() {
+        // Open the dedicated panel instead of adding to chat
+        openSpPanel();
+    }
+
     // For content intents: AI generates the actual response
     async function resolveContent(intent, userText) {
         const ctx = pageContent
@@ -608,18 +1228,9 @@ If "all" or no specific fields mentioned, set matchedFields to ["all"].`,
     function navigate(url, label) {
         const safeUrl = /^https?:\/\//.test(url) ? url : 'https://' + url;
         const displayLabel = label || safeUrl;
-        // Show clickable button — user can click it manually too
-        appendMsgRaw('ai',
-            `Opening <strong>${esc(displayLabel)}</strong><br>` +
-            `<a href="${safeUrl}" target="_blank" rel="noopener" ` +
-            `style="display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:6px 14px;` +
-            `background:#6366f1;color:white;border-radius:8px;font-size:12px;font-weight:600;` +
-            `text-decoration:none;cursor:pointer;">` +
-            `↗ Open ${esc(displayLabel)}</a>`
-        );
-        // Also navigate the tab
+        appendMsgRaw('ai', `Opening <strong>${esc(displayLabel)}</strong>…`);
         try { chrome.runtime.sendMessage({ type: 'NAVIGATE', url: safeUrl }); }
-        catch { window.open(safeUrl, '_blank'); }
+        catch { window.location.href = safeUrl; }
     }
 
     function search(query, engine = 'google') {
@@ -632,7 +1243,7 @@ If "all" or no specific fields mentioned, set matchedFields to ["all"].`,
             github:   `https://github.com/search?q=${encodeURIComponent(query)}`,
         };
         const url = urls[engine] || urls.google;
-        appendMsgRaw('ai', `🔍 Searching <strong>${esc(query)}</strong> on ${labels[engine] || 'Google'} <a href="${url}" target="_blank" rel="noopener" style="color:#6366f1;font-weight:600;">↗ Open results</a>`);
+        appendMsgRaw('ai', `🔍 Searching <strong>${esc(query)}</strong> on ${labels[engine] || 'Google'}…`);
         try { chrome.runtime.sendMessage({ type: 'NAVIGATE', url }); }
         catch { window.location.href = url; }
     }
@@ -672,13 +1283,18 @@ If "all" or no specific fields mentioned, set matchedFields to ["all"].`,
                     navigate(resolved.url, resolved.label);
                     chatHistory.push({ role: 'ai', text: `Navigating to ${resolved.label || resolved.url}` });
                 } else {
-                    // Fallback — show a clickable google search so user isn't stuck
                     const q = encodeURIComponent((intent.destination || originalText) + ' site:' + location.hostname);
                     const searchUrl = `https://www.google.com/search?q=${q}`;
-                    appendMsgRaw('ai',
-                        `Couldn't resolve that URL automatically. Try one of these:<br>` +
-                        `<a href="${searchUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:6px 14px;background:#6366f1;color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;">🔍 Search on Google</a>`
-                    );
+                    const wrap = appendMsgRaw('ai', `Couldn't resolve that URL automatically.`);
+                    const btn = Object.assign(document.createElement('button'), {
+                        textContent: '🔍 Search on Google',
+                        style: 'display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 14px;background:#6366f1;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;'
+                    });
+                    btn.addEventListener('click', () => {
+                        try { chrome.runtime.sendMessage({ type: 'NAVIGATE', url: searchUrl }); }
+                        catch { window.location.href = searchUrl; }
+                    });
+                    wrap?.querySelector('.nw-bubble')?.appendChild(btn);
                 }
                 break;
             }
@@ -711,6 +1327,53 @@ If "all" or no specific fields mentioned, set matchedFields to ["all"].`,
                     appendMsg('ai', `**${msg}**`);
                     chatHistory.push({ role: 'ai', text: msg });
                 }
+                break;
+            }
+
+            case 'compatibility': {
+                const report = await resolveCompatibility();
+                appendMsg('ai', report);
+                chatHistory.push({ role: 'ai', text: report });
+                break;
+            }
+
+            case 'save_job': {
+                const result = saveCurrentJob();
+                if (result.startsWith('__JOB_SAVED__:')) {
+                    const job = JSON.parse(result.slice('__JOB_SAVED__:'.length));
+                    renderJobSavedCard(job);
+                    chatHistory.push({ role: 'ai', text: `Saved "${job.title}" to job tracker.` });
+                } else {
+                    appendMsg('ai', result);
+                    chatHistory.push({ role: 'ai', text: result });
+                }
+                break;
+            }
+
+            case 'list_jobs': {
+                renderJobTracker();
+                const jobs = jtLoad();
+                chatHistory.push({ role: 'ai', text: `Showing job tracker (${jobs.length} jobs).` });
+                break;
+            }
+
+            case 'save_page': {
+                const result = saveCurrentPage();
+                if (result === '__PAGE_EXISTS__') {
+                    appendMsg('ai', '**Already saved!** This page is already in your saved pages. Open the menu → **Saved Pages** to view it.');
+                    chatHistory.push({ role: 'ai', text: 'Page already saved.' });
+                } else {
+                    const page = JSON.parse(result.slice('__PAGE_SAVED__:'.length));
+                    renderPageSavedCard(page); // shows toast + refreshes panel if open
+                    appendMsgRaw('ai', `🔖 <strong>${esc(page.title)}</strong> saved. Open the menu → <strong>Saved Pages</strong> to view all.`);
+                    chatHistory.push({ role: 'ai', text: `Saved page: "${page.title}"` });
+                }
+                break;
+            }
+
+            case 'list_pages': {
+                renderSavedPages(); // opens the panel
+                chatHistory.push({ role: 'ai', text: 'Opened saved pages panel.' });
                 break;
             }
 
@@ -751,11 +1414,7 @@ If "all" or no specific fields mentioned, set matchedFields to ["all"].`,
         });
     }
 
-    const NOVA_SYSTEM = `You are Nova, a smart AI assistant built into a browser extension for job seekers.
-You help users navigate the web, understand pages, write content, and find jobs.
-Format your responses clearly: use **bold** for key terms, bullet points for lists, and keep answers concise.
-Never say "I can't open links" or "I can't navigate" — Nova CAN take actions on the browser.
-Current page: "${document.title}" at ${location.href}.`;
+    const NOVA_SYSTEM = buildSystemPrompt(document.title, location.href);
 
     // ── Send ──────────────────────────────────────────────────────────────────
     async function doSend() {
@@ -785,10 +1444,16 @@ Current page: "${document.title}" at ${location.href}.`;
                 } else {
                     const q = encodeURIComponent(text + ' ' + location.hostname);
                     const searchUrl = `https://www.google.com/search?q=${q}`;
-                    appendMsgRaw('ai',
-                        `Couldn't resolve that URL automatically. Try:<br>` +
-                        `<a href="${searchUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:6px 14px;background:#6366f1;color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;">🔍 Search on Google</a>`
-                    );
+                    const wrap2 = appendMsgRaw('ai', `Couldn't resolve that URL automatically.`);
+                    const btn2 = Object.assign(document.createElement('button'), {
+                        textContent: '🔍 Search on Google',
+                        style: 'display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 14px;background:#6366f1;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;'
+                    });
+                    btn2.addEventListener('click', () => {
+                        try { chrome.runtime.sendMessage({ type: 'NAVIGATE', url: searchUrl }); }
+                        catch { window.location.href = searchUrl; }
+                    });
+                    wrap2?.querySelector('.nw-bubble')?.appendChild(btn2);
                 }
                 isThinking = false; return;
             }
@@ -827,23 +1492,10 @@ Current page: "${document.title}" at ${location.href}.`;
         }
     }
 
-    async function askAI(userMessage) {
-        let prompt = '';
-        const isSelectionQuery = userMessage.startsWith('"') && userMessage.includes('\n\n');
-        if (!isSelectionQuery && pageContent && /\b(summarize|summary|page|this|here|extract|what|key|point|content|tell|explain|describe|find|show|list)\b/i.test(userMessage)) {
-            prompt += `--- Page content ---\n${pageContent.slice(0, 6000)}\n--- End ---\n\n`;
-        }
-        chatHistory.slice(-4).forEach(m => {
-            prompt += `${m.role === 'user' ? 'User' : 'Nova'}: ${m.text}\n`;
-        });
-        prompt += `User: ${userMessage}`;
-        return callAI(prompt, NOVA_SYSTEM);
-    }
-
     // ── Render helpers ────────────────────────────────────────────────────────
     // Render a message without side-effects (used when restoring history)
     function renderMsg(role, text) {
-        appendMsg(role, text);
+        appendMsg(role, text, true); // instant — no ghost typing for history restore
     }
 
     function appendMsgRaw(role, html) {
@@ -853,49 +1505,117 @@ Current page: "${document.title}" at ${location.href}.`;
         wrap.innerHTML = `<div class="nw-avatar">N</div><div><div class="nw-bubble">${html}</div><div class="nw-time">${time}</div></div>`;
         messagesEl.appendChild(wrap);
         messagesEl.scrollTop = messagesEl.scrollHeight;
+        return wrap;
     }
 
-    function appendMsg(role, text) {
+    function appendMsg(role, text, instant = false) {
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const wrap = document.createElement('div');
         wrap.className = `nw-msg ${role}`;
         if (role === 'ai') {
-            wrap.innerHTML = `<div class="nw-avatar">N</div><div><div class="nw-bubble">${fmt(text)}</div><div class="nw-time">${time}</div></div>`;
+            wrap.innerHTML = `
+                <div class="nw-avatar">N</div>
+                <div class="nw-msg-wrap">
+                    <div class="nw-bubble"></div>
+                    <div class="nw-time">${time}</div>
+                    <button class="nw-copy-btn" title="Copy">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                    </button>
+                </div>`;
+            const bubble = wrap.querySelector('.nw-bubble');
+            const copyBtn = wrap.querySelector('.nw-copy-btn');
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(text).then(() => {
+                    copyBtn.classList.add('copied');
+                    copyBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+                    setTimeout(() => {
+                        copyBtn.classList.remove('copied');
+                        copyBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+                    }, 2000);
+                }).catch(() => {});
+            });
+            messagesEl.appendChild(wrap);
+            if (instant) {
+                bubble.innerHTML = fmt(text);
+            } else {
+                ghostTypeAI(bubble, text);
+            }
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return;
         } else {
-            wrap.innerHTML = `<div><div class="nw-bubble">${esc(text)}</div><div class="nw-time">${time}</div></div>`;
+            wrap.innerHTML = `
+                <div class="nw-avatar" style="background:#e5e7eb;color:#6b7280;">U</div>
+                <div>
+                    <div class="nw-bubble">${esc(text)}</div>
+                    <div class="nw-time">${time}</div>
+                </div>
+                <button class="nw-edit-btn" title="Edit message">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </button>`;
+            wrap.querySelector('.nw-edit-btn').addEventListener('click', () => {
+                editMessageFrom(wrap, text);
+            });
         }
         messagesEl.appendChild(wrap);
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    function fmt(text) {
-        // Execute any NAVIGATE tags the AI returned
-        const navMatch = text.match(/\[NAVIGATE:\s*(https?:\/\/[^\]]+)\]/i);
-        if (navMatch) {
-            const url = navMatch[1].trim();
-            setTimeout(() => {
-                try {
-                    chrome.runtime.sendMessage({ type: 'NAVIGATE', url });
-                } catch (e) {
-                    window.location.href = url;
-                }
-            }, 600);
+    function editMessageFrom(msgNode, originalText) {
+        if (isThinking) return;
+        // Find index of this user message in chatHistory
+        const allNodes = Array.from(messagesEl.querySelectorAll('.nw-msg'));
+        const nodeIdx = allNodes.indexOf(msgNode);
+
+        // Remove this node and everything after it from the DOM
+        for (let i = allNodes.length - 1; i >= nodeIdx; i--) {
+            allNodes[i].remove();
         }
 
-        return esc(text)
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/`([^`]+)`/g, '<code>$1</code>')
-            .replace(/^[•\-\*] (.+)$/gm, '<li>$1</li>')
-            .replace(/(<li>.*?<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
-            // Render NAVIGATE tag as a visible open button
-            .replace(/\[NAVIGATE:\s*(https?:\/\/[^\]]+)\]/gi, (_, url) =>
-                `<a href="${esc(url)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 11px;background:#6366f1;color:white;border-radius:7px;font-size:12px;font-weight:600;text-decoration:none;">↗ Opening…</a>`)
-            .replace(/\n/g, '<br>');
+        // Count user messages up to (not including) this one to find history index
+        // chatHistory is pairs: user/ai interleaved. Find the matching user entry.
+        // Walk backwards from end of chatHistory to find the matching user text.
+        let histIdx = -1;
+        for (let i = chatHistory.length - 1; i >= 0; i--) {
+            if (chatHistory[i].role === 'user' && chatHistory[i].text === originalText) {
+                histIdx = i;
+                break;
+            }
+        }
+        if (histIdx !== -1) {
+            chatHistory.splice(histIdx); // remove from that user message onward
+        }
+
+        // Restore text into input and focus
+        inputEl.value = originalText;
+        inputEl.dispatchEvent(new Event('input'));
+        inputEl.focus();
+        // Move cursor to end
+        inputEl.selectionStart = inputEl.selectionEnd = originalText.length;
     }
 
-    function esc(t) {
-        return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    async function ghostTypeAI(bubble, text) {
+        const chars = text.split('');
+        const SPEED_MS = 18;
+        let typed = '';
+        for (const ch of chars) {
+            typed += ch;
+            bubble.textContent = typed;
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            await new Promise(r => setTimeout(r, SPEED_MS));
+        }
+        // Swap plain text for fully formatted HTML once typing completes
+        bubble.innerHTML = fmt(text);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
     }
+
+    // fmt is aliased from NovaChatCore (with chrome navigate wired) at top of file
+
+    // esc + fmt aliased from NovaChatCore at top of file
 
     function showThinking() {
         const id = 'nw-think-' + Date.now();
@@ -935,5 +1655,13 @@ Current page: "${document.title}" at ${location.href}.`;
         widget.style.opacity = '1';
         widget.style.transform = 'scale(1)';
     });
+
+    } // end init()
+
+    if (document.body) {
+        init();
+    } else {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+    }
 
 })();
