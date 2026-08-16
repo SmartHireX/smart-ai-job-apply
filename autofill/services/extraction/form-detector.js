@@ -774,7 +774,20 @@ function extractTextCandidates(root) {
  * 4. FALLBACK: Humanized name/id
  */
 function getFieldLabel(element) {
-    // TIER 1: Explicit HTML associations (HIGHEST PRIORITY)
+    // TIER 0: Platform-specific extraction (NEW - HIGHEST PRIORITY)
+    if (typeof window.PlatformAdapterFactory !== 'undefined') {
+        try {
+            const platformLabel = window.PlatformAdapterFactory.extractLabel(element);
+            if (platformLabel) {
+                // console.log(`🎯 [Platform] Label from ${window.PlatformAdapterFactory.getPlatformName()}: "${platformLabel}"`);
+                return platformLabel;
+            }
+        } catch (error) {
+            console.warn('[Platform] Adapter extraction failed:', error);
+        }
+    }
+
+    // TIER 1: Explicit HTML associations
     const explicitLabel = getExplicitLabel(element);
     if (explicitLabel) {
         return explicitLabel;

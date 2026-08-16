@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Adapter Test Suite</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        h2 { color: #666; margin-top: 0; }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .field { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Platform Adapter Test Suite</h1>
+    <p>Test the platform-specific adapters for Workday, Greenhouse, and Lever.</p>
+
+    <!-- ========== PLATFORM DETECTION ========== -->
+    <div class="test-section">
+        <h2>1. Platform Detection</h2>
+        <button onclick="testPlatformDetection()">Run Detection Test</button>
+        <div id="detection-results"></div>
+    </div>
+
+    <!-- ========== WORKDAY MOCK FORM ========== -->
+    <div class="test-section">
+        <h2>2. Workday Mock Form</h2>
+        <button onclick="testWorkdayExtraction()">Test Workday Adapter</button>
+
+        <!-- Simulate Workday structure -->
+        <div style="margin-top: 20px;">
+            <div data-automation-id="formField-firstName">
+                <label data-automation-id="formField-firstName-label">
+                    <div data-automation-id="richText">First Name *</div>
+                </label>
+                <input type="text" id="workday-firstname" data-automation-id="firstName" />
+            </div>
+
+            <fieldset style="margin-top: 15px;">
+                <legend>
+                    <div data-automation-id="richText">Are you authorized to work in the US?</div>
+                </legend>
+                <div role="radiogroup">
+                    <label>
+                        <input type="radio" name="workAuth" value="yes" data-automation-id="radioButton" />
+                        <span>Yes</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="workAuth" value="no" data-automation-id="radioButton" />
+                        <span>No</span>
+                    </label>
+                </div>
+            </fieldset>
+        </div>
+
+        <div id="workday-results"></div>
+    </div>
+
+    <!-- ========== GREENHOUSE MOCK FORM ========== -->
+    <div class="test-section">
+        <h2>3. Greenhouse Mock Form</h2>
+        <button onclick="testGreenhouseExtraction()">Test Greenhouse Adapter</button>
+
+        <!-- Simulate Greenhouse structure -->
+        <div style="margin-top: 20px;">
+            <div class="field field--text">
+                <label for="gh-email">Email Address *</label>
+                <input type="email" id="gh-email" name="job_application[email]" />
+            </div>
+
+            <div class="field field--radio" style="margin-top: 15px;">
+                <label>Are you 18 years or older? *</label>
+                <div class="radio-options">
+                    <label>
+                        <input type="radio" name="legal_age" value="yes" />
+                        Yes
+                    </label>
+                    <label>
+                        <input type="radio" name="legal_age" value="no" />
+                        No
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div id="greenhouse-results"></div>
+    </div>
+
+    <!-- ========== LEVER MOCK FORM ========== -->
+    <div class="test-section">
+        <h2>4. Lever Mock Form</h2>
+        <button onclick="testLeverExtraction()">Test Lever Adapter</button>
+
+        <!-- Simulate Lever structure -->
+        <div style="margin-top: 20px;">
+            <li class="application-question">
+                <div>
+                    <div class="application-label">
+                        <div class="text">What is your current job title?<span class="required">*</span></div>
+                    </div>
+                    <div class="application-field">
+                        <input type="text" id="lever-title" class="card-field-input" />
+                    </div>
+                </div>
+            </li>
+
+            <li class="application-question" style="margin-top: 15px;">
+                <div>
+                    <div class="application-label">
+                        <div class="text">Preferred work location</div>
+                    </div>
+                    <div class="application-field">
+                        <select id="lever-location">
+                            <option value="">Select one...</option>
+                            <option value="remote">Remote</option>
+                            <option value="nyc">New York City</option>
+                            <option value="sf">San Francisco</option>
+                        </select>
+                    </div>
+                </div>
+            </li>
+        </div>
+
+        <div id="lever-results"></div>
+    </div>
+
+    <!-- ========== UNIVERSAL FALLBACK TEST ========== -->
+    <div class="test-section">
+        <h2>5. Universal Fallback (No Platform)</h2>
+        <button onclick="testUniversalFallback()">Test Universal Extraction</button>
+
+        <div class="field" style="margin-top: 20px;">
+            <label for="generic-name">Your Full Name</label>
+            <input type="text" id="generic-name" name="fullName" />
+        </div>
+
+        <div id="universal-results"></div>
+    </div>
+
+    <!-- Load adapter scripts -->
+    <script src="../autofill/services/platform-adapters/platform-adapter-factory.js"></script>
+    <script src="../autofill/services/platform-adapters/workday-adapter.js"></script>
+    <script src="../autofill/services/platform-adapters/greenhouse-adapter.js"></script>
+    <script src="../autofill/services/platform-adapters/lever-adapter.js"></script>
+
+    <script>
+        // Helper to display results
+        function displayResult(containerId, title, success, message) {
+            const container = document.getElementById(containerId);
+            const resultClass = success ? 'pass' : 'fail';
+            const icon = success ? '✅' : '❌';
+            container.innerHTML += `
+                <div class="test-result ${resultClass}">
+                    <strong>${icon} ${title}</strong><br>
+                    ${message}
+                </div>
+            `;
+        }
+
+        function displayInfo(containerId, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML += `
+                <div class="test-result info">
+                    <strong>ℹ️ Info:</strong><br>
+                    ${message}
+                </div>
+            `;
+        }
+
+        function clearResults(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        // Test 1: Platform Detection
+        function testPlatformDetection() {
+            clearResults('detection-results');
+
+            try {
+                // Clear cache first
+                PlatformAdapterFactory.clearCache();
+
+                // Test each adapter's detection
+                const workdayDetected = WorkdayAdapter.detect();
+                const greenhouseDetected = GreenhouseAdapter.detect();
+                const leverDetected = LeverAdapter.detect();
+
+                displayResult('detection-results', 'Workday Detection',
+                    workdayDetected === true,
+                    `Workday detected: ${workdayDetected} (Expected: true on this mock page)`);
+
+                displayResult('detection-results', 'Greenhouse Detection',
+                    greenhouseDetected === true,
+                    `Greenhouse detected: ${greenhouseDetected} (Expected: true on this mock page)`);
+
+                displayResult('detection-results', 'Lever Detection',
+                    leverDetected === true,
+                    `Lever detected: ${leverDetected} (Expected: true on this mock page)`);
+
+                // Test factory detection
+                const detectedPlatform = PlatformAdapterFactory.getPlatformName();
+                displayInfo('detection-results',
+                    `PlatformAdapterFactory detected: <strong>${detectedPlatform}</strong><br>
+                    Note: Factory picks the highest priority match (Workday > Lever > Greenhouse)`);
+
+            } catch (error) {
+                displayResult('detection-results', 'Platform Detection', false,
+                    `Error: ${error.message}`);
+            }
+        }
+
+        // Test 2: Workday Extraction
+        function testWorkdayExtraction() {
+            clearResults('workday-results');
+
+            try {
+                // Test text input label extraction
+                const firstNameInput = document.getElementById('workday-firstname');
+                const firstNameLabel = WorkdayAdapter.extractLabel(firstNameInput);
+
+                displayResult('workday-results', 'Text Input Label',
+                    firstNameLabel === 'First Name',
+                    `Extracted: "${firstNameLabel}" (Expected: "First Name")`);
+
+                // Test radio group label extraction
+                const radioInput = document.querySelector('input[name="workAuth"]');
+                const radioLabel = WorkdayAdapter.extractLabel(radioInput);
+
+                displayResult('workday-results', 'Radio Group Label',
+                    radioLabel === 'Are you authorized to work in the US?',
+                    `Extracted: "${radioLabel}" (Expected: "Are you authorized to work in the US?")`);
+
+                // Test options extraction
+                const options = WorkdayAdapter.extractOptions(radioInput);
+                displayResult('workday-results', 'Radio Options',
+                    options.length === 2,
+                    `Found ${options.length} options: ${options.map(o => o.text).join(', ')}`);
+
+            } catch (error) {
+                displayResult('workday-results', 'Workday Adapter', false,
+                    `Error: ${error.message}`);
+            }
+        }
+
+        // Test 3: Greenhouse Extraction
+        function testGreenhouseExtraction() {
+            clearResults('greenhouse-results');
+
+            try {
+                // Test email input label
+                const emailInput = document.getElementById('gh-email');
+                const emailLabel = GreenhouseAdapter.extractLabel(emailInput);
+
+                displayResult('greenhouse-results', 'Email Label',
+                    emailLabel === 'Email Address',
+                    `Extracted: "${emailLabel}" (Expected: "Email Address")`);
+
+                // Test radio group label
+                const legalAgeRadio = document.querySelector('input[name="legal_age"]');
+                const legalAgeLabel = GreenhouseAdapter.extractLabel(legalAgeRadio);
+
+                displayResult('greenhouse-results', 'Radio Group Label',
+                    legalAgeLabel === 'Are you 18 years or older?',
+                    `Extracted: "${legalAgeLabel}" (Expected: "Are you 18 years or older?")`);
+
+                // Test options
+                const options = GreenhouseAdapter.extractOptions(legalAgeRadio);
+                displayResult('greenhouse-results', 'Radio Options',
+                    options.length === 2,
+                    `Found ${options.length} options: ${options.map(o => o.text).join(', ')}`);
+
+            } catch (error) {
+                displayResult('greenhouse-results', 'Greenhouse Adapter', false,
+                    `Error: ${error.message}`);
+            }
+        }
+
+        // Test 4: Lever Extraction
+        function testLeverExtraction() {
+            clearResults('lever-results');
+
+            try {
+                // Test text input in card
+                const titleInput = document.getElementById('lever-title');
+                const titleLabel = LeverAdapter.extractLabel(titleInput);
+
+                displayResult('lever-results', 'Text Input Label',
+                    titleLabel === 'What is your current job title?',
+                    `Extracted: "${titleLabel}" (Expected: "What is your current job title?")`);
+
+                // Test select dropdown
+                const locationSelect = document.getElementById('lever-location');
+                const locationLabel = LeverAdapter.extractLabel(locationSelect);
+
+                displayResult('lever-results', 'Select Label',
+                    locationLabel === 'Preferred work location',
+                    `Extracted: "${locationLabel}" (Expected: "Preferred work location")`);
+
+                // Test select options
+                const options = LeverAdapter.extractOptions(locationSelect);
+                displayResult('lever-results', 'Select Options',
+                    options.length === 3,
+                    `Found ${options.length} options: ${options.map(o => o.text).join(', ')}`);
+
+            } catch (error) {
+                displayResult('lever-results', 'Lever Adapter', false,
+                    `Error: ${error.message}`);
+            }
+        }
+
+        // Test 5: Universal Fallback
+        function testUniversalFallback() {
+            clearResults('universal-results');
+
+            try {
+                const input = document.getElementById('generic-name');
+
+                // Simulate a platform that's not Workday/Greenhouse/Lever
+                // (In real usage, this would happen automatically)
+                const label = PlatformAdapterFactory.extractLabel(input);
+
+                displayInfo('universal-results',
+                    `Label extracted: "${label}"<br>
+                    Note: This should fall through to universal extraction since no platform-specific adapter matches this simple HTML structure.`);
+
+                // Test universal options extraction
+                const options = PlatformAdapterFactory.extractOptions(input);
+                displayResult('universal-results', 'Options Extraction',
+                    true,
+                    `Found ${options.length} options (text inputs have no options, so this is expected)`);
+
+            } catch (error) {
+                displayResult('universal-results', 'Universal Fallback', false,
+                    `Error: ${error.message}`);
+            }
+        }
+
+        // Auto-run detection test on load
+        window.addEventListener('load', () => {
+            console.log('Platform Adapter Test Page Loaded');
+            console.log('WorkdayAdapter available:', typeof WorkdayAdapter !== 'undefined');
+            console.log('GreenhouseAdapter available:', typeof GreenhouseAdapter !== 'undefined');
+            console.log('LeverAdapter available:', typeof LeverAdapter !== 'undefined');
+            console.log('PlatformAdapterFactory available:', typeof PlatformAdapterFactory !== 'undefined');
+        });
+    </script>
+</body>
+</html>

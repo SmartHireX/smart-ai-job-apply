@@ -494,16 +494,38 @@ function triggerAutoDetect() {
 new MutationObserver(() => {
     if (window.location.href !== lastUrl) {
         lastUrl = window.location.href;
-        // // console.log('🌐 [Bootstrap] URL Changed, triggering detection...');
         triggerAutoDetect();
+        // Re-inject widget on SPA navigation if it was open
+        setTimeout(() => {
+            if (!document.getElementById('nova-chat-widget')) {
+                restoreWidgetIfNeeded();
+            }
+        }, 400); // small delay for SPA DOM to settle
     }
 }).observe(document, { subtree: true, childList: true });
 
 // 2. Initial Trigger
 if (document.readyState === 'complete') {
     triggerAutoDetect();
+    restoreWidgetIfNeeded();
 } else {
-    window.addEventListener('load', triggerAutoDetect);
+    window.addEventListener('load', () => {
+        triggerAutoDetect();
+        restoreWidgetIfNeeded();
+    });
 }
 
-// // console.log('🎯 Nova AI Bootstrap loaded (lazy loading enabled)');
+// ── Auto-restore chat widget after navigation ─────────────────────────────
+function restoreWidgetIfNeeded() {
+    try {
+        if (!localStorage.getItem('nova_widget_open')) return;
+    } catch { return; }
+
+    // Already injected this page load — skip
+    if (document.getElementById('nova-chat-widget')) return;
+
+    // Ask background to inject via chrome.scripting.executeScript (bypasses page CSP / Trusted Types)
+    chrome.runtime.sendMessage({ type: 'INJECT_CHAT_WIDGET' });
+}
+
+// console.log('🎯 Nova AI Bootstrap loaded (lazy loading enabled)');

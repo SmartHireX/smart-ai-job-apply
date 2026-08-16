@@ -10,64 +10,38 @@ The HeuristicEngine is a pattern-based field type classification system that ach
 
 ### Classification Strategy
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                 CLASSIFICATION STRATEGY                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  [Input Field] ───► { HTML Attributes? } ───► [Autocomplete]│
-│                           │                                 │
-│                           ▼ (No)                            │
-│                  { Regex Pattern? } ────► [Pattern Match]   │
-│                           │                                 │
-│                           ▼ (No)                            │
-│                  { Keyword Match? } ────► [Keyword Match]   │
-│                           │                                 │
-│                           ▼ (No)                            │
-│                  { Alias Resolve? } ────► [Canonical Form]  │
-│                           │                                 │
-│                           ▼ (No)                            │
-│                       [Unknown]                             │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[Input Field] --> B{HTML Attributes?}
+    B -->|autocomplete| C[Return Autocomplete Type]
+    B -->|No| D{Regex Match?}
+    D -->|Yes| E[Return Pattern Match]
+    D -->|No| F{Keyword Match?}
+    F -->|Yes| G[Return Keyword Match]
+    F -->|No| H{Alias Resolution?}
+    H -->|Yes| I[Apply Canonical Form]
+    H -->|No| J[Return 'unknown']
 ```
 
 ### Core Components
 
-# Heuristic Engine (The Left Brain) ⚡
+1. **Pattern Matching** - Regex-based identification
+2. **Keyword Matching** - Label/name text analysis
+3. **Autocomplete Attributes** - HTML5 autocomplete parsing
+4. **Alias Resolution** - Canonical form mapping
+5. **Confidence Scoring** - Match quality assessment
 
-The **Heuristic Engine** is our deterministic, regex-based classifier. It is inspired by Chrome's internal autofill logic but expanded for enterprise job forms.
+---
 
-## Capabilities
+## Pattern Matching
 
-*   **Speed**: <2ms classification time.
-*   **Coverage**: 45+ standard field types.
-*   **Accuracy**: >99% for Contact fields (Email, Phone, Name).
+### Field Categories
 
-## Pattern Categories
+The engine organizes patterns into semantic categories:
 
-| Category | Typical Fields | Confidence |
-|----------|----------------|------------|
-| **Personal** | `first_name`, `email`, `phone` | 0.99 |
-| **Location** | `city`, `zip_code`, `state` | 0.97 |
-| **Social** | `linkedin`, `github`, `portfolio` | 0.95 |
-| **Legal** | `sponsorship`, `work_auth` | 0.96 |
-
-## The Role of Heuristics
-
-In our **Hybrid Architecture**, heuristics serve two purposes:
-
-1.  **Hyper-Fast Filter**: Instantly identifies simple fields (Name, Email) without needing the Neural Net.
-2.  **Hard Veto**: In the **Arbitration Matrix (Tier 2)**, strong regex matches (like detecting a `tel` input type) will **override** a neural prediction, preventing hallucinations.
-
-## Example Pattern
-
-```javascript
-// Heuristic for 'Job Title'
-const JOB_TITLE_PATTERN = /\b(job[_\-\s]?title|position|role|designation)\b/i;
-// Negative lookahead prevents matching "Title of page"
-const NEGATIVE_PATTERN = /\b(page[_\-\s]?title|fit[_\-\s]?for)\b/i;
-```
+| Category | Fields | Patterns |
+|----------|--------|----------|
+| **Personal Info** | name, email, phone, date of birth | 40+ patterns |
 | **Location** | address, city, state, zip, country | 35+ patterns |
 | **Work Experience** | company, title, dates, description | 30+ patterns |
 | **Education** | school, degree, major, GPA, dates | 25+ patterns |
@@ -126,23 +100,15 @@ if (field.placeholder && PATTERNS[fieldType].test(field.placeholder)) {
 
 ### HTML5 Autocomplete Support
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                AUTOCOMPLETE ATTRIBUTE PARSING               │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│   [HTML Field] ──────► { has autocomplete? }                │
-│                                │                            │
-│            ┌───────────────────┴───────────────────┐        │
-│            ▼                                       ▼        │
-│     (Mapping Found)                         (No Mapping)    │
-│            │                                       │        │
-│    ┌───────┴──────┐                        ┌───────┴──────┐ │
-│    │ first_name   │                        │ Continue to  │ │
-│    │ phone, email │                        │ Regex Match  │ │
-│    └──────────────┘                        └──────────────┘ │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    A[HTML Field] --> B{autocomplete?}
+    B -->|"given-name"| C[first_name]
+    B -->|"family-name"| D[last_name]
+    B -->|"email"| E[email]
+    B -->|"tel"| F[phone]
+    B -->|"address-line1"| G[address_line_1]
+    B -->|No| H[Continue to Pattern Match]
 ```
 
 **Supported Values**:
@@ -207,22 +173,13 @@ const FIELD_ALIASES = {
 
 ### Resolution Flow
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                    ALIAS RESOLUTION FLOW                        │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  [Predicted Label] ───► { In Aliases? }                     │
-│                                │                            │
-│            ┌───────────────────┴───────────────────┐        │
-│            ▼ (Yes)                                 ▼ (No)   │
-│   [Resolve to Canonical]                  [Keep Original]   │
-│            │                                       │        │
-│            └──────────┬────────────────────────────┘        │
-│                       ▼                                     │
-│                [Final Result]                               │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    A[Predicted Label] --> B{In Aliases?}
+    B -->|Yes| C[Resolve to Canonical]
+    B -->|No| D[Keep Original]
+    C --> E[Return Result]
+    D --> E
 ```
 
 **Example**:
@@ -313,31 +270,17 @@ function calculateConfidence(matches) {
 
 HeuristicEngine is the **primary classifier** due to its superior accuracy (77.87% vs Neural's 65.22%).
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                   ENSEMBLE ARBITRATION                      │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  [Field Input] ────┬────► [Heuristic Engine] (Primary)      │
-│                    │                                        │
-│                    └────► [Neural Classifier] (Backup)      │
-│                                                             │
-│          ┌───────────────────────────────────┐              │
-│          │        Coordination Logic         │              │
-│          └─────────────────┬─────────────────┘              │
-│                            │                                │
-│          ┌─────────────────┴─────────────────┐              │
-│          ▼                                   ▼              │
-│   { Heuristics High }                { Heuristics Low }     │
-│          │                                   │              │
-│          ▼                                   ▼              │
-│    [FAST RETURN]                   { Neural Agreement? }    │
-│                                              │              │
-│                                    ┌─────────┴─────────┐    │
-│                                    ▼                   ▼    │
-│                            [Use Consensus]       [Weighted] │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[Field Input] -->|First| B[HeuristicEngine]
+    A -->|Parallel| C[NeuralClassifier]
+    B --> D{Conf > 0.5?}
+    D -->|Yes| E[Use Heuristic]
+    D -->|No| F{Consensus?}
+    F -->|Yes| G[Use Consensus]
+    F -->|No| H{Neural Conf > 0.85?}
+    H -->|Yes| I[Use Neural]
+    H -->|No| E
 ```
 
 ### Usage Strategy

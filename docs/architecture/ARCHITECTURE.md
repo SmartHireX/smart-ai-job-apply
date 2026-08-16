@@ -1,85 +1,74 @@
 # 🏛️ SmartHireX Enterprise Architecture v2.0
 
-## 🌟 Philosophy: The Left & Right Brain Ensemble
+## 🌟 Philosophy: Enterprise-Grade Form Intelligence
 
-SmartHireX solves job application forms by combining deterministic precision with neural context. The system follows a strict **"Scan → Think → Act"** pipeline.
+This system is designed to match or exceed the sophistication of **Chrome Autofill**, **1Password**, and **LastPass**. We implement industry-standard techniques with our own optimizations.
 
-## ⚙️ How It Works: Under the Hood
-
-The extension operates as a sophisticated orchestrator for browser events. Here is the technical breakdown of a single autofill determination:
-
-### 1. The Scanning Layer (Shadow DOM Aware)
-SmartHireX uses a recursive `AutofillScanner` that:
-*   Pierces Shadow DOM boundaries and iframes.
-*   Extracts 3 distinct signals per field: **HTML attributes**, **Semantic hints**, and **Visual context**.
-
-### 2. The Hybrid Classification Engine
-We don't trust a single model. Every field is analyzed by two parallel engines:
-*   **The Heuristic Engine (Left Brain)**:
-    *   Uses 45+ Chrome-inspired regex patterns.
-    *   Extremely fast (<2ms) and accurate for standard fields (email, phone, git_url).
-    *   *Example*: `matches /^(?=.*billing)(?=.*zip).*$/i` → `billing_zip_code`
-*   **The Neural Network V8 (Right Brain)**:
-    *   A custom Tensorflow.js model (87 classes, Sigmoid output).
-    *   Analyzes 95-dimensional feature vectors (context, depth, siblings).
-    *   Solves ambiguity (e.g., "Start Date" - is it for Job 1 or Education?).
-
-### 3. The 5-Tier Arbitration Matrix
-When the engines disagree, who wins? We use a weighted arbitration matrix:
-*   **Tier 1**: Unanimous Agreement (Both say "Email").
-*   **Tier 2**: Strong Heuristic Override (Regex finds specific "CVV" pattern).
-*   **Tier 3**: Neural Contextual Win (Neural sees "School" nearby, overrides "Company" guess).
-*   **Tier 4**: Weighted Probability Voting.
-*   **Tier 5**: Scanner Veto (Hardcoded safety blocks).
-
-### 4. Stealth Execution
-To bypass anti-bot protections (like in Workday or React apps), we don't just set `value`. We use a stealth injection technique:
-```javascript
-const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-nativeSetter.call(element, value); // Bypass React's virtual DOM tracker
-element.dispatchEvent(new Event('input', { bubbles: true })); // Trigger framework state updates
-```
-
-### 5. The Learning Loop
-If you manually correct a field, `FormObserver` captures the change. It uses **fuzzy key matching** (Jaccard Similarity) to map that specific field ID to the correct label in your local cache, ensuring next time it fills correctly.
-│   └── messaging/               # Message router
-└── docs/                        # Documentation
+### Core Principles
+1. **Privacy First**: All data stays in browser local storage. No cloud sync.
+2. **3-Tier Resolution**: Explicit HTML → Semantic Hints → Visual Heuristics
+3. **Zero Dependencies**: Pure JavaScript, no TensorFlow or heavy frameworks
+4. **Self-Learning**: The system remembers user corrections and improves over time
 
 ---
 
 ## 🏗️ System Architecture Overview
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                HIGH-LEVEL SYSTEM ARCHITECTURE               │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌──────────────────────┐        ┌──────────────────────┐   │
-│  │  DOM EVENT / SCROLL  │───────►│    MUTATION OBSERVER │   │
-│  └──────────┬───────────┘        └──────────┬───────────┘   │
-│             │                               │               │
-│             └───────────────┬───────────────┘               │
-│                             ▼                               │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │               AUTOFILL ORCHESTRATOR                   │  │
-│  │ ┌───────────────────────────────────────────────────┐ │  │
-│  │ │ 1. SCAN: Shadows & Iframes → Signal Extraction    │ │  │
-│  │ │ 2. THINK: Heuristic + Neural Classification       │ │  │
-│  │ │ 3. ARBITRATE: 5-Tier Decision Matrix              │ │  │
-│  │ │ 4. ACT: Stealth Value Injection                   │ │  │
-│  │ └────────────────────────┬──────────────────────────┘ │  │
-│  └──────────────────────────┼────────────────────────────┘  │
-│                             ▼                               │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │              LOCAL PERSISTENCE LAYER                  │  │
-│  │ ┌─────────────────┬────────────────┬────────────────┐ │  │
-│  │ │ InteractionLog  │  GlobalMemory  │  RuleEngine    │ │  │
-│  │ └─────────────────┴────────────────┴────────────────┘ │  │
-│  └───────────────────────────────────────────────────────┘  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+```mermaid
+graph TB
+    subgraph User ["👤 User Interaction"]
+        Popup[Extension Popup]
+        Sidebar[Sidebar UI]
+    end
 
+    subgraph Core ["🎯 Core Engine"]
+        Bootstrap[Bootstrap Loader]
+        Pipeline[PipelineOrchestrator]
+        Router[MessageRouter]
+    end
+
+    subgraph Extraction ["📋 Form Extraction"]
+        FormDetector[FormDetector]
+        LabelExtractor[3-Tier Label Extractor]
+        SectionGrouper[SectionGrouper]
+    end
+
+    subgraph Classification ["🧠 AI Classification"]
+        Hybrid[HybridClassifier]
+        Heuristic[HeuristicEngine]
+        Neural[NeuralClassifier v8]
+    end
+
+    subgraph Resolution ["💾 Data Resolution"]
+        InteractionLog[InteractionLog]
+        RuleEngine[RuleEngine]
+        GlobalMemory[GlobalMemory]
+        CopilotClient[CopilotClient AI]
+    end
+
+    subgraph Execution ["🚀 Execution"]
+        ExecutionEngine[ExecutionEngine]
+        DateHandler[DateHandler]
+        SectionController[SectionController]
+    end
+
+    Popup --> Bootstrap
+    Sidebar --> Router
+    Bootstrap --> Pipeline
+    Pipeline --> FormDetector
+    FormDetector --> LabelExtractor
+    LabelExtractor --> SectionGrouper
+    SectionGrouper --> Hybrid
+    Hybrid --> Heuristic
+    Hybrid --> Neural
+    Pipeline --> InteractionLog
+    Pipeline --> RuleEngine
+    Pipeline --> GlobalMemory
+    Pipeline --> CopilotClient
+    Pipeline --> ExecutionEngine
+    ExecutionEngine --> DateHandler
+    ExecutionEngine --> SectionController
+```
 
 ---
 
@@ -147,18 +136,15 @@ smartHireX/
 
 The `PipelineOrchestrator` is the heart of the autofill system. It coordinates the entire pipeline:
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                    PIPELINE EXECUTION FLOW                  │
-├─────────────────────────────────────────────────────────────┤
-│  1. INGESTION  │  Extract fields → Inject ML Metadata       │
-├────────────────┼────────────────────────────────────────────┤
-│  2. GROUPING   │  Detect ATOMIC / MULTI / SECTION           │
-├────────────────┼────────────────────────────────────────────┤
-│  3. RESOLVE    │  InteractionLog → RuleEngine → Hybrid AI   │
-├────────────────┼────────────────────────────────────────────┤
-│  4. EXECUTE    │  Stealth Inject → Human Jitter             │
-└────────────────┴────────────────────────────────────────────┘
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     PIPELINE EXECUTION                          │
+├─────────────────────────────────────────────────────────────────┤
+│  1. INGESTION    │  Raw fields → ML enrichment → Metadata      │
+│  2. GROUPING     │  Fields → ATOMIC_SINGLE/MULTI/SECTION       │
+│  3. RESOLUTION   │  InteractionLog → RuleEngine → AI           │
+│  4. EXECUTION    │  Fill fields → Cache results → Human jitter │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Field Instance Types
@@ -175,27 +161,35 @@ The `PipelineOrchestrator` is the heart of the autofill system. It coordinates t
 
 Based on research of Chrome Autofill, 1Password, and LastPass techniques:
 
-```text
+```
 ┌─────────────────────────────────────────────────────────────────┐
-│              TIER 1: EXPLICIT HTML (100% Quality)               │
+│                     TIER 1: EXPLICIT (100% Confidence)          │
 ├─────────────────────────────────────────────────────────────────┤
-│  • autocomplete (Explicit)     • aria-labelledby (Visual Hint)  │
-│  • element.labels (Internal)   • aria-label (Accessibility)     │
-│  • label[for="id"] (Pointer)   • aria-describedby (Context)     │
-└────────────────────────────────┬────────────────────────────────┘
-                                 ▼
+│  1. autocomplete attribute    (developer intent)                │
+│  2. element.labels           (native HTML association)          │
+│  3. label[for="id"]          (explicit selector)                │
+│  4. aria-labelledby          (visible DOM text - FIRST!)        │
+│  5. aria-label               (direct attribute)                 │
+│  6. aria-describedby         (secondary description)            │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ (if empty)
 ┌─────────────────────────────────────────────────────────────────┐
-│              TIER 2: SEMANTIC HINTS (80-95% Qual)               │
+│                     TIER 2: SEMANTIC (80-95% Confidence)        │
 ├─────────────────────────────────────────────────────────────────┤
-│  • data-label / data-testid    • placeholder / title            │
-│  • fieldset legend (Groups)    • table column headers           │
-└────────────────────────────────┬────────────────────────────────┘
-                                 ▼
+│  1. data-label, data-field-name, data-testid                   │
+│  2. Fieldset legend (radio/checkbox groups only)               │
+│  3. Table column headers                                        │
+│  4. placeholder attribute                                       │
+│  5. title attribute                                             │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ (if empty)
 ┌─────────────────────────────────────────────────────────────────┐
-│              TIER 3: VISUAL HEURISTICS (40-70%)                 │
+│                     TIER 3: VISUAL HEURISTICS (40-70%)          │
 ├─────────────────────────────────────────────────────────────────┤
-│  • Structural boundary search  • Previous sibling text          │
-│  • Parent context nodes        • Humanized name/id fallback     │
+│  1. Structural boundary search (within .form-group)            │
+│  2. Previous sibling text (with field boundary detection)      │
+│  3. Parent text nodes (with section heading blacklist)         │
+│  4. Humanized name/id (last resort)                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -271,28 +265,23 @@ InteractionLog (cached) → RuleEngine (resume) → AI (generated)
 
 ---
 
-## 🔄 Message Flow Logic
+## 🔄 Message Flow
 
-```text
-┌────────┐      ┌────────────┐      ┌────────────┐     ┌──────┐
-│ POPUP  │      │ BACKGROUND │      │ CONTENT_S  │     │ DOM  │
-└───┬────┘      └─────┬──────┘      └─────┬──────┘     └──┬───┘
-    │  Activate       │                   │               │
-    │────────────────►│     Inject        │               │
-    │                 │──────────────────►│    Scan       │
-    │    Start        │                   │──────────────►│
-    │────────────────►│     Resolve       │               │
-    │                 │◄──────────────────│    Values     │
-    │                 │                   │◄──────────────│
-    │                 │     Execute       │               │
-    │                 │──────────────────►│    Inject     │
-    │                 │                   │──────────────►│
-    │                 │◄──────────────────│    Learn      │
-    │    Done         │     Cache         │               │
-    │◄────────────────│◄──────────────────│               │
-┌───┴────┐      ┌─────┴──────┐      ┌─────┴──────┐     ┌──┴───┘
-│ POPUP  │      │ BACKGROUND │      │ CONTENT_S  │     │ DOM  │
-└────────┘      └────────────┘      └────────────┘     └──────┘
+```mermaid
+sequenceDiagram
+    participant Popup
+    participant Background
+    participant ContentScript
+    participant Pipeline
+    participant DOM
+
+    Popup->>ContentScript: ACTIVATE_EXTENSION
+    ContentScript->>Pipeline: Load lazy scripts
+    Popup->>ContentScript: START_LOCAL_PROCESSING
+    ContentScript->>Pipeline: executePipeline(fields)
+    Pipeline->>DOM: Fill fields
+    DOM->>Pipeline: User corrections
+    Pipeline->>Pipeline: Cache corrections
 ```
 
 ---

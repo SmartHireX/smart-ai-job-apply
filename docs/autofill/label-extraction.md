@@ -10,9 +10,9 @@ SmartHireX v2.0 implements an enterprise-grade label extraction system based on 
 
 ## Architecture
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│             TIER 1: EXPLICIT (100% Confidence)              │
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     TIER 1: EXPLICIT (100% Confidence)          │
 │  Developer-provided semantics - always check first              │
 ├─────────────────────────────────────────────────────────────────┤
 │  1. autocomplete attribute    → "given-name" → "First Name"    │
@@ -194,6 +194,20 @@ if (/H[1-3]/.test(tag)) score -= 40;
 ```
 
 ---
+
+## Key Protections
+
+### 1. aria-labelledby Before aria-label
+Chrome and accessibility APIs prioritize `aria-labelledby` because it references visible DOM text, while `aria-label` is often generic.
+
+### 2. Iterate All element.labels
+Some forms have multiple labels (helper + primary + validation). We iterate all instead of just `[0]`.
+
+### 3. Guard section-* Tokens
+```html
+autocomplete="section-work email"
+```
+The `section-work` token is NOT a label - Chrome ignores it too.
 
 ### 4. PRECEDING vs FOLLOWING
 Fixed bug: Labels must be BEFORE inputs, not after.

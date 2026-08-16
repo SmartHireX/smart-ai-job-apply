@@ -57,6 +57,7 @@
                 "autofill/core/constants.js",
                 "shared/utils/ai-client.js",
                 "shared/utils/resume-manager.js",
+                "shared/utils/nova-chat-core.js",
                 "shared/utils/form-extractor.js",
                 "shared/utils/form-analyzer.js",
                 "autofill/ui/sidebar/widget-overlay.js",

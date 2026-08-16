@@ -53,213 +53,162 @@
 
 SmartHireX uses a **3-Tier Enterprise Architecture** for form detection:
 
-```text
-┌───────────────────────────────────────────────────────────────────┐
-│              TIER 1: EXPLICIT HTML (100% Confidence)              │
-│ ┌───────────────────────────────────────────────────────────────┐ │
-│ │ • autocomplete attribute       • aria-labelledby (Priority)   │ │
-│ │ • element.labels               • aria-label                   │ │
-│ │ • label[for="id"]              • aria-describedby             │ │
-│ └───────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────┬─────────────────────────────────┘
-                                  ▼
-┌───────────────────────────────────────────────────────────────────┐
-│              TIER 2: SEMANTIC HINTS (80-95% Confidence)           │
-│ ┌───────────────────────────────────────────────────────────────┐ │
-│ │ • data-label / data-testid     • Table column headers         │ │
-│ │ • Fieldset legend (Groups)     • placeholder / title          │ │
-│ └───────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────┬─────────────────────────────────┘
-                                  ▼
-┌───────────────────────────────────────────────────────────────────┐
-│              TIER 3: VISUAL HEURISTICS (40-70% Confidence)        │
-│ ┌───────────────────────────────────────────────────────────────┐ │
-│ │ • Structural boundary search   • Previous sibling text        │ │
-│ │ • Humanized name/id fallback   • Parent text nodes            │ │
-│ └───────────────────────────────────────────────────────────────┘ │
-└───────────────────────────────────────────────────────────────────┘
+```
+TIER 1: Explicit HTML (100% confidence)
+├── autocomplete attribute
+├── element.labels
+├── label[for="id"]
+├── aria-labelledby (priority over aria-label)
+└── aria-label / aria-describedby
+
+TIER 2: Semantic Hints (80-95% confidence)
+├── data-label, data-testid
+├── fieldset legend (groups only)
+├── table column headers
+└── placeholder / title
+
+TIER 3: Visual Heuristics (40-70% confidence)
+├── Structural boundary search
+├── Previous sibling text
+└── Humanized name/id fallback
 ```
 
 ### Pipeline Flow
 
-```text
-  User Visits Job Portal
-           │
-           ▼
-┌─────────────────────┐
-│  MUTATION OBSERVER  │ ◄───(Detects New Inputs)
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐      ┌───────────────────────────┐
-│   AUTOFILL SCANNER  │ ────►│    FEATURE EXTRACTION     │
-│  (Shadow DOM Aware) │      │ (95-dim Vector Analysis)  │
-└─────────────────────┘      └─────────────┬─────────────┘
-                                           │
-                       ┌───────────────────┴───────────────────┐
-                       ▼                                       ▼
-┌─────────────────────────────────────┐     ┌─────────────────────────────────────┐
-│          HEURISTIC ENGINE           │     │          NEURAL V8 MODEL            │
-│  (Regex & Pattern Matchers - <1ms)  │     │   (TensorFlow.js Sigmoid - ~3ms)    │
-└──────────────────┬──────────────────┘     └──────────────────┬──────────────────┘
-                   │                                           │
-                   └───────────────────┬───────────────────────┘
-                                       │
-                                       ▼
-                             ┌───────────────────┐
-                             │  5-TIER ARBITER   │
-                             │ (Decision Matrix) │
-                             └─────────┬─────────┘
-                                       │
-                      ┌────────────────┴─────────────────┐
-                      ▼                                  ▼
-             (High Confidence)                      (Ambiguous)
-                      │                                  │
-                      │                        ┌────────────────────┐
-                      │                        │   GEMINI AI FLASH  │
-                      │                        │ (Semantic Resolve) │
-                      │                        └─────────┬──────────┘
-                      │                                  │
-                      ▼                                  ▼
-            ┌───────────────────┐              ┌───────────────────┐
-            │    FINAL LABEL    │◄─────────────│   RESOLVED LABEL  │
-            └─────────┬─────────┘              └───────────────────┘
-                      │
-                      ▼
-            ┌───────────────────┐
-            │  EXECUTION ENGINE │
-            │ (Stealth Inject)  │
-            └─────────┬─────────┘
-                      │
-                      ▼
-            ┌───────────────────┐      ┌─────────────────────────┐
-            │   FORM OBSERVER   │─────►│     INTERACTION LOG     │
-            │  (Learns Changes) │      │ (Update Self-Learn DB)  │
-            └───────────────────┘      └─────────────────────────┘
+```
+Form Detection → Label Extraction → ML Classification → Data Resolution → Execution
+                                          ↓
+                    InteractionLog → RuleEngine → AI (Gemini)
 ```
 
-### 📊 Classification Accuracy
+### Classification Accuracy
 
-| Component | Accuracy | Latency | Coverage |
-| :--- | :---: | :---: | :---: |
-| **HeuristicEngine** | 77.87% | < 1ms | 90.51% |
-| **NeuralClassifier v8** | 65.22% | ~ 3ms | 100.0% |
-| **Hybrid Ensemble** | **75-78%** | **~ 3ms** | **100.0%** |
-| **Label Extraction** | 95%+ | < 1ms | 100.0% |
+| Component | Accuracy | Speed | Coverage |
+|-----------|----------|-------|----------|
+| **HeuristicEngine** | 77.87% | <1ms | 90.51% |
+| **NeuralClassifier v8** | 65.22% | ~3ms | 100% |
+| **Hybrid Ensemble** | 75-78% | ~3ms | 100% |
+| **Label Extraction** | 95%+ | <1ms | 100% |
 
 ---
 
-## 📁 Enterprise Project Structure
+## 📁 Project Structure
 
-```text
-┌── autofill/
-│   ├── core/                    # PipelineOrchestrator & System Bootstrap
-│   ├── services/extraction/     # FormDetector & SectionGrouper
+```
+smart-ai-job-apply/
+├── autofill/
+│   ├── core/                    # PipelineOrchestrator, Bootstrap
+│   ├── services/extraction/     # FormDetector, SectionGrouper
 │   ├── domains/
-│   │   ├── inference/           # Hybrid Ensemble (Neural + Heuristic)
-│   │   ├── heuristics/          # InteractionLog & GlobalMemory
-│   │   ├── profile/             # RuleEngine & CompositeFieldManager
-│   │   └── memory/              # High-Perf Indexing Service
-│   ├── workflows/               # AI-Fill & Instant-Fill Orchestration
-│   ├── handlers/                # Specialized Logic (e.g., DateHandler)
-│   └── ui/                      # React-Lite Sidebar Components
-├── popup/                       # Extension Entry Point UI
-├── options/                     # Enterprise Settings & API Management
-├── background/                  # Service Worker (Background Persistence)
-├── common/                      # Shared Telemetry & Messaging Utils
-└── docs/                        # Technical Architecture Specs
+│   │   ├── inference/           # HybridClassifier, Neural, Heuristic
+│   │   ├── heuristics/          # InteractionLog, GlobalMemory
+│   │   ├── profile/             # RuleEngine, CompositeFieldManager
+│   │   └── memory/              # IndexingService
+│   ├── workflows/               # AI Fill, Instant Fill
+│   ├── handlers/                # DateHandler
+│   └── ui/                      # Sidebar components
+│
+├── popup/                       # Extension popup UI
+├── options/                     # Settings page
+├── background/                  # Service worker
+├── common/                      # Shared utilities
+└── docs/                        # Documentation
 ```
 
 ---
 
-## 📚 Documentation Matrix
+## 📚 Documentation
 
-### 🚀 Getting Started
-| Resource | Scope |
-| :--- | :--- |
-| [Installation Guide](./docs/guides/INSTALLATION.md) | Step-by-step deployment instructions |
-| [Quick Start Guide](./docs/guides/QUICK_START.md) | 5-minute configuration walkthrough |
+### Quick Start
+| Document | Description |
+|----------|-------------|
+| [Installation Guide](./docs/guides/INSTALLATION.md) | How to install the extension |
+| [Quick Start](./docs/guides/QUICK_START.md) | Get started in 5 minutes |
 
-### 🏛️ Engineering Specs
-| Resource | Core Technology |
-| :--- | :--- |
-| [Architecture v2.0](./docs/architecture/ARCHITECTURE.md) | Complete system design & data flow |
-| [Autofill Overview](./docs/autofill/overview.md) | High-level system philosophy |
-| [Neural Engine](./docs/autofill/neural-classifier.md) | Deep Learning model architecture |
-| [Heuristic Engine](./docs/autofill/heuristic-engine.md) | Pattern matching & regex strategy |
-| [Caching Layer](./docs/autofill/cache-system.md) | Persistence & Retrieval optimization |
-
----
-
-## 🎯 Platform Compatibility
-
-Tested and certified for major Enterprise ATS platforms:
-
-```text
-┌─────────────────┬─────────────────┬─────────────────┐
-│ ✅ Greenhouse   │ ✅ Lever        │ ✅ Workday      │
-├─────────────────┼─────────────────┼─────────────────┤
-│ ✅ Ashby        │ ✅ Taleo        │ ✅ iCIMS        │
-├─────────────────┼─────────────────┼─────────────────┤
-│ ✅ BambooHR     │ ✅ SmartRecruit │ ✅ Custom Forms │
-└─────────────────┴─────────────────┴─────────────────┘
-```
+### Technical Documentation
+| Document | Description |
+|----------|-------------|
+| [Architecture](./docs/architecture/ARCHITECTURE.md) | Complete system design (v2.0) |
+| [Autofill Overview](./docs/autofill/overview.md) | System overview and data flow |
+| [Neural Classifier](./docs/autofill/neural-classifier.md) | Deep learning model details |
+| [Heuristic Engine](./docs/autofill/heuristic-engine.md) | Pattern matching documentation |
+| [Cache System](./docs/autofill/cache-system.md) | Caching strategy |
 
 ---
 
-## 📉 Performance Benchmarks
+## 🎯 Supported Platforms
 
-| Metric | Target | Actual | Status |
-| :--- | :---: | :---: | :---: |
-| **Classification Latency** | < 10ms | **3ms** | ⚡ Ultra-fast |
-| **Form Fill Throughput** | 10 f/sec | **25 f/sec** | 🚀 High-perf |
-| **Memory Footprint** | < 50MB | **14MB** | 🍃 Lightweight |
-| **Cache Hit Efficiency** | > 80% | **85%** | 🧠 High-IQ |
+Tested and optimized for:
+- ✅ Greenhouse
+- ✅ Lever
+- ✅ Workday
+- ✅ Ashby
+- ✅ Taleo
+- ✅ iCIMS
+- ✅ BambooHR
+- ✅ Custom HTML forms
 
 ---
 
-## 🛠️ Engineering & Development
+## 📊 Performance
 
-### Local Validation
+| Metric | Value |
+|--------|-------|
+| **Extension Size** | ~3 MB |
+| **Classification Speed** | 3ms per field |
+| **Form Fill Time** | 2-5 seconds (50 fields) |
+| **Memory Usage** | ~14 MB |
+| **Cache Hit Rate** | 85% |
+
+---
+
+## 🔧 Development
+
+### Testing
 ```bash
-# Provision test environment
+# Open test form
 open test/all-input-types-test.html
 
-# Monitor real-time extraction
-# Console Scope: [FormDetector] Enterprise Label Extraction v2.0 active
+# Verify label extraction in console
+# Look for: [FormDetector] Enterprise Label Extraction v2.0 loaded
 ```
 
-### Critical Path Filemap
+### Key Files
 
-| Module | Critical File | Responsibility |
-| :--- | :--- | :--- |
-| **Orchestration** | `autofill/core/PipelineOrchestrator.js` | Pipeline state management |
-| **Extraction** | `autofill/services/extraction/form-detector.js` | 3-tier signal extraction |
-| **Inference** | `autofill/domains/inference/HybridClassifier.js` | Ensemble arbitration |
-| **Memory** | `autofill/domains/heuristics/InteractionLog.js` | User-driven self-learning |
-| **Logic** | `autofill/domains/profile/RuleEngine.js` | Profile data mapping |
-
----
-
-## 🔒 Security & Privacy Posture
-
-- **Zero-Cloud Storage**: 100% of PII stays in your local Chrome Sandbox.
-- **Isolation Policy**: No telemetry, no phone-home, no analytics tracking.
-- **BYOK (Bring Your Own Key)**: Full ownership of AI processing via personal Gemini keys.
-- **Audit-Ready**: Transparent logic with open-source heuristic patterns.
+| File | Description |
+|------|-------------|
+| `autofill/core/PipelineOrchestrator.js` | Main pipeline engine |
+| `autofill/services/extraction/form-detector.js` | 3-tier label extraction |
+| `autofill/domains/inference/HybridClassifier.js` | Ensemble classification |
+| `autofill/domains/heuristics/InteractionLog.js` | User action memory |
+| `autofill/domains/profile/RuleEngine.js` | Resume data matching |
 
 ---
 
-## 🤝 Collaboration & Contribution
+## 🔒 Privacy & Security
 
-We welcome contributions to the SmartHireX core:
-- **Dataset Expansion**: Contributing anonymized form samples.
-- **Regex Logic**: Refining HeuristicEngine patterns.
-- **ATS Adapters**: Optimizing for new job portal architectures.
-- **Security**: Hardening the local storage vault.
+- **Local Storage Only**: All data stored in Chrome's local storage
+- **No Telemetry**: No usage tracking or analytics
+- **Your API Key**: You control your Gemini API key
+- **Open Source**: Full source code visibility
 
 ---
 
+## 🤝 Contributing
+
+Contributions welcome! Key areas:
+- **Training Data**: Real-world form samples
+- **Patterns**: New regex patterns for HeuristicEngine
+- **Platform Support**: Testing on new ATS platforms
+- **Documentation**: Improvements and clarifications
+
+---
+
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+---
 
 ## 🔗 Links
 
