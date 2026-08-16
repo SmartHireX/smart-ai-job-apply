@@ -189,10 +189,12 @@ Possible outputs:
 {"intent":"list_jobs"}
 {"intent":"save_page"}
 {"intent":"list_pages"}
+{"intent":"scan_jobs"}
 {"intent":"multi","intents":[<obj>,<obj>]}
 {"intent":"chat"}
 
-Use {"intent":"compatibility"} when the user asks about job fit, match, compatibility, suitability, how well they match, whether they qualify, or anything comparing themselves to a job.
+Use {"intent":"compatibility"} when the user asks about job fit, match, compatibility, suitability, how well they match, whether they qualify, or anything comparing themselves to a job on the CURRENT page.
+Use {"intent":"scan_jobs"} when the user asks to scan all jobs on this page, check multiple jobs, show which jobs I can apply for, scan job listings, check all jobs for fit, rank these jobs, find best matching jobs, which jobs match me.
 Use {"intent":"save_job"} when the user says save this job, bookmark this, add to tracker, remember this job.
 Use {"intent":"list_jobs"} when the user says show saved jobs, my job list, tracked jobs, show my applications, job tracker.
 Use {"intent":"save_page"} when the user says save this page, bookmark this page, remember this link, save this link, add to reading list, save this article.

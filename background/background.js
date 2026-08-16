@@ -228,6 +228,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return false;
     }
 
+    // Extract page content from a URL by opening it in a background tab, scraping, then closing
+    if (message.type === 'EXTRACT_JOB_CONTENT') {
+        (async () => {
+            let tab;
+            try {
+                tab = await chrome.tabs.create({ url: message.url, active: false });
+                // Wait for the tab to finish loading (max 12s)
+                await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => reject(new Error('timeout')), 12000);
+                    chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+                        if (tabId === tab.id && info.status === 'complete') {
+                            chrome.tabs.onUpdated.removeListener(listener);
+                            clearTimeout(timeout);
+                            resolve();
+                        }
+                    });
+                });
+                // Small settle delay for JS-rendered pages
+                await new Promise(r => setTimeout(r, 800));
+                const [result] = await chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: () => {
+                        const clone = document.body.cloneNode(true);
+                        clone.querySelectorAll('script,style,nav,footer,header').forEach(e => e.remove());
+                        return {
+                            title: document.title,
+                            text: (clone.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 6000)
+                        };
+                    }
+                });
+                sendResponse({ success: true, data: result?.result || { title: '', text: '' } });
+            } catch (e) {
+                sendResponse({ success: false, error: e.message });
+            } finally {
+                if (tab?.id) chrome.tabs.remove(tab.id).catch(() => {});
+            }
+        })();
+        return true;
+    }
+
     // Open popup and switch to the fill-form tab
     if (message.type === 'OPEN_POPUP_FILL') {
         chrome.storage.local.set({ nova_popup_tab: 'fill' });
