@@ -1610,14 +1610,19 @@ One sentence: should they apply, and what should they emphasise or address?`;
     async function ghostTypeAI(bubble, text) {
         const chars = text.split('');
         const SPEED_MS = 18;
+        const RENDER_EVERY = 4; // re-render formatted HTML every N chars
         let typed = '';
+        let i = 0;
         for (const ch of chars) {
             typed += ch;
-            bubble.textContent = typed;
-            messagesEl.scrollTop = messagesEl.scrollHeight;
+            i++;
+            if (i % RENDER_EVERY === 0) {
+                bubble.innerHTML = fmt(typed);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
             await new Promise(r => setTimeout(r, SPEED_MS));
         }
-        // Swap plain text for fully formatted HTML once typing completes
+        // Final render — always fully formatted
         bubble.innerHTML = fmt(text);
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }

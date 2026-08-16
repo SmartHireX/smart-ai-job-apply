@@ -427,11 +427,16 @@ function appendMessage(role, text, instant = false) {
 
 async function ghostTypePopup(bubble, text) {
     const SPEED_MS = 18;
+    const RENDER_EVERY = 4;
     let typed = '';
+    let i = 0;
     for (const ch of text.split('')) {
         typed += ch;
-        bubble.textContent = typed;
-        messagesEl.scrollTop = messagesEl.scrollHeight;
+        i++;
+        if (i % RENDER_EVERY === 0) {
+            bubble.innerHTML = formatAIText(typed);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
         await new Promise(r => setTimeout(r, SPEED_MS));
     }
     bubble.innerHTML = formatAIText(text);
