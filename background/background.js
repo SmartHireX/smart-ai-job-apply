@@ -209,6 +209,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    // Re-inject chat widget after navigation (called by bootstrap on pages with Trusted Types CSP)
+    if (message.type === 'INJECT_CHAT_WIDGET') {
+        (async () => {
+            try {
+                const tabId = sender.tab?.id;
+                if (!tabId) return;
+                // Skip if already present
+                const [result] = await chrome.scripting.executeScript({
+                    target: { tabId },
+                    func: () => !!document.getElementById('nova-chat-widget')
+                });
+                if (result?.result) return;
+                await chrome.scripting.executeScript({ target: { tabId }, files: ['shared/utils/nova-chat-core.js'] });
+                await chrome.scripting.executeScript({ target: { tabId }, files: ['autofill/ui/chat/chat-widget.js'] });
+            } catch (e) {}
+        })();
+        return false;
+    }
+
+    // Open popup and switch to the fill-form tab
+    if (message.type === 'OPEN_POPUP_FILL') {
+        chrome.storage.local.set({ nova_popup_tab: 'fill' });
+        chrome.action.openPopup().catch(() => {});
+        return false;
+    }
+
     // Navigate the active tab to a URL (proper MV3 pattern — avoids CSP issues)
     if (message.type === 'NAVIGATE') {
         (async () => {
@@ -253,7 +279,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     const selected = info.selectionText.trim().slice(0, 1000);
 
     try {
-        // Inject widget if not already on the page
+        // Inject core first, then widget
+        await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['shared/utils/nova-chat-core.js']
+        });
         await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             files: ['autofill/ui/chat/chat-widget.js']

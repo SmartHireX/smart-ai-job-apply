@@ -173,6 +173,13 @@ async function checkSetup() {
             isReady = true;
             showReadyUI();
             restoreHistory();
+            // Check if we were asked to open on the fill tab (from widget menu)
+            chrome.storage.local.get(['nova_popup_tab'], r => {
+                if (r.nova_popup_tab === 'fill') {
+                    chrome.storage.local.remove('nova_popup_tab');
+                    switchTab('fill');
+                }
+            });
             await Promise.all([loadPageContext(), detectForms()]);
         } else {
             showSetupUI(status);

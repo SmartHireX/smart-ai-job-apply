@@ -442,6 +442,10 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
                             Saved Pages
                         </button>
+                        <button class="nw-menu-item" id="nw-menu-fill">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            Fill Form
+                        </button>
                         <button class="nw-menu-item" id="nw-menu-clear">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                             Clear chat
@@ -685,6 +689,11 @@
     });
 
     document.getElementById('nw-menu-close').addEventListener('click', () => { closeMenu(); minimize(); });
+
+    document.getElementById('nw-menu-fill').addEventListener('click', () => {
+        closeMenu();
+        chrome.runtime.sendMessage({ type: 'OPEN_POPUP_FILL' });
+    });
 
     document.getElementById('nw-menu-clear').addEventListener('click', () => {
         closeMenu();
