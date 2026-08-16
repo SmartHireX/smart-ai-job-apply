@@ -1067,8 +1067,8 @@ One sentence: should they apply, and what should they emphasise or address?`;
                     </div>
                     <div style="font-size:11px;color:#9ca3af;margin-top:4px;">Say <strong>"show my saved jobs"</strong> to view all tracked jobs.</div>
                 </div>
-                <div class="nw-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
             </div>`;
+        wrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(Date.now()));
         messagesEl.appendChild(wrap);
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
@@ -1078,7 +1078,7 @@ One sentence: should they apply, and what should they emphasise or address?`;
         const wrap = document.createElement('div');
         wrap.className = 'nw-msg ai';
 
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const ts = Date.now();
 
         if (!jobs.length) {
             wrap.innerHTML = `
@@ -1088,8 +1088,8 @@ One sentence: should they apply, and what should they emphasise or address?`;
                         <div class="nw-jt-header">📋 Job Tracker (0 jobs)</div>
                         <div class="nw-jt-empty">No jobs saved yet.<br>Browse a job posting and say <strong>"save this job"</strong>.</div>
                     </div>
-                    <div class="nw-time">${time}</div>
                 </div>`;
+            wrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(ts));
             messagesEl.appendChild(wrap);
             messagesEl.scrollTop = messagesEl.scrollHeight;
             return;
@@ -1151,14 +1151,10 @@ One sentence: should they apply, and what should they emphasise or address?`;
             bubble.appendChild(card);
         });
 
-        const timeEl = document.createElement('div');
-        timeEl.className = 'nw-time';
-        timeEl.textContent = time;
-
         const msgWrap = document.createElement('div');
         msgWrap.className = 'nw-msg-wrap';
         msgWrap.appendChild(bubble);
-        msgWrap.appendChild(timeEl);
+        msgWrap.appendChild(makeTimeEl(ts));
 
         const avatarEl = document.createElement('div');
         avatarEl.className = 'nw-avatar';
@@ -1508,17 +1504,27 @@ One sentence: should they apply, and what should they emphasise or address?`;
     }
 
     function appendMsgRaw(role, html) {
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const ts = Date.now();
         const wrap = document.createElement('div');
         wrap.className = `nw-msg ${role}`;
-        wrap.innerHTML = `<div class="nw-avatar">N</div><div><div class="nw-bubble">${html}</div><div class="nw-time">${time}</div></div>`;
+        const avatar = document.createElement('div');
+        avatar.className = 'nw-avatar';
+        avatar.textContent = 'N';
+        const body = document.createElement('div');
+        const bubble = document.createElement('div');
+        bubble.className = 'nw-bubble';
+        bubble.innerHTML = html;
+        body.appendChild(bubble);
+        body.appendChild(makeTimeEl(ts));
+        wrap.appendChild(avatar);
+        wrap.appendChild(body);
         messagesEl.appendChild(wrap);
         messagesEl.scrollTop = messagesEl.scrollHeight;
         return wrap;
     }
 
     function appendMsg(role, text, instant = false) {
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const ts = Date.now();
         const wrap = document.createElement('div');
         wrap.className = `nw-msg ${role}`;
         if (role === 'ai') {
@@ -1526,13 +1532,13 @@ One sentence: should they apply, and what should they emphasise or address?`;
                 <div class="nw-avatar">N</div>
                 <div class="nw-msg-wrap">
                     <div class="nw-bubble"></div>
-                    <div class="nw-time">${time}</div>
                     <button class="nw-copy-btn" title="Copy">
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                         </svg>
                     </button>
                 </div>`;
+            wrap.querySelector('.nw-msg-wrap').insertBefore(makeTimeEl(ts), wrap.querySelector('.nw-copy-btn'));
             const bubble = wrap.querySelector('.nw-bubble');
             const copyBtn = wrap.querySelector('.nw-copy-btn');
             copyBtn.addEventListener('click', () => {
@@ -1558,7 +1564,6 @@ One sentence: should they apply, and what should they emphasise or address?`;
                 <div class="nw-avatar" style="background:#e5e7eb;color:#6b7280;">U</div>
                 <div>
                     <div class="nw-bubble">${esc(text)}</div>
-                    <div class="nw-time">${time}</div>
                 </div>
                 <button class="nw-edit-btn" title="Edit message">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -1566,6 +1571,7 @@ One sentence: should they apply, and what should they emphasise or address?`;
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                 </button>`;
+            wrap.querySelector('div').appendChild(makeTimeEl(ts));
             wrap.querySelector('.nw-edit-btn').addEventListener('click', () => {
                 editMessageFrom(wrap, text);
             });
@@ -1627,9 +1633,37 @@ One sentence: should they apply, and what should they emphasise or address?`;
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    // fmt is aliased from NovaChatCore (with chrome navigate wired) at top of file
+    // ── Relative timestamps ───────────────────────────────────────────────────
+    function relativeTime(ts) {
+        const diff = Math.floor((Date.now() - ts) / 1000);
+        if (diff < 10)  return 'just now';
+        if (diff < 60)  return `${diff}s ago`;
+        if (diff < 120) return '1m ago';
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        const d = new Date(ts);
+        const now = new Date();
+        if (d.toDateString() === now.toDateString()) {
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+        if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+        return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
 
-    // esc + fmt aliased from NovaChatCore at top of file
+    // Refresh all visible timestamps every 30s so "just now" → "2m ago" etc.
+    setInterval(() => {
+        messagesEl.querySelectorAll('.nw-time[data-ts]').forEach(el => {
+            el.textContent = relativeTime(+el.dataset.ts);
+        });
+    }, 30000);
+
+    function makeTimeEl(ts) {
+        const el = document.createElement('div');
+        el.className = 'nw-time';
+        el.dataset.ts = ts;
+        el.textContent = relativeTime(ts);
+        return el;
+    }
 
     function showThinking() {
         const id = 'nw-think-' + Date.now();
