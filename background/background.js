@@ -228,38 +228,67 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return false;
     }
 
-    // Extract page content from a URL by opening it in a background tab, scraping, then closing
+    // Extract page content from a URL by opening it in a background tab, scraping, then closing.
+    // Sends status updates to the requesting tab via chrome.tabs.sendMessage so the widget
+    // can show live progress (opening → reading → done / error).
     if (message.type === 'EXTRACT_JOB_CONTENT') {
+        const originTabId = sender.tab?.id;
+        const jobUrl      = message.url;
+        const jobIndex    = message.index;
+
+        const notify = (status, extra = {}) => {
+            if (!originTabId) return;
+            chrome.tabs.sendMessage(originTabId, {
+                type: 'JOB_SCAN_STATUS',
+                index: jobIndex,
+                status,   // 'opening' | 'reading' | 'done' | 'error'
+                url: jobUrl,
+                ...extra
+            }).catch(() => {});
+        };
+
         (async () => {
             let tab;
             try {
-                tab = await chrome.tabs.create({ url: message.url, active: false });
-                // Wait for the tab to finish loading (max 12s)
+                notify('opening');
+                tab = await chrome.tabs.create({ url: jobUrl, active: false });
+
+                // Wait for load (max 15s)
                 await new Promise((resolve, reject) => {
-                    const timeout = setTimeout(() => reject(new Error('timeout')), 12000);
-                    chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-                        if (tabId === tab.id && info.status === 'complete') {
+                    const timeout = setTimeout(() => reject(new Error('Page load timeout')), 15000);
+                    const listener = (tabId, info) => {
+                        if (tabId !== tab.id) return;
+                        if (info.status === 'complete') {
                             chrome.tabs.onUpdated.removeListener(listener);
                             clearTimeout(timeout);
                             resolve();
                         }
-                    });
+                    };
+                    chrome.tabs.onUpdated.addListener(listener);
                 });
-                // Small settle delay for JS-rendered pages
-                await new Promise(r => setTimeout(r, 800));
+
+                // Let JS-rendered content settle
+                await new Promise(r => setTimeout(r, 1000));
+                notify('reading');
+
                 const [result] = await chrome.scripting.executeScript({
                     target: { tabId: tab.id },
                     func: () => {
                         const clone = document.body.cloneNode(true);
-                        clone.querySelectorAll('script,style,nav,footer,header').forEach(e => e.remove());
+                        clone.querySelectorAll('script,style,nav,footer,header,[role="banner"],[role="navigation"]').forEach(e => e.remove());
                         return {
                             title: document.title,
-                            text: (clone.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 6000)
+                            url:   location.href,
+                            text:  (clone.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 6000)
                         };
                     }
                 });
-                sendResponse({ success: true, data: result?.result || { title: '', text: '' } });
+
+                const data = result?.result || { title: '', url: jobUrl, text: '' };
+                notify('done', { data });
+                sendResponse({ success: true, data });
             } catch (e) {
+                notify('error', { error: e.message });
                 sendResponse({ success: false, error: e.message });
             } finally {
                 if (tab?.id) chrome.tabs.remove(tab.id).catch(() => {});

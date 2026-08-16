@@ -6,6 +6,7 @@
     "description": "Nova Apply: AI-powered job application form filler. Uses your Gemini API key to intelligently fill forms with your resume data.",
     "permissions": [
         "activeTab",
+        "tabs",
         "storage",
         "scripting",
         "contextMenus"

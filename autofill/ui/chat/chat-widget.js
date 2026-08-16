@@ -381,34 +381,41 @@
         }
         .nw-job-remove:hover { color: #ef4444; }
         /* ── Bulk job scanner ── */
-        .nw-scan-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-        .nw-scan-title  { font-size:13px; font-weight:700; color:#111827; }
+        .nw-scan-header   { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+        .nw-scan-title    { font-size:13px; font-weight:700; color:#111827; }
         .nw-scan-progress { font-size:11px; color:#9ca3af; }
         .nw-scan-bar-wrap { height:4px; background:#f3f4f6; border-radius:2px; margin-bottom:10px; overflow:hidden; }
-        .nw-scan-bar  { height:100%; background:#6366f1; border-radius:2px; transition:width 0.3s ease; }
-        .nw-scan-list { display:flex; flex-direction:column; gap:8px; }
-        .nw-scan-row  { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; background:#f9fafb; border-radius:8px; border:1px solid #f3f4f6; }
-        .nw-scan-row.nw-scan-loading { align-items:center; }
-        .nw-scan-row.nw-scan-error   { opacity:0.5; }
-        .nw-scan-spinner {
-            width:14px; height:14px; border:2px solid #e5e7eb; border-top-color:#6366f1;
-            border-radius:50%; flex-shrink:0; animation:nw-spin 0.8s linear infinite;
-        }
+        .nw-scan-bar      { height:100%; background:#6366f1; border-radius:2px; transition:width 0.4s ease; }
+        .nw-scan-list     { display:flex; flex-direction:column; gap:6px; }
+        .nw-scan-row      { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; background:#f9fafb; border-radius:8px; border:1px solid #f3f4f6; transition:border-color 0.2s; }
+        .nw-scan-row[data-state="opening"] { border-color:#c7d2fe; background:#eef2ff; }
+        .nw-scan-row[data-state="reading"] { border-color:#c7d2fe; background:#eef2ff; }
+        .nw-scan-row[data-state="scoring"] { border-color:#fde68a; background:#fffbeb; }
+        .nw-scan-row[data-state="done"]    { border-color:#d1fae5; background:#f0fdf4; }
+        .nw-scan-row[data-state="error"]   { opacity:0.5; }
+        .nw-scan-icon     { flex-shrink:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+        .nw-scan-dot      { width:10px; height:10px; border-radius:50%; display:inline-block; }
+        .nw-scan-dot.queued { background:#e5e7eb; }
+        .nw-scan-dot.error  { background:#ef4444; }
+        .nw-scan-spinner  { width:16px; height:16px; border:2px solid #e5e7eb; border-radius:50%; flex-shrink:0; animation:nw-spin 0.8s linear infinite; }
+        .nw-scan-spinner        { border-top-color:#6366f1; }
+        .nw-scan-spinner.reading { border-top-color:#6366f1; border-right-color:#a5b4fc; }
+        .nw-scan-spinner.scoring { border-top-color:#f59e0b; border-right-color:#fcd34d; }
         @keyframes nw-spin { to { transform:rotate(360deg); } }
         .nw-scan-score-badge {
-            flex-shrink:0; width:36px; height:36px; border-radius:8px; display:flex;
-            align-items:center; justify-content:center; font-size:11px; font-weight:700;
-            color:#fff; line-height:1.1; text-align:center;
+            width:32px; height:32px; border-radius:8px; display:flex; flex-direction:column;
+            align-items:center; justify-content:center; font-size:12px; font-weight:800;
+            color:#fff; line-height:1; text-align:center; flex-shrink:0;
         }
         .nw-scan-job-info  { flex:1; min-width:0; }
-        .nw-scan-job-name  { font-size:12px; font-weight:600; color:#111827; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .nw-scan-job-title { font-size:12px; color:#6b7280; }
+        .nw-scan-job-name  { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:1px; }
+        .nw-scan-url       { font-size:10px; color:#9ca3af; margin-bottom:2px; }
         .nw-scan-verdict   { font-size:11px; color:#6b7280; line-height:1.4; margin-bottom:4px; }
         .nw-scan-tags      { display:flex; flex-wrap:wrap; gap:4px; }
         .nw-scan-tag       { font-size:10px; padding:2px 6px; border-radius:4px; font-weight:500; }
         .nw-scan-tag.match { background:#f0fdf4; color:#16a34a; }
         .nw-scan-tag.gap   { background:#fef2f2; color:#dc2626; }
-        .nw-scan-summary   { margin-top:8px; padding:8px 10px; background:#eef2ff; border-radius:8px; font-size:11px; color:#4f46e5; line-height:1.5; }
+        .nw-scan-summary   { margin-top:10px; padding:8px 10px; background:#eef2ff; border-radius:8px; font-size:11px; color:#4f46e5; line-height:1.8; }
         /* ── Saved pages ── */
         .nw-sp-card {
             background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
@@ -1049,24 +1056,18 @@ One sentence: should they apply, and what should they emphasise or address?`;
     // ── Bulk Job Scanner ──────────────────────────────────────────────────────
 
     function scrapeJobLinks() {
-        // Collect unique job posting links from the current page
         const seen = new Set();
         const results = [];
-        const host = location.hostname;
+        const rootHost = location.hostname.split('.').slice(-2).join('.');
 
-        // Platform-specific selectors first
         const SELECTORS = [
-            // LinkedIn
             '.jobs-search__results-list a[href*="/jobs/view/"]',
             'a.job-card-list__title',
             'a.job-card-container__link',
-            // Indeed
             'a.jcs-JobTitle',
             'a[data-jk]',
             'h2.jobTitle a',
-            // Glassdoor
             'a[data-test="job-link"]',
-            // Greenhouse, Lever, etc.
             'a[href*="/jobs/"]',
             'a[href*="/job/"]',
             'a[href*="job-detail"]',
@@ -1077,11 +1078,9 @@ One sentence: should they apply, and what should they emphasise or address?`;
             document.querySelectorAll(sel).forEach(a => {
                 try {
                     const href = a.href;
-                    if (!href || seen.has(href)) return;
-                    if (href.startsWith('javascript:') || href === location.href) return;
-                    // Must be an absolute URL on the same host or a known job board
+                    if (!href || seen.has(href) || href.startsWith('javascript:') || href === location.href) return;
                     const url = new URL(href);
-                    if (!url.hostname.includes(host.split('.').slice(-2).join('.'))) return;
+                    if (!url.hostname.includes(rootHost)) return;
                     const label = (a.textContent || a.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
                     if (!label) return;
                     seen.add(href);
@@ -1090,17 +1089,14 @@ One sentence: should they apply, and what should they emphasise or address?`;
             });
         }
 
-        // Fallback: any link whose text looks like a job title
         if (results.length === 0) {
             document.querySelectorAll('a[href]').forEach(a => {
                 try {
                     const href = a.href;
                     if (!href || seen.has(href) || href === location.href) return;
-                    const url = new URL(href);
-                    if (url.hostname !== location.hostname) return;
+                    if (new URL(href).hostname !== location.hostname) return;
                     const label = (a.textContent || '').replace(/\s+/g, ' ').trim();
                     if (label.length < 5 || label.length > 100) return;
-                    // Heuristic: looks like a job title (has a noun + level or tech keyword)
                     if (!/engineer|developer|designer|manager|analyst|lead|senior|junior|intern|product|marketing|sales|operations|director|coordinator|specialist|architect|scientist/i.test(label)) return;
                     seen.add(href);
                     results.push({ url: href, title: label });
@@ -1108,24 +1104,73 @@ One sentence: should they apply, and what should they emphasise or address?`;
             });
         }
 
-        return results.slice(0, 15); // cap at 15 to avoid rate limits
+        return results.slice(0, 12);
     }
 
-    async function scoreSingleJob(jobUrl, resumeText) {
-        // Fetch job content via background (opens temp tab, scrapes, closes)
-        const data = await new Promise(resolve => {
-            try {
-                chrome.runtime.sendMessage({ type: 'EXTRACT_JOB_CONTENT', url: jobUrl }, result => {
-                    if (chrome.runtime.lastError) return resolve(null);
-                    resolve(result);
-                });
-            } catch { resolve(null); }
-        });
+    function scoreColor(s) {
+        if (s >= 8) return '#10b981';
+        if (s >= 6) return '#f59e0b';
+        return '#ef4444';
+    }
 
-        if (!data?.success || !data.data?.text) return null;
+    // Row states: queued → opening → reading → scoring → done / error
+    function setRowState(row, state, data = {}) {
+        const ICONS = {
+            queued:  `<span class="nw-scan-dot queued"></span>`,
+            opening: `<span class="nw-scan-spinner"></span>`,
+            reading: `<span class="nw-scan-spinner reading"></span>`,
+            scoring: `<span class="nw-scan-spinner scoring"></span>`,
+            done:    `<div class="nw-scan-score-badge" style="background:${scoreColor(data.score || 0)}">${data.score || '?'}<span style="font-size:8px">/10</span></div>`,
+            error:   `<span class="nw-scan-dot error"></span>`,
+        };
+        const STATUS_LABEL = {
+            queued:  'Queued',
+            opening: '🌐 Opening tab…',
+            reading: '📄 Reading page…',
+            scoring: '🧠 Scoring with AI…',
+            done:    '',
+            error:   '⚠ Could not load',
+        };
 
-        const { title: pageTitle, text: jobText } = data.data;
+        const icon = row.querySelector('.nw-scan-icon');
+        const statusEl = row.querySelector('.nw-scan-status');
 
+        if (icon) icon.innerHTML = ICONS[state] || '';
+        if (statusEl) {
+            if (state === 'done' && data.score) {
+                statusEl.innerHTML = `
+                    <div class="nw-scan-verdict">${esc(data.verdict || '')}</div>
+                    <div class="nw-scan-tags">
+                        ${data.match ? `<span class="nw-scan-tag match">✓ ${esc(data.match)}</span>` : ''}
+                        ${data.gap && data.gap.toLowerCase() !== 'none' ? `<span class="nw-scan-tag gap">✗ ${esc(data.gap)}</span>` : ''}
+                    </div>`;
+            } else {
+                statusEl.textContent = STATUS_LABEL[state] || '';
+            }
+        }
+
+        row.dataset.state = state;
+    }
+
+    function makeJobRow(job, index) {
+        const row = document.createElement('div');
+        row.className = 'nw-scan-row';
+        row.dataset.index = index;
+        row.dataset.state = 'queued';
+        row.innerHTML = `
+            <div class="nw-scan-icon"><span class="nw-scan-dot queued"></span></div>
+            <div class="nw-scan-job-info">
+                <div class="nw-scan-job-name">
+                    <a href="${esc(job.url)}" style="color:#111827;font-weight:600;font-size:12px;text-decoration:none;"
+                       title="${esc(job.url)}">${esc(job.title)}</a>
+                </div>
+                <div class="nw-scan-url">${esc(new URL(job.url).hostname.replace('www.',''))}</div>
+                <div class="nw-scan-status" style="font-size:11px;color:#9ca3af;margin-top:2px;">Queued</div>
+            </div>`;
+        return row;
+    }
+
+    async function scoreSingleJob(jobText, resumeText) {
         const prompt =
 `You are a career advisor. Score this job against the candidate's resume.
 
@@ -1137,30 +1182,16 @@ ${resumeText.slice(0, 2500)}
 
 Respond in this EXACT format (no extra text):
 SCORE: <number 1-10>
-VERDICT: <one sentence — should they apply? what's the key reason?>
+VERDICT: <one sentence — should they apply and why?>
 MATCH: <2-3 top matching skills, comma separated>
-GAP: <1-2 biggest missing requirements, or "None" if strong match>`;
+GAP: <1-2 missing requirements, or "None" if strong match>`;
 
-        try {
-            const raw = await callAI(prompt, 'You are a career advisor. Follow the exact output format. Be concise and honest.');
-            const score   = parseInt((raw.match(/SCORE:\s*(\d+)/i) || [])[1]) || 0;
-            const verdict = (raw.match(/VERDICT:\s*(.+)/i) || [])[1]?.trim() || '';
-            const match   = (raw.match(/MATCH:\s*(.+)/i) || [])[1]?.trim() || '';
-            const gap     = (raw.match(/GAP:\s*(.+)/i) || [])[1]?.trim() || '';
-            return { score, verdict, match, gap, pageTitle };
-        } catch { return null; }
-    }
-
-    function scoreColor(s) {
-        if (s >= 8) return '#10b981'; // green
-        if (s >= 6) return '#f59e0b'; // amber
-        return '#ef4444';             // red
-    }
-    function scoreLabel(s) {
-        if (s >= 8) return 'Strong match';
-        if (s >= 6) return 'Good fit';
-        if (s >= 4) return 'Partial fit';
-        return 'Weak match';
+        const raw = await callAI(prompt, 'You are a career advisor. Follow the exact output format. Be concise and honest.');
+        const score   = parseInt((raw.match(/SCORE:\s*(\d+)/i) || [])[1]) || 0;
+        const verdict = (raw.match(/VERDICT:\s*(.+)/i) || [])[1]?.trim() || '';
+        const match   = (raw.match(/MATCH:\s*(.+)/i) || [])[1]?.trim() || '';
+        const gap     = (raw.match(/GAP:\s*(.+)/i) || [])[1]?.trim() || '';
+        return { score, verdict, match, gap };
     }
 
     async function resolveScanJobs() {
@@ -1169,7 +1200,6 @@ GAP: <1-2 biggest missing requirements, or "None" if strong match>`;
             return appendMsg('ai', "I couldn't find any job listings on this page. Try navigating to a job search results page on LinkedIn, Indeed, or a company careers page.");
         }
 
-        // Get resume once up front
         const resumeText = await new Promise(resolve => {
             chrome.runtime.sendMessage({ type: 'GET_RESUME_TEXT' }, result => {
                 if (chrome.runtime.lastError || !result?.success || !result.text) return resolve(null);
@@ -1180,7 +1210,8 @@ GAP: <1-2 biggest missing requirements, or "None" if strong match>`;
             return appendMsg('ai', '⚠️ No resume found. Please go to **Settings** and add your profile first.');
         }
 
-        // Build the live-updating results card
+        // ── Build master card ──────────────────────────────────────────────────
+        const uid = 'nw-scan-' + Date.now();
         const cardWrap = document.createElement('div');
         cardWrap.className = 'nw-msg ai';
         cardWrap.innerHTML = `
@@ -1188,75 +1219,109 @@ GAP: <1-2 biggest missing requirements, or "None" if strong match>`;
             <div class="nw-msg-wrap">
                 <div class="nw-bubble">
                     <div class="nw-scan-header">
-                        <span class="nw-scan-title">🔍 Scanning ${jobs.length} job${jobs.length !== 1 ? 's' : ''}…</span>
-                        <span class="nw-scan-progress" id="nw-scan-prog">0 / ${jobs.length}</span>
+                        <span class="nw-scan-title" id="${uid}-title">🔍 Found ${jobs.length} job${jobs.length !== 1 ? 's' : ''} — scanning…</span>
+                        <span class="nw-scan-progress" id="${uid}-prog">0 / ${jobs.length}</span>
                     </div>
-                    <div class="nw-scan-bar-wrap"><div class="nw-scan-bar" id="nw-scan-bar" style="width:0%"></div></div>
-                    <div class="nw-scan-list" id="nw-scan-list"></div>
+                    <div class="nw-scan-bar-wrap"><div class="nw-scan-bar" id="${uid}-bar" style="width:0%"></div></div>
+                    <div class="nw-scan-list" id="${uid}-list"></div>
                 </div>
             </div>`;
         cardWrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(Date.now()));
         messagesEl.appendChild(cardWrap);
         messagesEl.scrollTop = messagesEl.scrollHeight;
 
-        const listEl  = cardWrap.querySelector('#nw-scan-list');
-        const barEl   = cardWrap.querySelector('#nw-scan-bar');
-        const progEl  = cardWrap.querySelector('#nw-scan-prog');
+        const listEl  = document.getElementById(`${uid}-list`);
+        const barEl   = document.getElementById(`${uid}-bar`);
+        const progEl  = document.getElementById(`${uid}-prog`);
+        const titleEl = document.getElementById(`${uid}-title`);
+
+        // Pre-render all job rows as queued
+        const rows = jobs.map((job, i) => {
+            const row = makeJobRow(job, i);
+            listEl.appendChild(row);
+            return row;
+        });
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+
+        // Register a message listener so background status updates hit the rows in real time
+        const statusListener = (msg) => {
+            if (msg.type !== 'JOB_SCAN_STATUS') return;
+            const row = rows[msg.index];
+            if (!row) return;
+            if (msg.status === 'opening') setRowState(row, 'opening');
+            else if (msg.status === 'reading') setRowState(row, 'reading');
+            // 'done' and 'error' are handled after callAI below
+        };
+        chrome.runtime.onMessage.addListener(statusListener);
+
         const results = [];
 
         for (let i = 0; i < jobs.length; i++) {
             const job = jobs[i];
+            const row = rows[i];
 
-            // Placeholder row while loading
-            const row = document.createElement('div');
-            row.className = 'nw-scan-row nw-scan-loading';
-            row.innerHTML = `<span class="nw-scan-spinner"></span><span class="nw-scan-job-title">${esc(job.title)}</span>`;
-            listEl.appendChild(row);
+            setRowState(row, 'opening');
             messagesEl.scrollTop = messagesEl.scrollHeight;
 
-            const result = await scoreSingleJob(job.url, resumeText);
+            // Ask background to open tab + extract content
+            const extracted = await new Promise(resolve => {
+                try {
+                    chrome.runtime.sendMessage(
+                        { type: 'EXTRACT_JOB_CONTENT', url: job.url, index: i },
+                        result => {
+                            if (chrome.runtime.lastError) return resolve(null);
+                            resolve(result);
+                        }
+                    );
+                } catch { resolve(null); }
+            });
 
-            if (result) {
-                const col = scoreColor(result.score);
-                row.className = 'nw-scan-row';
-                row.innerHTML = `
-                    <div class="nw-scan-score-badge" style="background:${col};">${result.score}/10</div>
-                    <div class="nw-scan-job-info">
-                        <div class="nw-scan-job-name"><a href="${esc(job.url)}" style="color:#111827;font-weight:600;text-decoration:none;">${esc(job.title)}</a></div>
-                        <div class="nw-scan-verdict">${esc(result.verdict)}</div>
-                        <div class="nw-scan-tags">
-                            ${result.match ? `<span class="nw-scan-tag match">✓ ${esc(result.match)}</span>` : ''}
-                            ${result.gap && result.gap.toLowerCase() !== 'none' ? `<span class="nw-scan-tag gap">✗ ${esc(result.gap)}</span>` : ''}
-                        </div>
-                    </div>`;
-                results.push({ ...job, ...result });
-            } else {
-                row.className = 'nw-scan-row nw-scan-error';
-                row.innerHTML = `<span style="color:#9ca3af;font-size:11px;">⚠ Could not load</span><span class="nw-scan-job-title" style="color:#9ca3af;">${esc(job.title)}</span>`;
+            if (!extracted?.success || !extracted.data?.text) {
+                setRowState(row, 'error');
+                progEl.textContent = `${i + 1} / ${jobs.length}`;
+                barEl.style.width = Math.round(((i + 1) / jobs.length) * 100) + '%';
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+                continue;
             }
 
-            // Update progress bar
-            const pct = Math.round(((i + 1) / jobs.length) * 100);
-            barEl.style.width = pct + '%';
+            // Update title from actual page title if available
+            const realTitle = extracted.data.title || job.title;
+            const nameEl = row.querySelector('.nw-scan-job-name a');
+            if (nameEl && realTitle && realTitle !== job.title) nameEl.textContent = realTitle.slice(0, 80);
+
+            setRowState(row, 'scoring');
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+            try {
+                const scored = await scoreSingleJob(extracted.data.text, resumeText);
+                setRowState(row, 'done', scored);
+                results.push({ ...job, title: realTitle, ...scored });
+            } catch (e) {
+                setRowState(row, 'error');
+            }
+
             progEl.textContent = `${i + 1} / ${jobs.length}`;
+            barEl.style.width = Math.round(((i + 1) / jobs.length) * 100) + '%';
             messagesEl.scrollTop = messagesEl.scrollHeight;
         }
 
-        // Final summary
-        const scored = results.filter(r => r.score);
-        const top = scored.sort((a, b) => b.score - a.score).slice(0, 3);
-        const headerEl = cardWrap.querySelector('.nw-scan-title');
-        headerEl.textContent = `✅ Scanned ${jobs.length} job${jobs.length !== 1 ? 's' : ''} — ${scored.length} scored`;
+        chrome.runtime.onMessage.removeListener(statusListener);
+
+        // ── Final summary ──────────────────────────────────────────────────────
+        const scored = results.filter(r => r.score > 0).sort((a, b) => b.score - a.score);
+        titleEl.textContent = `✅ Scanned ${jobs.length} job${jobs.length !== 1 ? 's' : ''} — ${scored.length} scored`;
         progEl.textContent = '';
 
-        if (top.length) {
+        if (scored.length) {
             const summary = document.createElement('div');
             summary.className = 'nw-scan-summary';
-            summary.innerHTML = `<strong>Top matches:</strong> ${top.map(j => `${j.title} (${j.score}/10)`).join(' · ')}`;
+            summary.innerHTML = `<strong>Top matches:</strong> ${scored.slice(0, 3).map(j =>
+                `<a href="${esc(j.url)}" style="color:#4f46e5;font-weight:600;text-decoration:none;">${esc(j.title)}</a> <strong>${j.score}/10</strong>`
+            ).join(' · ')}`;
             listEl.appendChild(summary);
         }
 
-        const summaryText = `Scanned ${jobs.length} jobs. Top matches: ${top.map(j => `${j.title} — ${j.score}/10`).join(', ')}`;
+        const summaryText = `Scanned ${jobs.length} jobs. Top matches: ${scored.slice(0, 3).map(j => `${j.title} — ${j.score}/10`).join(', ')}`;
         chatHistory.push({ role: 'ai', text: summaryText });
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
