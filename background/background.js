@@ -228,73 +228,97 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return false;
     }
 
-    // Extract page content from a URL by opening it in a background tab, scraping, then closing.
-    // Sends status updates to the requesting tab via chrome.tabs.sendMessage so the widget
-    // can show live progress (opening → reading → done / error).
-    if (message.type === 'EXTRACT_JOB_CONTENT') {
-        const originTabId = sender.tab?.id;
-        const jobUrl      = message.url;
-        const jobIndex    = message.index;
+    // Full same-tab job scan loop.
+    // Navigates the current tab to each job URL, scrapes content, navigates back to origin.
+    // Progress + results written to chrome.storage.local so the widget can read them
+    // after the tab returns to the origin URL and the widget re-inits.
+    if (message.type === 'SCAN_JOBS_IN_TAB') {
+        const tabId     = sender.tab?.id;
+        const jobs      = message.jobs;       // [{url, title}, ...]
+        const originUrl = message.originUrl;
+        const scanId    = message.scanId;
 
-        const notify = (status, extra = {}) => {
-            if (!originTabId) return;
-            chrome.tabs.sendMessage(originTabId, {
-                type: 'JOB_SCAN_STATUS',
-                index: jobIndex,
-                status,   // 'opening' | 'reading' | 'done' | 'error'
-                url: jobUrl,
-                ...extra
-            }).catch(() => {});
-        };
+        if (!tabId || !jobs?.length) { sendResponse({ started: false }); return false; }
+
+        // Helper: wait for tab to finish loading
+        function waitForTabLoad(tid, timeoutMs = 15000) {
+            return new Promise((resolve, reject) => {
+                const t = setTimeout(() => {
+                    chrome.tabs.onUpdated.removeListener(fn);
+                    reject(new Error('timeout'));
+                }, timeoutMs);
+                function fn(id, info) {
+                    if (id !== tid || info.status !== 'complete') return;
+                    chrome.tabs.onUpdated.removeListener(fn);
+                    clearTimeout(t);
+                    resolve();
+                }
+                chrome.tabs.onUpdated.addListener(fn);
+            });
+        }
+
+        // Helper: scrape visible text from tab
+        async function scrapeTab(tid) {
+            const [r] = await chrome.scripting.executeScript({
+                target: { tabId: tid },
+                func: () => {
+                    const c = document.body.cloneNode(true);
+                    c.querySelectorAll('script,style,nav,footer,header,[role="banner"],[role="navigation"]').forEach(e => e.remove());
+                    return { title: document.title, url: location.href, text: (c.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 6000) };
+                }
+            });
+            return r?.result || { title: '', url: '', text: '' };
+        }
+
+        // Helper: write progress to storage so widget can poll/read on restore
+        async function saveProgress(update) {
+            const existing = await chrome.storage.local.get(['nova_scan_state']);
+            const state = existing.nova_scan_state || {};
+            Object.assign(state, update);
+            await chrome.storage.local.set({ nova_scan_state: state });
+        }
+
+        sendResponse({ started: true });
 
         (async () => {
-            let tab;
-            try {
-                notify('opening');
-                tab = await chrome.tabs.create({ url: jobUrl, active: false });
+            await saveProgress({ scanId, status: 'running', total: jobs.length, done: 0, results: [], originUrl });
 
-                // Wait for load (max 15s)
-                await new Promise((resolve, reject) => {
-                    const timeout = setTimeout(() => reject(new Error('Page load timeout')), 15000);
-                    const listener = (tabId, info) => {
-                        if (tabId !== tab.id) return;
-                        if (info.status === 'complete') {
-                            chrome.tabs.onUpdated.removeListener(listener);
-                            clearTimeout(timeout);
-                            resolve();
-                        }
-                    };
-                    chrome.tabs.onUpdated.addListener(listener);
-                });
+            for (let i = 0; i < jobs.length; i++) {
+                const job = jobs[i];
+                await saveProgress({ currentIndex: i, currentTitle: job.title, currentUrl: job.url, done: i });
 
-                // Let JS-rendered content settle
-                await new Promise(r => setTimeout(r, 1000));
-                notify('reading');
+                try {
+                    // Navigate the tab to the job page
+                    await chrome.tabs.update(tabId, { url: job.url });
+                    await waitForTabLoad(tabId);
+                    await new Promise(r => setTimeout(r, 1000)); // settle JS
 
-                const [result] = await chrome.scripting.executeScript({
-                    target: { tabId: tab.id },
-                    func: () => {
-                        const clone = document.body.cloneNode(true);
-                        clone.querySelectorAll('script,style,nav,footer,header,[role="banner"],[role="navigation"]').forEach(e => e.remove());
-                        return {
-                            title: document.title,
-                            url:   location.href,
-                            text:  (clone.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 6000)
-                        };
-                    }
-                });
+                    const data = await scrapeTab(tabId);
 
-                const data = result?.result || { title: '', url: jobUrl, text: '' };
-                notify('done', { data });
-                sendResponse({ success: true, data });
-            } catch (e) {
-                notify('error', { error: e.message });
-                sendResponse({ success: false, error: e.message });
-            } finally {
-                if (tab?.id) chrome.tabs.remove(tab.id).catch(() => {});
+                    // Store raw text for AI scoring (widget will do the AI call after restore)
+                    const existing2 = await chrome.storage.local.get(['nova_scan_state']);
+                    const st = existing2.nova_scan_state || {};
+                    const results = st.results || [];
+                    results.push({ index: i, url: job.url, title: data.title || job.title, text: data.text, status: 'scraped' });
+                    await chrome.storage.local.set({ nova_scan_state: { ...st, results, done: i + 1 } });
+
+                } catch (e) {
+                    const existing3 = await chrome.storage.local.get(['nova_scan_state']);
+                    const st = existing3.nova_scan_state || {};
+                    const results = st.results || [];
+                    results.push({ index: i, url: job.url, title: job.title, text: '', status: 'error', error: e.message });
+                    await chrome.storage.local.set({ nova_scan_state: { ...st, results, done: i + 1 } });
+                }
             }
+
+            // Navigate back to origin
+            await saveProgress({ status: 'returning', done: jobs.length });
+            try {
+                await chrome.tabs.update(tabId, { url: originUrl });
+            } catch {}
         })();
-        return true;
+
+        return false;
     }
 
     // Open popup and switch to the fill-form tab

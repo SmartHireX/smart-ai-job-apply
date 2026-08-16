@@ -585,19 +585,21 @@
         _seed.forEach(m => renderMsg(m.role, m.text));
         document.getElementById('nw-chips').style.display = 'none';
         messagesEl.scrollTop = messagesEl.scrollHeight;
+        setTimeout(() => checkPendingScanResults(), 300);
     } else {
         // Auto-restore after navigation — load from shared chrome.storage.local
         try {
             chrome.storage.local.get(['nova_chat_history'], result => {
                 const saved = result.nova_chat_history;
                 if (!Array.isArray(saved) || !saved.length) return;
-                // Splice into backing array so chatHistory is authoritative
                 _seed.push(...saved);
                 window.__novaHistory = _seed;
                 messagesEl.innerHTML = '';
                 saved.forEach(m => renderMsg(m.role, m.text));
                 document.getElementById('nw-chips').style.display = 'none';
                 messagesEl.scrollTop = messagesEl.scrollHeight;
+                // Check if we're returning from a job scan
+                setTimeout(() => checkPendingScanResults(), 300);
             });
         } catch {}
     }
@@ -1210,8 +1212,50 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             return appendMsg('ai', '⚠️ No resume found. Please go to **Settings** and add your profile first.');
         }
 
-        // ── Build master card ──────────────────────────────────────────────────
+        // Store resume so we can use it after the tab returns
+        const scanId = 'scan_' + Date.now();
+        await new Promise(r => chrome.storage.local.set({
+            nova_scan_resume: resumeText,
+            nova_scan_state: { scanId, status: 'starting', total: jobs.length, done: 0, results: [], originUrl: location.href }
+        }, r));
+
+        // Show a "scanning in progress" message — tab will navigate away in a moment
+        appendMsg('ai',
+            `🔍 Opening ${jobs.length} job${jobs.length !== 1 ? 's' : ''} one by one in this tab.\n\n` +
+            `Each page will load, I'll read it, then move to the next. When all done I'll navigate back here and show your results.\n\n` +
+            `**Don't close this tab!**`
+        );
+        chatHistory.push({ role: 'ai', text: `Starting job scan of ${jobs.length} jobs.` });
+
+        // Small delay so user can read the message before tab navigates
+        await new Promise(r => setTimeout(r, 1800));
+
+        // Hand off to background — it navigates the tab through all jobs then back
+        chrome.runtime.sendMessage({
+            type: 'SCAN_JOBS_IN_TAB',
+            jobs,
+            originUrl: location.href,
+            scanId
+        });
+    }
+
+    // Called on widget init — checks if we just returned from a scan and renders results
+    async function checkPendingScanResults() {
+        const stored = await new Promise(r => chrome.storage.local.get(['nova_scan_state', 'nova_scan_resume'], r));
+        const state  = stored.nova_scan_state;
+        const resume = stored.nova_scan_resume;
+
+        if (!state || state.status === 'done' || !state.results?.length) return;
+        if (state.originUrl && state.originUrl !== location.href) return; // wrong page
+        if (state.status !== 'returning' && state.status !== 'running') return;
+
+        // Clear state so it doesn't re-run on next page load
+        await new Promise(r => chrome.storage.local.remove(['nova_scan_state', 'nova_scan_resume'], r));
+
+        const scrapedJobs = state.results;
         const uid = 'nw-scan-' + Date.now();
+
+        // Build the results card
         const cardWrap = document.createElement('div');
         cardWrap.className = 'nw-msg ai';
         cardWrap.innerHTML = `
@@ -1219,15 +1263,19 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             <div class="nw-msg-wrap">
                 <div class="nw-bubble">
                     <div class="nw-scan-header">
-                        <span class="nw-scan-title" id="${uid}-title">🔍 Found ${jobs.length} job${jobs.length !== 1 ? 's' : ''} — scanning…</span>
-                        <span class="nw-scan-progress" id="${uid}-prog">0 / ${jobs.length}</span>
+                        <span class="nw-scan-title" id="${uid}-title">🧠 Scoring ${scrapedJobs.length} jobs with AI…</span>
+                        <span class="nw-scan-progress" id="${uid}-prog">0 / ${scrapedJobs.length}</span>
                     </div>
                     <div class="nw-scan-bar-wrap"><div class="nw-scan-bar" id="${uid}-bar" style="width:0%"></div></div>
                     <div class="nw-scan-list" id="${uid}-list"></div>
                 </div>
             </div>`;
         cardWrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(Date.now()));
-        messagesEl.appendChild(cardWrap);
+
+        // Insert before the last message (history is already rendered), or append
+        const msgs = messagesEl.querySelectorAll('.nw-msg');
+        if (msgs.length) messagesEl.insertBefore(cardWrap, msgs[msgs.length - 1].nextSibling);
+        else messagesEl.appendChild(cardWrap);
         messagesEl.scrollTop = messagesEl.scrollHeight;
 
         const listEl  = document.getElementById(`${uid}-list`);
@@ -1235,93 +1283,59 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         const progEl  = document.getElementById(`${uid}-prog`);
         const titleEl = document.getElementById(`${uid}-title`);
 
-        // Pre-render all job rows as queued
-        const rows = jobs.map((job, i) => {
-            const row = makeJobRow(job, i);
+        // Pre-render all rows as queued
+        const rows = scrapedJobs.map((job, i) => {
+            const row = makeJobRow({ url: job.url, title: job.title }, i);
+            if (job.status === 'error') setRowState(row, 'error');
             listEl.appendChild(row);
             return row;
         });
         messagesEl.scrollTop = messagesEl.scrollHeight;
 
-        // Register a message listener so background status updates hit the rows in real time
-        const statusListener = (msg) => {
-            if (msg.type !== 'JOB_SCAN_STATUS') return;
-            const row = rows[msg.index];
-            if (!row) return;
-            if (msg.status === 'opening') setRowState(row, 'opening');
-            else if (msg.status === 'reading') setRowState(row, 'reading');
-            // 'done' and 'error' are handled after callAI below
-        };
-        chrome.runtime.onMessage.addListener(statusListener);
+        const finalResults = [];
 
-        const results = [];
-
-        for (let i = 0; i < jobs.length; i++) {
-            const job = jobs[i];
+        for (let i = 0; i < scrapedJobs.length; i++) {
+            const job = scrapedJobs[i];
             const row = rows[i];
 
-            setRowState(row, 'opening');
-            messagesEl.scrollTop = messagesEl.scrollHeight;
-
-            // Ask background to open tab + extract content
-            const extracted = await new Promise(resolve => {
-                try {
-                    chrome.runtime.sendMessage(
-                        { type: 'EXTRACT_JOB_CONTENT', url: job.url, index: i },
-                        result => {
-                            if (chrome.runtime.lastError) return resolve(null);
-                            resolve(result);
-                        }
-                    );
-                } catch { resolve(null); }
-            });
-
-            if (!extracted?.success || !extracted.data?.text) {
+            if (job.status === 'error' || !job.text) {
                 setRowState(row, 'error');
-                progEl.textContent = `${i + 1} / ${jobs.length}`;
-                barEl.style.width = Math.round(((i + 1) / jobs.length) * 100) + '%';
-                messagesEl.scrollTop = messagesEl.scrollHeight;
+                progEl.textContent = `${i + 1} / ${scrapedJobs.length}`;
+                barEl.style.width = Math.round(((i + 1) / scrapedJobs.length) * 100) + '%';
                 continue;
             }
-
-            // Update title from actual page title if available
-            const realTitle = extracted.data.title || job.title;
-            const nameEl = row.querySelector('.nw-scan-job-name a');
-            if (nameEl && realTitle && realTitle !== job.title) nameEl.textContent = realTitle.slice(0, 80);
 
             setRowState(row, 'scoring');
             messagesEl.scrollTop = messagesEl.scrollHeight;
 
             try {
-                const scored = await scoreSingleJob(extracted.data.text, resumeText);
+                const scored = await scoreSingleJob(job.text, resume || '');
                 setRowState(row, 'done', scored);
-                results.push({ ...job, title: realTitle, ...scored });
-            } catch (e) {
+                finalResults.push({ url: job.url, title: job.title, ...scored });
+            } catch {
                 setRowState(row, 'error');
             }
 
-            progEl.textContent = `${i + 1} / ${jobs.length}`;
-            barEl.style.width = Math.round(((i + 1) / jobs.length) * 100) + '%';
+            progEl.textContent = `${i + 1} / ${scrapedJobs.length}`;
+            barEl.style.width = Math.round(((i + 1) / scrapedJobs.length) * 100) + '%';
             messagesEl.scrollTop = messagesEl.scrollHeight;
         }
 
-        chrome.runtime.onMessage.removeListener(statusListener);
-
-        // ── Final summary ──────────────────────────────────────────────────────
-        const scored = results.filter(r => r.score > 0).sort((a, b) => b.score - a.score);
-        titleEl.textContent = `✅ Scanned ${jobs.length} job${jobs.length !== 1 ? 's' : ''} — ${scored.length} scored`;
+        // Final summary
+        const sorted = finalResults.filter(r => r.score > 0).sort((a, b) => b.score - a.score);
+        titleEl.textContent = `✅ Scanned ${scrapedJobs.length} jobs — ${sorted.length} scored`;
         progEl.textContent = '';
 
-        if (scored.length) {
+        if (sorted.length) {
             const summary = document.createElement('div');
             summary.className = 'nw-scan-summary';
-            summary.innerHTML = `<strong>Top matches:</strong> ${scored.slice(0, 3).map(j =>
+            summary.innerHTML = `<strong>Top matches:</strong> ${sorted.slice(0, 3).map(j =>
                 `<a href="${esc(j.url)}" style="color:#4f46e5;font-weight:600;text-decoration:none;">${esc(j.title)}</a> <strong>${j.score}/10</strong>`
             ).join(' · ')}`;
             listEl.appendChild(summary);
         }
 
-        const summaryText = `Scanned ${jobs.length} jobs. Top matches: ${scored.slice(0, 3).map(j => `${j.title} — ${j.score}/10`).join(', ')}`;
+        const summaryText = `Job scan complete. Top matches: ${sorted.slice(0, 3).map(j => `${j.title} — ${j.score}/10`).join(', ')}`;
         chatHistory.push({ role: 'ai', text: summaryText });
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
