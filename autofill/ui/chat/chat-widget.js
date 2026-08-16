@@ -582,7 +582,7 @@
     if (_seed.length) {
         // History was passed directly from popup — render immediately
         messagesEl.innerHTML = '';
-        _seed.forEach(m => renderMsg(m.role, m.text));
+        _seed.forEach(m => renderMsg(m.role, m.text, m.ts));
         document.getElementById('nw-chips').style.display = 'none';
         messagesEl.scrollTop = messagesEl.scrollHeight;
         setTimeout(() => checkPendingScanResults(), 300);
@@ -595,7 +595,7 @@
                     _seed.push(...saved);
                     window.__novaHistory = _seed;
                     messagesEl.innerHTML = '';
-                    saved.forEach(m => renderMsg(m.role, m.text));
+                    saved.forEach(m => renderMsg(m.role, m.text, m.ts));
                     document.getElementById('nw-chips').style.display = 'none';
                     messagesEl.scrollTop = messagesEl.scrollHeight;
                 }
@@ -1226,7 +1226,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             `Each page will load, I'll read it, then move to the next. When all done I'll navigate back here and show your results.\n\n` +
             `**Don't close this tab!**`
         );
-        chatHistory.push({ role: 'ai', text: `Starting job scan of ${jobs.length} jobs.` });
+        chatHistory.push({ role: 'ai', text: `Starting job scan of ${jobs.length} jobs.`, ts: Date.now() });
 
         // Small delay so user can read the message before tab navigates
         await new Promise(r => setTimeout(r, 1800));
@@ -1346,7 +1346,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         }
 
         const summaryText = `Job scan complete. Top matches: ${sorted.slice(0, 3).map(j => `${j.title} — ${j.score}/10`).join(', ')}`;
-        chatHistory.push({ role: 'ai', text: summaryText });
+        chatHistory.push({ role: 'ai', text: summaryText, ts: Date.now() });
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
@@ -1615,11 +1615,10 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         switch (intent.intent) {
 
             case 'navigate': {
-                // thinkId stays on while resolveUrl runs — user sees "thinking"
                 const resolved = await resolveUrl(intent.destination || originalText);
                 if (resolved?.url) {
                     navigate(resolved.url, resolved.label);
-                    chatHistory.push({ role: 'ai', text: `Navigating to ${resolved.label || resolved.url}` });
+                    chatHistory.push({ role: 'ai', text: `Navigating to ${resolved.label || resolved.url}`, ts: Date.now() });
                 } else {
                     const q = encodeURIComponent((intent.destination || originalText) + ' site:' + location.hostname);
                     const searchUrl = `https://www.google.com/search?q=${q}`;
@@ -1639,19 +1638,19 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
             case 'search': {
                 search(intent.query || originalText, intent.engine);
-                chatHistory.push({ role: 'ai', text: `Searching: ${intent.query}` });
+                chatHistory.push({ role: 'ai', text: `Searching: ${intent.query}`, ts: Date.now() });
                 break;
             }
 
             case 'scroll': {
                 scrollPage(intent.direction || 'down');
-                chatHistory.push({ role: 'ai', text: `Scrolled ${intent.direction || 'down'}` });
+                chatHistory.push({ role: 'ai', text: `Scrolled ${intent.direction || 'down'}`, ts: Date.now() });
                 break;
             }
 
             case 'copy': {
                 copyToClipboard(intent.what || 'url');
-                chatHistory.push({ role: 'ai', text: `Copied ${intent.what || 'url'}` });
+                chatHistory.push({ role: 'ai', text: `Copied ${intent.what || 'url'}`, ts: Date.now() });
                 break;
             }
 
@@ -1663,7 +1662,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                     try { chrome.runtime.sendMessage({ type: 'START_LOCAL_PROCESSING' }); } catch {}
                     const msg = fillResult.message || `Auto-filling form...`;
                     appendMsg('ai', `**${msg}**`);
-                    chatHistory.push({ role: 'ai', text: msg });
+                    chatHistory.push({ role: 'ai', text: msg, ts: Date.now() });
                 }
                 break;
             }
@@ -1671,16 +1670,15 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             case 'compatibility': {
                 const report = await resolveCompatibility();
                 appendMsg('ai', report);
-                chatHistory.push({ role: 'ai', text: report });
+                chatHistory.push({ role: 'ai', text: report, ts: Date.now() });
                 break;
             }
 
             case 'scan_jobs': {
-                // resolveScanJobs renders its own live card — no appendMsg wrapper
                 removeThinking(thinkId);
                 isThinking = false;
                 await resolveScanJobs();
-                return; // skip the outer removeThinking / isThinking reset below
+                return;
             }
 
             case 'save_job': {
@@ -1688,10 +1686,10 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 if (result.startsWith('__JOB_SAVED__:')) {
                     const job = JSON.parse(result.slice('__JOB_SAVED__:'.length));
                     renderJobSavedCard(job);
-                    chatHistory.push({ role: 'ai', text: `Saved "${job.title}" to job tracker.` });
+                    chatHistory.push({ role: 'ai', text: `Saved "${job.title}" to job tracker.`, ts: Date.now() });
                 } else {
                     appendMsg('ai', result);
-                    chatHistory.push({ role: 'ai', text: result });
+                    chatHistory.push({ role: 'ai', text: result, ts: Date.now() });
                 }
                 break;
             }
@@ -1699,7 +1697,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             case 'list_jobs': {
                 renderJobTracker();
                 const jobs = jtLoad();
-                chatHistory.push({ role: 'ai', text: `Showing job tracker (${jobs.length} jobs).` });
+                chatHistory.push({ role: 'ai', text: `Showing job tracker (${jobs.length} jobs).`, ts: Date.now() });
                 break;
             }
 
@@ -1707,27 +1705,26 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 const result = saveCurrentPage();
                 if (result === '__PAGE_EXISTS__') {
                     appendMsg('ai', '**Already saved!** This page is already in your saved pages. Open the menu → **Saved Pages** to view it.');
-                    chatHistory.push({ role: 'ai', text: 'Page already saved.' });
+                    chatHistory.push({ role: 'ai', text: 'Page already saved.', ts: Date.now() });
                 } else {
                     const page = JSON.parse(result.slice('__PAGE_SAVED__:'.length));
-                    renderPageSavedCard(page); // shows toast + refreshes panel if open
+                    renderPageSavedCard(page);
                     appendMsgRaw('ai', `🔖 <strong>${esc(page.title)}</strong> saved. Open the menu → <strong>Saved Pages</strong> to view all.`);
-                    chatHistory.push({ role: 'ai', text: `Saved page: "${page.title}"` });
+                    chatHistory.push({ role: 'ai', text: `Saved page: "${page.title}"`, ts: Date.now() });
                 }
                 break;
             }
 
             case 'list_pages': {
-                renderSavedPages(); // opens the panel
-                chatHistory.push({ role: 'ai', text: 'Opened saved pages panel.' });
+                renderSavedPages();
+                chatHistory.push({ role: 'ai', text: 'Opened saved pages panel.', ts: Date.now() });
                 break;
             }
 
             default: {
-                // summarize / explain / extract / translate / write / chat
                 const answer = await resolveContent(intent, originalText);
                 appendMsg('ai', answer);
-                chatHistory.push({ role: 'ai', text: answer });
+                chatHistory.push({ role: 'ai', text: answer, ts: Date.now() });
                 break;
             }
         }
@@ -1769,7 +1766,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
         chipsEl.style.display = 'none';
         appendMsg('user', text);
-        chatHistory.push({ role: 'user', text });
+        chatHistory.push({ role: 'user', text, ts: Date.now() });
         inputEl.value = '';
         inputEl.style.height = 'auto';
         sendBtn.disabled = true;
@@ -1786,7 +1783,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 removeThinking(thinkId);
                 if (resolved?.url) {
                     navigate(resolved.url, resolved.label);
-                    chatHistory.push({ role: 'ai', text: `Navigating to ${resolved.label || resolved.url}` });
+                    chatHistory.push({ role: 'ai', text: `Navigating to ${resolved.label || resolved.url}`, ts: Date.now() });
                 } else {
                     const q = encodeURIComponent(text + ' ' + location.hostname);
                     const searchUrl = `https://www.google.com/search?q=${q}`;
@@ -1840,8 +1837,8 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
     // ── Render helpers ────────────────────────────────────────────────────────
     // Render a message without side-effects (used when restoring history)
-    function renderMsg(role, text) {
-        appendMsg(role, text, true); // instant — no ghost typing for history restore
+    function renderMsg(role, text, ts) {
+        appendMsg(role, text, true, ts); // instant — no ghost typing for history restore
     }
 
     function appendMsgRaw(role, html) {
@@ -1864,8 +1861,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         return wrap;
     }
 
-    function appendMsg(role, text, instant = false) {
-        const ts = Date.now();
+    function appendMsg(role, text, instant = false, ts = Date.now()) {
         const wrap = document.createElement('div');
         wrap.className = `nw-msg ${role}`;
         if (role === 'ai') {
