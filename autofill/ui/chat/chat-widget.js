@@ -380,42 +380,266 @@
             font-family: inherit; transition: color 0.15s;
         }
         .nw-job-remove:hover { color: #ef4444; }
-        /* ── Bulk job scanner ── */
-        .nw-scan-header   { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-        .nw-scan-title    { font-size:13px; font-weight:700; color:#111827; }
-        .nw-scan-progress { font-size:11px; color:#9ca3af; }
-        .nw-scan-bar-wrap { height:4px; background:#f3f4f6; border-radius:2px; margin-bottom:10px; overflow:hidden; }
-        .nw-scan-bar      { height:100%; background:#6366f1; border-radius:2px; transition:width 0.4s ease; }
-        .nw-scan-list     { display:flex; flex-direction:column; gap:6px; }
-        .nw-scan-row      { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; background:#f9fafb; border-radius:8px; border:1px solid #f3f4f6; transition:border-color 0.2s; }
-        .nw-scan-row[data-state="opening"] { border-color:#c7d2fe; background:#eef2ff; }
-        .nw-scan-row[data-state="reading"] { border-color:#c7d2fe; background:#eef2ff; }
-        .nw-scan-row[data-state="scoring"] { border-color:#fde68a; background:#fffbeb; }
-        .nw-scan-row[data-state="done"]    { border-color:#d1fae5; background:#f0fdf4; }
-        .nw-scan-row[data-state="error"]   { opacity:0.5; }
-        .nw-scan-icon     { flex-shrink:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
-        .nw-scan-dot      { width:10px; height:10px; border-radius:50%; display:inline-block; }
-        .nw-scan-dot.queued { background:#e5e7eb; }
-        .nw-scan-dot.error  { background:#ef4444; }
-        .nw-scan-spinner  { width:16px; height:16px; border:2px solid #e5e7eb; border-radius:50%; flex-shrink:0; animation:nw-spin 0.8s linear infinite; }
-        .nw-scan-spinner        { border-top-color:#6366f1; }
-        .nw-scan-spinner.reading { border-top-color:#6366f1; border-right-color:#a5b4fc; }
-        .nw-scan-spinner.scoring { border-top-color:#f59e0b; border-right-color:#fcd34d; }
-        @keyframes nw-spin { to { transform:rotate(360deg); } }
-        .nw-scan-score-badge {
-            width:32px; height:32px; border-radius:8px; display:flex; flex-direction:column;
-            align-items:center; justify-content:center; font-size:12px; font-weight:800;
-            color:#fff; line-height:1; text-align:center; flex-shrink:0;
+        /* ── Job preview panel ── */
+        @keyframes nw-ov-bg     { 0%,100%{opacity:.82} 50%{opacity:1} }
+        @keyframes nw-ov-in     { from{opacity:0} to{opacity:1} }
+        @keyframes nw-reticle   { to{transform:rotate(360deg)} }
+        @keyframes nw-reticle-r { to{transform:rotate(-360deg)} }
+        @keyframes nw-ping      { 0%{transform:scale(1);opacity:.6} 100%{transform:scale(2.6);opacity:0} }
+        @keyframes nw-bar-run   { 0%{transform:translateX(-100%)} 100%{transform:translateX(400%)} }
+        @keyframes nw-fade-up   { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+        @keyframes nw-check-pop { from{transform:scale(0) rotate(-45deg);opacity:0} to{transform:scale(1) rotate(0);opacity:1} }
+        @keyframes nw-particle  { 0%{transform:translate(0,0) scale(1);opacity:.7} 100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0} }
+        @keyframes nw-shimmer   { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+        #nw-job-preview {
+            position:fixed; top:0; left:0; width:52%; height:100vh;
+            background:#fff; box-shadow:6px 0 48px rgba(0,0,0,.22);
+            z-index:2147483640; display:flex; flex-direction:column;
+            transform:translateX(-100%); transition:transform .38s cubic-bezier(.4,0,.2,1);
+            border-right:1.5px solid rgba(0,0,0,.08);
         }
+        #nw-job-preview.nw-preview-open { transform:translateX(0); }
+
+        #nw-preview-header {
+            display:flex; align-items:center; gap:10px;
+            padding:9px 14px; background:rgba(249,250,251,.97);
+            border-bottom:1px solid #e5e7eb; flex-shrink:0;
+        }
+        #nw-preview-favicon { width:16px; height:16px; border-radius:3px; flex-shrink:0; }
+        #nw-preview-title   { font-size:12px; font-weight:600; color:#111827; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        #nw-preview-badge   { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; background:#eef2ff; color:#4f46e5; white-space:nowrap; }
+        #nw-preview-close   { width:22px; height:22px; border-radius:50%; background:#f3f4f6; border:none; cursor:pointer; font-size:13px; color:#6b7280; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        #nw-preview-close:hover { background:#e5e7eb; }
+
+        #nw-preview-body   { position:relative; flex:1; overflow:hidden; display:flex; flex-direction:column; }
+        #nw-preview-iframe { position:absolute; inset:0; border:none; width:100%; height:100%; }
+
+        /* ─── scanning overlay ─── */
+        #nw-preview-scan-overlay {
+            position:absolute; inset:0; z-index:10;
+            display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;
+            transition:opacity .45s ease;
+            animation:nw-ov-in .3s ease both;
+            overflow:hidden;
+        }
+        #nw-preview-scan-overlay.nw-overlay-hidden { opacity:0; pointer-events:none; }
+
+        /* full-bleed gradient bg — color-keyed by phase */
+        #nw-ov-bg {
+            position:absolute; inset:0; transition:background .7s ease;
+            background:radial-gradient(ellipse 80% 60% at 50% 38%, rgba(99,102,241,.18) 0%, rgba(10,10,20,.88) 100%);
+        }
+        #nw-preview-scan-overlay::after {
+            content:''; position:absolute; inset:0; pointer-events:none;
+            background-image:
+                linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+            background-size:44px 44px;
+        }
+        [data-phase="reading"] #nw-ov-bg  { background:radial-gradient(ellipse 80% 60% at 50% 38%, rgba(6,182,212,.2) 0%, rgba(6,14,22,.9) 100%); }
+        [data-phase="scoring"] #nw-ov-bg  { background:radial-gradient(ellipse 80% 60% at 50% 38%, rgba(245,158,11,.18) 0%, rgba(20,12,4,.9) 100%); }
+
+        /* reticle — central animated SVG ring */
+        #nw-ov-reticle {
+            position:relative; z-index:2;
+            width:96px; height:96px; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+            margin-bottom:28px;
+        }
+        #nw-ov-reticle svg.ring-outer {
+            position:absolute; inset:0;
+            animation:nw-reticle 3s linear infinite;
+        }
+        #nw-ov-reticle svg.ring-inner {
+            position:absolute; inset:12px;
+            animation:nw-reticle-r 2s linear infinite;
+        }
+        /* ping ripple */
+        #nw-ov-ping {
+            position:absolute; inset:28px; border-radius:50%;
+            border:1.5px solid currentColor;
+            animation:nw-ping 1.8s ease-out infinite;
+        }
+        [data-phase="loading"] #nw-ov-ping { color:rgba(99,102,241,.6); }
+        [data-phase="reading"] #nw-ov-ping { color:rgba(6,182,212,.6); }
+        [data-phase="scoring"] #nw-ov-ping { color:rgba(245,158,11,.6); }
+        /* center icon */
+        #nw-ov-icon {
+            width:36px; height:36px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:15px; font-weight:800; color:#fff;
+            transition:background .6s;
+            position:relative; z-index:1;
+        }
+        [data-phase="loading"] #nw-ov-icon { background:rgba(99,102,241,.8); box-shadow:0 0 0 8px rgba(99,102,241,.12); }
+        [data-phase="reading"] #nw-ov-icon { background:rgba(6,182,212,.8);  box-shadow:0 0 0 8px rgba(6,182,212,.12); }
+        [data-phase="scoring"] #nw-ov-icon { background:rgba(245,158,11,.8); box-shadow:0 0 0 8px rgba(245,158,11,.12); }
+
+        /* phase label + subtitle */
+        #nw-ov-label {
+            position:relative; z-index:2;
+            font-size:17px; font-weight:700; color:#fff; letter-spacing:-.01em;
+            text-align:center; margin-bottom:6px;
+            animation:nw-fade-up .35s ease both;
+        }
+        #nw-ov-sub {
+            position:relative; z-index:2;
+            font-size:11.5px; color:rgba(255,255,255,.42); text-align:center;
+            margin-bottom:36px; line-height:1.5;
+        }
+
+        /* inline shimmer progress bar */
+        #nw-ov-bar-wrap {
+            position:relative; z-index:2;
+            width:160px; height:3px; border-radius:2px;
+            background:rgba(255,255,255,.1); overflow:hidden; margin-bottom:32px;
+        }
+        #nw-ov-bar-fill {
+            position:absolute; inset:0; width:45%; border-radius:2px;
+            background:linear-gradient(90deg,transparent,currentColor,transparent);
+            background-size:200% 100%;
+            animation:nw-bar-run 1.4s ease-in-out infinite;
+        }
+        [data-phase="loading"] #nw-ov-bar-fill { color:#818cf8; }
+        [data-phase="reading"] #nw-ov-bar-fill { color:#22d3ee; animation-duration:1.1s; }
+        [data-phase="scoring"] #nw-ov-bar-fill { color:#fbbf24; animation-duration:.8s; }
+
+        /* step pills at bottom */
+        #nw-ov-steps {
+            position:relative; z-index:2;
+            display:flex; align-items:center; gap:0;
+        }
+        .nw-ov-step {
+            display:flex; align-items:center; gap:6px;
+            font-size:10.5px; font-weight:600;
+            color:rgba(255,255,255,.25);
+            transition:color .4s;
+            padding:0 4px;
+        }
+        .nw-ov-step.active { color:rgba(255,255,255,.9); }
+        .nw-ov-step.done   { color:rgba(52,211,153,.75); }
+        .nw-ov-step-dot {
+            width:6px; height:6px; border-radius:50%;
+            background:rgba(255,255,255,.15); flex-shrink:0;
+            transition:background .4s, box-shadow .4s;
+        }
+        .nw-ov-step.active .nw-ov-step-dot { background:#fff; box-shadow:0 0 0 3px rgba(255,255,255,.15); }
+        .nw-ov-step.done   .nw-ov-step-dot { background:#34d399; }
+        .nw-ov-step-div { width:24px; height:1px; background:rgba(255,255,255,.12); }
+
+        /* blocked state */
+        #nw-preview-blocked {
+            position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+            flex-direction:column; gap:12px; background:rgba(8,8,16,.92);
+            color:rgba(255,255,255,.5); font-size:13px; text-align:center; padding:32px; z-index:11;
+        }
+        #nw-preview-blocked svg { opacity:.2; stroke:rgba(255,255,255,.6); }
+        #nw-preview-blocked strong { color:rgba(255,255,255,.82); display:block; margin-bottom:4px; }
+
+        /* ── Bulk job scanner ── */
+        @keyframes nw-spin        { to { transform:rotate(360deg); } }
+        @keyframes nw-row-in      { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+        @keyframes nw-badge-pop   { 0%{transform:scale(0.4);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+        @keyframes nw-bar-shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+        @keyframes nw-pulse-row   { 0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0.12)} 50%{box-shadow:0 0 0 4px rgba(99,102,241,0.18)} }
+
+        .nw-scan-header   { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+        .nw-scan-title    { font-size:13px; font-weight:700; color:#111827; line-height:1.3; }
+        .nw-scan-progress { font-size:11px; color:#9ca3af; font-variant-numeric:tabular-nums; }
+
+        /* progress bar — shimmer while running, solid green when done */
+        .nw-scan-bar-wrap { height:5px; background:#f3f4f6; border-radius:3px; margin-bottom:10px; overflow:hidden; }
+        .nw-scan-bar      { height:100%; border-radius:3px; transition:width 0.45s cubic-bezier(0.4,0,0.2,1), background 0.5s;
+                            background:linear-gradient(90deg,#6366f1 0%,#a5b4fc 40%,#6366f1 60%,#818cf8 100%);
+                            background-size:200% 100%; animation:nw-bar-shimmer 1.8s linear infinite; }
+        .nw-scan-bar.done { background:#10b981; animation:none; }
+
+        /* filter chips with counts */
+        .nw-scan-filters  { display:flex; gap:5px; margin-bottom:10px; flex-wrap:wrap; }
+        .nw-scan-chip     { font-size:10px; font-weight:600; padding:3px 10px; border-radius:20px; border:1.5px solid #e5e7eb;
+                            background:#f9fafb; color:#6b7280; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+        .nw-scan-chip:hover   { border-color:#a5b4fc; color:#4f46e5; background:#eef2ff; }
+        .nw-scan-chip.active  { background:#6366f1; color:#fff; border-color:#6366f1; box-shadow:0 1px 6px rgba(99,102,241,0.28); }
+        .nw-scan-chip-count   { opacity:0.7; margin-left:3px; font-weight:500; }
+
+        /* job list */
+        .nw-scan-list  { display:flex; flex-direction:column; gap:5px; }
+        .nw-scan-row   { border-radius:10px; border:1.5px solid #f3f4f6; background:#f9fafb;
+                         transition:border-color 0.2s, background 0.2s, box-shadow 0.2s;
+                         overflow:hidden; animation:nw-row-in 0.25s ease both; }
+        .nw-scan-row:hover { box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+
+        /* active (processing) row — pulsing indigo ring */
+        .nw-scan-row[data-active="true"] { border-color:#a5b4fc; animation:nw-row-in 0.25s ease both, nw-pulse-row 1.6s ease-in-out infinite; }
+
+        .nw-scan-row[data-state="opening"] .nw-scan-row-main,
+        .nw-scan-row[data-state="reading"]  .nw-scan-row-main { background:rgba(238,242,255,0.7); }
+        .nw-scan-row[data-state="opening"],
+        .nw-scan-row[data-state="reading"]  { border-color:#c7d2fe; }
+        .nw-scan-row[data-state="scoring"]  .nw-scan-row-main { background:rgba(255,251,235,0.8); }
+        .nw-scan-row[data-state="scoring"]  { border-color:#fde68a; }
+        .nw-scan-row[data-state="done"]     .nw-scan-row-main { background:rgba(240,253,244,0.8); }
+        .nw-scan-row[data-state="done"]     { border-color:#bbf7d0; }
+        .nw-scan-row[data-state="done"]:hover .nw-scan-row-main { background:rgba(220,252,231,0.9); }
+        .nw-scan-row[data-state="error"]    { opacity:0.45; }
+
+        .nw-scan-row-main { display:flex; align-items:center; gap:10px; padding:8px 10px; cursor:pointer; user-select:none; }
+
+        /* icon slot */
+        .nw-scan-icon  { flex-shrink:0; width:34px; height:34px; display:flex; align-items:center; justify-content:center; }
+        .nw-scan-dot   { width:10px; height:10px; border-radius:50%; display:inline-block; }
+        .nw-scan-dot.queued { background:#d1d5db; }
+        .nw-scan-dot.error  { background:#f87171; }
+        .nw-scan-spinner { width:18px; height:18px; border:2.5px solid #e5e7eb; border-radius:50%; flex-shrink:0; animation:nw-spin 0.75s linear infinite; }
+        .nw-scan-spinner          { border-top-color:#6366f1; }
+        .nw-scan-spinner.reading  { border-top-color:#6366f1; border-right-color:#a5b4fc; }
+        .nw-scan-spinner.scoring  { border-top-color:#f59e0b; border-right-color:#fcd34d; }
+
+        /* score ring badge */
+        .nw-scan-score-ring { flex-shrink:0; width:34px; height:34px; animation:nw-badge-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .nw-scan-score-ring circle.track { fill:none; stroke:#e5e7eb; stroke-width:3; }
+        .nw-scan-score-ring circle.fill  { fill:none; stroke-width:3; stroke-linecap:round;
+                                           transform:rotate(-90deg); transform-origin:50% 50%;
+                                           transition:stroke-dashoffset 0.6s cubic-bezier(0.4,0,0.2,1); }
+        .nw-scan-score-ring text { font-size:9px; font-weight:800; text-anchor:middle; dominant-baseline:central; fill:#111827; }
+
+        /* job info */
         .nw-scan-job-info  { flex:1; min-width:0; }
-        .nw-scan-job-name  { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:1px; }
-        .nw-scan-url       { font-size:10px; color:#9ca3af; margin-bottom:2px; }
-        .nw-scan-verdict   { font-size:11px; color:#6b7280; line-height:1.4; margin-bottom:4px; }
-        .nw-scan-tags      { display:flex; flex-wrap:wrap; gap:4px; }
-        .nw-scan-tag       { font-size:10px; padding:2px 6px; border-radius:4px; font-weight:500; }
-        .nw-scan-tag.match { background:#f0fdf4; color:#16a34a; }
-        .nw-scan-tag.gap   { background:#fef2f2; color:#dc2626; }
-        .nw-scan-summary   { margin-top:10px; padding:8px 10px; background:#eef2ff; border-radius:8px; font-size:11px; color:#4f46e5; line-height:1.8; }
+        .nw-scan-job-main  { display:flex; align-items:center; gap:6px; min-width:0; }
+        .nw-scan-job-name  { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; font-size:12px; color:#111827; flex:1; min-width:0; }
+        .nw-scan-label-pill { font-size:9px; font-weight:700; padding:2px 7px; border-radius:10px; white-space:nowrap; flex-shrink:0; letter-spacing:0.03em; border:1px solid transparent; }
+        .nw-scan-url       { font-size:10px; color:#9ca3af; margin-top:1px; }
+        .nw-scan-status-line { font-size:11px; color:#9ca3af; margin-top:2px; font-style:italic; }
+        .nw-scan-expand    { font-size:11px; color:#9ca3af; flex-shrink:0; margin-left:4px; transition:transform 0.25s cubic-bezier(0.4,0,0.2,1); padding:2px; }
+        .nw-scan-row[data-open="true"] .nw-scan-expand { transform:rotate(180deg); color:#6366f1; }
+        /* nav arrow — visible on hover to hint row is clickable */
+        .nw-scan-row-nav { font-size:11px; color:#9ca3af; flex-shrink:0; opacity:0; transition:opacity 0.15s, color 0.15s; }
+        .nw-scan-row[data-state="done"]:hover .nw-scan-row-nav { opacity:1; color:#6366f1; }
+
+        /* expand detail — max-height slide */
+        .nw-scan-detail { max-height:0; overflow:hidden; transition:max-height 0.3s cubic-bezier(0.4,0,0.2,1), padding 0.3s; padding:0 10px 0 52px; }
+        .nw-scan-row[data-open="true"] .nw-scan-detail { max-height:200px; padding:0 10px 12px 52px; }
+
+        .nw-scan-verdict  { font-size:11px; color:#374151; line-height:1.5; margin-bottom:7px; }
+        .nw-scan-tags     { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:9px; }
+        .nw-scan-tag      { font-size:10px; padding:2px 7px; border-radius:4px; font-weight:500; border-left:3px solid transparent; padding-left:6px; }
+        .nw-scan-tag.match { background:#f0fdf4; color:#15803d; border-color:#86efac; }
+        .nw-scan-tag.gap   { background:#fef2f2; color:#b91c1c; border-color:#fca5a5; }
+        .nw-scan-apply-btn { display:inline-flex; align-items:center; gap:4px; padding:5px 12px;
+                             background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff; border-radius:7px; font-size:11px;
+                             font-weight:700; text-decoration:none; transition:opacity 0.15s, transform 0.15s;
+                             box-shadow:0 1px 6px rgba(99,102,241,0.3); }
+        .nw-scan-apply-btn:hover { opacity:0.9; transform:translateY(-1px); }
+
+        /* podium summary */
+        .nw-scan-podium    { display:flex; gap:5px; margin-top:10px; }
+        .nw-scan-podium-card { flex:1; border-radius:10px; padding:8px 8px 8px 10px; border:1.5px solid #e5e7eb;
+                               background:#fff; min-width:0; display:flex; flex-direction:column; gap:2px; }
+        .nw-scan-podium-card:first-child { border-color:#fde68a; background:#fffbeb; }
+        .nw-scan-podium-medal { font-size:13px; line-height:1; }
+        .nw-scan-podium-name  { font-size:10px; font-weight:700; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+        .nw-scan-podium-score { font-size:10px; font-weight:800; color:#6366f1; }
         /* ── Saved pages ── */
         .nw-sp-card {
             background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
@@ -1034,11 +1258,15 @@ If "all" or no specific fields mentioned, set matchedFields to ["all"].`,
         const prompt =
 `You are a professional career advisor. A job seeker wants to know how well they match a job posting.
 
+Job URL: ${location.href}
+
 --- JOB POSTING ---
 ${pageContent.slice(0, 5000)}
 
 --- CANDIDATE RESUME ---
 ${resumeText.slice(0, 3000)}
+
+If the job posting text is incomplete, use the Job URL to infer the role and company.
 
 Provide a structured compatibility analysis:
 
@@ -1063,7 +1291,14 @@ One sentence: should they apply, and what should they emphasise or address?`;
         const results = [];
         const rootHost = location.hostname.split('.').slice(-2).join('.');
 
+        // UI labels that are navigation/chrome — not job titles
+        const UI_LABEL_BLOCKLIST = /^(preferences|show all|sign in|sign up|join now|see more|load more|next|previous|back|settings|notifications|jobs|messaging|home|my network|post a job|hiring|salary|companies|services|learning)$/i;
+
+        // LinkedIn job URLs must contain /jobs/view/ — reject generic /jobs/ pages
+        const LINKEDIN_JOB_URL = /linkedin\.com.*\/jobs\/view\//;
+
         const SELECTORS = [
+            // Most specific first — platform job card selectors
             '.jobs-search__results-list a[href*="/jobs/view/"]',
             'a.job-card-list__title',
             'a.job-card-container__link',
@@ -1071,10 +1306,9 @@ One sentence: should they apply, and what should they emphasise or address?`;
             'a[data-jk]',
             'h2.jobTitle a',
             'a[data-test="job-link"]',
-            'a[href*="/jobs/"]',
-            'a[href*="/job/"]',
+            // Generic ATS patterns — only used if specifics find nothing
+            'a[href*="/jobs/view/"]',
             'a[href*="job-detail"]',
-            'a[href*="careers"]',
         ];
 
         for (const sel of SELECTORS) {
@@ -1084,8 +1318,11 @@ One sentence: should they apply, and what should they emphasise or address?`;
                     if (!href || seen.has(href) || href.startsWith('javascript:') || href === location.href) return;
                     const url = new URL(href);
                     if (!url.hostname.includes(rootHost)) return;
+                    // On LinkedIn reject anything that isn't a /jobs/view/ URL
+                    if (url.hostname.includes('linkedin') && !LINKEDIN_JOB_URL.test(href)) return;
                     const label = (a.textContent || a.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
-                    if (!label) return;
+                    if (!label || label.length < 6) return;
+                    if (UI_LABEL_BLOCKLIST.test(label)) return;
                     seen.add(href);
                     results.push({ url: href, title: label });
                 } catch {}
@@ -1113,46 +1350,89 @@ One sentence: should they apply, and what should they emphasise or address?`;
     function scoreColor(s) {
         if (s >= 8) return '#10b981';
         if (s >= 6) return '#f59e0b';
+        if (s >= 4) return '#f97316';
         return '#ef4444';
     }
 
+    function scoreLabel(s) {
+        if (s >= 8) return { text: 'Strong Match',  bg: '#dcfce7', color: '#15803d' };
+        if (s >= 6) return { text: 'Good Match',    bg: '#fef9c3', color: '#a16207' };
+        if (s >= 4) return { text: 'Partial Match', bg: '#ffedd5', color: '#c2410c' };
+        return             { text: 'Weak Match',    bg: '#fee2e2', color: '#b91c1c' };
+    }
+
+    function _scoreRingSVG(score, color) {
+        const r = 13, circ = 2 * Math.PI * r;
+        const filled = ((score / 10) * circ).toFixed(2);
+        return `<svg class="nw-scan-score-ring" viewBox="0 0 34 34">
+            <circle class="track" cx="17" cy="17" r="${r}"/>
+            <circle class="fill" cx="17" cy="17" r="${r}" stroke="${color}"
+                stroke-dasharray="${circ.toFixed(2)}"
+                stroke-dashoffset="${(circ - filled).toFixed(2)}"/>
+            <text x="17" y="17">${score}</text>
+        </svg>`;
+    }
+
     // Row states: queued → opening → reading → scoring → done / error
-    function setRowState(row, state, data = {}) {
+    function setRowState(row, state, data = {}, errorMsg = '') {
         const ICONS = {
             queued:  `<span class="nw-scan-dot queued"></span>`,
             opening: `<span class="nw-scan-spinner"></span>`,
             reading: `<span class="nw-scan-spinner reading"></span>`,
             scoring: `<span class="nw-scan-spinner scoring"></span>`,
-            done:    `<div class="nw-scan-score-badge" style="background:${scoreColor(data.score || 0)}">${data.score || '?'}<span style="font-size:8px">/10</span></div>`,
+            done:    _scoreRingSVG(data.score || 0, scoreColor(data.score || 0)),
             error:   `<span class="nw-scan-dot error"></span>`,
         };
-        const STATUS_LABEL = {
+        const STATUS_TEXT = {
             queued:  'Queued',
-            opening: '🌐 Opening tab…',
-            reading: '📄 Reading page…',
-            scoring: '🧠 Scoring with AI…',
-            done:    '',
-            error:   '⚠ Could not load',
+            opening: '🌐 Opening…',
+            reading: '📄 Reading…',
+            scoring: '🧠 Scoring…',
+            error:   errorMsg ? `⚠ ${errorMsg}` : '⚠ Could not load',
         };
 
-        const icon = row.querySelector('.nw-scan-icon');
-        const statusEl = row.querySelector('.nw-scan-status');
+        const icon       = row.querySelector('.nw-scan-icon');
+        const statusLine = row.querySelector('.nw-scan-status-line');
+        const labelPill  = row.querySelector('.nw-scan-label-pill');
+        const detailEl   = row.querySelector('.nw-scan-detail');
+        const expandEl   = row.querySelector('.nw-scan-expand');
 
         if (icon) icon.innerHTML = ICONS[state] || '';
-        if (statusEl) {
-            if (state === 'done' && data.score) {
-                statusEl.innerHTML = `
-                    <div class="nw-scan-verdict">${esc(data.verdict || '')}</div>
-                    <div class="nw-scan-tags">
-                        ${data.match ? `<span class="nw-scan-tag match">✓ ${esc(data.match)}</span>` : ''}
-                        ${data.gap && data.gap.toLowerCase() !== 'none' ? `<span class="nw-scan-tag gap">✗ ${esc(data.gap)}</span>` : ''}
-                    </div>`;
-            } else {
-                statusEl.textContent = STATUS_LABEL[state] || '';
+
+        // Active pulse — only on processing states
+        row.dataset.active = (state === 'opening' || state === 'reading' || state === 'scoring') ? 'true' : 'false';
+
+        if (state === 'done' && data.score) {
+            const lbl = scoreLabel(data.score);
+            if (labelPill) {
+                labelPill.textContent = lbl.text;
+                labelPill.style.background = lbl.bg;
+                labelPill.style.color = lbl.color;
+                labelPill.style.borderColor = lbl.color + '44';
+                labelPill.style.display = '';
             }
+            if (statusLine) statusLine.textContent = '';
+            if (detailEl) {
+                // Split comma-separated match/gap into individual tag pills
+                const matchTags = (data.match || '').split(',').map(s => s.trim()).filter(Boolean)
+                    .map(s => `<span class="nw-scan-tag match">✓ ${esc(s)}</span>`).join('');
+                const gapTags = (data.gap || '').toLowerCase() === 'none' ? '' :
+                    (data.gap || '').split(',').map(s => s.trim()).filter(Boolean)
+                        .map(s => `<span class="nw-scan-tag gap">✗ ${esc(s)}</span>`).join('');
+                detailEl.innerHTML = `
+                    <div class="nw-scan-verdict">${esc(data.verdict || '')}</div>
+                    <div class="nw-scan-tags">${matchTags}${gapTags}</div>
+                    <a href="${esc(row.dataset.url || '')}" target="_blank" class="nw-scan-apply-btn">↗ Apply Now</a>`;
+            }
+            if (expandEl) expandEl.style.display = '';
+        } else {
+            if (labelPill) labelPill.style.display = 'none';
+            if (statusLine) statusLine.textContent = STATUS_TEXT[state] || '';
+            if (expandEl)   expandEl.style.display = 'none';
         }
 
         row.dataset.state = state;
+        if (data.score) row.dataset.score = data.score;
     }
 
     function makeJobRow(job, index) {
@@ -1160,28 +1440,56 @@ One sentence: should they apply, and what should they emphasise or address?`;
         row.className = 'nw-scan-row';
         row.dataset.index = index;
         row.dataset.state = 'queued';
+        row.dataset.url   = job.url;
+        // Stagger entrance: each row slides in 30ms after the previous
+        row.style.animationDelay = `${index * 30}ms`;
+
+        const hostname = (() => { try { return new URL(job.url).hostname.replace('www.', ''); } catch { return job.url; } })();
         row.innerHTML = `
-            <div class="nw-scan-icon"><span class="nw-scan-dot queued"></span></div>
-            <div class="nw-scan-job-info">
-                <div class="nw-scan-job-name">
-                    <a href="${esc(job.url)}" style="color:#111827;font-weight:600;font-size:12px;text-decoration:none;"
-                       title="${esc(job.url)}">${esc(job.title)}</a>
+            <div class="nw-scan-row-main">
+                <div class="nw-scan-icon"><span class="nw-scan-dot queued"></span></div>
+                <div class="nw-scan-job-info">
+                    <div class="nw-scan-job-main">
+                        <div class="nw-scan-job-name" title="${esc(job.url)}">${esc(job.title)}</div>
+                        <span class="nw-scan-label-pill" style="display:none"></span>
+                    </div>
+                    <div class="nw-scan-url">${esc(hostname)}</div>
+                    <div class="nw-scan-status-line">Queued</div>
                 </div>
-                <div class="nw-scan-url">${esc(new URL(job.url).hostname.replace('www.',''))}</div>
-                <div class="nw-scan-status" style="font-size:11px;color:#9ca3af;margin-top:2px;">Queued</div>
-            </div>`;
+                <span class="nw-scan-row-nav">↗</span>
+                <span class="nw-scan-expand" style="display:none">▾</span>
+            </div>
+            <div class="nw-scan-detail"></div>`;
+
+        // Click row-main: navigate to job in same tab; click expand chevron: toggle detail
+        row.querySelector('.nw-scan-row-main').addEventListener('click', e => {
+            if (row.dataset.state !== 'done') return;
+            // Chevron click → toggle detail only
+            if (e.target.closest('.nw-scan-expand')) {
+                row.dataset.open = row.dataset.open === 'true' ? 'false' : 'true';
+                return;
+            }
+            const url = row.dataset.url;
+            if (!url) return;
+            // Ask background to navigate the active tab — most reliable in MV3 content scripts
+            chrome.runtime.sendMessage({ type: 'NAVIGATE', url });
+        });
+
         return row;
     }
 
-    async function scoreSingleJob(jobText, resumeText) {
+    async function scoreSingleJob(jobText, resumeText, jobUrl = '') {
+        const urlLine = jobUrl ? `Job URL: ${jobUrl}\n` : '';
         const prompt =
 `You are a career advisor. Score this job against the candidate's resume.
-
+${urlLine}
 --- JOB POSTING ---
 ${jobText.slice(0, 4000)}
 
 --- CANDIDATE RESUME ---
 ${resumeText.slice(0, 2500)}
+
+If the job posting text above is incomplete or unclear, use the Job URL to infer the role and company.
 
 Respond in this EXACT format (no extra text):
 SCORE: <number 1-10>
@@ -1189,14 +1497,209 @@ VERDICT: <one sentence — should they apply and why?>
 MATCH: <2-3 top matching skills, comma separated>
 GAP: <1-2 missing requirements, or "None" if strong match>`;
 
-        const raw = await callAI(prompt, 'You are a career advisor. Follow the exact output format. Be concise and honest.');
-        const score   = parseInt((raw.match(/SCORE:\s*(\d+)/i) || [])[1]) || 0;
+        const SYSTEM = 'You are a career advisor. Follow the exact output format. Be concise and honest.';
+
+        // Retry once on failure — service worker may need a moment to wake after closing scrape tab
+        let raw = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+                raw = await Promise.race([
+                    callAI(prompt, SYSTEM),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('score timeout')), 25000))
+                ]);
+                break; // success
+            } catch (e) {
+                if (attempt === 0) {
+                    await new Promise(r => setTimeout(r, 2000)); // wait 2s before retry
+                } else {
+                    throw e; // both attempts failed — bubble up
+                }
+            }
+        }
+
+        const score   = Math.min(10, Math.max(1, parseInt((raw.match(/SCORE:\s*(\d+)/i) || [])[1]) || 0));
         const verdict = (raw.match(/VERDICT:\s*(.+)/i) || [])[1]?.trim() || '';
         const match   = (raw.match(/MATCH:\s*(.+)/i) || [])[1]?.trim() || '';
         const gap     = (raw.match(/GAP:\s*(.+)/i) || [])[1]?.trim() || '';
         return { score, verdict, match, gap };
     }
 
+    // ── Scan card ─────────────────────────────────────────────────────────────
+    const SCAN_CARD_ID  = 'nw-scan-card';
+    const SCAN_STORE_KEY = 'nova_scan_results'; // persists completed results across reloads
+    let   _scanCancelled = false;
+
+    function getOrCreateScanCard(jobs, showCancel = false) {
+        let card = document.getElementById(SCAN_CARD_ID);
+        if (card) return card;
+
+        const uid = SCAN_CARD_ID;
+        card = document.createElement('div');
+        card.id = SCAN_CARD_ID;
+        card.className = 'nw-msg ai';
+        card.innerHTML = `
+            <div class="nw-avatar">N</div>
+            <div class="nw-msg-wrap">
+                <div class="nw-bubble">
+                    <div class="nw-scan-header">
+                        <span class="nw-scan-title" id="${uid}-title">🔍 Found ${jobs.length} job${jobs.length !== 1 ? 's' : ''} — scanning…</span>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="nw-scan-progress" id="${uid}-prog">0 / ${jobs.length}</span>
+                            <button id="${uid}-cancel" style="display:${showCancel ? '' : 'none'};font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#ef4444;cursor:pointer;">✕ Cancel</button>
+                        </div>
+                    </div>
+                    <div class="nw-scan-bar-wrap"><div class="nw-scan-bar" id="${uid}-bar" style="width:0%"></div></div>
+                    <div class="nw-scan-list" id="${uid}-list"></div>
+                </div>
+            </div>`;
+        card.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(Date.now()));
+        messagesEl.appendChild(card);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        return card;
+    }
+
+    function _wireCancelBtn(card) {
+        const btn = card.querySelector(`#${SCAN_CARD_ID}-cancel`);
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            _scanCancelled = true;
+            hideJobPreviewPanel();
+            btn.style.display = 'none';
+            const titleEl = card.querySelector(`#${SCAN_CARD_ID}-title`);
+            if (titleEl) titleEl.textContent = '🛑 Scan cancelled';
+        });
+    }
+
+    function _wireFilterChips() {}
+
+    // ── Job preview panel ─────────────────────────────────────────────────────
+
+    function showJobPreviewPanel(url, title, index, total) {
+        let panel = document.getElementById('nw-job-preview');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.id = 'nw-job-preview';
+            panel.innerHTML = `
+                <div id="nw-preview-header">
+                    <img id="nw-preview-favicon" src="" alt="">
+                    <span id="nw-preview-title"></span>
+                    <span id="nw-preview-badge"></span>
+                    <button id="nw-preview-close" title="Close preview">✕</button>
+                </div>
+                <div id="nw-preview-body">
+                    <iframe id="nw-preview-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+                    <div id="nw-preview-scan-overlay" data-phase="loading">
+                        <div id="nw-ov-bg"></div>
+                        <div id="nw-ov-reticle">
+                            <div id="nw-ov-ping"></div>
+                            <svg class="ring-outer" viewBox="0 0 96 96" fill="none">
+                                <circle cx="48" cy="48" r="44" stroke="rgba(255,255,255,.06)" stroke-width="1.5"/>
+                                <path d="M48 4 A44 44 0 0 1 92 48" stroke="#818cf8" stroke-width="2" stroke-linecap="round" id="nw-arc-outer"/>
+                                <circle cx="92" cy="48" r="3" fill="#818cf8" id="nw-dot-outer"/>
+                            </svg>
+                            <svg class="ring-inner" viewBox="0 0 72 72" fill="none">
+                                <circle cx="36" cy="36" r="32" stroke="rgba(255,255,255,.05)" stroke-width="1.5"/>
+                                <path d="M36 4 A32 32 0 0 1 68 36" stroke="rgba(129,140,248,.5)" stroke-width="1.5" stroke-linecap="round" id="nw-arc-inner"/>
+                            </svg>
+                            <div id="nw-ov-icon">N</div>
+                        </div>
+                        <div id="nw-ov-label">Opening page…</div>
+                        <div id="nw-ov-sub">Waiting for page to load</div>
+                        <div id="nw-ov-bar-wrap"><div id="nw-ov-bar-fill"></div></div>
+                        <div id="nw-ov-steps">
+                            <div class="nw-ov-step active" id="nw-step-load"><div class="nw-ov-step-dot"></div>Load</div>
+                            <div class="nw-ov-step-div"></div>
+                            <div class="nw-ov-step" id="nw-step-read"><div class="nw-ov-step-dot"></div>Read</div>
+                            <div class="nw-ov-step-div"></div>
+                            <div class="nw-ov-step" id="nw-step-score"><div class="nw-ov-step-dot"></div>Score</div>
+                        </div>
+                    </div>
+                    <div id="nw-preview-blocked">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="3"/></svg>
+                        <div><strong>Site blocks preview</strong><br><span style="font-size:11px">Reading content in background…</span></div>
+                    </div>
+                </div>`;
+            document.body.appendChild(panel);
+            document.getElementById('nw-preview-close').addEventListener('click', hideJobPreviewPanel);
+        }
+
+        const hostname = (() => { try { return new URL(url).hostname; } catch { return ''; } })();
+        document.getElementById('nw-preview-favicon').src = `https://www.google.com/s2/favicons?domain=${hostname}&sz=16`;
+        document.getElementById('nw-preview-title').textContent = title;
+        document.getElementById('nw-preview-badge').textContent = `${index + 1} of ${total}`;
+
+        // Reset overlay to "loading" state
+        _setPreviewState('loading');
+
+        const iframe  = document.getElementById('nw-preview-iframe');
+        const blocked = document.getElementById('nw-preview-blocked');
+        iframe.style.display  = '';
+        blocked.style.display = 'none';
+        iframe.src = url;
+
+        // After page loads, advance overlay to "reading" state
+        iframe.onload = () => {
+            _setPreviewState('reading');
+        };
+
+        // If blocked by X-Frame-Options, show blocked notice (overlay stays on top)
+        iframe.onerror = () => {
+            iframe.style.display  = 'none';
+            blocked.style.display = 'flex';
+            document.getElementById('nw-preview-scan-overlay').classList.add('nw-overlay-hidden');
+        };
+
+        requestAnimationFrame(() => panel.classList.add('nw-preview-open'));
+    }
+
+    function _setPreviewState(phase) {
+        const overlay   = document.getElementById('nw-preview-scan-overlay');
+        if (!overlay) return;
+
+        overlay.classList.remove('nw-overlay-hidden');
+        overlay.dataset.phase = phase;
+
+        const COPY = {
+            loading: { label: 'Opening page…',        sub: 'Waiting for page to load',                  arc: '#818cf8', arc2: 'rgba(129,140,248,.5)' },
+            reading: { label: 'Reading content…',      sub: 'Extracting job requirements & description', arc: '#22d3ee', arc2: 'rgba(34,211,238,.4)' },
+            scoring: { label: 'Scoring with AI…',      sub: 'Matching your resume to this role',         arc: '#fbbf24', arc2: 'rgba(251,191,36,.4)' },
+        };
+        const c = COPY[phase] || COPY.loading;
+
+        const labelEl  = document.getElementById('nw-ov-label');
+        const subEl    = document.getElementById('nw-ov-sub');
+        const arcOuter = document.getElementById('nw-arc-outer');
+        const dotOuter = document.getElementById('nw-dot-outer');
+        const arcInner = document.getElementById('nw-arc-inner');
+        const stepLoad = document.getElementById('nw-step-load');
+        const stepRead = document.getElementById('nw-step-read');
+        const stepScore= document.getElementById('nw-step-score');
+
+        if (labelEl) { labelEl.style.animation = 'none'; labelEl.offsetHeight; labelEl.style.animation = ''; labelEl.textContent = c.label; }
+        if (subEl)   subEl.textContent = c.sub;
+        if (arcOuter){ arcOuter.setAttribute('stroke', c.arc); }
+        if (dotOuter){ dotOuter.setAttribute('fill', c.arc); }
+        if (arcInner){ arcInner.setAttribute('stroke', c.arc2); }
+
+        const S = { loading: ['active','',''], reading: ['done','active',''], scoring: ['done','done','active'] };
+        const s = S[phase] || S.loading;
+        if (stepLoad)  stepLoad.className  = 'nw-ov-step ' + s[0];
+        if (stepRead)  stepRead.className  = 'nw-ov-step ' + s[1];
+        if (stepScore) stepScore.className = 'nw-ov-step ' + s[2];
+    }
+
+    function hideJobPreviewPanel() {
+        const panel = document.getElementById('nw-job-preview');
+        if (!panel) return;
+        panel.classList.remove('nw-preview-open');
+        const iframe = document.getElementById('nw-preview-iframe');
+        if (iframe) iframe.src = 'about:blank';
+        setTimeout(() => panel.remove(), 380);
+    }
+
+    // Main scan — widget stays alive the entire time.
+    // For each job: background opens a popup window, loads the page (user sees it),
+    // scrapes, closes the popup, returns text. Widget scores and updates row live.
     async function resolveScanJobs() {
         const jobs = scrapeJobLinks();
         if (jobs.length === 0) {
@@ -1213,141 +1716,213 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             return appendMsg('ai', '⚠️ No resume found. Please go to **Settings** and add your profile first.');
         }
 
-        // Store resume so we can use it after the tab returns
-        const scanId = 'scan_' + Date.now();
-        await new Promise(r => chrome.storage.local.set({
-            nova_scan_resume: resumeText,
-            nova_scan_state: { scanId, status: 'starting', total: jobs.length, done: 0, results: [], originUrl: location.href }
-        }, r));
+        _scanCancelled = false;
+        const card    = getOrCreateScanCard(jobs, true);
+        const listEl  = card.querySelector(`#${SCAN_CARD_ID}-list`);
+        const barEl   = card.querySelector(`#${SCAN_CARD_ID}-bar`);
+        const progEl  = card.querySelector(`#${SCAN_CARD_ID}-prog`);
+        const titleEl = card.querySelector(`#${SCAN_CARD_ID}-title`);
 
-        // Show a "scanning in progress" message — tab will navigate away in a moment
-        appendMsg('ai',
-            `🔍 Opening ${jobs.length} job${jobs.length !== 1 ? 's' : ''} one by one in this tab.\n\n` +
-            `Each page will load, I'll read it, then move to the next. When all done I'll navigate back here and show your results.\n\n` +
-            `**Don't close this tab!**`
-        );
-        chatHistory.push({ role: 'ai', text: `Starting job scan of ${jobs.length} jobs.`, ts: Date.now() });
+        _wireCancelBtn(card);
 
-        // Small delay so user can read the message before tab navigates
-        await new Promise(r => setTimeout(r, 1800));
-
-        // Hand off to background — it navigates the tab through all jobs then back
-        chrome.runtime.sendMessage({
-            type: 'SCAN_JOBS_IN_TAB',
-            jobs,
-            originUrl: location.href,
-            scanId
-        });
-    }
-
-    // Called on widget init — checks if we just returned from a scan and renders results
-    async function checkPendingScanResults() {
-        const stored = await new Promise(r => chrome.storage.local.get(['nova_scan_state', 'nova_scan_resume'], r));
-        const state  = stored.nova_scan_state;
-        const resume = stored.nova_scan_resume;
-
-        if (!state || state.status === 'done') return;
-        if (!state.results?.length) return;
-
-        // Match on hostname + pathname only — ignore query params which may differ on return
-        if (state.originUrl) {
-            try {
-                const origin = new URL(state.originUrl);
-                const current = new URL(location.href);
-                if (origin.hostname !== current.hostname || origin.pathname !== current.pathname) return;
-            } catch { return; }
-        }
-
-        // Mark done immediately so a second widget init on the same page doesn't re-run
-        await new Promise(r => chrome.storage.local.set({ nova_scan_state: { ...state, status: 'done' } }, r));
-        await new Promise(r => chrome.storage.local.remove('nova_scan_resume', r));
-
-        const scrapedJobs = state.results;
-        const uid = 'nw-scan-' + Date.now();
-
-        // Build the results card
-        const cardWrap = document.createElement('div');
-        cardWrap.className = 'nw-msg ai';
-        cardWrap.innerHTML = `
-            <div class="nw-avatar">N</div>
-            <div class="nw-msg-wrap">
-                <div class="nw-bubble">
-                    <div class="nw-scan-header">
-                        <span class="nw-scan-title" id="${uid}-title">🧠 Scoring ${scrapedJobs.length} jobs with AI…</span>
-                        <span class="nw-scan-progress" id="${uid}-prog">0 / ${scrapedJobs.length}</span>
-                    </div>
-                    <div class="nw-scan-bar-wrap"><div class="nw-scan-bar" id="${uid}-bar" style="width:0%"></div></div>
-                    <div class="nw-scan-list" id="${uid}-list"></div>
-                </div>
-            </div>`;
-        cardWrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(Date.now()));
-
-        // Insert before the last message (history is already rendered), or append
-        const msgs = messagesEl.querySelectorAll('.nw-msg');
-        if (msgs.length) messagesEl.insertBefore(cardWrap, msgs[msgs.length - 1].nextSibling);
-        else messagesEl.appendChild(cardWrap);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-
-        const listEl  = document.getElementById(`${uid}-list`);
-        const barEl   = document.getElementById(`${uid}-bar`);
-        const progEl  = document.getElementById(`${uid}-prog`);
-        const titleEl = document.getElementById(`${uid}-title`);
-
-        // Pre-render all rows as queued
-        const rows = scrapedJobs.map((job, i) => {
-            const row = makeJobRow({ url: job.url, title: job.title }, i);
-            if (job.status === 'error') setRowState(row, 'error');
+        const rows = jobs.map((job, i) => {
+            const row = makeJobRow(job, i);
             listEl.appendChild(row);
             return row;
         });
         messagesEl.scrollTop = messagesEl.scrollHeight;
+        chatHistory.push({ role: 'ai', text: `Starting job scan of ${jobs.length} jobs.`, ts: Date.now() });
 
-        const finalResults = [];
+        // allScanRecords tracks every job (success + error) for persist/restore
+        const allScanRecords = jobs.map(j => ({ url: j.url, title: j.title, status: 'error' }));
+        let doneCount = 0;
 
-        for (let i = 0; i < scrapedJobs.length; i++) {
-            const job = scrapedJobs[i];
+        for (let i = 0; i < jobs.length; i++) {
+            if (_scanCancelled) break;
+
+            const job = jobs[i];
             const row = rows[i];
+            const rec = allScanRecords[i];
 
-            if (job.status === 'error' || !job.text) {
-                setRowState(row, 'error');
-                progEl.textContent = `${i + 1} / ${scrapedJobs.length}`;
-                barEl.style.width = Math.round(((i + 1) / scrapedJobs.length) * 100) + '%';
-                continue;
-            }
-
-            setRowState(row, 'scoring');
+            setRowState(row, 'opening');
+            titleEl.textContent = `🔍 Opening job ${i + 1} of ${jobs.length}…`;
             messagesEl.scrollTop = messagesEl.scrollHeight;
 
-            try {
-                const scored = await scoreSingleJob(job.text, resume || '');
-                setRowState(row, 'done', scored);
-                finalResults.push({ url: job.url, title: job.title, ...scored });
-            } catch {
-                setRowState(row, 'error');
+            showJobPreviewPanel(job.url, job.title, i, jobs.length);
+
+            const scraped = await new Promise(resolve => {
+                chrome.runtime.sendMessage({ type: 'SCRAPE_JOB_POPUP', url: job.url }, result => {
+                    if (chrome.runtime.lastError) return resolve({ text: '', error: chrome.runtime.lastError.message });
+                    resolve(result || { text: '' });
+                });
+            });
+
+            // Advance overlay to "reading" phase while we check the scraped text
+            _setPreviewState('reading');
+
+            if (_scanCancelled) { hideJobPreviewPanel(); break; }
+
+            let jobText = scraped.text;
+            // Single retry if first attempt returned empty
+            if (!jobText) {
+                setRowState(row, 'reading');
+                titleEl.textContent = `🔄 Retrying job ${i + 1} of ${jobs.length}…`;
+                await new Promise(r => setTimeout(r, 5000));
+                if (!_scanCancelled) {
+                    const retry = await new Promise(resolve => {
+                        chrome.runtime.sendMessage({ type: 'SCRAPE_JOB_POPUP', url: job.url }, result => {
+                            if (chrome.runtime.lastError) return resolve({ text: '' });
+                            resolve(result || { text: '' });
+                        });
+                    });
+                    jobText = retry.text;
+                }
             }
 
-            progEl.textContent = `${i + 1} / ${scrapedJobs.length}`;
-            barEl.style.width = Math.round(((i + 1) / scrapedJobs.length) * 100) + '%';
+            if (!jobText) {
+                hideJobPreviewPanel();
+                setRowState(row, 'error', {}, 'No content scraped');
+                rec.status = 'error'; rec.errorMsg = 'No content scraped';
+            } else {
+                // Show "Scoring" state in overlay briefly so user sees it transition
+                _setPreviewState('scoring');
+                setRowState(row, 'scoring');
+                titleEl.textContent = `🧠 Scoring job ${i + 1} of ${jobs.length}…`;
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+
+                // Hold overlay at scoring state briefly, then close
+                await new Promise(r => setTimeout(r, 800));
+                hideJobPreviewPanel();
+                // Brief pause for background worker to settle
+                await new Promise(r => setTimeout(r, 400));
+
+                try {
+                    const scored = await scoreSingleJob(jobText, resumeText, job.url);
+                    const effectiveScore = scored.score > 0 ? scored.score : (scored.verdict ? 5 : 0);
+                    if (effectiveScore > 0) {
+                        const data = { ...scored, score: effectiveScore };
+                        setRowState(row, 'done', data);
+                        Object.assign(rec, { status: 'done', score: effectiveScore,
+                            verdict: data.verdict, match: data.match, gap: data.gap });
+                    } else {
+                        setRowState(row, 'error', {}, 'Could not parse AI response');
+                        rec.status = 'error'; rec.errorMsg = 'Could not parse AI response';
+                    }
+                } catch(e) {
+                    const msg = (e?.message || '').replace('__CONTEXT_INVALID__', 'Extension reloaded — refresh page');
+                    setRowState(row, 'error', {}, msg || 'AI request failed');
+                    rec.status = 'error'; rec.errorMsg = msg || 'AI request failed';
+                }
+            }
+
+            doneCount++;
+            progEl.textContent = `${doneCount} / ${jobs.length}`;
+            barEl.style.width  = Math.round((doneCount / jobs.length) * 100) + '%';
             messagesEl.scrollTop = messagesEl.scrollHeight;
         }
 
-        // Final summary
-        const sorted = finalResults.filter(r => r.score > 0).sort((a, b) => b.score - a.score);
-        titleEl.textContent = `✅ Scanned ${scrapedJobs.length} jobs — ${sorted.length} scored`;
+        // Hide cancel button
+        const cancelBtn = card.querySelector(`#${SCAN_CARD_ID}-cancel`);
+        if (cancelBtn) cancelBtn.style.display = 'none';
+
+        if (_scanCancelled) {
+            rows.forEach(r => { if (r.dataset.state === 'queued' || r.dataset.state === 'opening') setRowState(r, 'error'); });
+        }
+
+        const scoredRecords = allScanRecords.filter(r => r.status === 'done');
+        scoredRecords.sort((a, b) => b.score - a.score);
+
+        // Update title
+        titleEl.textContent = _scanCancelled
+            ? `🛑 Cancelled — ${scoredRecords.length} of ${jobs.length} scored`
+            : `✅ Scanned ${jobs.length} jobs — ${scoredRecords.length} scored`;
         progEl.textContent = '';
 
-        if (sorted.length) {
-            const summary = document.createElement('div');
-            summary.className = 'nw-scan-summary';
-            summary.innerHTML = `<strong>Top matches:</strong> ${sorted.slice(0, 3).map(j =>
-                `<a href="${esc(j.url)}" style="color:#4f46e5;font-weight:600;text-decoration:none;">${esc(j.title)}</a> <strong>${j.score}/10</strong>`
-            ).join(' · ')}`;
-            listEl.appendChild(summary);
-        }
+        // Sort rows by score
+        Array.from(listEl.querySelectorAll('.nw-scan-row'))
+            .sort((a, b) => (parseInt(b.dataset.score) || 0) - (parseInt(a.dataset.score) || 0))
+            .forEach(r => listEl.appendChild(r));
 
-        const summaryText = `Job scan complete. Top matches: ${sorted.slice(0, 3).map(j => `${j.title} — ${j.score}/10`).join(', ')}`;
-        chatHistory.push({ role: 'ai', text: summaryText, ts: Date.now() });
-        messagesEl.scrollTop = messagesEl.scrollHeight;
+        barEl.classList.add('done');
+        _wireFilterChips(card, listEl, scoredRecords);
+        if (scoredRecords.length) _appendPodium(listEl, scoredRecords);
+
+        // Summary text — only list jobs that actually scored
+        const topText = scoredRecords.length
+            ? scoredRecords.slice(0, 3).map(j => `${j.title} — ${j.score}/10`).join(', ')
+            : 'No jobs scored — check extension settings or try again.';
+        chatHistory.push({ role: 'ai', text: `Job scan complete. ${topText}`, ts: Date.now() });
+
+        // Always persist — even if all failed, so we can restore the card on reload
+        chrome.storage.local.set({ [SCAN_STORE_KEY]: { records: allScanRecords, ts: Date.now() } });
+    }
+
+    function _appendPodium(listEl, results) {
+        const MEDALS = ['🥇', '🥈', '🥉'];
+        const top = results.slice(0, 3);
+        const podium = document.createElement('div');
+        podium.className = 'nw-scan-podium';
+        podium.innerHTML = top.map((j, i) => `
+            <a class="nw-scan-podium-card" href="${esc(j.url)}" target="_blank" style="text-decoration:none;">
+                <div class="nw-scan-podium-medal">${MEDALS[i]}</div>
+                <div class="nw-scan-podium-name">${esc(j.title)}</div>
+                <div class="nw-scan-podium-score">${j.score}/10</div>
+            </a>`).join('');
+        listEl.appendChild(podium);
+    }
+
+    // Restore a completed scan card from chrome.storage.local when the widget reinits.
+    async function checkPendingScanResults() {
+        chrome.storage.local.get([SCAN_STORE_KEY], data => {
+            const stored = data[SCAN_STORE_KEY];
+            if (!stored || !stored.records || !stored.records.length) return;
+
+            // Discard results older than 2 hours
+            if (Date.now() - stored.ts > 2 * 60 * 60 * 1000) {
+                chrome.storage.local.remove(SCAN_STORE_KEY);
+                return;
+            }
+
+            const records = stored.records;
+            const jobs = records.map(r => ({ url: r.url, title: r.title }));
+
+            const card    = getOrCreateScanCard(jobs, false);
+            const listEl  = card.querySelector(`#${SCAN_CARD_ID}-list`);
+            const barEl   = card.querySelector(`#${SCAN_CARD_ID}-bar`);
+            const progEl  = card.querySelector(`#${SCAN_CARD_ID}-prog`);
+            const titleEl = card.querySelector(`#${SCAN_CARD_ID}-title`);
+
+            // Rebuild every row — done rows show score ring, error rows show error state
+            records.forEach((r, i) => {
+                const row = makeJobRow({ url: r.url, title: r.title }, i);
+                listEl.appendChild(row);
+                if (r.status === 'done') {
+                    setRowState(row, 'done', { score: r.score, verdict: r.verdict, match: r.match, gap: r.gap });
+                } else {
+                    setRowState(row, 'error', {}, r.errorMsg || 'Could not load');
+                }
+            });
+
+            // Sort done rows first by score, errors at the bottom
+            Array.from(listEl.querySelectorAll('.nw-scan-row'))
+                .sort((a, b) => {
+                    const sA = parseInt(a.dataset.score) || 0;
+                    const sB = parseInt(b.dataset.score) || 0;
+                    return sB - sA;
+                })
+                .forEach(r => listEl.appendChild(r));
+
+            const scoredRecords = records.filter(r => r.status === 'done');
+            barEl.style.width = '100%';
+            barEl.classList.add('done');
+            progEl.textContent  = '';
+            titleEl.textContent = `✅ Scanned ${records.length} jobs — ${scoredRecords.length} scored`;
+
+            _wireFilterChips(card, listEl, scoredRecords);
+            if (scoredRecords.length) _appendPodium(listEl, scoredRecords);
+
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        });
     }
 
     // ── Job Tracker (storage from Core) ──────────────────────────────────────
@@ -1774,6 +2349,14 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         const thinkId = showThinking();
         isThinking = true;
         try {
+            const SCAN_PATTERN = /\b(scan|check|analyse|analyze|compare|rank|score|review)\b.{0,30}\bjobs?\b|\bjobs?\b.{0,30}\b(scan|check|match|fit|compatible|compatibility|suit|qualify)\b|\bwhich jobs?\b|\ball jobs?\b|\bthese jobs?\b|\bjob listings?\b/i;
+            if (SCAN_PATTERN.test(text)) {
+                removeThinking(thinkId);
+                isThinking = false;
+                await resolveScanJobs();
+                return;
+            }
+
             const NAV_PATTERN = /\b(open|go to|take me to|navigate to|visit|show me|bring me to|launch)\b|\bmy (profile|account|settings|dashboard|inbox|messages|notifications|jobs|feed|network|connections|page|resume)\b/i;
             const isNav = NAV_PATTERN.test(text);
             console.log(`[Nova v${WIDGET_VERSION}] doSend: "${text}" | navPattern=${isNav}`);

@@ -228,97 +228,113 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return false;
     }
 
-    // Full same-tab job scan loop.
-    // Navigates the current tab to each job URL, scrapes content, navigates back to origin.
-    // Progress + results written to chrome.storage.local so the widget can read them
-    // after the tab returns to the origin URL and the widget re-inits.
-    if (message.type === 'SCAN_JOBS_IN_TAB') {
-        const tabId     = sender.tab?.id;
-        const jobs      = message.jobs;       // [{url, title}, ...]
-        const originUrl = message.originUrl;
-        const scanId    = message.scanId;
-
-        if (!tabId || !jobs?.length) { sendResponse({ started: false }); return false; }
-
-        // Helper: wait for tab to finish loading
-        function waitForTabLoad(tid, timeoutMs = 15000) {
-            return new Promise((resolve, reject) => {
-                const t = setTimeout(() => {
-                    chrome.tabs.onUpdated.removeListener(fn);
-                    reject(new Error('timeout'));
-                }, timeoutMs);
-                function fn(id, info) {
-                    if (id !== tid || info.status !== 'complete') return;
-                    chrome.tabs.onUpdated.removeListener(fn);
-                    clearTimeout(t);
-                    resolve();
-                }
-                chrome.tabs.onUpdated.addListener(fn);
-            });
-        }
-
-        // Helper: scrape visible text from tab
-        async function scrapeTab(tid) {
-            const [r] = await chrome.scripting.executeScript({
-                target: { tabId: tid },
-                func: () => {
-                    const c = document.body.cloneNode(true);
-                    c.querySelectorAll('script,style,nav,footer,header,[role="banner"],[role="navigation"]').forEach(e => e.remove());
-                    return { title: document.title, url: location.href, text: (c.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 6000) };
-                }
-            });
-            return r?.result || { title: '', url: '', text: '' };
-        }
-
-        // Helper: write progress to storage so widget can poll/read on restore
-        async function saveProgress(update) {
-            const existing = await chrome.storage.local.get(['nova_scan_state']);
-            const state = existing.nova_scan_state || {};
-            Object.assign(state, update);
-            await chrome.storage.local.set({ nova_scan_state: state });
-        }
-
-        sendResponse({ started: true });
+    // Open a popup window for the job URL (user sees it load), scrape it, close it,
+    // return the text directly. Widget stays alive on the search page the whole time.
+    if (message.type === 'SCRAPE_JOB_POPUP') {
+        const url = message.url;
+        if (!url) { sendResponse({ text: '', error: 'no url' }); return false; }
 
         (async () => {
-            await saveProgress({ scanId, status: 'running', total: jobs.length, done: 0, results: [], originUrl });
-
-            for (let i = 0; i < jobs.length; i++) {
-                const job = jobs[i];
-                await saveProgress({ currentIndex: i, currentTitle: job.title, currentUrl: job.url, done: i });
-
-                try {
-                    // Navigate the tab to the job page
-                    await chrome.tabs.update(tabId, { url: job.url });
-                    await waitForTabLoad(tabId);
-                    await new Promise(r => setTimeout(r, 1000)); // settle JS
-
-                    const data = await scrapeTab(tabId);
-
-                    // Store raw text for AI scoring (widget will do the AI call after restore)
-                    const existing2 = await chrome.storage.local.get(['nova_scan_state']);
-                    const st = existing2.nova_scan_state || {};
-                    const results = st.results || [];
-                    results.push({ index: i, url: job.url, title: data.title || job.title, text: data.text, status: 'scraped' });
-                    await chrome.storage.local.set({ nova_scan_state: { ...st, results, done: i + 1 } });
-
-                } catch (e) {
-                    const existing3 = await chrome.storage.local.get(['nova_scan_state']);
-                    const st = existing3.nova_scan_state || {};
-                    const results = st.results || [];
-                    results.push({ index: i, url: job.url, title: job.title, text: '', status: 'error', error: e.message });
-                    await chrome.storage.local.set({ nova_scan_state: { ...st, results, done: i + 1 } });
-                }
-            }
-
-            // Navigate back to origin
-            await saveProgress({ status: 'returning', done: jobs.length });
+            let popupTabId = null;
             try {
-                await chrome.tabs.update(tabId, { url: originUrl });
-            } catch {}
+                // Hidden background tab — visual is handled by the iframe in the widget
+                const tab = await chrome.tabs.create({ url, active: false });
+                popupTabId = tab.id;
+
+                if (!popupTabId) throw new Error('no tab created');
+
+                // Wait for the page to finish loading
+                await new Promise((resolve, reject) => {
+                    const timer = setTimeout(() => {
+                        chrome.tabs.onUpdated.removeListener(fn);
+                        reject(new Error('timeout'));
+                    }, 15000);
+                    function fn(tabId, info) {
+                        if (tabId !== popupTabId || info.status !== 'complete') return;
+                        chrome.tabs.onUpdated.removeListener(fn);
+                        clearTimeout(timer);
+                        resolve();
+                    }
+                    chrome.tabs.onUpdated.addListener(fn);
+                });
+
+                // Wait up to 8s for JS-rendered content (React/Vue SPAs).
+                // Pulse chrome.storage every 2s to keep the MV3 service worker alive —
+                // without this, the SW can suspend mid-wait and kill the pending sendResponse.
+                await new Promise(r => {
+                    let elapsed = 0;
+                    const tick = setInterval(() => {
+                        elapsed += 2000;
+                        chrome.storage.local.get('_nw_sw_ping'); // no-op read keeps SW alive
+                        if (elapsed >= 8000) { clearInterval(tick); r(); }
+                    }, 2000);
+                });
+
+                // Smart scrape: JSON-LD → platform selectors → body fallback
+                const [r] = await chrome.scripting.executeScript({
+                    target: { tabId: popupTabId },
+                    func: () => {
+                        function clean(t) { return (t || '').replace(/\s+/g, ' ').trim(); }
+
+                        // TIER 1: JSON-LD structured data
+                        for (const s of document.querySelectorAll('script[type="application/ld+json"]')) {
+                            try {
+                                const d  = JSON.parse(s.textContent);
+                                const jd = d['@type'] === 'JobPosting' ? d : d.jobPosting;
+                                if (jd?.title) {
+                                    return clean([
+                                        `Title: ${jd.title}`,
+                                        `Company: ${jd.hiringOrganization?.name || ''}`,
+                                        `Location: ${jd.jobLocation?.address?.addressLocality || ''}`,
+                                        `Description: ${clean(jd.description || '').slice(0, 4000)}`
+                                    ].join('\n'));
+                                }
+                            } catch {}
+                        }
+
+                        // TIER 2: Platform-specific selectors
+                        const h = location.hostname;
+                        let titleSel, companySel, descSel;
+                        if (h.includes('greenhouse') || h.includes('boards')) {
+                            titleSel = '.app-title, h1.app-title'; companySel = '.company-name'; descSel = '#content .section-wrapper';
+                        } else if (h.includes('lever')) {
+                            titleSel = '.posting-headline h2'; companySel = '.main-header-text-logo'; descSel = '.section-wrapper';
+                        } else if (h.includes('myworkday') || h.includes('workday')) {
+                            titleSel = 'h2[data-automation-id="jobPostingHeader"], h3.css-12b42k6';
+                            companySel = '[data-automation-id="company"]'; descSel = '[data-automation-id="jobPostingDescription"]';
+                        } else if (h.includes('linkedin')) {
+                            titleSel = 'h1.top-card-layout__title, h1.t-24';
+                            companySel = 'a.topcard__org-name-link, .top-card-layout__second-subline';
+                            descSel = '.description__text, .show-more-less-html__markup';
+                        } else if (h.includes('indeed')) {
+                            titleSel = 'h1.jobsearch-JobInfoHeader-title, h1[data-testid="jobsearch-JobInfoHeader-title"]';
+                            companySel = '[data-testid="inlineHeader-companyName"]'; descSel = '#jobDescriptionText';
+                        }
+                        const descEl = descSel && document.querySelector(descSel);
+                        if (descEl) {
+                            return clean([
+                                `Title: ${clean(document.querySelector(titleSel)?.innerText || document.title)}`,
+                                `Company: ${clean(document.querySelector(companySel)?.innerText || '')}`,
+                                `Description: ${clean(descEl.innerText).slice(0, 4000)}`
+                            ].join('\n'));
+                        }
+
+                        // TIER 3: Body fallback
+                        const clone = document.body.cloneNode(true);
+                        clone.querySelectorAll('script,style,nav,footer,header,[role="banner"],[role="navigation"]').forEach(e => e.remove());
+                        return clean(clone.innerText || '').slice(0, 5000);
+                    }
+                });
+
+                sendResponse({ text: r?.result || '' });
+            } catch (e) {
+                sendResponse({ text: '', error: e.message });
+            } finally {
+                if (popupTabId) chrome.tabs.remove(popupTabId).catch(() => {});
+            }
         })();
 
-        return false;
+        return true; // keep message channel open for async sendResponse
     }
 
     // Open popup and switch to the fill-form tab
