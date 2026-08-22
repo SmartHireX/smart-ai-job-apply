@@ -600,6 +600,8 @@
 
         /* score ring badge */
         .nw-scan-score-ring { flex-shrink:0; width:34px; height:34px; animation:nw-badge-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .nw-compat-ring { width:52px !important; height:52px !important; }
+        .nw-compat-ring text { font-size:8px !important; }
         .nw-scan-score-ring circle.track { fill:none; stroke:#e5e7eb; stroke-width:3; }
         .nw-scan-score-ring circle.fill  { fill:none; stroke-width:3; stroke-linecap:round;
                                            transform:rotate(-90deg); transform-origin:50% 50%;
@@ -808,7 +810,7 @@
     if (_seed.length) {
         // History was passed directly from popup — render immediately
         messagesEl.innerHTML = '';
-        _seed.forEach(m => renderMsg(m.role, m.text, m.ts, m.records));
+        _seed.forEach(m => renderMsg(m.role, m.text, m.ts, m.records || m.result));
         document.getElementById('nw-chips').style.display = 'none';
         messagesEl.scrollTop = messagesEl.scrollHeight;
     } else {
@@ -954,7 +956,9 @@
 
     document.getElementById('nw-menu-fill').addEventListener('click', () => {
         closeMenu();
-        chrome.runtime.sendMessage({ type: 'OPEN_POPUP_FILL' });
+        inputEl.value = 'fill this form';
+        inputEl.dispatchEvent(new Event('input'));
+        setTimeout(doSend, 80);
     });
 
     document.getElementById('nw-menu-clear').addEventListener('click', () => {
@@ -1240,7 +1244,7 @@ If "all" or no specific fields mentioned, set matchedFields to ["all"].`,
     // For compatibility: fetches stored resume, sends job + resume to AI for fit analysis
     async function resolveCompatibility() {
         if (!pageContent) {
-            return 'I couldn\'t read the job description on this page. Make sure you\'re on a job posting and try again.';
+            return null;
         }
 
         // Fetch resume text from storage via background
@@ -1252,11 +1256,11 @@ If "all" or no specific fields mentioned, set matchedFields to ["all"].`,
         });
 
         if (!resumeText) {
-            return '⚠️ No resume found. Please go to **Settings** and add your profile/resume first, then try again.';
+            return null;
         }
 
         const prompt =
-`You are a professional career advisor. A job seeker wants to know how well they match a job posting.
+`You are a career advisor. Analyze how well this candidate matches this job.
 
 Job URL: ${location.href}
 
@@ -1266,22 +1270,58 @@ ${pageContent.slice(0, 5000)}
 --- CANDIDATE RESUME ---
 ${resumeText.slice(0, 3000)}
 
-If the job posting text is incomplete, use the Job URL to infer the role and company.
+Return ONLY a JSON object, nothing else:
+{
+  "score": <integer 1-10>,
+  "verdict": "<one sentence: should they apply and what to emphasise>",
+  "match": ["<strength 1>", "<strength 2>", "<strength 3>"],
+  "gap": ["<gap 1>", "<gap 2>"]
+}`;
 
-Provide a structured compatibility analysis:
+        const raw = await callAI(prompt, 'You are a career advisor. Return only valid JSON, no markdown, no explanation.');
+        try {
+            const json = raw.replace(/```json|```/g, '').trim();
+            const start = json.indexOf('{'), end = json.lastIndexOf('}');
+            return JSON.parse(json.slice(start, end + 1));
+        } catch {
+            return { score: null, verdict: raw, match: [], gap: [] };
+        }
+    }
 
-**Overall Match Score: X/10**
+    function renderCompatibilityCard(result) {
+        const ts = Date.now();
+        const score = result.score || 0;
+        const lbl   = scoreLabel(score);
+        const color = scoreColor(score);
 
-**Matching Strengths**
-• List 3-5 skills or experiences from the resume that directly match the job requirements
+        const matchTags = (result.match || []).map(m =>
+            `<span class="nw-scan-tag match">✓ ${esc(m)}</span>`).join('');
+        const gapTags = (result.gap || []).map(g =>
+            `<span class="nw-scan-tag gap">✗ ${esc(g)}</span>`).join('');
 
-**Gaps / Missing Requirements**
-• List 2-4 requirements in the job that are missing or weak in the resume
-
-**Verdict**
-One sentence: should they apply, and what should they emphasise or address?`;
-
-        return callAI(prompt, 'You are a career advisor. Be honest, specific, and concise. Use the exact format requested.');
+        const wrap = document.createElement('div');
+        wrap.className = 'nw-msg ai';
+        wrap.innerHTML = `
+            <div class="nw-avatar">N</div>
+            <div class="nw-msg-wrap">
+                <div class="nw-bubble" style="padding:0;overflow:hidden;min-width:260px;">
+                    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 12px;border-bottom:1px solid #f3f4f6;">
+                        <div style="flex-shrink:0;">${_scoreRingSVG(score, color).replace('class="nw-scan-score-ring"', 'class="nw-scan-score-ring nw-compat-ring"')}</div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:13px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(document.title.replace(/\s*[\|\-–—].*$/, '').trim() || 'This Role')}</div>
+                            <div style="margin-top:4px;">
+                                <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;background:${lbl.bg};color:${lbl.color};">${lbl.text}</span>
+                            </div>
+                        </div>
+                    </div>
+                    ${result.verdict ? `<div style="padding:10px 16px;font-size:12px;color:#6b7280;line-height:1.5;border-bottom:1px solid #f3f4f6;font-style:italic;">${esc(result.verdict)}</div>` : ''}
+                    ${matchTags || gapTags ? `<div style="padding:10px 16px;display:flex;flex-wrap:wrap;gap:6px;">${matchTags}${gapTags}</div>` : ''}
+                </div>
+            </div>`;
+        wrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(ts));
+        messagesEl.appendChild(wrap);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        return wrap;
     }
 
     // ── Bulk Job Scanner ──────────────────────────────────────────────────────
@@ -2180,22 +2220,826 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             }
 
             case 'fill': {
-                const fillResult = await resolveFill(intent.fields || 'all');
-                if (fillResult.action === 'no_form') {
-                    appendMsg('ai', 'No form detected on this page.');
-                } else {
-                    try { chrome.runtime.sendMessage({ type: 'START_LOCAL_PROCESSING' }); } catch {}
-                    const msg = fillResult.message || `Auto-filling form...`;
-                    appendMsg('ai', `**${msg}**`);
-                    chatHistory.push({ role: 'ai', text: msg, ts: Date.now() });
+                const rawFields = Array.from(document.querySelectorAll('input,textarea,select'))
+                    .filter(el => el.offsetParent !== null && el.type !== 'hidden' && el.type !== 'submit' && el.type !== 'button' && el.type !== 'image' && el.type !== 'reset');
+
+                if (!rawFields.length) {
+                    appendMsg('ai', 'No form detected on this page. Navigate to a job application form and try again.');
+                    chatHistory.push({ role: 'ai', text: 'No form detected.', ts: Date.now() });
+                    break;
                 }
+
+                // Build field list with labels
+                const fields = rawFields.slice(0, 14).map(el => ({
+                    el,
+                    id: el.id || el.name || '',
+                    label: (document.querySelector(`label[for="${el.id}"]`)?.textContent?.trim()
+                        || el.getAttribute('aria-label') || el.placeholder || el.name || el.id || el.type)
+                        .replace(/[*:]/g, '').trim()
+                })).filter(f => f.label);
+
+                const fillCardId = 'nw-fill-card-' + Date.now();
+                const fillTs = Date.now();
+
+                // Field type icon
+                const _fieldIcon = (el) => {
+                    const t = el.type || el.tagName.toLowerCase();
+                    if (t === 'email')    return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`;
+                    if (t === 'tel')      return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.14 9.81 19.79 19.79 0 0 1 1.09 4.18 2 2 0 0 1 3.07 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+                    if (t === 'url')      return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+                    if (t === 'textarea') return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 6H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+                    if (t === 'select')   return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>`;
+                    return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+                };
+
+                // Field row — used in both preview and active fill states
+                const mkRows = (prefix) => fields.map(f => {
+                    const rid = `${prefix}-${f.id.replace(/[^a-z0-9]/gi, '_')}`;
+                    return `<div id="${rid}" style="display:flex;align-items:center;gap:10px;padding:7px 16px;border-bottom:1px solid #f1f5f9;transition:background 0.15s;">
+                        <span id="${rid}-dot" style="width:7px;height:7px;border-radius:50%;background:#e2e8f0;flex-shrink:0;transition:all 0.25s;"></span>
+                        <span style="color:#64748b;flex-shrink:0;display:flex;align-items:center;">${_fieldIcon(f.el)}</span>
+                        <span style="font-size:12px;color:#1e293b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">${esc(f.label)}</span>
+                        <span id="${rid}-val" style="font-size:10.5px;color:#94a3b8;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                    </div>`;
+                }).join('');
+
+                const fillWrap = document.createElement('div');
+                fillWrap.className = 'nw-msg ai';
+                fillWrap.id = fillCardId;
+                fillWrap.innerHTML = `
+                    <style>
+                        @keyframes nw-fill-shimmer {
+                            0%   { background-position: -200% center; }
+                            100% { background-position:  200% center; }
+                        }
+                        @keyframes nw-fill-pulse {
+                            0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
+                            50%     { box-shadow: 0 0 0 5px rgba(99,102,241,0); }
+                        }
+                        #${fillCardId}-confirm:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(99,102,241,0.4); }
+                        #${fillCardId}-confirm:active { transform: translateY(0); }
+                    </style>
+                    <div class="nw-avatar">N</div>
+                    <div class="nw-msg-wrap">
+                        <div class="nw-bubble" style="padding:0;overflow:hidden;min-width:260px;width:100%;border-radius:4px 14px 14px 14px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+
+                            <!-- ── Preview state ── -->
+                            <div id="${fillCardId}-preview">
+                                <!-- Header gradient -->
+                                <div style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);padding:14px 16px 12px;position:relative;overflow:hidden;">
+                                    <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.08);"></div>
+                                    <div style="position:absolute;bottom:-30px;left:30px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.05);"></div>
+                                    <div style="display:flex;align-items:center;gap:10px;position:relative;">
+                                        <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                        </div>
+                                        <div>
+                                            <div style="font-size:13px;font-weight:700;color:white;letter-spacing:-0.1px;">Application Form</div>
+                                            <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:1px;">${fields.length} field${fields.length !== 1 ? 's' : ''} detected</div>
+                                        </div>
+                                        <div style="margin-left:auto;background:rgba(255,255,255,0.2);padding:3px 9px;border-radius:20px;font-size:10.5px;color:white;font-weight:600;">Ready</div>
+                                    </div>
+                                </div>
+
+                                <!-- Field list -->
+                                <div style="padding:6px 0 4px;">${mkRows(fillCardId + '-pre')}</div>
+
+                                <!-- CTA -->
+                                <div style="padding:10px 14px 14px;">
+                                    <button id="${fillCardId}-confirm" style="width:100%;padding:10px 0;background:linear-gradient(135deg,#6366f1,#8b5cf6);background-size:200% auto;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.02em;transition:all 0.2s;position:relative;overflow:hidden;">
+                                        <span style="position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:6px;">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                            Fill with my resume
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- ── Filling state ── -->
+                            <div id="${fillCardId}-filling" style="display:none;">
+                                <!-- Progress header -->
+                                <div style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);padding:12px 16px;">
+                                    <div style="display:flex;align-items:center;gap:10px;">
+                                        <span id="${fillCardId}-icon" class="nw-scan-spinner reading" style="flex-shrink:0;border-color:rgba(255,255,255,0.3);border-top-color:white;border-right-color:rgba(255,255,255,0.6);"></span>
+                                        <div style="flex:1;min-width:0;">
+                                            <div id="${fillCardId}-label" style="font-size:12.5px;font-weight:700;color:white;">Matching with resume…</div>
+                                            <div style="height:3px;background:rgba(255,255,255,0.2);border-radius:2px;margin-top:6px;overflow:hidden;">
+                                                <div id="${fillCardId}-bar" style="height:100%;width:4%;background:white;border-radius:2px;transition:width 0.5s ease;opacity:0.9;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Live field rows -->
+                                <div id="${fillCardId}-act-rows" style="padding:6px 0 6px;">${mkRows(fillCardId + '-act')}</div>
+                            </div>
+
+                            <!-- ── Done state ── -->
+                            <div id="${fillCardId}-result" style="display:none;"></div>
+                        </div>
+                    </div>`;
+                fillWrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(fillTs));
+                messagesEl.appendChild(fillWrap);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+
+                // Mark a field row as filling / done in the active view
+                const _markField = (fieldEl, state, value) => {
+                    const id  = fieldEl.id || fieldEl.name || '';
+                    const rid = `${fillCardId}-act-${id.replace(/[^a-z0-9]/gi, '_')}`;
+                    const dot = document.getElementById(rid + '-dot');
+                    const val = document.getElementById(rid + '-val');
+                    if (!dot) return;
+                    if (state === 'filling') {
+                        dot.style.background  = '#818cf8';
+                        dot.style.boxShadow   = '0 0 0 3px rgba(129,140,248,0.3)';
+                        // Pulse the real field on the page
+                        fieldEl.classList.add('nova-filling');
+                    } else if (state === 'done') {
+                        dot.style.background  = '#10b981';
+                        dot.style.boxShadow   = 'none';
+                        if (val && value) val.textContent = String(value).slice(0, 28);
+                        fieldEl.classList.remove('nova-filling');
+                        fieldEl.classList.add('nova-filled');
+                        // Show badge if present on the mini-form
+                        const badge = document.getElementById('badge-' + (fieldEl.id || fieldEl.name));
+                        if (badge) badge.classList.add('visible');
+                    } else if (state === 'skipped') {
+                        dot.style.background = '#d1d5db';
+                        if (val) val.textContent = 'skipped';
+                    }
+                };
+
+                // Watch each field for value changes — fires when engine writes values
+                const _observers = [];
+                const _setupWatchers = () => {
+                    fields.forEach(({ el }) => {
+                        let prev = el.value;
+                        _markField(el, 'idle');
+                        const check = () => {
+                            if (el.value !== prev && el.value.trim()) {
+                                prev = el.value;
+                                _markField(el, 'done', el.value);
+                            }
+                        };
+                        // MutationObserver catches programmatic value sets
+                        const obs = new MutationObserver(check);
+                        obs.observe(el, { attributes: true, attributeFilter: ['value'] });
+                        el.addEventListener('input', check);
+                        el.addEventListener('change', check);
+                        _observers.push({ obs, el, check });
+                    });
+                    // Poll as fallback for React/Vue controlled inputs
+                    const poll = setInterval(() => {
+                        _observers.forEach(({ el, check }) => check());
+                    }, 300);
+                    window._novaFillPoll = poll;
+                };
+
+                const _teardownWatchers = () => {
+                    _observers.forEach(({ obs, el, check }) => {
+                        obs.disconnect();
+                        el.removeEventListener('input', check);
+                        el.removeEventListener('change', check);
+                    });
+                    clearInterval(window._novaFillPoll);
+                };
+
+                // Confirm button
+                document.getElementById(fillCardId + '-confirm').addEventListener('click', () => {
+                    document.getElementById(fillCardId + '-preview').style.display = 'none';
+                    document.getElementById(fillCardId + '-filling').style.display  = 'block';
+                    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+                    window._novaFillCardId       = fillCardId;
+                    window._novaFillStats        = null;
+                    window._novaTeardownWatchers = _teardownWatchers;
+
+                    _setupWatchers();
+
+                    // FormProcessor calls this per field — drives instant dot updates
+                    window._novaOnFieldAnswered = (selector, value) => {
+                        const fieldEl = fields.find(f =>
+                            f.el.matches && (f.el.matches(selector) ||
+                            f.el.id === selector.replace(/^#/, '') ||
+                            f.el.name === selector.replace(/^\[name="(.+)"\]$/, '$1'))
+                        )?.el;
+                        if (!fieldEl) return;
+                        _markField(fieldEl, 'filling', null);
+                        setTimeout(() => _markField(fieldEl, 'done', value), 350);
+                    };
+
+                    // Re-apply all chat overrides AFTER scripts finish loading.
+                    // widget-overlay.js sets window.showProcessingWidget on load, so we
+                    // must override AFTER loadAllScripts() resolves, not before.
+                    const _applyOverrides = () => {
+                        window._novaOrigShowWidget       = window.showProcessingWidget;
+                        window._novaOrigUpdateProgress   = window.updateProcessingProgress;
+                        window._novaOrigShowSidebar      = window.showAccordionSidebar;
+                        window._novaOrigShowSuccessToast = window.showSuccessToast;
+                        window._novaOrigTriggerConfetti  = window.triggerConfetti;
+
+                        window.showProcessingWidget = (text, step) => {
+                            const labelEl = document.getElementById(fillCardId + '-label');
+                            const barEl   = document.getElementById(fillCardId + '-bar');
+                            if (!labelEl) return;
+                            if (step === -1) { labelEl.textContent = '⚠ Error'; labelEl.style.color = '#ef4444'; return; }
+                            const LABELS = { 1: 'Matching with resume…', 2: 'Filling fields with AI…', 3: 'Applying values…', 4: 'Done!' };
+                            labelEl.textContent = LABELS[step] || text;
+                            if (step === 4 && barEl) barEl.style.width = '100%';
+                        };
+                        window.updateProcessingProgress = (percent) => {
+                            const barEl = document.getElementById(fillCardId + '-bar');
+                            if (barEl) barEl.style.width = Math.min(percent, 95) + '%';
+                        };
+                        // Suppress sidebar panel, toast, confetti — results live in chat card
+                        window.showAccordionSidebar  = () => {};
+                        window.showSuccessToast      = () => {};
+                        window.triggerConfetti       = () => {};
+
+                        // Direct callback — fires in-process, no message bus needed
+                        window._novaOnFillComplete = () => {
+                            const filledCount  = fields.filter(f => f.el.classList.contains('nova-filled')).length;
+                            const skippedCount = fields.length - filledCount;
+
+                            // Hide the live field rows, keep only the header; result section replaces them
+                            const fillingEl = document.getElementById(fillCardId + '-filling');
+                            if (fillingEl) {
+                                // Hide the live act rows — result section has its own clean list
+                                const actRows = document.getElementById(fillCardId + '-act-rows');
+                                if (actRows) actRows.style.display = 'none';
+
+                                const hdr = fillingEl.querySelector('div[style*="linear-gradient"]');
+                                if (hdr) {
+                                    hdr.style.background = 'linear-gradient(135deg,#059669 0%,#10b981 100%)';
+                                    const iconEl  = document.getElementById(fillCardId + '-icon');
+                                    const labelEl = document.getElementById(fillCardId + '-label');
+                                    const barEl   = document.getElementById(fillCardId + '-bar');
+                                    if (iconEl)  iconEl.outerHTML = `<span style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>`;
+                                    if (labelEl) { labelEl.textContent = 'Form filled!'; }
+                                    if (barEl)   { barEl.style.width = '100%'; barEl.style.background = 'rgba(255,255,255,0.8)'; }
+                                }
+                            }
+
+                            // Collect source + value per field
+                            const fieldResults = fields.map(f => {
+                                const isFilled = f.el.classList.contains('nova-filled');
+                                const val = f.el.value || f.el.getAttribute('data-autofill-value') || '';
+                                const src = (f.el.getAttribute('data-autofill-source') || '').toLowerCase();
+                                let srcLabel = null, srcColor = '#059669', srcBg = '#ecfdf5';
+                                if (src.includes('ai') || src.includes('copilot') || src.includes('gen') || src.includes('inference')) {
+                                    srcLabel = 'AI'; srcColor = '#6366f1'; srcBg = '#eef2ff';
+                                } else if (src.includes('memory') || src.includes('cache')) {
+                                    srcLabel = 'Cached'; srcColor = '#0891b2'; srcBg = '#ecfeff';
+                                } else if (isFilled) {
+                                    srcLabel = 'Resume';
+                                }
+                                return { f, isFilled, val, srcLabel, srcColor, srcBg };
+                            });
+
+                            const resultEl = document.getElementById(fillCardId + '-result');
+                            if (resultEl) {
+                                resultEl.style.display = 'block';
+
+                                // ── Result card ──────────────────────────────────────
+                                resultEl.innerHTML = `
+                                <style>
+                                    /* ── Field row ── */
+                                    .nr-row { display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid #f3f4f6;background:#fff;cursor:default;transition:background 0.12s; }
+                                    .nr-row:last-child { border-bottom:none; }
+                                    .nr-row:hover { background:#f8f9ff; }
+
+                                    /* Filled row icon box */
+                                    .nr-icon { width:30px;height:30px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#94a3b8;transition:all 0.15s; }
+                                    .nr-row:hover .nr-icon { background:#eef2ff;color:#6366f1; }
+
+                                    /* Text */
+                                    .nr-body { flex:1;min-width:0; }
+                                    .nr-name { font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px; }
+                                    .nr-val  { font-size:12.5px;font-weight:500;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+
+                                    /* Right side: source badge + refine */
+                                    .nr-right { display:flex;align-items:center;gap:5px;flex-shrink:0; }
+                                    .nr-src   { font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0; }
+                                    .nr-src.resume { background:#dcfce7;color:#166534; }
+                                    .nr-src.ai     { background:#ede9fe;color:#6d28d9; }
+                                    .nr-src.cache  { background:#e0f2fe;color:#075985; }
+                                    .nr-refine { width:26px;height:26px;border-radius:7px;border:1.5px solid #e0e7ff;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#6366f1;transition:all 0.15s;flex-shrink:0; }
+                                    .nr-refine:hover { background:#eef2ff;border-color:#a5b4fc; }
+                                    .nr-refine.open  { background:#6366f1;border-color:#6366f1;color:#fff; }
+
+                                    /* Skipped row — same density as filled, just no value */
+                                    .nr-row.nr-skip { background:#fff;cursor:pointer; }
+                                    .nr-row.nr-skip .nr-name { color:#94a3b8; }
+                                    .nr-row.nr-skip .nr-val  { color:#cbd5e1; }
+                                    .nr-row.nr-skip .nr-icon { background:#f8fafc;color:#cbd5e1; }
+                                    .nr-row.nr-skip:hover { background:#f8f9ff; }
+                                    .nr-row.nr-skip:hover .nr-icon { background:#eef2ff;color:#6366f1; }
+
+                                    /* Expand panel */
+                                    .nr-expand { display:none;border-top:1px solid #eef2ff;background:#f8f7ff; }
+                                    .nr-expand.open { display:block; }
+                                    .nr-expand-head { padding:9px 14px 2px;font-size:11px;color:#6366f1;font-weight:600; }
+                                    .nr-chips { display:flex;flex-wrap:wrap;gap:5px;padding:5px 14px 8px; }
+                                    .nr-chip  { padding:4px 11px;border:1px solid #ddd6fe;border-radius:20px;font-size:11px;color:#7c3aed;background:white;cursor:pointer;transition:all 0.12s;white-space:nowrap;font-weight:500; }
+                                    .nr-chip:hover { background:#ede9fe;border-color:#a78bfa; }
+                                    .nr-thinking { display:none;align-items:center;gap:7px;padding:5px 14px 7px;font-size:11px;color:#94a3b8; }
+                                    .nr-thinking.on { display:flex; }
+                                    .nr-reply { margin:0 14px;padding:10px 12px;background:white;border:1px solid #ddd6fe;border-radius:10px;font-size:12px;color:#1e293b;line-height:1.6;display:none;white-space:pre-wrap;word-break:break-word; }
+                                    .nr-reply.on { display:block; }
+                                    .nr-apply-btn { display:none;margin:8px 14px 0;width:calc(100% - 28px);padding:7px 0;background:#6366f1;color:white;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;transition:opacity 0.15s; }
+                                    .nr-apply-btn:hover { opacity:0.88; }
+                                    .nr-bar { display:flex;align-items:center;gap:6px;padding:8px 14px 10px;border-top:1px solid #eef2ff;margin-top:8px; }
+                                    .nr-bar-input { flex:1;border:1.5px solid #e0e7ff;border-radius:8px;padding:5px 10px;font-size:12px;color:#1e293b;outline:none;font-family:inherit;background:#fff;transition:border-color 0.15s; }
+                                    .nr-bar-input:focus { border-color:#a5b4fc; }
+                                    .nr-bar-send { flex-shrink:0;width:28px;height:28px;border-radius:8px;background:#6366f1;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity 0.15s; }
+                                    .nr-bar-send:hover { opacity:0.85; }
+
+                                    /* Skipped group label */
+                                    .nr-group-lbl { padding:8px 14px 5px;font-size:9.5px;font-weight:700;color:#c4c9d4;text-transform:uppercase;letter-spacing:0.08em;background:#fafafa;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9; }
+
+                                    /* Footer */
+                                    .nr-footer { display:flex;flex-direction:column;gap:8px;padding:10px 14px 12px;border-top:1px solid #f1f5f9;background:#fff; }
+                                    .nr-footer-stats { display:flex;align-items:center;gap:6px; }
+                                    .nr-stat-pill { display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0; }
+                                    .nr-stat-pill.green { background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0; }
+                                    .nr-stat-pill.amber { background:#fffbeb;color:#b45309;border:1px solid #fde68a; }
+                                    .nr-btn-undo { width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 0;background:linear-gradient(135deg,#fff5f5 0%,#fff 100%);border:1.5px solid #fecaca;border-radius:8px;font-size:12px;font-weight:700;color:#dc2626;cursor:pointer;font-family:inherit;transition:all 0.18s;box-shadow:0 1px 3px rgba(220,38,38,0.08); }
+                                    .nr-btn-undo:hover { background:linear-gradient(135deg,#fee2e2 0%,#fff5f5 100%);border-color:#f87171;box-shadow:0 2px 8px rgba(220,38,38,0.15);transform:translateY(-1px); }
+                                    .nr-btn-undo:active { transform:translateY(0);box-shadow:none; }
+                                </style>
+
+                                <!-- rows container -->
+                                <div id="${fillCardId}-rows"></div>
+
+                                <!-- skipped group -->
+                                <div id="${fillCardId}-skip"></div>
+
+                                <!-- footer -->
+                                <div class="nr-footer">
+                                    <div class="nr-footer-stats">
+                                        <span class="nr-stat-pill green"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>${filledCount} filled</span>
+                                        ${skippedCount > 0 ? `<span class="nr-stat-pill amber"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${skippedCount} need help</span>` : ''}
+                                    </div>
+                                    <button id="${fillCardId}-undo" class="nr-btn-undo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>Undo All Changes</button>
+                                </div>`;
+
+                                // ── Build rows ────────────────────────────────────
+                                const rowsContainer = resultEl.querySelector(`#${fillCardId}-rows`);
+                                const skipContainer = resultEl.querySelector(`#${fillCardId}-skip`);
+
+                                // Filled fields first
+                                fieldResults.filter(r => r.isFilled).forEach(({ f, val, srcLabel, srcColor, srcBg }, i) => {
+                                    const rowId = `${fillCardId}-fr-${i}`;
+                                    const selector = f.el.id ? `#${f.el.id}` : (f.el.name ? `[name="${f.el.name}"]` : null);
+                                    const srcClass = srcLabel === 'AI' ? 'ai' : srcLabel === 'Cached' ? 'cache' : 'resume';
+
+                                    const rowWrap = document.createElement('div');
+                                    rowWrap.id = rowId;
+
+                                    const mainRow = document.createElement('div');
+                                    mainRow.className = 'nr-row';
+                                    mainRow.innerHTML = `
+                                        <div class="nr-icon">${_fieldIcon(f.el)}</div>
+                                        <div class="nr-body">
+                                            <div class="nr-name">${esc(f.label)}</div>
+                                            <div class="nr-val" title="${esc(val)}">${esc(val ? (val.length > 38 ? val.slice(0, 36) + '…' : val) : '—')}</div>
+                                        </div>
+                                        <div class="nr-right">
+                                            ${srcLabel ? `<span class="nr-src ${srcClass}">${srcLabel}</span>` : ''}
+                                            <button class="nr-refine" title="Refine with AI">
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                                            </button>
+                                        </div>`;
+
+                                    // Expand panel
+                                    const expandPanel = document.createElement('div');
+                                    expandPanel.className = 'nr-expand';
+                                    expandPanel.innerHTML = `
+                                        <div class="nr-expand-head">How should I rewrite <strong>${esc(f.label)}</strong>?</div>
+                                        <div class="nr-chips">
+                                            <span class="nr-chip">More professional</span>
+                                            <span class="nr-chip">More concise</span>
+                                            <span class="nr-chip">Focus on impact</span>
+                                            <span class="nr-chip">Rewrite from scratch</span>
+                                        </div>
+                                        <div class="nr-thinking">
+                                            <span class="nw-scan-spinner reading" style="width:11px;height:11px;border-width:1.5px;flex-shrink:0;border-color:rgba(99,102,241,0.25);border-top-color:#6366f1;border-right-color:#a5b4fc;"></span>
+                                            Nova is rewriting…
+                                        </div>
+                                        <div class="nr-reply"></div>
+                                        <div class="nr-bar">
+                                            <input class="nr-bar-input" type="text" placeholder="e.g. focus on leadership…" />
+                                            <button class="nr-bar-send">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                            </button>
+                                        </div>`;
+
+                                    rowWrap.appendChild(mainRow);
+                                    rowWrap.appendChild(expandPanel);
+                                    rowsContainer.appendChild(rowWrap);
+
+                                    // Refine button toggles expand panel
+                                    const refineBtn = mainRow.querySelector('.nr-refine');
+                                    refineBtn.addEventListener('click', (e) => {
+                                        e.stopPropagation();
+                                        const isOpen = expandPanel.classList.contains('open');
+                                        // Close all others
+                                        resultEl.querySelectorAll('.nr-expand.open').forEach(p => {
+                                            p.classList.remove('open');
+                                            p.previousElementSibling?.querySelector('.nr-refine')?.classList.remove('open');
+                                        });
+                                        if (!isOpen) {
+                                            expandPanel.classList.add('open');
+                                            refineBtn.classList.add('open');
+                                            expandPanel.querySelector('.nr-bar-input').focus();
+                                            setTimeout(() => messagesEl.scrollTop = messagesEl.scrollHeight, 60);
+                                        }
+                                    });
+
+                                    // Shared regen logic
+                                    const thinkEl  = expandPanel.querySelector('.nr-thinking');
+                                    const replyEl  = expandPanel.querySelector('.nr-reply');
+                                    const barInput = expandPanel.querySelector('.nr-bar-input');
+                                    const sendBtn2 = expandPanel.querySelector('.nr-bar-send');
+                                    const chipsEl  = expandPanel.querySelector('.nr-chips');
+
+                                    const _runRegen = async (instruction) => {
+                                        chipsEl.style.display = 'none';
+                                        thinkEl.classList.add('on');
+                                        replyEl.classList.remove('on');
+                                        sendBtn2.disabled = true;
+
+                                        try {
+                                            let newVal = null;
+                                            if (typeof window.regenerateFieldWithAI === 'function') {
+                                                const r = await window.regenerateFieldWithAI(selector, f.label, instruction);
+                                                if (r?.success) newVal = r.value || f.el.value;
+                                            } else {
+                                                newVal = await new Promise(resolve => {
+                                                    chrome.runtime.sendMessage({
+                                                        type: 'AI_REQUEST',
+                                                        prompt: `Job application field: "${f.label}"\nCurrent value: "${f.el.value}"\nInstruction: ${instruction || 'improve it'}\nReturn only the new answer text.`,
+                                                        systemInstruction: 'Return only the answer text. No explanation, no quotes.',
+                                                        options: { maxTokens: 400, temperature: 0.7, provider: activeProvider }
+                                                    }, r => resolve(r?.success ? r.text?.trim() : null));
+                                                });
+                                                if (newVal && f.el) {
+                                                    f.el.value = newVal;
+                                                    f.el.dispatchEvent(new Event('input', { bubbles: true }));
+                                                    f.el.dispatchEvent(new Event('change', { bubbles: true }));
+                                                }
+                                            }
+
+                                            thinkEl.classList.remove('on');
+
+                                            if (newVal) {
+                                                replyEl.textContent = newVal;
+                                                replyEl.classList.add('on');
+                                                // Apply button
+                                                let applyBtn = expandPanel.querySelector('.nr-apply-btn');
+                                                if (!applyBtn) {
+                                                    applyBtn = document.createElement('button');
+                                                    applyBtn.className = 'nr-apply-btn';
+                                                    replyEl.after(applyBtn);
+                                                }
+                                                applyBtn.style.display = 'block';
+                                                applyBtn.textContent = '✓ Apply to field';
+                                                applyBtn.onclick = () => {
+                                                    f.el.value = newVal;
+                                                    f.el.dispatchEvent(new Event('input', { bubbles: true }));
+                                                    f.el.dispatchEvent(new Event('change', { bubbles: true }));
+                                                    f.el.classList.add('nova-filled');
+                                                    // Update inline preview
+                                                    const valEl = mainRow.querySelector('.nr-val');
+                                                    if (valEl) valEl.textContent = newVal.length > 38 ? newVal.slice(0, 36) + '…' : newVal;
+                                                    // Update source badge
+                                                    const srcEl = mainRow.querySelector('.nr-src');
+                                                    if (srcEl) { srcEl.textContent = 'AI'; srcEl.className = 'nr-src ai'; }
+                                                    else {
+                                                        const s = document.createElement('span');
+                                                        s.className = 'nr-src ai';
+                                                        s.textContent = 'AI';
+                                                        mainRow.querySelector('.nr-right')?.prepend(s);
+                                                    }
+                                                    // Icon flashes indigo
+                                                    const iconEl = mainRow.querySelector('.nr-icon');
+                                                    if (iconEl) { iconEl.style.background = '#eef2ff'; iconEl.style.color = '#6366f1'; }
+                                                    // Close + reset
+                                                    setTimeout(() => {
+                                                        expandPanel.classList.remove('open');
+                                                        refineBtn.classList.remove('open');
+                                                        replyEl.classList.remove('on');
+                                                        replyEl.textContent = '';
+                                                        applyBtn.style.display = 'none';
+                                                        chipsEl.style.display = 'flex';
+                                                        barInput.value = '';
+                                                        sendBtn2.disabled = false;
+                                                    }, 700);
+                                                };
+                                                setTimeout(() => messagesEl.scrollTop = messagesEl.scrollHeight, 60);
+                                            } else {
+                                                replyEl.textContent = '⚠ Could not generate — try again.';
+                                                replyEl.classList.add('on');
+                                                sendBtn2.disabled = false;
+                                            }
+                                        } catch (err) {
+                                            thinkEl.classList.remove('on');
+                                            replyEl.textContent = '⚠ Error: ' + err.message;
+                                            replyEl.classList.add('on');
+                                            sendBtn2.disabled = false;
+                                        }
+                                    };
+
+                                    // Chips
+                                    expandPanel.querySelectorAll('.nr-chip').forEach(chip => {
+                                        chip.addEventListener('click', () => _runRegen(chip.textContent.trim()));
+                                    });
+                                    // Bar
+                                    sendBtn2.addEventListener('click', () => { const t = barInput.value.trim(); if (t) _runRegen(t); });
+                                    barInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const t = barInput.value.trim(); if (t) _runRegen(t); } });
+
+                                    // Hover spotlight + beam
+                                    mainRow.addEventListener('mouseenter', () => {
+                                        f.el.classList.add('smarthirex-spotlight');
+                                        if (typeof window.showConnectionBeam === 'function') window.showConnectionBeam(mainRow, f.el);
+                                    });
+                                    mainRow.addEventListener('mouseleave', () => {
+                                        f.el.classList.remove('smarthirex-spotlight');
+                                        if (typeof window.hideConnectionBeam === 'function') window.hideConnectionBeam();
+                                    });
+                                    mainRow.addEventListener('click', (e) => {
+                                        if (e.target.closest('.nr-refine')) return;
+                                        f.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        f.el.focus();
+                                    });
+                                }); // end filled forEach
+
+                                // Skipped section
+                                if (skippedCount > 0) {
+                                    const skipSec = resultEl.querySelector(`#${fillCardId}-skip`);
+                                    // Label
+                                    const lbl = document.createElement('div');
+                                    lbl.className = 'nr-group-lbl';
+                                    lbl.textContent = `${skippedCount} skipped`;
+                                    skipSec.appendChild(lbl);
+                                    // Rows
+                                    fieldResults.filter(r => !r.isFilled).forEach(({ f }, si) => {
+                                        const selector = f.el.id ? `#${f.el.id}` : (f.el.name ? `[name="${f.el.name}"]` : null);
+                                        const skipRowId = `${fillCardId}-sk-${si}`;
+
+                                        const rowWrap = document.createElement('div');
+                                        rowWrap.id = skipRowId;
+
+                                        const row = document.createElement('div');
+                                        row.className = 'nr-row nr-skip';
+                                        row.innerHTML = `
+                                            <div class="nr-icon">${_fieldIcon(f.el)}</div>
+                                            <div class="nr-body">
+                                                <div class="nr-name">${esc(f.label)}</div>
+                                                <div class="nr-val">Not filled</div>
+                                            </div>
+                                            <div class="nr-right">
+                                                <button class="nr-refine" title="Fill with AI">
+                                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                                                </button>
+                                            </div>`;
+
+                                        const expandPanel = document.createElement('div');
+                                        expandPanel.className = 'nr-expand';
+                                        expandPanel.innerHTML = `
+                                            <div class="nr-expand-head">Fill <strong>${esc(f.label)}</strong> with AI</div>
+                                            <div class="nr-chips">
+                                                <span class="nr-chip">Write from resume</span>
+                                                <span class="nr-chip">Professional tone</span>
+                                                <span class="nr-chip">Keep it concise</span>
+                                            </div>
+                                            <div class="nr-thinking">
+                                                <span class="nw-scan-spinner reading" style="width:11px;height:11px;border-width:1.5px;flex-shrink:0;border-color:rgba(99,102,241,0.25);border-top-color:#6366f1;border-right-color:#a5b4fc;"></span>
+                                                Nova is writing…
+                                            </div>
+                                            <div class="nr-reply"></div>
+                                            <div class="nr-bar">
+                                                <input class="nr-bar-input" type="text" placeholder="Describe what to write…" />
+                                                <button class="nr-bar-send">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                                </button>
+                                            </div>`;
+
+                                        rowWrap.appendChild(row);
+                                        rowWrap.appendChild(expandPanel);
+                                        skipSec.appendChild(rowWrap);
+
+                                        // Toggle
+                                        const refineBtn = row.querySelector('.nr-refine');
+                                        refineBtn.addEventListener('click', (e) => {
+                                            e.stopPropagation();
+                                            const isOpen = expandPanel.classList.contains('open');
+                                            resultEl.querySelectorAll('.nr-expand.open').forEach(p => {
+                                                p.classList.remove('open');
+                                                p.previousElementSibling?.querySelector('.nr-refine')?.classList.remove('open');
+                                            });
+                                            if (!isOpen) {
+                                                expandPanel.classList.add('open');
+                                                refineBtn.classList.add('open');
+                                                expandPanel.querySelector('.nr-bar-input').focus();
+                                                setTimeout(() => messagesEl.scrollTop = messagesEl.scrollHeight, 60);
+                                            }
+                                        });
+
+                                        // Regen logic (same pattern as filled rows)
+                                        const thinkEl  = expandPanel.querySelector('.nr-thinking');
+                                        const replyEl  = expandPanel.querySelector('.nr-reply');
+                                        const barInput = expandPanel.querySelector('.nr-bar-input');
+                                        const sendBtn2 = expandPanel.querySelector('.nr-bar-send');
+                                        const chipsEl  = expandPanel.querySelector('.nr-chips');
+
+                                        const _runSkipFill = async (instruction) => {
+                                            chipsEl.style.display = 'none';
+                                            thinkEl.classList.add('on');
+                                            replyEl.classList.remove('on');
+                                            sendBtn2.disabled = true;
+
+                                            try {
+                                                let newVal = null;
+                                                if (typeof window.regenerateFieldWithAI === 'function') {
+                                                    const r = await window.regenerateFieldWithAI(selector, f.label, instruction);
+                                                    if (r?.success) newVal = r.value || f.el.value;
+                                                } else {
+                                                    newVal = await new Promise(resolve => {
+                                                        chrome.runtime.sendMessage({
+                                                            type: 'AI_REQUEST',
+                                                            prompt: `Job application field: "${f.label}"\nInstruction: ${instruction || 'write a suitable value'}\nReturn only the answer text.`,
+                                                            systemInstruction: 'Return only the answer text. No explanation, no quotes.',
+                                                            options: { maxTokens: 400, temperature: 0.7, provider: activeProvider }
+                                                        }, r => resolve(r?.success ? r.text?.trim() : null));
+                                                    });
+                                                    if (newVal && f.el) {
+                                                        f.el.value = newVal;
+                                                        f.el.dispatchEvent(new Event('input', { bubbles: true }));
+                                                        f.el.dispatchEvent(new Event('change', { bubbles: true }));
+                                                    }
+                                                }
+
+                                                thinkEl.classList.remove('on');
+
+                                                if (newVal) {
+                                                    replyEl.textContent = newVal;
+                                                    replyEl.classList.add('on');
+                                                    let applyBtn = expandPanel.querySelector('.nr-apply-btn');
+                                                    if (!applyBtn) {
+                                                        applyBtn = document.createElement('button');
+                                                        applyBtn.className = 'nr-apply-btn';
+                                                        replyEl.after(applyBtn);
+                                                    }
+                                                    applyBtn.style.display = 'block';
+                                                    applyBtn.textContent = '✓ Apply to field';
+                                                    applyBtn.onclick = () => {
+                                                        f.el.value = newVal;
+                                                        f.el.dispatchEvent(new Event('input', { bubbles: true }));
+                                                        f.el.dispatchEvent(new Event('change', { bubbles: true }));
+                                                        f.el.classList.add('nova-filled');
+                                                        // Promote row to filled state
+                                                        row.classList.remove('nr-skip');
+                                                        row.querySelector('.nr-val').textContent = newVal.length > 38 ? newVal.slice(0, 36) + '…' : newVal;
+                                                        row.querySelector('.nr-val').style.fontStyle = 'normal';
+                                                        row.querySelector('.nr-icon').style.background = '#eef2ff';
+                                                        row.querySelector('.nr-icon').style.color = '#6366f1';
+                                                        const right = row.querySelector('.nr-right');
+                                                        const badge = document.createElement('span');
+                                                        badge.className = 'nr-src ai';
+                                                        badge.textContent = 'AI';
+                                                        right.insertBefore(badge, right.firstChild);
+                                                        setTimeout(() => {
+                                                            expandPanel.classList.remove('open');
+                                                            refineBtn.classList.remove('open');
+                                                            replyEl.classList.remove('on');
+                                                            replyEl.textContent = '';
+                                                            applyBtn.style.display = 'none';
+                                                            chipsEl.style.display = 'flex';
+                                                            barInput.value = '';
+                                                            sendBtn2.disabled = false;
+                                                        }, 700);
+                                                    };
+                                                    setTimeout(() => messagesEl.scrollTop = messagesEl.scrollHeight, 60);
+                                                } else {
+                                                    replyEl.textContent = '⚠ Could not generate — try again.';
+                                                    replyEl.classList.add('on');
+                                                    sendBtn2.disabled = false;
+                                                }
+                                            } catch (err) {
+                                                thinkEl.classList.remove('on');
+                                                replyEl.textContent = '⚠ Error: ' + err.message;
+                                                replyEl.classList.add('on');
+                                                sendBtn2.disabled = false;
+                                            }
+                                        };
+
+                                        expandPanel.querySelectorAll('.nr-chip').forEach(chip => {
+                                            chip.addEventListener('click', () => _runSkipFill(chip.textContent.trim()));
+                                        });
+                                        sendBtn2.addEventListener('click', () => { const t = barInput.value.trim(); if (t) _runSkipFill(t); });
+                                        barInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const t = barInput.value.trim(); if (t) _runSkipFill(t); } });
+
+                                        // Hover spotlight + beam (same as filled rows)
+                                        row.addEventListener('mouseenter', () => {
+                                            f.el.classList.add('smarthirex-spotlight');
+                                            if (typeof window.showConnectionBeam === 'function') window.showConnectionBeam(row, f.el);
+                                        });
+                                        row.addEventListener('mouseleave', () => {
+                                            f.el.classList.remove('smarthirex-spotlight');
+                                            if (typeof window.hideConnectionBeam === 'function') window.hideConnectionBeam();
+                                        });
+
+                                        // Click to jump to field
+                                        row.addEventListener('click', (e) => {
+                                            if (e.target.closest('.nr-refine')) return;
+                                            f.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            f.el.focus();
+                                        });
+                                    });
+                                }
+
+                                // Undo
+                                resultEl.querySelector(`#${fillCardId}-undo`)?.addEventListener('click', () => {
+                                    if (window.UndoManager) window.UndoManager.undo();
+                                    fields.forEach(f => {
+                                        f.el.value = '';
+                                        f.el.classList.remove('nova-filled', 'nova-filling');
+                                        const badge = document.getElementById('badge-' + (f.el.id || f.el.name));
+                                        if (badge) badge.classList.remove('visible');
+                                    });
+                                    const btn = resultEl.querySelector(`#${fillCardId}-undo`);
+                                    if (btn) {
+                                        btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Done`;
+                                        btn.disabled = true;
+                                        btn.style.background = '#f0fdf4';
+                                        btn.style.borderColor = '#bbf7d0';
+                                        btn.style.color = '#15803d';
+                                        btn.style.cursor = 'default';
+                                    }
+                                });
+                            }
+                            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+                            // Teardown watchers
+                            if (typeof window._novaTeardownWatchers === 'function') {
+                                window._novaTeardownWatchers();
+                                window._novaTeardownWatchers = null;
+                            }
+                            window._novaFillCardId      = null;
+                            window._novaFillStats       = null;
+                            window._novaOnFillComplete  = null;
+                            window._novaOnFieldAnswered = null;
+                            if (window._novaOrigShowWidget)       window.showProcessingWidget     = window._novaOrigShowWidget;
+                            if (window._novaOrigUpdateProgress)   window.updateProcessingProgress = window._novaOrigUpdateProgress;
+                            if (window._novaOrigShowSidebar)      window.showAccordionSidebar     = window._novaOrigShowSidebar;
+                            if (window._novaOrigShowSuccessToast) window.showSuccessToast         = window._novaOrigShowSuccessToast;
+                            if (window._novaOrigTriggerConfetti)  window.triggerConfetti          = window._novaOrigTriggerConfetti;
+                            window._novaOrigShowWidget = window._novaOrigUpdateProgress =
+                                window._novaOrigShowSidebar = window._novaOrigShowSuccessToast =
+                                window._novaOrigTriggerConfetti = null;
+                        };
+                    };
+
+                    const _doFill = () => {
+                        if (window.FormProcessor && window.FormProcessor.process) {
+                            _applyOverrides();
+                            window.FormProcessor.process();
+                        } else {
+                            const labelEl = document.getElementById(fillCardId + '-label');
+                            const iconEl  = document.getElementById(fillCardId + '-icon');
+                            if (labelEl) { labelEl.textContent = 'Engine not ready'; labelEl.style.color = '#ef4444'; }
+                            if (iconEl)  iconEl.outerHTML = `<span style="font-size:14px;flex-shrink:0;">⚠</span>`;
+                            _teardownWatchers();
+                        }
+                    };
+
+                    if (window.__NOVA_LOADED && window.FormProcessor) {
+                        _doFill();
+                    } else if (typeof loadAllScripts === 'function') {
+                        loadAllScripts().then(_doFill).catch(_doFill);
+                    } else {
+                        chrome.runtime.sendMessage({ type: 'INJECT_SCRIPTS' }, () => setTimeout(_doFill, 500));
+                    }
+                });
+
+                chatHistory.push({ role: 'ai', text: `Form detected — ${fields.length} fields. Ready to fill.`, ts: fillTs });
                 break;
             }
 
             case 'compatibility': {
-                const report = await resolveCompatibility();
-                appendMsg('ai', report);
-                chatHistory.push({ role: 'ai', text: report, ts: Date.now() });
+                const result = await resolveCompatibility();
+                if (!result) {
+                    const msg = !pageContent
+                        ? "I couldn't read the job description on this page. Make sure you're on a job posting and try again."
+                        : '⚠️ No resume found. Please go to **Settings** and add your profile first, then try again.';
+                    appendMsg('ai', msg);
+                    chatHistory.push({ role: 'ai', text: msg, ts: Date.now() });
+                } else {
+                    renderCompatibilityCard(result);
+                    const summary = `Fit analysis: ${result.score}/10 — ${result.verdict || ''}`;
+                    chatHistory.push({ role: 'compat', result, ts: Date.now(), text: summary });
+                }
                 break;
             }
 
@@ -2307,6 +3151,14 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 return;
             }
 
+            const FILL_PATTERN = /\b(fill|autofill|auto-fill|auto fill)\b.{0,25}\b(form|fields?|application|this)\b|\b(fill this|fill the form|fill in|complete this form|fill out)\b/i;
+            if (FILL_PATTERN.test(text)) {
+                removeThinking(thinkId);
+                isThinking = false;
+                await dispatchIntent({ intent: 'fill' }, text, thinkId);
+                return;
+            }
+
             const NAV_PATTERN = /\b(open|go to|take me to|navigate to|visit|show me|bring me to|launch)\b|\bmy (profile|account|settings|dashboard|inbox|messages|notifications|jobs|feed|network|connections|page|resume)\b/i;
             const isNav = NAV_PATTERN.test(text);
             console.log(`[Nova v${WIDGET_VERSION}] doSend: "${text}" | navPattern=${isNav}`);
@@ -2373,6 +3225,10 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     function renderMsg(role, text, ts, extra) {
         if (role === 'scan') {
             _renderScanCard(extra || [], ts);
+            return;
+        }
+        if (role === 'compat') {
+            if (extra) renderCompatibilityCard(extra);
             return;
         }
         appendMsg(role, text, true, ts); // instant — no ghost typing for history restore
@@ -2588,7 +3444,14 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     }
 
     // ── Listen for selected-text from context menu ────────────────────────────
+    // Note: FILL_COMPLETE is handled via window._novaOnFillComplete (direct call),
+    // not here, because chrome.runtime.sendMessage goes to background only.
     chrome.runtime.onMessage.addListener((message) => {
+        // Cache stats for the fill card (sent from FormProcessor.updateStats)
+        if (message.type === 'UPDATE_STATS' && message.payload) {
+            window._novaFillStats = message.payload;
+        }
+
         if (message.type !== 'NOVA_SELECTION' || !message.text) return;
 
         // Make sure widget is visible
