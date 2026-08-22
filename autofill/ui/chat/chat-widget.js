@@ -958,7 +958,7 @@
 
     document.getElementById('nw-menu-settings').addEventListener('click', () => {
         closeMenu();
-        chrome.runtime.openOptionsPage();
+        chrome.runtime.sendMessage({ type: 'OPEN_OPTIONS' });
     });
 
     document.getElementById('nw-menu-close').addEventListener('click', () => { closeMenu(); minimize(); });

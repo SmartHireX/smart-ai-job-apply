@@ -337,6 +337,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // keep message channel open for async sendResponse
     }
 
+    if (message.type === 'OPEN_OPTIONS') {
+        chrome.runtime.openOptionsPage();
+        return false;
+    }
+
     // Navigate the active tab to a URL (proper MV3 pattern — avoids CSP issues)
     if (message.type === 'NAVIGATE') {
         (async () => {
