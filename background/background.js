@@ -337,13 +337,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // keep message channel open for async sendResponse
     }
 
-    // Open popup and switch to the fill-form tab
-    if (message.type === 'OPEN_POPUP_FILL') {
-        chrome.storage.local.set({ nova_popup_tab: 'fill' });
-        chrome.action.openPopup().catch(() => {});
-        return false;
-    }
-
     // Navigate the active tab to a URL (proper MV3 pattern — avoids CSP issues)
     if (message.type === 'NAVIGATE') {
         (async () => {
@@ -419,8 +412,43 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
 });
 
-// Handle extension icon click when popup is closed
-chrome.action.onClicked.addListener((tab) => {
-    // This only fires if there's no default_popup
-    // With our popup, this won't fire normally
+// Extension icon click — inject widget if needed, then toggle open
+chrome.action.onClicked.addListener(async (tab) => {
+    if (!tab?.id) return;
+    try {
+        // Check if widget is already in the page
+        const [result] = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => !!document.getElementById('nova-chat-widget')
+        });
+
+        if (!result?.result) {
+            // First time on this page — inject
+            await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['shared/utils/nova-chat-core.js'] });
+            await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['autofill/ui/chat/chat-widget.js'] });
+            // Widget auto-opens on inject, nothing more to do
+        } else {
+            // Already injected — toggle visibility
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: () => {
+                    const w = document.getElementById('nova-chat-widget');
+                    if (!w) return;
+                    const hidden = w.style.display === 'none' || w.dataset.minimized === 'true';
+                    if (hidden) {
+                        w.style.display = '';
+                        w.dataset.minimized = 'false';
+                        // Restore bubble if present
+                        const bubble = document.getElementById('nova-mini-bubble');
+                        if (bubble) bubble.style.display = 'none';
+                    } else {
+                        w.style.display = 'none';
+                        w.dataset.minimized = 'true';
+                    }
+                }
+            });
+        }
+    } catch (e) {
+        console.error('Nova icon click error:', e);
+    }
 });
