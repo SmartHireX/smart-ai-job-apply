@@ -1077,7 +1077,7 @@
     // ── Domain-aware chips (data from Core) ──────────────────────────────────
     function renderChips() {
         chipsEl.innerHTML = '';
-        getChipsForPage(location.hostname).forEach(({ label, prompt }) => {
+        getChipsForPage(location.hostname, location.href).forEach(({ label, prompt }) => {
             const btn = document.createElement('button');
             btn.className = 'nw-chip';
             btn.textContent = label;
@@ -1092,6 +1092,15 @@
 
     renderChips();
 
+    // Re-show chips on page context change (SPA like LinkedIn)
+    let _lastChipUrl = location.href;
+    window.addEventListener('popstate', () => {
+        if (location.href !== _lastChipUrl) {
+            _lastChipUrl = location.href;
+            chipsEl.style.display = 'flex';
+            renderChips();
+        }
+    });
 
     // ─────────────────────────────────────────────────────────────────────────
     // INTENT ENGINE  (two-step, fully AI-driven)
@@ -1295,7 +1304,12 @@ Return ONLY a JSON object, nothing else:
                     <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 12px;border-bottom:1px solid #f3f4f6;">
                         <div style="flex-shrink:0;">${_scoreRingSVG(score, color).replace('class="nw-scan-score-ring"', 'class="nw-scan-score-ring nw-compat-ring"')}</div>
                         <div style="flex:1;min-width:0;">
-                            <div style="font-size:13px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(document.title.replace(/\s*[\|\-–—].*$/, '').trim() || 'This Role')}</div>
+                            <div style="font-size:13px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc((
+                    document.querySelector('meta[property="og:title"]')?.content ||
+                    document.querySelector('meta[name="title"]')?.content ||
+                    document.querySelector('h1')?.textContent?.trim() ||
+                    document.title
+                ).replace(/\s*[\|\-–—].*$/, '').trim().slice(0, 60) || 'This Role')}</div>
                             <div style="margin-top:4px;">
                                 <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;background:${lbl.bg};color:${lbl.color};">${lbl.text}</span>
                             </div>
@@ -1303,10 +1317,26 @@ Return ONLY a JSON object, nothing else:
                     </div>
                     ${result.verdict ? `<div style="padding:10px 16px;font-size:12px;color:#6b7280;line-height:1.5;border-bottom:1px solid #f3f4f6;font-style:italic;">${esc(result.verdict)}</div>` : ''}
                     ${matchTags || gapTags ? `<div style="padding:10px 16px;display:flex;flex-wrap:wrap;gap:6px;">${matchTags}${gapTags}</div>` : ''}
+                    <div style="display:flex;gap:8px;padding:10px 16px 12px;border-top:1px solid #f3f4f6;">
+                      <button id="compat-save-${ts}" style="flex:1;padding:7px 0;background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">💾 Save to tracker</button>
+                      <button id="compat-fill-${ts}" style="flex:1;padding:7px 0;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">⚡ Fill Form</button>
+                    </div>
                 </div>
             </div>`;
         wrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(ts));
         messagesEl.appendChild(wrap);
+
+        // Wire buttons
+        wrap.querySelector(`#compat-save-${ts}`)?.addEventListener('click', function() {
+            saveCurrentJob();
+            this.textContent = '✓ Saved!';
+            this.style.background = '#dcfce7';
+            this.disabled = true;
+        });
+        wrap.querySelector(`#compat-fill-${ts}`)?.addEventListener('click', () => {
+            dispatchIntent({ intent: 'fill' }, '', null);
+        });
+
         messagesEl.scrollTop = messagesEl.scrollHeight;
         return wrap;
     }
@@ -1597,7 +1627,79 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         });
     }
 
-    function _wireFilterChips() {}
+    function _wireFilterChips(card, listEl, scoredRecords) {
+        const filtersContainer = card.querySelector('.nw-scan-filters');
+        if (!filtersContainer) {
+            // Add filter container if it doesn't exist
+            const progressRow = card.querySelector('.nw-scan-bar-wrap');
+            if (progressRow) {
+                const newContainer = document.createElement('div');
+                newContainer.className = 'nw-scan-filters';
+                newContainer.id = `${SCAN_CARD_ID}-filters`;
+                progressRow.insertAdjacentElement('afterend', newContainer);
+            }
+        }
+
+        const filterEl = card.querySelector('.nw-scan-filters') || card.querySelector(`#${SCAN_CARD_ID}-filters`);
+        if (!filterEl) return;
+
+        filterEl.innerHTML = '';
+
+        // Calculate counts by score bucket
+        const buckets = {
+            'All': scoredRecords.length,
+            'Strong (8-10)': scoredRecords.filter(r => r.score >= 8).length,
+            'Good (5-7)': scoredRecords.filter(r => r.score >= 5 && r.score < 8).length,
+            'Weak (<5)': scoredRecords.filter(r => r.score < 5).length,
+        };
+
+        let activeFilter = 'All';
+        const updateRowVisibility = (filter) => {
+            Array.from(listEl.querySelectorAll('.nw-scan-row')).forEach(row => {
+                const score = parseInt(row.dataset.score);
+                if (isNaN(score)) {
+                    row.style.display = 'none';
+                    return;
+                }
+
+                let show = false;
+                if (filter === 'All') show = true;
+                else if (filter === 'Strong (8-10)') show = score >= 8;
+                else if (filter === 'Good (5-7)') show = score >= 5 && score < 8;
+                else if (filter === 'Weak (<5)') show = score < 5;
+
+                row.style.display = show ? '' : 'none';
+            });
+
+            // Update visible count in title
+            const visibleCount = Array.from(listEl.querySelectorAll('.nw-scan-row')).filter(r => r.style.display !== 'none').length;
+            const titleEl = card.querySelector(`#${SCAN_CARD_ID}-title`);
+            if (titleEl) {
+                const total = scoredRecords.length;
+                titleEl.textContent = visibleCount === total
+                    ? `✅ Scanned ${total} jobs — ${visibleCount} scored`
+                    : `✅ Scanned ${total} jobs — ${visibleCount} shown`;
+            }
+        };
+
+        // Create chips
+        Object.entries(buckets).forEach(([label, count]) => {
+            const chip = document.createElement('button');
+            chip.className = 'nw-scan-chip';
+            chip.textContent = `${label} (${count})`;
+            if (label === 'All') chip.classList.add('active');
+
+            chip.addEventListener('click', () => {
+                // Update active state
+                filterEl.querySelectorAll('.nw-scan-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                activeFilter = label;
+                updateRowVisibility(label);
+            });
+
+            filterEl.appendChild(chip);
+        });
+    }
 
     // ── Job preview panel ─────────────────────────────────────────────────────
 
@@ -1611,6 +1713,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                     <img id="nw-preview-favicon" src="" alt="">
                     <span id="nw-preview-title"></span>
                     <span id="nw-preview-badge"></span>
+                    <button id="nw-preview-newtab" style="width:22px;height:22px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;font-size:11px;color:#6b7280;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Open in new tab">↗</button>
                     <button id="nw-preview-close" title="Close preview">✕</button>
                 </div>
                 <div id="nw-preview-body">
@@ -1648,6 +1751,9 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 </div>`;
             document.body.appendChild(panel);
             document.getElementById('nw-preview-close').addEventListener('click', hideJobPreviewPanel);
+            document.getElementById('nw-preview-newtab')?.addEventListener('click', () => {
+                chrome.runtime.sendMessage({ type: 'NAVIGATE', url: document.getElementById('nw-preview-iframe')?.src || '' });
+            });
         }
 
         const hostname = (() => { try { return new URL(url).hostname; } catch { return ''; } })();
@@ -1740,7 +1846,13 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             });
         });
         if (!resumeText) {
-            return appendMsg('ai', '⚠️ No resume found. Please go to **Settings** and add your profile first.');
+            const errWrap = appendMsg('ai', '⚠️ No resume found. Add your profile to get started.');
+            const btn = document.createElement('button');
+            btn.textContent = '⚙️ Open Settings';
+            btn.style.cssText = 'display:block;margin-top:8px;padding:6px 14px;background:#6366f1;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;';
+            btn.addEventListener('click', () => chrome.runtime.sendMessage({ type: 'OPEN_OPTIONS' }));
+            errWrap?.querySelector('.nw-bubble')?.appendChild(btn);
+            return;
         }
 
         _scanCancelled = false;
@@ -1872,6 +1984,18 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
         barEl.classList.add('done');
         _wireFilterChips(card, listEl, scoredRecords);
+
+        // Add summary banner at top of list
+        if (scoredRecords.length) {
+            const topScore = scoredRecords[0].score;
+            const topTitle = scoredRecords[0].title;
+            const strongCount = scoredRecords.filter(r => r.score >= 8).length;
+            const banner = document.createElement('div');
+            banner.style.cssText = 'margin:0 0 8px;padding:10px 12px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:10px;font-size:11.5px;color:#15803d;line-height:1.6;';
+            banner.innerHTML = `<strong>${scoredRecords.length} jobs scored</strong> · ${strongCount} strong match${strongCount !== 1 ? 'es' : ''} · Top: <strong>${esc(topTitle.slice(0, 30))}${topTitle.length > 30 ? '…' : ''}</strong> (${topScore}/10)`;
+            listEl.insertBefore(banner, listEl.firstChild);
+        }
+
         if (scoredRecords.length) _appendPodium(listEl, scoredRecords);
 
         // Make results available to chat context
@@ -2331,6 +2455,12 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
                 // Auto-start fill immediately — intent already confirmed by user message
                 setTimeout(() => {
+                    // Show brief "Starting…" hint
+                    const readyBadge = fillWrap.querySelector('[style*="rgba(255,255,255,0.2)"]');
+                    if (readyBadge) {
+                        readyBadge.textContent = 'Starting…';
+                        readyBadge.style.background = 'rgba(255,255,255,0.35)';
+                    }
                     document.getElementById(fillCardId + '-confirm')?.click();
                 }, 300);
 
@@ -2696,6 +2826,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                                                 }
                                                 applyBtn.style.display = 'block';
                                                 applyBtn.textContent = '✓ Apply to field';
+                                                const prevVal = f.el.value;
                                                 applyBtn.onclick = () => {
                                                     f.el.value = newVal;
                                                     f.el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -2716,6 +2847,17 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                                                     // Icon flashes indigo
                                                     const iconEl = mainRow.querySelector('.nr-icon');
                                                     if (iconEl) { iconEl.style.background = '#eef2ff'; iconEl.style.color = '#6366f1'; }
+                                                    // Add revert link
+                                                    const revertLink = document.createElement('span');
+                                                    revertLink.textContent = '↩ Revert';
+                                                    revertLink.style.cssText = 'font-size:10px;color:#94a3b8;cursor:pointer;text-decoration:underline;display:block;margin-top:3px;';
+                                                    revertLink.addEventListener('click', () => {
+                                                        f.el.value = prevVal;
+                                                        f.el.dispatchEvent(new Event('input', { bubbles: true }));
+                                                        revertLink.remove();
+                                                        if (valEl) valEl.textContent = prevVal.length > 38 ? prevVal.slice(0, 36) + '…' : prevVal;
+                                                    });
+                                                    valEl?.parentElement?.appendChild(revertLink);
                                                     // Close + reset
                                                     setTimeout(() => {
                                                         expandPanel.classList.remove('open');
@@ -2800,6 +2942,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                                         expandPanel.className = 'nr-expand';
                                         expandPanel.innerHTML = `
                                             <div class="nr-expand-head">Fill <strong>${esc(f.label)}</strong> with AI</div>
+                                            <div style="padding:2px 14px 4px;font-size:10.5px;color:#a78bfa;">Tell me what to write, or I'll pull from your resume.</div>
                                             <div class="nr-chips">
                                                 <span class="nr-chip">Write from resume</span>
                                                 <span class="nr-chip">Professional tone</span>
@@ -3022,11 +3165,19 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             case 'compatibility': {
                 const result = await resolveCompatibility();
                 if (!result) {
-                    const msg = !pageContent
-                        ? "I couldn't read the job description on this page. Make sure you're on a job posting and try again."
-                        : '⚠️ No resume found. Please go to **Settings** and add your profile first, then try again.';
-                    appendMsg('ai', msg);
-                    chatHistory.push({ role: 'ai', text: msg, ts: Date.now() });
+                    if (!pageContent) {
+                        const msg = "I couldn't read the job description on this page. Make sure you're on a job posting and try again.";
+                        appendMsg('ai', msg);
+                        chatHistory.push({ role: 'ai', text: msg, ts: Date.now() });
+                    } else {
+                        const errWrap = appendMsg('ai', '⚠️ No resume found. Add your profile to get started.');
+                        const btn = document.createElement('button');
+                        btn.textContent = '⚙️ Open Settings';
+                        btn.style.cssText = 'display:block;margin-top:8px;padding:6px 14px;background:#6366f1;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;';
+                        btn.addEventListener('click', () => chrome.runtime.sendMessage({ type: 'OPEN_OPTIONS' }));
+                        errWrap?.querySelector('.nw-bubble')?.appendChild(btn);
+                        chatHistory.push({ role: 'ai', text: '⚠️ No resume found. Add your profile to get started.', ts: Date.now() });
+                    }
                 } else {
                     renderCompatibilityCard(result);
                     const summary = `Fit analysis: ${result.score}/10 — ${result.verdict || ''}`;

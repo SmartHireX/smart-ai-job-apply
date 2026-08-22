@@ -128,7 +128,29 @@
         { label: '🔖 Save page',    prompt: 'save this page' },
     ];
 
-    function getChipsForPage(hostname) {
+    function getChipsForPage(hostname, href = '') {
+        // URL-pattern detection for job detail vs listing pages (runs before hostname lookup)
+        if (href) {
+            // Job detail page patterns
+            if (/\/jobs\/view\/|\/job\/|\/jobs\/|\/posting\/|\/apply\//i.test(href)) {
+                return [
+                    { label: '⚡ Fill form',       prompt: 'fill this form' },
+                    { label: '🎯 Check fit',       prompt: 'How well do I match this job? Analyze my fit.' },
+                    { label: '📝 Cover letter',    prompt: 'Write a tailored cover letter for this job posting.' },
+                    { label: '💾 Save job',        prompt: 'save this job' },
+                ];
+            }
+            // Job listing page patterns
+            if (/\/jobs\/search|\/job-search|\?q=|\/jobs\?|search\?/i.test(href)) {
+                return [
+                    { label: '🔍 Scan all jobs',   prompt: 'scan jobs on this page' },
+                    { label: '🎯 Best matches',    prompt: 'Which jobs on this page best match my profile?' },
+                    { label: '📄 Summarize',       prompt: 'Summarize the jobs on this page.' },
+                    { label: '🔖 Save page',       prompt: 'save this page' },
+                ];
+            }
+        }
+        // Fallback to hostname-based DOMAIN_CHIPS
         const entry = DOMAIN_CHIPS.find(d => d.match.test(hostname));
         return entry ? entry.chips : DEFAULT_CHIPS;
     }
