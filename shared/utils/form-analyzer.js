@@ -281,6 +281,9 @@ async function extractFieldsFromDOM(source) {
     const inputs = root.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]), select, textarea, button[aria-haspopup="listbox"], button[aria-expanded="true"], button[aria-expanded="false"]');
 
     inputs.forEach(input => {
+        // Skip anything inside the Nova chat widget
+        if (input.closest('#nova-chat-widget')) return;
+
         // DEDUPLICATION CHECK
         // Strategy: "Semantic Identity with Group Awareness"
         // Radio/Checkbox: name::type::value (to allow options)

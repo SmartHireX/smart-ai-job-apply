@@ -1205,7 +1205,7 @@ Prefer matching a visible link if relevant. Otherwise use your knowledge of this
     // For fill: AI maps natural language field mentions to DOM form fields
     async function resolveFill(fields) {
         const formFields = Array.from(document.querySelectorAll('input,textarea,select'))
-            .filter(el => el.offsetParent !== null) // visible only
+            .filter(el => el.offsetParent !== null && !el.closest('#nova-chat-widget'))
             .map(el => ({
                 tag: el.tagName.toLowerCase(),
                 type: el.type || '',
@@ -2221,7 +2221,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
             case 'fill': {
                 const rawFields = Array.from(document.querySelectorAll('input,textarea,select'))
-                    .filter(el => el.offsetParent !== null && el.type !== 'hidden' && el.type !== 'submit' && el.type !== 'button' && el.type !== 'image' && el.type !== 'reset');
+                    .filter(el => el.offsetParent !== null && !el.closest('#nova-chat-widget') && el.type !== 'hidden' && el.type !== 'submit' && el.type !== 'button' && el.type !== 'image' && el.type !== 'reset');
 
                 if (!rawFields.length) {
                     appendMsg('ai', 'No form detected on this page. Navigate to a job application form and try again.');
@@ -2530,7 +2530,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                                     /* Skipped row — same density as filled, just no value */
                                     .nr-row.nr-skip { background:#fff;cursor:pointer; }
                                     .nr-row.nr-skip .nr-name { color:#94a3b8; }
-                                    .nr-row.nr-skip .nr-val  { color:#cbd5e1; }
+                                    .nr-row.nr-skip .nr-val  { color:#111827; }
                                     .nr-row.nr-skip .nr-icon { background:#f8fafc;color:#cbd5e1; }
                                     .nr-row.nr-skip:hover { background:#f8f9ff; }
                                     .nr-row.nr-skip:hover .nr-icon { background:#eef2ff;color:#6366f1; }
