@@ -2329,6 +2329,11 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 messagesEl.appendChild(fillWrap);
                 messagesEl.scrollTop = messagesEl.scrollHeight;
 
+                // Auto-start fill immediately — intent already confirmed by user message
+                setTimeout(() => {
+                    document.getElementById(fillCardId + '-confirm')?.click();
+                }, 300);
+
                 // Mark a field row as filling / done in the active view
                 const _markField = (fieldEl, state, value) => {
                     const id  = fieldEl.id || fieldEl.name || '';
