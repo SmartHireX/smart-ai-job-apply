@@ -99,7 +99,7 @@ const CONTENT_SCRIPTS = [
     'autofill/core/autofill-orchestrator.js'
 ];
 
-// Listen for messages from content scripts or popup
+// Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Inject scripts for lazy loading

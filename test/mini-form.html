@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Apply — Acme Corp</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; max-width: 480px; margin: 60px auto; padding: 0 20px; background: #f8fafc; }
+        h2 { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 24px; }
+        .field { margin-bottom: 16px; position: relative; }
+        label { display: block; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
+        input, textarea {
+            width: 100%; padding: 9px 12px; border: 1.5px solid #e2e8f0;
+            border-radius: 8px; font-size: 14px; color: #1e293b; outline: none;
+            font-family: inherit; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus, textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+        textarea { resize: vertical; min-height: 80px; }
+        button { width: 100%; padding: 10px; background: #6366f1; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+        button:hover { background: #4f46e5; }
+
+        /* Nova fill highlight — injected by extension */
+        .nova-filling {
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.18), 0 0 16px rgba(99,102,241,0.12) !important;
+            animation: nova-pulse 1s ease-in-out infinite;
+        }
+        .nova-filled {
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.15) !important;
+            transition: all 0.4s ease;
+        }
+        @keyframes nova-pulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(99,102,241,0.18), 0 0 16px rgba(99,102,241,0.12); }
+            50%       { box-shadow: 0 0 0 5px rgba(99,102,241,0.28), 0 0 24px rgba(99,102,241,0.2); }
+        }
+
+        /* Nova filled badge */
+        .nova-badge {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: #10b981; color: white; font-size: 10px; font-weight: 700;
+            padding: 2px 7px; border-radius: 20px; opacity: 0;
+            transition: opacity 0.3s; pointer-events: none;
+        }
+        .nova-badge.visible { opacity: 1; }
+    </style>
+</head>
+<body>
+    <h2>Senior Frontend Engineer — Acme Corp</h2>
+    <form id="job-form">
+        <div class="field">
+            <label for="full_name">Full Name</label>
+            <input type="text" id="full_name" name="full_name" placeholder="Jane Smith">
+            <span class="nova-badge" id="badge-full_name">✓ Nova</span>
+        </div>
+        <div class="field">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="jane@example.com">
+            <span class="nova-badge" id="badge-email">✓ Nova</span>
+        </div>
+        <div class="field">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" placeholder="+1 (555) 000-0000">
+            <span class="nova-badge" id="badge-phone">✓ Nova</span>
+        </div>
+        <div class="field">
+            <label for="cover_letter">Why do you want this role?</label>
+            <textarea id="cover_letter" name="cover_letter" placeholder="Tell us about yourself…"></textarea>
+            <span class="nova-badge" id="badge-cover_letter" style="top:18px;transform:none;">✓ Nova</span>
+        </div>
+        <button type="submit">Submit Application</button>
+    </form>
+</body>
+</html>

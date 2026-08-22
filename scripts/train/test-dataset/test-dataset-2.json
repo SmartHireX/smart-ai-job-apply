@@ -1,0 +1,827 @@
+[
+    {
+        "features": {
+            "label": "First Name *",
+            "name": "firstName",
+            "automationId": "first-name",
+            "placeholder": "Enter first name",
+            "parentContext": "Personal Info",
+            "siblingContext": "Required"
+        },
+        "label": "first_name"
+    },
+    {
+        "features": {
+            "label": "Given Name",
+            "name": "givenName",
+            "automationId": "qa-fname",
+            "placeholder": "First name",
+            "parentContext": "Name",
+            "siblingContext": null
+        },
+        "label": "first_name"
+    },
+    {
+        "features": {
+            "label": "Vorname *",
+            "name": "vorname",
+            "automationId": "input-vorname",
+            "placeholder": "Ihr Vorname",
+            "parentContext": "Name",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "first_name"
+    },
+    {
+        "features": {
+            "label": "Prénom *",
+            "name": "prenom",
+            "automationId": "gh-fname",
+            "placeholder": "Votre prénom",
+            "parentContext": "Nom",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "first_name"
+    },
+    {
+        "features": {
+            "label": "First",
+            "name": "first",
+            "automationId": "input-first",
+            "placeholder": "First name",
+            "parentContext": "Identity",
+            "siblingContext": null
+        },
+        "label": "first_name"
+    },
+    {
+        "features": {
+            "label": "Last Name *",
+            "name": "lastName",
+            "automationId": "last-name",
+            "placeholder": "Enter last name",
+            "parentContext": "Personal Info",
+            "siblingContext": "Required"
+        },
+        "label": "last_name"
+    },
+    {
+        "features": {
+            "label": "Surname",
+            "name": "surname",
+            "automationId": "qa-lname",
+            "placeholder": "Last name",
+            "parentContext": "Name",
+            "siblingContext": null
+        },
+        "label": "last_name"
+    },
+    {
+        "features": {
+            "label": "Nachname *",
+            "name": "nachname",
+            "automationId": "input-nachname",
+            "placeholder": "Ihr Nachname",
+            "parentContext": "Name",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "last_name"
+    },
+    {
+        "features": {
+            "label": "Nom *",
+            "name": "nom",
+            "automationId": "gh-lname",
+            "placeholder": "Votre nom",
+            "parentContext": "Nom",
+            "siblingContext": "Obligatoire"
+        },
+        "label": "last_name"
+    },
+    {
+        "features": {
+            "label": "Family Name",
+            "name": "familyName",
+            "automationId": "input-family",
+            "placeholder": "Last",
+            "parentContext": "Identity",
+            "siblingContext": null
+        },
+        "label": "last_name"
+    },
+    {
+        "features": {
+            "label": "Email Address *",
+            "name": "emailAddress",
+            "automationId": "email-addr",
+            "placeholder": "you@example.com",
+            "parentContext": "Contact",
+            "siblingContext": "Required"
+        },
+        "label": "email"
+    },
+    {
+        "features": {
+            "label": "E-Mail *",
+            "name": "email",
+            "automationId": "qa-email",
+            "placeholder": "Your email",
+            "parentContext": "Contact Info",
+            "siblingContext": null
+        },
+        "label": "email"
+    },
+    {
+        "features": {
+            "label": "E-Mail-Adresse *",
+            "name": "emailAdresse",
+            "automationId": "input-email",
+            "placeholder": "ihre@email.de",
+            "parentContext": "Kontakt",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "email"
+    },
+    {
+        "features": {
+            "label": "Correo electrónico *",
+            "name": "correo",
+            "automationId": "lever-email",
+            "placeholder": "su@email.com",
+            "parentContext": "Contacto",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "email"
+    },
+    {
+        "features": {
+            "label": "Email",
+            "name": "emailInput",
+            "automationId": "input-mail",
+            "placeholder": "Email address",
+            "parentContext": "Communications",
+            "siblingContext": null
+        },
+        "label": "email"
+    },
+    {
+        "features": {
+            "label": "Phone Number *",
+            "name": "phoneNumber",
+            "automationId": "phone-num",
+            "placeholder": "(555) 123-4567",
+            "parentContext": "Contact",
+            "siblingContext": "Required"
+        },
+        "label": "phone"
+    },
+    {
+        "features": {
+            "label": "Mobile Phone",
+            "name": "mobilePhone",
+            "automationId": "qa-phone",
+            "placeholder": "Your phone",
+            "parentContext": "Contact Info",
+            "siblingContext": null
+        },
+        "label": "phone"
+    },
+    {
+        "features": {
+            "label": "Telefonnummer *",
+            "name": "telefon",
+            "automationId": "input-telefon",
+            "placeholder": "+49...",
+            "parentContext": "Kontakt",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "phone"
+    },
+    {
+        "features": {
+            "label": "Teléfono *",
+            "name": "telefono",
+            "automationId": "lever-phone",
+            "placeholder": "+1...",
+            "parentContext": "Contacto",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "phone"
+    },
+    {
+        "features": {
+            "label": "Contact Number",
+            "name": "contactNum",
+            "automationId": "input-contact",
+            "placeholder": "Phone",
+            "parentContext": "Communications",
+            "siblingContext": null
+        },
+        "label": "phone"
+    },
+    {
+        "features": {
+            "label": "Street Address *",
+            "name": "streetAddress",
+            "automationId": "street-addr",
+            "placeholder": "123 Main St",
+            "parentContext": "Address",
+            "siblingContext": "Required"
+        },
+        "label": "address"
+    },
+    {
+        "features": {
+            "label": "Address Line 1",
+            "name": "addressLine1",
+            "automationId": "qa-address",
+            "placeholder": "Street address",
+            "parentContext": "Location",
+            "siblingContext": null
+        },
+        "label": "address"
+    },
+    {
+        "features": {
+            "label": "Straße *",
+            "name": "strasse",
+            "automationId": "input-strasse",
+            "placeholder": "Ihre Straße",
+            "parentContext": "Adresse",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "address"
+    },
+    {
+        "features": {
+            "label": "Dirección *",
+            "name": "direccion",
+            "automationId": "lever-address",
+            "placeholder": "Su dirección",
+            "parentContext": "Ubicación",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "address"
+    },
+    {
+        "features": {
+            "label": "Home Address",
+            "name": "homeAddress",
+            "automationId": "input-home-addr",
+            "placeholder": "Street",
+            "parentContext": "Residence",
+            "siblingContext": null
+        },
+        "label": "address"
+    },
+    {
+        "features": {
+            "label": "City *",
+            "name": "city",
+            "automationId": "city-input",
+            "placeholder": "Your city",
+            "parentContext": "Address",
+            "siblingContext": "Required"
+        },
+        "label": "city"
+    },
+    {
+        "features": {
+            "label": "Town/City",
+            "name": "townCity",
+            "automationId": "qa-city",
+            "placeholder": "Enter city",
+            "parentContext": "Location",
+            "siblingContext": null
+        },
+        "label": "city"
+    },
+    {
+        "features": {
+            "label": "Stadt *",
+            "name": "stadt",
+            "automationId": "input-stadt",
+            "placeholder": "Ihre Stadt",
+            "parentContext": "Adresse",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "city"
+    },
+    {
+        "features": {
+            "label": "Ciudad *",
+            "name": "ciudad",
+            "automationId": "lever-city",
+            "placeholder": "Su ciudad",
+            "parentContext": "Ubicación",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "city"
+    },
+    {
+        "features": {
+            "label": "Municipality",
+            "name": "municipality",
+            "automationId": "input-municipality",
+            "placeholder": "City name",
+            "parentContext": "Geo",
+            "siblingContext": null
+        },
+        "label": "city"
+    },
+    {
+        "features": {
+            "label": "State/Province *",
+            "name": "state",
+            "automationId": "state-select",
+            "placeholder": "Select state",
+            "parentContext": "Address",
+            "siblingContext": "Required"
+        },
+        "label": "state"
+    },
+    {
+        "features": {
+            "label": "Region",
+            "name": "region",
+            "automationId": "qa-state",
+            "placeholder": "Your state",
+            "parentContext": "Location",
+            "siblingContext": null
+        },
+        "label": "state"
+    },
+    {
+        "features": {
+            "label": "Bundesland *",
+            "name": "bundesland",
+            "automationId": "input-bundesland",
+            "placeholder": "Wählen",
+            "parentContext": "Adresse",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "state"
+    },
+    {
+        "features": {
+            "label": "Provincia *",
+            "name": "provincia",
+            "automationId": "lever-state",
+            "placeholder": "Seleccionar",
+            "parentContext": "Ubicación",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "state"
+    },
+    {
+        "features": {
+            "label": "Province/State",
+            "name": "provinceState",
+            "automationId": "input-province",
+            "placeholder": "State",
+            "parentContext": "Address",
+            "siblingContext": null
+        },
+        "label": "state"
+    },
+    {
+        "features": {
+            "label": "ZIP Code *",
+            "name": "zipCode",
+            "automationId": "zip-input",
+            "placeholder": "12345",
+            "parentContext": "Address",
+            "siblingContext": "Required"
+        },
+        "label": "zip_code"
+    },
+    {
+        "features": {
+            "label": "Postal Code",
+            "name": "postalCode",
+            "automationId": "qa-zip",
+            "placeholder": "Enter ZIP",
+            "parentContext": "Location",
+            "siblingContext": null
+        },
+        "label": "zip_code"
+    },
+    {
+        "features": {
+            "label": "PLZ *",
+            "name": "plz",
+            "automationId": "input-plz",
+            "placeholder": "12345",
+            "parentContext": "Adresse",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "zip_code"
+    },
+    {
+        "features": {
+            "label": "Código Postal *",
+            "name": "codigoPostal",
+            "automationId": "lever-zip",
+            "placeholder": "CP",
+            "parentContext": "Ubicación",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "zip_code"
+    },
+    {
+        "features": {
+            "label": "Postcode",
+            "name": "postcode",
+            "automationId": "input-postcode",
+            "placeholder": "ZIP",
+            "parentContext": "Address",
+            "siblingContext": null
+        },
+        "label": "zip_code"
+    },
+    {
+        "features": {
+            "label": "Country *",
+            "name": "country",
+            "automationId": "country-select",
+            "placeholder": "Select country",
+            "parentContext": "Address",
+            "siblingContext": "Required"
+        },
+        "label": "country"
+    },
+    {
+        "features": {
+            "label": "Nation",
+            "name": "nation",
+            "automationId": "qa-country",
+            "placeholder": "Your country",
+            "parentContext": "Location",
+            "siblingContext": null
+        },
+        "label": "country"
+    },
+    {
+        "features": {
+            "label": "Land *",
+            "name": "land",
+            "automationId": "input-land",
+            "placeholder": "Wählen Sie",
+            "parentContext": "Adresse",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "country"
+    },
+    {
+        "features": {
+            "label": "País *",
+            "name": "pais",
+            "automationId": "lever-country",
+            "placeholder": "Seleccionar país",
+            "parentContext": "Ubicación",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "country"
+    },
+    {
+        "features": {
+            "label": "Country of Residence",
+            "name": "countryRes",
+            "automationId": "input-country-res",
+            "placeholder": "Country",
+            "parentContext": "Address",
+            "siblingContext": null
+        },
+        "label": "country"
+    },
+    {
+        "features": {
+            "label": "Current Company",
+            "name": "currentCompany",
+            "automationId": "curr-company",
+            "placeholder": "Where do you work?",
+            "parentContext": "Employment",
+            "siblingContext": "Optional"
+        },
+        "label": "current_company"
+    },
+    {
+        "features": {
+            "label": "Present Employer",
+            "name": "presentEmployer",
+            "automationId": "qa-curr-co",
+            "placeholder": "Company name",
+            "parentContext": "Career",
+            "siblingContext": null
+        },
+        "label": "current_company"
+    },
+    {
+        "features": {
+            "label": "Aktueller Arbeitgeber",
+            "name": "aktuellerAG",
+            "automationId": "input-ag",
+            "placeholder": "Firma",
+            "parentContext": "Beruf",
+            "siblingContext": "Optional"
+        },
+        "label": "current_company"
+    },
+    {
+        "features": {
+            "label": "Empresa actual",
+            "name": "empresaActual",
+            "automationId": "lever-curr-co",
+            "placeholder": "Nombre de empresa",
+            "parentContext": "Carrera",
+            "siblingContext": "Opcional"
+        },
+        "label": "current_company"
+    },
+    {
+        "features": {
+            "label": "Employer",
+            "name": "employer",
+            "automationId": "input-employer",
+            "placeholder": "Current company",
+            "parentContext": "Work",
+            "siblingContext": null
+        },
+        "label": "current_company"
+    },
+    {
+        "features": {
+            "label": "Current Title",
+            "name": "currentTitle",
+            "automationId": "curr-title",
+            "placeholder": "Your role",
+            "parentContext": "Employment",
+            "siblingContext": "Optional"
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Present Position",
+            "name": "presentPosition",
+            "automationId": "qa-curr-title",
+            "placeholder": "Job title",
+            "parentContext": "Career",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Aktuelle Position",
+            "name": "aktuellePos",
+            "automationId": "input-pos",
+            "placeholder": "Position",
+            "parentContext": "Beruf",
+            "siblingContext": "Optional"
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Puesto actual",
+            "name": "puestoActual",
+            "automationId": "lever-curr-title",
+            "placeholder": "Puesto",
+            "parentContext": "Carrera",
+            "siblingContext": "Opcional"
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Job Role",
+            "name": "jobRole",
+            "automationId": "input-role",
+            "placeholder": "Current position",
+            "parentContext": "Work",
+            "siblingContext": null
+        },
+        "label": "current_title"
+    },
+    {
+        "features": {
+            "label": "Resume/CV *",
+            "name": "resume",
+            "automationId": "resume-upload",
+            "placeholder": null,
+            "parentContext": "Documents",
+            "siblingContext": "Required"
+        },
+        "label": "resume"
+    },
+    {
+        "features": {
+            "label": "Upload CV",
+            "name": "uploadCV",
+            "automationId": "qa-resume",
+            "placeholder": "PDF or DOCX",
+            "parentContext": "Application",
+            "siblingContext": null
+        },
+        "label": "resume"
+    },
+    {
+        "features": {
+            "label": "Lebenslauf *",
+            "name": "lebenslauf",
+            "automationId": "input-cv",
+            "placeholder": null,
+            "parentContext": "Dokumente",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "resume"
+    },
+    {
+        "features": {
+            "label": "Currículum *",
+            "name": "curriculum",
+            "automationId": "lever-resume",
+            "placeholder": "Subir archivo",
+            "parentContext": "Documentos",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "resume"
+    },
+    {
+        "features": {
+            "label": "CV File",
+            "name": "cvFile",
+            "automationId": "input-cv-file",
+            "placeholder": "Upload",
+            "parentContext": "Attachments",
+            "siblingContext": null
+        },
+        "label": "resume"
+    },
+    {
+        "features": {
+            "label": "LinkedIn Profile",
+            "name": "linkedinProfile",
+            "automationId": "linkedin-url",
+            "placeholder": "linkedin.com/in/...",
+            "parentContext": "Social",
+            "siblingContext": "Optional"
+        },
+        "label": "linkedin_url"
+    },
+    {
+        "features": {
+            "label": "LinkedIn URL",
+            "name": "linkedinURL",
+            "automationId": "qa-linkedin",
+            "placeholder": "Your LinkedIn",
+            "parentContext": "Professional Links",
+            "siblingContext": null
+        },
+        "label": "linkedin_url"
+    },
+    {
+        "features": {
+            "label": "LinkedIn-Profil",
+            "name": "linkedinProfil",
+            "automationId": "input-linkedin",
+            "placeholder": "LinkedIn Link",
+            "parentContext": "Soziale Medien",
+            "siblingContext": "Optional"
+        },
+        "label": "linkedin_url"
+    },
+    {
+        "features": {
+            "label": "Perfil de LinkedIn",
+            "name": "perfilLinkedIn",
+            "automationId": "lever-linkedin",
+            "placeholder": "URL de LinkedIn",
+            "parentContext": "Social",
+            "siblingContext": "Opcional"
+        },
+        "label": "linkedin_url"
+    },
+    {
+        "features": {
+            "label": "LinkedIn",
+            "name": "linkedin",
+            "automationId": "input-li",
+            "placeholder": "Profile URL",
+            "parentContext": "Links",
+            "siblingContext": null
+        },
+        "label": "linkedin_url"
+    },
+    {
+        "features": {
+            "label": "GitHub Profile",
+            "name": "githubProfile",
+            "automationId": "github-url",
+            "placeholder": "github.com/...",
+            "parentContext": "Social",
+            "siblingContext": "Optional"
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "GitHub Username",
+            "name": "githubUsername",
+            "automationId": "qa-github",
+            "placeholder": "Your GitHub",
+            "parentContext": "Technical Links",
+            "siblingContext": null
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "GitHub-Profil",
+            "name": "githubProfil",
+            "automationId": "input-github",
+            "placeholder": "GitHub Link",
+            "parentContext": "Soziale Medien",
+            "siblingContext": "Optional"
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "Perfil de GitHub",
+            "name": "perfilGitHub",
+            "automationId": "lever-github",
+            "placeholder": "URL de GitHub",
+            "parentContext": "Social",
+            "siblingContext": "Opcional"
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "GitHub",
+            "name": "github",
+            "automationId": "input-gh",
+            "placeholder": "Profile URL",
+            "parentContext": "Links",
+            "siblingContext": null
+        },
+        "label": "github_url"
+    },
+    {
+        "features": {
+            "label": "University/College *",
+            "name": "university",
+            "automationId": "uni-name",
+            "placeholder": "Institution name",
+            "parentContext": "Education",
+            "siblingContext": "Required"
+        },
+        "label": "institution_name"
+    },
+    {
+        "features": {
+            "label": "School Name",
+            "name": "schoolName",
+            "automationId": "qa-school",
+            "placeholder": "Your school",
+            "parentContext": "Academic",
+            "siblingContext": null
+        },
+        "label": "institution_name"
+    },
+    {
+        "features": {
+            "label": "Hochschule *",
+            "name": "hochschule",
+            "automationId": "input-hochschule",
+            "placeholder": "Name der Hochschule",
+            "parentContext": "Bildung",
+            "siblingContext": "Pflichtfeld"
+        },
+        "label": "institution_name"
+    },
+    {
+        "features": {
+            "label": "Universidad *",
+            "name": "universidad",
+            "automationId": "lever-uni",
+            "placeholder": "Nombre de universidad",
+            "parentContext": "Educación",
+            "siblingContext": "Obligatorio"
+        },
+        "label": "institution_name"
+    },
+    {
+        "features": {
+            "label": "Institution",
+            "name": "institution",
+            "automationId": "input-institution",
+            "placeholder": "School name",
+            "parentContext": "Education",
+            "siblingContext": null
+        },
+        "label": "institution_name"
+    }
+]

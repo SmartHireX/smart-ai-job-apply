@@ -49,6 +49,9 @@ class FormProcessor {
             }
 
             chrome.runtime.sendMessage({ type: 'FILL_COMPLETE' });
+            if (typeof window._novaOnFillComplete === 'function') {
+                window._novaOnFillComplete();
+            }
         }
     }
 
@@ -125,7 +128,9 @@ class FormProcessor {
                         // We could update granular progress here if needed
                     },
                     onFieldAnswered: (selector, value, confidence) => {
-                        // Optional: Micro-interactions for specific fields
+                        if (typeof window._novaOnFieldAnswered === 'function') {
+                            window._novaOnFieldAnswered(selector, value, confidence);
+                        }
                     },
                     onAllComplete: (mappings) => {
                         if (typeof window.updateProcessingProgress === 'function') {
