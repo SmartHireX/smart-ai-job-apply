@@ -185,6 +185,7 @@ Possible outputs:
 {"intent":"copy","what":"url|title|text"}
 {"intent":"fill","fields":"<fields or all>"}
 {"intent":"compatibility"}
+Use {"intent":"fill"} when the user wants to fill, autofill, complete, apply, or submit a form — e.g. "fill this form", "fill in the fields", "autofill", "complete the application", "apply for me", "help me fill this", "fill out the form", "submit my application".
 {"intent":"save_job"}
 {"intent":"list_jobs"}
 {"intent":"save_page"}

@@ -3138,14 +3138,6 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 return;
             }
 
-            const FILL_PATTERN = /\b(fill|autofill|auto-fill|auto fill)\b.{0,25}\b(form|fields?|application|this)\b|\b(fill this|fill the form|fill in|complete this form|fill out)\b/i;
-            if (FILL_PATTERN.test(text)) {
-                removeThinking(thinkId);
-                isThinking = false;
-                await dispatchIntent({ intent: 'fill' }, text, thinkId);
-                return;
-            }
-
             const NAV_PATTERN = /\b(open|go to|take me to|navigate to|visit|show me|bring me to|launch)\b|\bmy (profile|account|settings|dashboard|inbox|messages|notifications|jobs|feed|network|connections|page|resume)\b/i;
             const isNav = NAV_PATTERN.test(text);
             console.log(`[Nova v${WIDGET_VERSION}] doSend: "${text}" | navPattern=${isNav}`);
