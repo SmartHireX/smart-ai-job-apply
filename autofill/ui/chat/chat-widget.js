@@ -41,15 +41,7 @@
     let _lastScanResults = null;
     let activeProvider = localStorage.getItem('nova_provider') || 'gemini';
 
-    if (window.__novaProvider) {
-        activeProvider = window.__novaProvider;
-    }
-
-    // chatHistory is filled synchronously from window.__novaHistory (popup pass-through),
-    // or async from chrome.storage.local after render (auto-restore path).
-    const _seed = (window.__novaHistory && Array.isArray(window.__novaHistory) && window.__novaHistory.length)
-        ? window.__novaHistory
-        : [];
+    const _seed = [];
 
     const chatHistory = new Proxy(_seed, {
         get(target, prop) {
@@ -57,9 +49,6 @@
                 return (...args) => {
                     const result = Array.prototype.push.apply(target, args);
                     const slice = target.slice(-40);
-                    // Keep window.__novaHistory in sync so popup can read it on re-open
-                    window.__novaHistory = slice;
-                    // Persist to chrome.storage.local — shared with popup
                     try { chrome.storage.local.set({ nova_chat_history: slice }); } catch {}
                     return result;
                 };
@@ -811,28 +800,18 @@
 
     // ── Restore chat history ──────────────────────────────────────────────────
     const messagesEl = document.getElementById('nw-messages');
-    if (_seed.length) {
-        // History was passed directly from popup — render immediately
-        messagesEl.innerHTML = '';
-        _seed.forEach(m => renderMsg(m.role, m.text, m.ts, m.records || m.result));
-        document.getElementById('nw-chips').style.display = 'none';
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-    } else {
-        // Auto-restore after navigation — load from shared chrome.storage.local
-        try {
-            chrome.storage.local.get(['nova_chat_history'], result => {
-                const saved = result.nova_chat_history;
-                if (Array.isArray(saved) && saved.length) {
-                    _seed.push(...saved);
-                    window.__novaHistory = _seed;
-                    messagesEl.innerHTML = '';
-                    saved.forEach(m => renderMsg(m.role, m.text, m.ts, m.records));
-                    document.getElementById('nw-chips').style.display = 'none';
-                    messagesEl.scrollTop = messagesEl.scrollHeight;
-                }
-            });
-        } catch {}
-    }
+    try {
+        chrome.storage.local.get(['nova_chat_history'], result => {
+            const saved = result.nova_chat_history;
+            if (Array.isArray(saved) && saved.length) {
+                _seed.push(...saved);
+                messagesEl.innerHTML = '';
+                saved.forEach(m => renderMsg(m.role, m.text, m.ts, m.records));
+                document.getElementById('nw-chips').style.display = 'none';
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+        });
+    } catch {}
 
     // ── Drag ──────────────────────────────────────────────────────────────────
     const header = document.getElementById('nw-header');
@@ -973,7 +952,6 @@
     document.getElementById('nw-menu-clear').addEventListener('click', () => {
         closeMenu();
         chatHistory.length = 0;
-        window.__novaHistory = [];
         _lastScanResults = null;
         try { chrome.storage.local.remove('nova_chat_history'); } catch {}
         messagesEl.innerHTML = `

@@ -1,6 +1,6 @@
 /**
- * Nova Chat Core — shared logic for chat-widget.js and popup.js
- * Exposes window.NovaChatCore so both consumers stay in sync automatically.
+ * Nova Chat Core — shared logic for chat-widget.js
+ * Exposes window.NovaChatCore for use by the chat widget.
  * No chrome.* calls here — pure functions only, callers handle browser APIs.
  */
 (function () {
