@@ -7381,6 +7381,8 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     }
 
     async function _npOpenPanel() {
+        closeAllPanels();
+        npPanel.classList.add('open');
         _npNotes = await _npLoadAll();
         const ids = _npSortedIds();
         if (!_npActiveId || !_npNotes[_npActiveId]) {
@@ -7389,8 +7391,6 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         _npBadge();
         _npRenderList();
         _npRenderEditor();
-        closeAllPanels();
-        npPanel.classList.add('open');
     }
 
     document.getElementById('nw-np-panel-back').addEventListener('click', () => npPanel.classList.remove('open'));
@@ -7406,7 +7406,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         npEditor.querySelector('#nw-np-title')?.focus();
     });
 
-    document.getElementById('nw-menu-scratch').addEventListener('click', () => { closeMenu(); _npOpenPanel(); });
+    document.getElementById('nw-menu-scratch').addEventListener('click', () => { closeMenu(); closeAllPanels(); _npOpenPanel(); });
 
     document.addEventListener('keydown', e => {
         if (e.altKey && e.key === 's' && !e.target.matches('input,textarea,[contenteditable]')) {
