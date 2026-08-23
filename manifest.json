@@ -12,7 +12,8 @@
         "contextMenus",
         "alarms",
         "notifications",
-        "declarativeNetRequest"
+        "declarativeNetRequest",
+        "history"
     ],
     "host_permissions": [
         "https://generativelanguage.googleapis.com/*",

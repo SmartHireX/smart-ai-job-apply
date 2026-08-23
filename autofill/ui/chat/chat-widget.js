@@ -294,6 +294,161 @@
             display: flex; border: 1px solid #e5e7eb; border-radius: 7px; overflow: hidden;
         }
         .nw-menu-provider .nw-provider-btn { flex: 1; text-align: center; }
+        /* ── Clipboard History panel ── */
+        .nw-cb-panel {
+            position: absolute; inset: 0; background: #f8f9fb; z-index: 5;
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+        .nw-cb-panel.open { transform: translateX(0); }
+        .nw-cb-panel-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 16px; height: 52px;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+        }
+        .nw-cb-panel-back {
+            width: 28px; height: 28px; border: 1px solid #e5e7eb;
+            border-radius: 7px; background: #fff; color: #6b7280;
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: all 0.15s; flex-shrink: 0;
+        }
+        .nw-cb-panel-back:hover { background: #f3f4f6; color: #111827; }
+        .nw-cb-panel-title { font-size: 13px; font-weight: 700; color: #111827; flex: 1; }
+        .nw-cb-count {
+            font-size: 10.5px; font-weight: 600; color: #6366f1;
+            background: #eef2ff; padding: 2px 8px; border-radius: 10px;
+        }
+        .nw-cb-search {
+            padding: 10px 12px; background: #fff;
+            border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+        }
+        .nw-cb-search-inner {
+            display: flex; align-items: center; gap: 8px;
+            background: #f3f4f6; border: 1.5px solid transparent;
+            border-radius: 9px; padding: 7px 10px;
+            transition: border-color 0.15s;
+        }
+        .nw-cb-search-inner:focus-within { border-color: #6366f1; background: #fff; }
+        .nw-cb-search-inner svg { color: #9ca3af; flex-shrink: 0; }
+        .nw-cb-search-inner input {
+            flex: 1; border: none; outline: none; font-size: 12px;
+            background: transparent; font-family: inherit; color: #111827;
+        }
+        .nw-cb-search-inner input::placeholder { color: #9ca3af; }
+        .nw-cb-list {
+            flex: 1; overflow-y: auto; padding: 8px 12px;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .nw-cb-item {
+            background: #fff;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex; align-items: flex-start; gap: 10px;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .nw-cb-item:hover {
+            border-color: #6366f1;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.1);
+        }
+        .nw-cb-item:hover .nw-cb-copy-btn { opacity: 1; }
+        .nw-cb-icon {
+            width: 28px; height: 28px; border-radius: 7px;
+            background: #eef2ff; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0; margin-top: 1px;
+        }
+        .nw-cb-icon svg { color: #6366f1; }
+        .nw-cb-body { flex: 1; min-width: 0; }
+        .nw-cb-text {
+            font-size: 12px; color: #1f2937; line-height: 1.5;
+            white-space: pre-wrap; word-break: break-word;
+            max-height: 56px; overflow: hidden;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        }
+        .nw-cb-meta {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 10px; color: #9ca3af; margin-top: 5px;
+        }
+        .nw-cb-meta-dot { width: 3px; height: 3px; border-radius: 50%; background: #d1d5db; }
+        .nw-cb-copy-btn {
+            opacity: 0; flex-shrink: 0;
+            padding: 4px 10px; background: #6366f1; color: #fff;
+            border: none; border-radius: 6px; font-size: 10.5px; font-weight: 600;
+            cursor: pointer; font-family: inherit;
+            transition: opacity 0.15s, background 0.15s;
+            align-self: center;
+        }
+        .nw-cb-copy-btn:hover { background: #4f46e5; }
+        .nw-cb-copy-btn.copied { background: #10b981; opacity: 1; }
+        .nw-cb-empty {
+            padding: 40px 20px; text-align: center; color: #9ca3af; font-size: 12px;
+            line-height: 1.6;
+        }
+        .nw-cb-empty-icon { font-size: 28px; margin-bottom: 8px; }
+        /* ── Tab Switcher overlay ── */
+        .nw-tab-overlay {
+            position: fixed; inset: 0; z-index: 2147483647;
+            background: rgba(0,0,0,0.55); display: flex;
+            align-items: flex-start; justify-content: center;
+            padding-top: 80px;
+        }
+        .nw-tab-palette {
+            width: 520px; max-width: calc(100vw - 32px);
+            background: #fff; border-radius: 14px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.22);
+            overflow: hidden; display: flex; flex-direction: column;
+            max-height: calc(100vh - 160px);
+        }
+        .nw-tab-search-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 14px 16px; border-bottom: 1px solid #f3f4f6;
+        }
+        .nw-tab-search-row svg { color: #9ca3af; flex-shrink: 0; }
+        .nw-tab-search-row input {
+            flex: 1; border: none; outline: none; font-size: 15px;
+            color: #111827; font-family: inherit; background: transparent;
+        }
+        .nw-tab-search-row input::placeholder { color: #9ca3af; }
+        .nw-tab-esc {
+            font-size: 10px; color: #9ca3af; background: #f3f4f6;
+            padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
+        }
+        .nw-tab-list { overflow-y: auto; padding: 6px 0; }
+        .nw-tab-section-label {
+            padding: 4px 16px; font-size: 10px; font-weight: 700;
+            color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .nw-tab-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 16px; cursor: pointer; transition: background 0.1s;
+        }
+        .nw-tab-item.active, .nw-tab-item:hover { background: #f5f3ff; }
+        .nw-tab-item.selected { background: #eef2ff; }
+        .nw-tab-favicon { width: 16px; height: 16px; flex-shrink: 0; border-radius: 3px; }
+        .nw-tab-info { flex: 1; min-width: 0; }
+        .nw-tab-title {
+            font-size: 13px; color: #111827; font-weight: 500;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .nw-tab-url {
+            font-size: 10px; color: #9ca3af;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .nw-tab-badge {
+            font-size: 10px; color: #6366f1; background: #eef2ff;
+            padding: 1px 6px; border-radius: 10px; flex-shrink: 0;
+        }
+        .nw-tab-hint {
+            padding: 8px 16px; border-top: 1px solid #f3f4f6;
+            font-size: 10px; color: #9ca3af; display: flex; gap: 12px;
+        }
+        .nw-tab-hint kbd {
+            background: #f3f4f6; padding: 1px 5px; border-radius: 4px;
+            font-family: inherit; font-size: 10px;
+        }
         /* ── Saved pages panel ── */
         .nw-sp-panel {
             position: absolute; inset: 0; background: #fff; z-index: 5;
@@ -818,6 +973,97 @@
             background: rgba(255,255,255,0.12); color: #e2e8f0;
         }
         #nova-explain-tooltip .nova-tt-clip:hover { background: rgba(255,255,255,0.2); }
+        /* Writing assistant toolbar */
+        #nova-write-toolbar {
+            position: fixed; z-index: 2147483646;
+            background: #1e293b; border-radius: 10px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.28);
+            padding: 6px; min-width: 180px;
+            font-family: -apple-system, sans-serif;
+            animation: nova-tooltip-in 0.13s ease;
+        }
+        .nova-wt-title {
+            font-size: 9.5px; font-weight: 700; color: #64748b;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            padding: 2px 6px 6px;
+        }
+        .nova-wt-btn {
+            display: flex; align-items: center; gap: 8px;
+            width: 100%; padding: 7px 10px; border: none;
+            background: transparent; color: #e2e8f0;
+            font-size: 12px; font-weight: 500; cursor: pointer;
+            border-radius: 7px; text-align: left; font-family: inherit;
+            transition: background 0.1s;
+        }
+        .nova-wt-btn:hover { background: rgba(255,255,255,0.1); }
+        .nova-wt-btn span { font-size: 14px; }
+        /* Link preview card */
+        #nova-link-preview {
+            position: fixed; z-index: 2147483645;
+            background: #fff; border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+            padding: 12px 14px; width: 280px;
+            font-family: -apple-system, sans-serif;
+            animation: nova-tooltip-in 0.15s ease;
+            pointer-events: none;
+        }
+        .nova-lp-domain {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 10px; color: #6b7280; margin-bottom: 6px;
+        }
+        .nova-lp-favicon { width: 14px; height: 14px; border-radius: 3px; }
+        .nova-lp-title {
+            font-size: 13px; font-weight: 700; color: #111827;
+            line-height: 1.35; margin-bottom: 5px;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .nova-lp-desc {
+            font-size: 11px; color: #6b7280; line-height: 1.45;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .nova-lp-loading { font-size: 11px; color: #9ca3af; padding: 4px 0; }
+        /* Screen time badge */
+        #nova-st-badge {
+            position: fixed; bottom: 72px; right: 16px; z-index: 2147483640;
+            background: rgba(17,24,39,0.88); color: #fff;
+            border-radius: 20px; padding: 5px 12px;
+            font-family: -apple-system, sans-serif;
+            font-size: 11px; font-weight: 600;
+            display: flex; align-items: center; gap: 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            cursor: pointer; backdrop-filter: blur(6px);
+            transition: opacity 0.2s;
+        }
+        #nova-st-badge:hover { opacity: 0.85; }
+        #nova-st-badge .nova-st-dot {
+            width: 7px; height: 7px; border-radius: 50%; background: #10b981; flex-shrink: 0;
+        }
+        #nova-st-badge.warn .nova-st-dot { background: #f59e0b; }
+        #nova-st-badge.danger .nova-st-dot { background: #ef4444; }
+        /* Screen time panel */
+        .nova-st-panel {
+            position: fixed; bottom: 110px; right: 16px; z-index: 2147483641;
+            background: #fff; border-radius: 14px; width: 230px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+            font-family: -apple-system, sans-serif;
+            overflow: hidden;
+            animation: nova-tooltip-in 0.15s ease;
+        }
+        .nova-st-panel-header {
+            padding: 12px 14px 8px; border-bottom: 1px solid #f3f4f6;
+            font-size: 12px; font-weight: 700; color: #111827;
+        }
+        .nova-st-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 7px 14px; font-size: 11.5px; border-bottom: 1px solid #f9fafb;
+        }
+        .nova-st-row:last-child { border-bottom: none; }
+        .nova-st-site { color: #374151; font-weight: 500; }
+        .nova-st-time { color: #6366f1; font-weight: 700; font-size: 11px; }
+        .nova-st-bar-wrap { height: 3px; background: #f3f4f6; border-radius: 2px; margin-top: 3px; }
+        .nova-st-bar { height: 3px; background: #6366f1; border-radius: 2px; transition: width 0.3s; }
     `;
     document.head.appendChild(styleEl);
 
@@ -872,13 +1118,21 @@
                                 <button id="nw-groq-nudge-btn" style="display:block;width:100%;margin-top:5px;padding:4px 0;background:#f59e0b;color:white;border:none;border-radius:5px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;">⚡ Get free Groq key →</button>
                             </div>
                         </div>
-                        <button class="nw-menu-item" id="nw-menu-focus">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg>
-                            Focus Mode
+                        <button class="nw-menu-item" id="nw-menu-clipboard">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M14 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+                            Clipboard History
+                        </button>
+                        <button class="nw-menu-item" id="nw-menu-tabs">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9.5" y1="14.5" x2="14.5" y2="14.5"/></svg>
+                            Tab Switcher
                         </button>
                         <button class="nw-menu-item" id="nw-menu-adblock">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
                             Remove Ads
+                        </button>
+                        <button class="nw-menu-item" id="nw-menu-screentime">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            Screen Time
                         </button>
                         <button class="nw-menu-item" id="nw-menu-settings">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -892,6 +1146,23 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <!-- Clipboard history panel (slides over chat) -->
+        <div class="nw-cb-panel" id="nw-cb-panel">
+            <div class="nw-cb-panel-header">
+                <button class="nw-cb-panel-back" id="nw-cb-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="nw-cb-panel-title">📋 Clipboard History</div>
+                <div class="nw-cb-count" id="nw-cb-count"></div>
+            </div>
+            <div class="nw-cb-search">
+                <div class="nw-cb-search-inner">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="nw-cb-search" placeholder="Search copies…" autocomplete="off"/>
+                </div>
+            </div>
+            <div class="nw-cb-list" id="nw-cb-list"></div>
         </div>
         <!-- Saved pages panel (slides over chat) -->
         <div class="nw-sp-panel" id="nw-sp-panel">
@@ -1225,7 +1496,7 @@
     document.getElementById('nw-menu-pages').addEventListener('click', openSpPanel);
     document.getElementById('nw-sp-back').addEventListener('click', closeSpPanel);
 
-    // ── Focus Mode & Ad Remover ───────────────────────────────────────────────
+    // ── Ad Remover (site-specific + generic selectors) ────────────────────────
     const FOCUS_SELECTORS = {
         'linkedin.com': [
             // Sidebars and recommendations
@@ -1325,36 +1596,6 @@
         '[data-google-query-id]',
         '.widget_media_image + div[class*="ad"]',
     ];
-
-    let _focusActive = false;
-    let _focusStyleEl = null;
-
-    function _buildFocusCSS() {
-        const host = location.hostname.replace('www.', '');
-        const siteKey = Object.keys(FOCUS_SELECTORS).find(k => host.includes(k));
-        const siteSelectors = siteKey ? FOCUS_SELECTORS[siteKey] : [];
-        const allSelectors = [...siteSelectors, ...GENERIC_AD_SELECTORS];
-        return allSelectors.map(s => `${s} { display: none !important; visibility: hidden !important; }`).join('\n');
-    }
-
-    function _toggleFocus(on) {
-        _focusActive = on;
-        const btn = document.getElementById('nw-menu-focus');
-        if (on) {
-            if (!_focusStyleEl) {
-                _focusStyleEl = document.createElement('style');
-                _focusStyleEl.id = 'nova-focus-styles';
-                document.head.appendChild(_focusStyleEl);
-            }
-            _focusStyleEl.textContent = _buildFocusCSS();
-            if (btn) { btn.style.color = '#6366f1'; btn.style.fontWeight = '700'; btn.textContent = ''; btn.insertAdjacentHTML('afterbegin', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg> Focus Mode ✓'); }
-            localStorage.setItem('nova_focus_mode', '1');
-        } else {
-            if (_focusStyleEl) { _focusStyleEl.textContent = ''; }
-            if (btn) { btn.style.color = ''; btn.style.fontWeight = ''; btn.textContent = ''; btn.insertAdjacentHTML('afterbegin', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg> Focus Mode'); }
-            localStorage.removeItem('nova_focus_mode');
-        }
-    }
 
     // ── YouTube ad skipper (Brave-inspired) ──────────────────────────────────
     let _ytObserver = null;
@@ -1507,8 +1748,10 @@
                 document.head.appendChild(_adBlockStyleEl);
             }
             const isYT = location.hostname.includes('youtube.com');
-            const ytSelectors = isYT ? (FOCUS_SELECTORS['youtube.com'] || []) : [];
-            const allSelectors = [...GENERIC_AD_SELECTORS, ...ytSelectors];
+            const host = location.hostname.replace('www.', '');
+            const siteKey = Object.keys(FOCUS_SELECTORS).find(k => host.includes(k));
+            const siteSelectors = siteKey ? FOCUS_SELECTORS[siteKey] : [];
+            const allSelectors = [...GENERIC_AD_SELECTORS, ...siteSelectors];
             _adBlockStyleEl.textContent = allSelectors
                 .map(s => `${s} { display: none !important; }`)
                 .join('\n');
@@ -1539,17 +1782,12 @@
         }
     }
 
-    document.getElementById('nw-menu-focus').addEventListener('click', () => {
-        closeMenu();
-        _toggleFocus(!_focusActive);
-    });
     document.getElementById('nw-menu-adblock').addEventListener('click', () => {
         closeMenu();
         _toggleAdBlock(!_adBlockActive);
     });
 
     // Restore on init if previously enabled
-    if (localStorage.getItem('nova_focus_mode')) _toggleFocus(true);
     if (localStorage.getItem('nova_adblock')) {
         _toggleAdBlock(true);
         // Re-arm network rules on YouTube (declarativeNetRequest persists across sessions but reinforce it)
@@ -1692,8 +1930,13 @@
         clipBtn.className = 'nova-tt-clip';
         clipBtn.textContent = '📎 Clip';
 
+        const writeBtn = document.createElement('button');
+        writeBtn.className = 'nova-tt-ask';
+        writeBtn.textContent = '✍️ Write';
+
         tt.appendChild(explainBtn);
         tt.appendChild(askBtn);
+        tt.appendChild(writeBtn);
         tt.appendChild(clipBtn);
         document.body.appendChild(tt);
 
@@ -1729,12 +1972,17 @@
             e.stopPropagation();
             tt.remove();
             _saveClip(truncated, document.title, location.href);
-            // Quick visual confirmation
             const confirm = document.createElement('div');
             confirm.style.cssText = 'position:fixed;bottom:80px;right:24px;z-index:2147483647;background:#1e293b;color:white;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;font-family:-apple-system,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.2);animation:nova-tooltip-in 0.12s ease;';
             confirm.textContent = '📎 Clipped!';
             document.body.appendChild(confirm);
             setTimeout(() => confirm.remove(), 1800);
+        });
+
+        writeBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            tt.remove();
+            _showWriteToolbar(truncated, e.clientX, e.clientY);
         });
 
         // Auto-hide if user clicks elsewhere
@@ -5270,6 +5518,502 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         inputEl.dispatchEvent(new Event('input'));
         // Auto-send after a brief moment so the user sees what's being asked
         setTimeout(doSend, 120);
+    });
+
+    // ── Clipboard History ─────────────────────────────────────────────────────
+    const CB_KEY      = 'nova_clipboard_history';
+    const CB_MAX      = 50;
+    const cbPanel     = document.getElementById('nw-cb-panel');
+    const cbList      = document.getElementById('nw-cb-list');
+    const cbCount     = document.getElementById('nw-cb-count');
+    const cbSearchEl  = document.getElementById('nw-cb-search');
+
+    function cbLoad() {
+        try { return JSON.parse(localStorage.getItem(CB_KEY) || '[]'); } catch { return []; }
+    }
+    function cbSave(items) {
+        try { localStorage.setItem(CB_KEY, JSON.stringify(items)); } catch {}
+    }
+
+    function cbAdd(text) {
+        if (!text || text.length < 2 || text.length > 10000) return;
+        let items = cbLoad();
+        // Deduplicate — move to top if already exists
+        items = items.filter(i => i.text !== text);
+        items.unshift({ text, ts: Date.now(), url: location.hostname });
+        if (items.length > CB_MAX) items = items.slice(0, CB_MAX);
+        cbSave(items);
+    }
+
+    function cbTimestamp(ts) {
+        const diff = Date.now() - ts;
+        if (diff < 60000) return 'just now';
+        if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+        return Math.floor(diff / 86400000) + 'd ago';
+    }
+
+    function cbRender(query) {
+        let items = cbLoad();
+        if (query) {
+            const q = query.toLowerCase();
+            items = items.filter(i => i.text.toLowerCase().includes(q));
+        }
+        cbCount.textContent = items.length ? `${items.length}` : '';
+        if (!items.length) {
+            cbList.innerHTML = `<div class="nw-cb-empty"><div class="nw-cb-empty-icon">📋</div>${query ? 'No matches found.' : 'Nothing copied yet.<br>Copy any text on any page<br>and it will appear here.'}</div>`;
+            return;
+        }
+
+        function cbTypeIcon(text) {
+            if (/^https?:\/\//i.test(text)) return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+            if (text.length > 120) return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+            if (/^\d[\d\s\-().+]+$/.test(text.trim())) return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+            return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>`;
+        }
+
+        cbList.innerHTML = items.map((item, i) => `
+            <div class="nw-cb-item" data-idx="${i}">
+                <div class="nw-cb-icon">${cbTypeIcon(item.text)}</div>
+                <div class="nw-cb-body">
+                    <div class="nw-cb-text">${NovaChatCore.esc(item.text)}</div>
+                    <div class="nw-cb-meta">
+                        <span>${cbTimestamp(item.ts)}</span>
+                        ${item.url ? `<span class="nw-cb-meta-dot"></span><span>${NovaChatCore.esc(item.url)}</span>` : ''}
+                    </div>
+                </div>
+                <button class="nw-cb-copy-btn" data-idx="${i}">Copy</button>
+            </div>
+        `).join('');
+
+        cbList.querySelectorAll('.nw-cb-item').forEach(el => {
+            el.addEventListener('click', async () => {
+                const idx = +el.dataset.idx;
+                const text = cbLoad()[idx]?.text;
+                if (!text) return;
+                await navigator.clipboard.writeText(text).catch(() => {});
+                const btn = el.querySelector('.nw-cb-copy-btn');
+                if (btn) {
+                    btn.textContent = '✓ Copied';
+                    btn.classList.add('copied');
+                    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1400);
+                }
+            });
+        });
+    }
+
+    function openCbPanel() {
+        cbPanel.classList.add('open');
+        cbSearchEl.value = '';
+        cbRender('');
+        setTimeout(() => cbSearchEl.focus(), 200);
+    }
+    function closeCbPanel() { cbPanel.classList.remove('open'); }
+
+    document.getElementById('nw-cb-back').addEventListener('click', closeCbPanel);
+    document.getElementById('nw-menu-clipboard').addEventListener('click', () => { closeMenu(); openCbPanel(); });
+    cbSearchEl.addEventListener('input', () => cbRender(cbSearchEl.value.trim()));
+
+    // Listen for copy events on the page to record clipboard entries
+    document.addEventListener('copy', () => {
+        setTimeout(async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                cbAdd(text);
+            } catch { /* clipboard read requires focus/permission — silent fail */ }
+        }, 50);
+    }, true);
+
+    // ── Tab Command Palette ───────────────────────────────────────────────────
+    let _tabOverlay    = null;
+    let _tabItems      = [];
+    let _tabSelected   = 0;
+
+    function _tabTimeAgo(ts) {
+        if (!ts) return '';
+        const diff = Date.now() - ts;
+        if (diff < 60000) return 'just now';
+        if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+        return Math.floor(diff / 3600000) + 'h ago';
+    }
+
+    function _tabRenderList(items, query) {
+        const list = _tabOverlay.querySelector('.nw-tab-list');
+        if (!items.length) {
+            list.innerHTML = `<div style="padding:24px;text-align:center;color:#9ca3af;font-size:12px;">No tabs match "${NovaChatCore.esc(query)}"</div>`;
+            return;
+        }
+
+        // Split open tabs vs history
+        const open = items.filter(i => i.source === 'tab');
+        const hist = items.filter(i => i.source === 'history');
+
+        let html = '';
+        if (open.length) {
+            html += `<div class="nw-tab-section-label">Open Tabs</div>`;
+            html += open.map((t, i) => _tabItemHtml(t, i === _tabSelected)).join('');
+        }
+        if (hist.length) {
+            const offset = open.length;
+            html += `<div class="nw-tab-section-label" style="margin-top:4px;">Recent History</div>`;
+            html += hist.map((t, i) => _tabItemHtml(t, (i + offset) === _tabSelected)).join('');
+        }
+        list.innerHTML = html;
+
+        // Scroll selected into view
+        const sel = list.querySelector('.nw-tab-item.selected');
+        if (sel) sel.scrollIntoView({ block: 'nearest' });
+
+        // Click handlers
+        list.querySelectorAll('.nw-tab-item').forEach(el => {
+            el.addEventListener('click', () => _tabActivate(+el.dataset.idx));
+        });
+    }
+
+    function _tabItemHtml(t, selected) {
+        const favicon = t.favIconUrl
+            ? `<img class="nw-tab-favicon" src="${NovaChatCore.esc(t.favIconUrl)}" onerror="this.style.display='none'">`
+            : `<div class="nw-tab-favicon" style="background:#e5e7eb;border-radius:3px;"></div>`;
+        return `
+            <div class="nw-tab-item${selected ? ' selected' : ''}" data-idx="${t._idx}">
+                ${favicon}
+                <div class="nw-tab-info">
+                    <div class="nw-tab-title">${NovaChatCore.esc(t.title || t.url || 'Untitled')}</div>
+                    <div class="nw-tab-url">${NovaChatCore.esc((t.url || '').replace(/^https?:\/\//, ''))}</div>
+                </div>
+                ${t.source === 'tab' ? `<div class="nw-tab-badge">${t.active ? 'current' : 'tab'}</div>` : `<div class="nw-tab-badge" style="color:#9ca3af;background:#f3f4f6;">${_tabTimeAgo(t.lastVisitTime)}</div>`}
+            </div>`;
+    }
+
+    function _tabFilter(allItems, query) {
+        if (!query) return allItems;
+        const q = query.toLowerCase();
+        return allItems.filter(t =>
+            (t.title || '').toLowerCase().includes(q) ||
+            (t.url || '').toLowerCase().includes(q)
+        );
+    }
+
+    function _tabActivate(idx) {
+        const item = _tabItems[idx];
+        if (!item) return;
+        closeTabPalette();
+        if (item.source === 'tab') {
+            chrome.runtime.sendMessage({ type: 'SWITCH_TAB', tabId: item.id, windowId: item.windowId });
+        } else {
+            chrome.runtime.sendMessage({ type: 'NAVIGATE', url: item.url });
+        }
+    }
+
+    function closeTabPalette() {
+        if (!_tabOverlay) return;
+        _tabOverlay.remove();
+        _tabOverlay = null;
+    }
+
+    async function openTabPalette() {
+        if (_tabOverlay) { closeTabPalette(); return; }
+
+        // Build overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'nw-tab-overlay';
+        overlay.innerHTML = `
+            <div class="nw-tab-palette">
+                <div class="nw-tab-search-row">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" placeholder="Search tabs and history…" autocomplete="off" id="nw-tab-input"/>
+                    <span class="nw-tab-esc">ESC</span>
+                </div>
+                <div class="nw-tab-list" id="nw-tab-list" style="max-height:340px;"></div>
+                <div class="nw-tab-hint">
+                    <span><kbd>↑↓</kbd> navigate</span>
+                    <span><kbd>Enter</kbd> switch</span>
+                    <span><kbd>ESC</kbd> close</span>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        _tabOverlay = overlay;
+        _tabSelected = 0;
+
+        // Close on backdrop click
+        overlay.addEventListener('click', e => { if (e.target === overlay) closeTabPalette(); });
+
+        const input = overlay.querySelector('#nw-tab-input');
+        input.focus();
+
+        // Fetch tabs + recent history from background
+        chrome.runtime.sendMessage({ type: 'GET_TABS_AND_HISTORY' }, (res) => {
+            const tabs = (res?.tabs || []).map((t, i) => ({ ...t, source: 'tab', _idx: i }));
+            const hist = (res?.history || []).map((h, i) => ({ ...h, source: 'history', _idx: tabs.length + i }));
+            _tabItems = [...tabs, ...hist];
+            _tabRenderList(_tabFilter(_tabItems, ''), '');
+        });
+
+        input.addEventListener('input', () => {
+            _tabSelected = 0;
+            const q = input.value.trim();
+            _tabRenderList(_tabFilter(_tabItems, q), q);
+        });
+
+        input.addEventListener('keydown', e => {
+            const filtered = _tabFilter(_tabItems, input.value.trim());
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                _tabSelected = Math.min(_tabSelected + 1, filtered.length - 1);
+                _tabRenderList(filtered, input.value.trim());
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                _tabSelected = Math.max(_tabSelected - 1, 0);
+                _tabRenderList(filtered, input.value.trim());
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const item = filtered[_tabSelected];
+                if (item) _tabActivate(item._idx);
+            } else if (e.key === 'Escape') {
+                closeTabPalette();
+            }
+        });
+    }
+
+    document.getElementById('nw-menu-tabs').addEventListener('click', () => { closeMenu(); openTabPalette(); });
+
+    // Global keyboard shortcut: Ctrl+Shift+K opens tab palette
+    document.addEventListener('keydown', e => {
+        if (e.ctrlKey && e.shiftKey && e.key === 'K') { e.preventDefault(); openTabPalette(); }
+    }, true);
+
+    // ── Writing Assistant ─────────────────────────────────────────────────────
+    const WRITE_ACTIONS = [
+        { icon: '✅', label: 'Fix grammar',        prompt: t => `Fix grammar and spelling in this text, return only the corrected version:\n\n"${t}"` },
+        { icon: '💼', label: 'Make professional',  prompt: t => `Rewrite this text to sound more professional and polished, return only the rewritten version:\n\n"${t}"` },
+        { icon: '✂️', label: 'Make shorter',        prompt: t => `Make this text shorter and more concise while keeping the key meaning, return only the shortened version:\n\n"${t}"` },
+        { icon: '🔥', label: 'Make stronger',       prompt: t => `Rewrite this to sound more confident and impactful, return only the rewritten version:\n\n"${t}"` },
+        { icon: '😊', label: 'Make friendly',       prompt: t => `Rewrite this to sound warmer and more friendly, return only the rewritten version:\n\n"${t}"` },
+        { icon: '🌐', label: 'Translate to English', prompt: t => `Translate this to English, return only the translation:\n\n"${t}"` },
+    ];
+
+    function _showWriteToolbar(selectedText, x, y) {
+        document.getElementById('nova-write-toolbar')?.remove();
+        const toolbar = document.createElement('div');
+        toolbar.id = 'nova-write-toolbar';
+        const left = Math.min(x, window.innerWidth - 200);
+        const top  = Math.max(y - 8, 8);
+        toolbar.style.cssText = `left:${left}px;top:${top}px;`;
+
+        toolbar.innerHTML = `<div class="nova-wt-title">Writing Assistant</div>` +
+            WRITE_ACTIONS.map((a, i) =>
+                `<button class="nova-wt-btn" data-idx="${i}"><span>${a.icon}</span>${a.label}</button>`
+            ).join('');
+        document.body.appendChild(toolbar);
+
+        toolbar.querySelectorAll('.nova-wt-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                toolbar.remove();
+                const action = WRITE_ACTIONS[+btn.dataset.idx];
+                widget.style.display = 'flex';
+                widget.dataset.minimized = 'false';
+                document.getElementById('nova-mini-bubble')?.style &&
+                    (document.getElementById('nova-mini-bubble').style.display = 'none');
+                const prompt = action.prompt(selectedText.slice(0, 600));
+                inputEl.value = prompt;
+                inputEl.dispatchEvent(new Event('input'));
+                setTimeout(doSend, 80);
+            });
+        });
+
+        setTimeout(() => {
+            const hide = (ev) => {
+                if (!toolbar.contains(ev.target)) { toolbar.remove(); document.removeEventListener('mousedown', hide); }
+            };
+            document.addEventListener('mousedown', hide);
+        }, 0);
+    }
+
+    // ── Link Preview on Hover ─────────────────────────────────────────────────
+    let _lpTimer = null;
+    let _lpCard  = null;
+    let _lpCache = {};
+
+    function _lpShow(url, x, y) {
+        _lpHide();
+        const card = document.createElement('div');
+        card.id = 'nova-link-preview';
+        _lpCard = card;
+
+        // Position: prefer above, fall back below
+        const top = y - 20 > 160 ? y - 155 : y + 20;
+        const left = Math.min(Math.max(x - 140, 8), window.innerWidth - 296);
+        card.style.cssText = `left:${left}px;top:${top}px;`;
+        card.innerHTML = `<div class="nova-lp-loading">Loading preview…</div>`;
+        document.body.appendChild(card);
+
+        if (_lpCache[url]) { _lpPopulate(card, _lpCache[url]); return; }
+
+        fetch(url, { method: 'GET', credentials: 'omit', signal: AbortSignal.timeout(4000) })
+            .then(r => r.text())
+            .then(html => {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const getMeta = (name) =>
+                    doc.querySelector(`meta[property="${name}"]`)?.content ||
+                    doc.querySelector(`meta[name="${name}"]`)?.content || '';
+                const data = {
+                    title:   getMeta('og:title') || doc.title || url,
+                    desc:    getMeta('og:description') || getMeta('description') || '',
+                    favicon: `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32`,
+                    domain:  new URL(url).hostname.replace('www.', ''),
+                };
+                _lpCache[url] = data;
+                if (_lpCard === card) _lpPopulate(card, data);
+            })
+            .catch(() => { if (_lpCard === card) card.remove(); });
+    }
+
+    function _lpPopulate(card, data) {
+        card.innerHTML = `
+            <div class="nova-lp-domain">
+                <img class="nova-lp-favicon" src="${NovaChatCore.esc(data.favicon)}" onerror="this.style.display='none'">
+                ${NovaChatCore.esc(data.domain)}
+            </div>
+            <div class="nova-lp-title">${NovaChatCore.esc(data.title)}</div>
+            ${data.desc ? `<div class="nova-lp-desc">${NovaChatCore.esc(data.desc)}</div>` : ''}
+        `;
+    }
+
+    function _lpHide() {
+        _lpCard?.remove(); _lpCard = null;
+    }
+
+    document.addEventListener('mouseover', e => {
+        const link = e.target.closest('a[href]');
+        if (!link || link.closest(`#${WIDGET_ID}`)) return;
+        const href = link.href;
+        if (!href || !href.startsWith('http')) return;
+        clearTimeout(_lpTimer);
+        _lpTimer = setTimeout(() => _lpShow(href, e.clientX, e.clientY), 600);
+    }, true);
+
+    document.addEventListener('mouseout', e => {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+        clearTimeout(_lpTimer);
+        _lpHide();
+    }, true);
+
+    // ── Screen Time Tracker ───────────────────────────────────────────────────
+    const ST_KEY = 'nova_screen_time';
+
+    function _stLoad() {
+        try { return JSON.parse(localStorage.getItem(ST_KEY) || '{}'); } catch { return {}; }
+    }
+    function _stSave(data) {
+        try { localStorage.setItem(ST_KEY, JSON.stringify(data)); } catch {}
+    }
+    function _stFmtTime(ms) {
+        const s = Math.floor(ms / 1000);
+        if (s < 60) return `${s}s`;
+        const m = Math.floor(s / 60);
+        if (m < 60) return `${m}m`;
+        return `${Math.floor(m / 60)}h ${m % 60}m`;
+    }
+
+    // Record time for current domain
+    const _stDomain   = location.hostname.replace('www.', '') || 'local';
+    const _stDateKey  = new Date().toISOString().slice(0, 10);
+    let   _stStart    = Date.now();
+    let   _stActive   = !document.hidden;
+
+    function _stFlush() {
+        if (!_stActive) return;
+        const data  = _stLoad();
+        const day   = data[_stDateKey] || {};
+        const spent = Date.now() - _stStart;
+        day[_stDomain] = (day[_stDomain] || 0) + spent;
+        data[_stDateKey] = day;
+        _stSave(data);
+        _stStart = Date.now();
+        // Prune data older than 7 days
+        const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+        Object.keys(data).forEach(k => { if (k < cutoff.toISOString().slice(0, 10)) delete data[k]; });
+        _stSave(data);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        _stFlush();
+        _stActive = !document.hidden;
+        _stStart  = Date.now();
+    });
+    window.addEventListener('beforeunload', _stFlush);
+    setInterval(_stFlush, 30000);
+
+    // Badge showing today's time on current site
+    let _stBadgeEl = null;
+    let _stPanelEl = null;
+    let _stBadgeTimer = null;
+
+    function _stUpdateBadge() {
+        const data    = _stLoad();
+        const today   = data[_stDateKey] || {};
+        const ms      = (today[_stDomain] || 0) + (Date.now() - _stStart);
+        const mins    = Math.floor(ms / 60000);
+        if (mins < 1) return; // Don't show badge until at least 1 minute
+
+        if (!_stBadgeEl) {
+            _stBadgeEl = document.createElement('div');
+            _stBadgeEl.id = 'nova-st-badge';
+            document.body.appendChild(_stBadgeEl);
+            _stBadgeEl.addEventListener('click', _stTogglePanel);
+        }
+
+        _stBadgeEl.className = 'nova-st-badge' + (mins >= 120 ? ' danger' : mins >= 45 ? ' warn' : '');
+        _stBadgeEl.innerHTML = `<div class="nova-st-dot"></div>${_stFmtTime(ms)} on ${_stDomain}`;
+    }
+
+    function _stTogglePanel() {
+        if (_stPanelEl) { _stPanelEl.remove(); _stPanelEl = null; return; }
+        const data  = _stLoad();
+        const today = data[_stDateKey] || {};
+        // Add current session
+        today[_stDomain] = (today[_stDomain] || 0) + (Date.now() - _stStart);
+        const sorted = Object.entries(today).sort((a, b) => b[1] - a[1]).slice(0, 8);
+        const max    = sorted[0]?.[1] || 1;
+
+        const panel = document.createElement('div');
+        panel.className = 'nova-st-panel';
+        _stPanelEl = panel;
+        panel.innerHTML = `
+            <div class="nova-st-panel-header">⏱ Today's screen time</div>
+            ${sorted.map(([site, ms]) => `
+                <div class="nova-st-row">
+                    <div>
+                        <div class="nova-st-site">${NovaChatCore.esc(site)}</div>
+                        <div class="nova-st-bar-wrap"><div class="nova-st-bar" style="width:${Math.round(ms/max*100)}%"></div></div>
+                    </div>
+                    <div class="nova-st-time">${_stFmtTime(ms)}</div>
+                </div>
+            `).join('')}
+        `;
+        document.body.appendChild(panel);
+
+        setTimeout(() => {
+            const hide = (ev) => {
+                if (!panel.contains(ev.target) && ev.target !== _stBadgeEl) {
+                    panel.remove(); _stPanelEl = null;
+                    document.removeEventListener('mousedown', hide);
+                }
+            };
+            document.addEventListener('mousedown', hide);
+        }, 0);
+    }
+
+    // Update badge every 30 seconds
+    _stUpdateBadge();
+    _stBadgeTimer = setInterval(_stUpdateBadge, 30000);
+
+    // Menu button toggles screen time panel
+    document.getElementById('nw-menu-screentime').addEventListener('click', () => {
+        closeMenu();
+        _stTogglePanel();
     });
 
     // ── Entrance pop animation ────────────────────────────────────────────────

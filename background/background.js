@@ -368,6 +368,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return false;
     }
 
+    // Tab palette: return all open tabs + recent history
+    if (message.type === 'GET_TABS_AND_HISTORY') {
+        (async () => {
+            try {
+                const tabs = await chrome.tabs.query({});
+                const history = await chrome.history.search({ text: '', maxResults: 30, startTime: Date.now() - 7 * 86400000 });
+                // Exclude URLs already open as tabs
+                const openUrls = new Set(tabs.map(t => t.url));
+                const filteredHistory = history.filter(h => !openUrls.has(h.url));
+                sendResponse({ tabs, history: filteredHistory });
+            } catch (e) {
+                sendResponse({ tabs: [], history: [] });
+            }
+        })();
+        return true;
+    }
+
+    // Tab palette: switch to a specific tab
+    if (message.type === 'SWITCH_TAB') {
+        (async () => {
+            try {
+                await chrome.tabs.update(message.tabId, { active: true });
+                await chrome.windows.update(message.windowId, { focused: true });
+                sendResponse({ success: true });
+            } catch (e) {
+                sendResponse({ success: false });
+            }
+        })();
+        return true;
+    }
+
     // Enable/disable YouTube network-level ad blocking via declarativeNetRequest
     if (message.type === 'TOGGLE_YT_ADBLOCK') {
         (async () => {
