@@ -1549,7 +1549,7 @@
         }
         /* ── Notepad panel (inside widget) ── */
         .nw-np-panel {
-            position: absolute; inset: 0; background: #fff; z-index: 5;
+            position: absolute; inset: 0; background: #fff; z-index: 7;
             display: flex; flex-direction: column;
             transform: translateX(100%);
             transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
