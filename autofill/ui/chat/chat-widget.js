@@ -4618,6 +4618,115 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         openSpPanel();
     }
 
+    // ── Context Assembly (MCP-style) ─────────────────────────────────────────
+    // Loads relevant user data stores based on intent and injects them as
+    // structured context sections into the prompt before calling AI.
+
+    function _getResumeText() {
+        return new Promise(resolve => {
+            try {
+                chrome.runtime.sendMessage({ type: 'GET_RESUME_TEXT' }, result => {
+                    if (chrome.runtime.lastError || !result?.success) { resolve(''); return; }
+                    resolve(result.text || '');
+                });
+            } catch { resolve(''); }
+        });
+    }
+
+    // Routes which data stores to load based on intent and user message keywords
+    async function assembleContext(intent, userText) {
+        const intentType = intent.intent || 'chat';
+        const uLow = userText.toLowerCase();
+
+        // Signals for each data source
+        const wantsResume    = /\b(resume|cv|my (skills?|experience|background|profile|work|education|qualification|summary))\b/i.test(uLow)
+            || /\b(cover letter|job fit|compatibility|keyword|apply|fill|autofill|form)\b/i.test(uLow)
+            || ['compatibility', 'keyword_match', 'profile_score', 'fill', 'write'].includes(intentType);
+
+        const wantsNotes     = /\b(note|notes?|notepad|wrote|saved note|my notes?|from my notes?)\b/i.test(uLow)
+            || intentType === 'chat';
+
+        const wantsPages     = /\b(saved page|bookmark|reading list|saved link|article I saved)\b/i.test(uLow)
+            || intentType === 'list_pages';
+
+        const wantsClips     = /\b(clip|clips?|clipping|saved text|saved clip)\b/i.test(uLow)
+            || intentType === 'list_clips';
+
+        const wantsClipboard = /\b(clipboard|copied|paste|last copied)\b/i.test(uLow);
+
+        const sections = [];
+
+        // Resume
+        if (wantsResume) {
+            try {
+                const resumeText = await _getResumeText();
+                if (resumeText && resumeText.length > 20) {
+                    sections.push(`--- My Resume / Profile ---\n${resumeText.slice(0, 3000)}\n---`);
+                }
+            } catch {}
+        }
+
+        // Notepad
+        if (wantsNotes) {
+            try {
+                const allNotes = await _npLoadAll();
+                const noteList = Object.values(allNotes);
+                if (noteList.length) {
+                    const notesText = noteList
+                        .filter(n => n.content && n.content.trim())
+                        .sort((a, b) => (b.ts || 0) - (a.ts || 0))
+                        .slice(0, 8)
+                        .map(n => `[${(n.title || 'Untitled').slice(0, 40)}]: ${n.content.slice(0, 400)}`)
+                        .join('\n\n');
+                    if (notesText) {
+                        sections.push(`--- My Notepad Notes ---\n${notesText}\n---`);
+                    }
+                }
+            } catch {}
+        }
+
+        // Saved pages
+        if (wantsPages) {
+            try {
+                const pages = await spLoad();
+                if (pages.length) {
+                    const pagesText = pages.slice(0, 10)
+                        .map(p => `• ${p.title} — ${p.url}`)
+                        .join('\n');
+                    sections.push(`--- My Saved Pages ---\n${pagesText}\n---`);
+                }
+            } catch {}
+        }
+
+        // Web clips
+        if (wantsClips) {
+            try {
+                const clips = await _clipsLoad();
+                if (clips.length) {
+                    const clipsText = clips.slice(0, 5)
+                        .map(c => `• [${c.title || c.url || 'clip'}]: ${c.text.slice(0, 300)}`)
+                        .join('\n\n');
+                    sections.push(`--- My Saved Clips ---\n${clipsText}\n---`);
+                }
+            } catch {}
+        }
+
+        // Clipboard history
+        if (wantsClipboard) {
+            try {
+                const cbItems = await cbLoad();
+                if (cbItems.length) {
+                    const cbText = cbItems.slice(0, 5)
+                        .map(i => `• ${i.text.slice(0, 200)}`)
+                        .join('\n');
+                    sections.push(`--- My Recent Clipboard ---\n${cbText}\n---`);
+                }
+            } catch {}
+        }
+
+        return sections.length ? sections.join('\n\n') + '\n\n' : '';
+    }
+
     // For content intents: AI generates the actual response
     async function resolveContent(intent, userText) {
         const ctx = pageContent
@@ -4627,17 +4736,20 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             .map(m => `${m.role === 'user' ? 'User' : 'Nova'}: ${(m.text || '').slice(0, 200)}`)
             .join('\n');
 
+        // Assemble personalised context from user's data stores
+        const userCtx = await assembleContext(intent, userText);
+
         let prompt;
         if (intent.intent === 'summarize') {
-            prompt = `${ctx}Summarize this page:\n• 2-3 sentence overview\n• Key points (max 5 bullets)\n• What the user might want to do next`;
+            prompt = `${userCtx}${ctx}Summarize this page:\n• 2-3 sentence overview\n• Key points (max 5 bullets)\n• What the user might want to do next`;
         } else if (intent.intent === 'explain') {
-            prompt = `Explain "${intent.topic}":\n• What it is (one sentence)\n• Why it matters\n• One concrete example`;
+            prompt = `${userCtx}Explain "${intent.topic}":\n• What it is (one sentence)\n• Why it matters\n• One concrete example`;
         } else if (intent.intent === 'extract') {
-            prompt = `${ctx}Extract ${intent.what} from this page as a clean structured list. If nothing found, say so.`;
+            prompt = `${userCtx}${ctx}Extract ${intent.what} from this page as a clean structured list. If nothing found, say so.`;
         } else if (intent.intent === 'translate') {
-            prompt = `${ctx}Translate the main content of this page to ${intent.language}. Keep formatting intact.`;
+            prompt = `${userCtx}${ctx}Translate the main content of this page to ${intent.language}. Keep formatting intact.`;
         } else if (intent.intent === 'write') {
-            prompt = `Write a ${intent.type} about: "${intent.about}".\nContext: currently on ${document.title} (${location.href}).\nMake it professional, ready to use, no placeholder brackets.`;
+            prompt = `${userCtx}Write a ${intent.type} about: "${intent.about}".\nContext: currently on ${document.title} (${location.href}).\nMake it professional, ready to use, no placeholder brackets.`;
         } else {
             // chat
             const needsPage = pageContent && /\b(page|this|here|content|article|post|job|profile)\b/i.test(userText);
@@ -4646,7 +4758,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                     `${i + 1}. ${j.title} — ${j.score}/10`
                   ).join('\n')}\n---\n\n`
                 : '';
-            prompt = `${scanCtx}${needsPage ? ctx : ''}${history ? history + '\n' : ''}User: ${userText}`;
+            prompt = `${userCtx}${scanCtx}${needsPage ? ctx : ''}${history ? history + '\n' : ''}User: ${userText}`;
         }
 
         return callAI(prompt, NOVA_SYSTEM, { intent: intent.intent });
