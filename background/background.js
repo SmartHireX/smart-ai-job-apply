@@ -209,6 +209,246 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    if (message.type === 'SAVE_RESUME_DATA') {
+        (async () => {
+            try {
+                await self.ResumeManager.saveResumeData(message.data);
+                sendResponse({ success: true });
+            } catch (error) {
+                sendResponse({ success: false, error: error.message });
+            }
+        })();
+        return true;
+    }
+
+    if (message.type === 'SCRAPE_LINKEDIN_PROFILE') {
+        const url = message.url;
+        if (!url) { sendResponse({ success: false, error: 'No URL provided' }); return false; }
+
+        (async () => {
+            let tabId = null;
+            let keepAlive = null;
+            try {
+                // Open active so LinkedIn SPA fully renders, then immediately switch
+                // focus back to the options tab so user sees the scan panel
+                const optionsTabId = sender.tab?.id;
+                const tab = await chrome.tabs.create({ url, active: true });
+                tabId = tab.id;
+                // Switch back to options page right away
+                if (optionsTabId) chrome.tabs.update(optionsTabId, { active: true }).catch(() => {});
+
+                // Keep SW alive while waiting
+                keepAlive = setInterval(() => chrome.storage.local.get('_nw_sw_ping'), 2000);
+
+                // Wait for page load
+                await new Promise((resolve, reject) => {
+                    const timer = setTimeout(() => { chrome.tabs.onUpdated.removeListener(fn); reject(new Error('Page load timeout')); }, 25000);
+                    function fn(id, info) {
+                        if (id !== tabId || info.status !== 'complete') return;
+                        chrome.tabs.onUpdated.removeListener(fn);
+                        clearTimeout(timer);
+                        resolve();
+                    }
+                    chrome.tabs.onUpdated.addListener(fn);
+                });
+
+                // Inject scroll script — scrolls full page so LinkedIn lazy-loads all sections,
+                // then waits for key sections to appear, then scrapes everything
+                const [result] = await chrome.scripting.executeScript({
+                    target: { tabId },
+                    func: () => new Promise(async (resolve) => {
+                        function clean(t) { return (t || '').replace(/\s+/g, ' ').trim(); }
+
+                        // Helper: find section containing an anchor id
+                        function getSection(id) {
+                            const anchor = document.getElementById(id);
+                            if (!anchor) return null;
+                            let el = anchor;
+                            // Walk up to the nearest section element
+                            while (el && el.tagName !== 'SECTION') el = el.parentElement;
+                            return el || null;
+                        }
+
+                        // Helper: get visible spans in element (aria-hidden ones carry the readable text)
+                        function visibleSpans(container) {
+                            return [...container.querySelectorAll('span[aria-hidden="true"]')]
+                                .map(e => clean(e.innerText)).filter(Boolean);
+                        }
+
+                        // Step 1: Scroll through the full page to trigger lazy-load
+                        const scrollTo = (y) => new Promise(r => { window.scrollTo(0, y); setTimeout(r, 600); });
+                        const h = () => document.body.scrollHeight;
+                        await scrollTo(h() * 0.2);
+                        await scrollTo(h() * 0.4);
+                        await scrollTo(h() * 0.6);
+                        await scrollTo(h() * 0.8);
+                        await scrollTo(h());
+                        await new Promise(r => setTimeout(r, 1000)); // final settle
+                        await scrollTo(0); // back to top so top-card is visible
+
+                        // Step 2: Wait until h1 (name) is present — up to 10s
+                        await new Promise(r => {
+                            let t = 0;
+                            const iv = setInterval(() => {
+                                t += 500;
+                                if (document.querySelector('h1')?.innerText?.trim() || t >= 10000) { clearInterval(iv); r(); }
+                            }, 500);
+                        });
+
+                        // Step 3: Scrape
+                        const linkedinUrl = window.location.href.replace(/\?.*$/, '');
+
+                        // ── Name ──────────────────────────────────────────────────────────
+                        let firstName = '', lastName = '';
+                        const h1El = document.querySelector('h1');
+                        const h1Text = clean(h1El?.innerText || '');
+                        if (h1Text) {
+                            const p = h1Text.split(/\s+/).filter(Boolean);
+                            firstName = p[0] || ''; lastName = p.slice(1).join(' ');
+                        } else {
+                            const m = document.title.match(/^(.+?)\s*[|–\-]/);
+                            if (m) { const p = m[1].trim().split(/\s+/); firstName = p[0]; lastName = p.slice(1).join(' '); }
+                        }
+
+                        // ── Headline ──────────────────────────────────────────────────────
+                        // LinkedIn puts headline in the div immediately after h1
+                        let headline = '';
+                        if (h1El) {
+                            let next = h1El.nextElementSibling;
+                            while (next) {
+                                const t = clean(next.innerText || '');
+                                if (t.length > 5 && t.length < 200) { headline = t; break; }
+                                next = next.nextElementSibling;
+                            }
+                            // Fallback: look in parent
+                            if (!headline) {
+                                const parent = h1El.parentElement;
+                                if (parent) {
+                                    for (const child of parent.children) {
+                                        if (child === h1El) continue;
+                                        const t = clean(child.innerText || '');
+                                        if (t.length > 5 && t.length < 200) { headline = t; break; }
+                                    }
+                                }
+                            }
+                        }
+
+                        // ── Location ──────────────────────────────────────────────────────
+                        // LinkedIn location is a small span near the top card
+                        let location = '';
+                        const locCandidates = [
+                            document.querySelector('.text-body-small.inline.t-black--light.break-words'),
+                            document.querySelector('[data-field="location_text"]'),
+                            ...[...document.querySelectorAll('span.text-body-small')].filter(el => {
+                                const t = clean(el.innerText || '');
+                                return t.length > 3 && t.length < 80 && !/^\d/.test(t);
+                            })
+                        ].filter(Boolean);
+                        for (const el of locCandidates) {
+                            const t = clean(el.innerText || '');
+                            if (t.length > 3 && t.length < 80) { location = t; break; }
+                        }
+
+                        // ── About / Summary ───────────────────────────────────────────────
+                        let summary = '';
+                        const aboutSec = getSection('about');
+                        if (aboutSec) {
+                            const clone = aboutSec.cloneNode(true);
+                            clone.querySelectorAll('h2,h3,button,svg,.visually-hidden').forEach(e => e.remove());
+                            summary = clean(clone.innerText || '').replace(/^about\s*/i, '').slice(0, 2000);
+                        }
+
+                        // ── Experience ────────────────────────────────────────────────────
+                        const experience = [];
+                        const expSec = getSection('experience');
+                        if (expSec) {
+                            const items = [...expSec.querySelectorAll('li')].slice(0, 15);
+                            items.forEach(item => {
+                                const spans = visibleSpans(item);
+                                // spans[0]=title, [1]=company, [2]=duration/dates, rest=description
+                                if (spans[0] && spans[0].length > 1 && spans[0].length < 100) {
+                                    experience.push({
+                                        id: Math.random().toString(36).slice(2, 9),
+                                        title:       spans[0],
+                                        company:     spans[1] || '',
+                                        period:      spans[2] || '',
+                                        description: spans.slice(3).join(' ').slice(0, 400),
+                                        current:     /present/i.test(spans[2] || '')
+                                    });
+                                }
+                            });
+                        }
+
+                        // ── Education ─────────────────────────────────────────────────────
+                        const education = [];
+                        const eduSec = getSection('education');
+                        if (eduSec) {
+                            const items = [...eduSec.querySelectorAll('li')].slice(0, 8);
+                            items.forEach(item => {
+                                const spans = visibleSpans(item);
+                                if (spans[0] && spans[0].length > 1) {
+                                    education.push({
+                                        id:        Math.random().toString(36).slice(2, 9),
+                                        school:    spans[0],
+                                        degree:    spans[1] || '',
+                                        major:     spans[2] || '',
+                                        startDate: '',
+                                        endDate:   spans.find(s => /\d{4}/.test(s)) || '',
+                                        gpa:       ''
+                                    });
+                                }
+                            });
+                        }
+
+                        // ── Skills ────────────────────────────────────────────────────────
+                        let skills = [];
+                        const skillsSec = getSection('skills');
+                        if (skillsSec) {
+                            skills = visibleSpans(skillsSec)
+                                .filter(s => s.length > 1 && s.length < 60)
+                                .slice(0, 40);
+                        }
+
+                        // ── Certifications ────────────────────────────────────────────────
+                        let certifications = [];
+                        const certSec = getSection('licenses_and_certifications') || getSection('certifications');
+                        if (certSec) {
+                            certifications = visibleSpans(certSec)
+                                .filter(s => s.length > 2 && s.length < 100)
+                                .slice(0, 10);
+                        }
+
+                        const debug = !firstName ? {
+                            title: document.title, h1Text,
+                            bodySnippet: clean(document.body.innerText).slice(0, 400)
+                        } : null;
+
+                        resolve({
+                            personal: { firstName, lastName, location, linkedin: linkedinUrl },
+                            headline,
+                            summary,
+                            experience,
+                            education,
+                            skills: { technical: skills, soft: [], languages: [], certifications },
+                            debug
+                        });
+                    })
+                });
+
+                const scraped = result?.result;
+                if (!scraped || scraped._error) throw new Error(scraped?._error || 'Could not scrape profile');
+                sendResponse({ success: true, data: scraped });
+            } catch (err) {
+                sendResponse({ success: false, error: err.message });
+            } finally {
+                clearInterval(keepAlive);
+                if (tabId) chrome.tabs.remove(tabId).catch(() => {});
+            }
+        })();
+
+        return true;
+    }
+
     // Re-inject chat widget after navigation (called by bootstrap on pages with Trusted Types CSP)
     if (message.type === 'INJECT_CHAT_WIDGET') {
         (async () => {

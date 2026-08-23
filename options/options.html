@@ -246,6 +246,27 @@
                             <button type="button" class="btn btn-primary save-tab-btn">Save Changes</button>
                         </div>
                     </div>
+
+                    <!-- LinkedIn Sync card -->
+                    <div class="card" id="linkedin-sync-card" style="margin-top:20px;background:#f0f9ff;border:1px solid #bae6fd;padding:20px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="#0077b5"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                            <div>
+                                <div style="font-size:14px;font-weight:700;color:#0c4a6e;">Sync from LinkedIn</div>
+                                <div style="font-size:12px;color:#0369a1;margin-top:2px;">Paste your LinkedIn profile URL — we'll open it, scrape your info, and fill your profile automatically</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:stretch;">
+                            <input type="url" id="linkedin-sync-url" placeholder="https://linkedin.com/in/your-username"
+                                style="flex:1;padding:8px 12px;border:1px solid #bae6fd;border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:#fff;color:#0c4a6e;min-width:0;">
+                            <button id="linkedin-sync-btn" type="button"
+                                style="padding:8px 16px;background:#0077b5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                                Sync Profile
+                            </button>
+                        </div>
+                        <div id="linkedin-sync-status" style="margin-top:10px;font-size:12px;color:#0369a1;min-height:18px;"></div>
+                    </div>
                 </section>
 
                 <!-- Experience Tab -->
@@ -623,6 +644,100 @@
             <div class="modal-footer">
                 <button id="generic-delete-cancel" class="btn btn-secondary">Cancel</button>
                 <button id="generic-delete-confirm" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LinkedIn Sync Preview Panel (same pattern as job scan) -->
+    <style>
+        #li-preview-panel {
+            position:fixed; top:0; left:0; width:52%; height:100vh;
+            background:#fff; box-shadow:6px 0 48px rgba(0,0,0,.22);
+            z-index:9999; display:flex; flex-direction:column;
+            transform:translateX(-100%); transition:transform .38s cubic-bezier(.4,0,.2,1);
+            border-right:1.5px solid rgba(0,0,0,.08);
+        }
+        #li-preview-panel.li-panel-open { transform:translateX(0); }
+        #li-preview-hdr {
+            display:flex; align-items:center; gap:10px;
+            padding:9px 14px; background:rgba(249,250,251,.97);
+            border-bottom:1px solid #e5e7eb; flex-shrink:0;
+        }
+        #li-preview-hdr img { width:16px; height:16px; border-radius:3px; }
+        #li-preview-hdr span { font-size:12px; font-weight:600; color:#111827; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        #li-preview-body { position:relative; flex:1; overflow:hidden; }
+        #li-preview-iframe { display:none; }
+        #li-scan-overlay {
+            position:absolute; inset:0; z-index:10;
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            overflow:hidden; animation:li-ov-in .3s ease both;
+        }
+        #li-scan-overlay.li-ov-hidden { opacity:0; pointer-events:none; transition:opacity .45s ease; }
+        #li-ov-bg {
+            position:absolute; inset:0;
+            background:radial-gradient(ellipse 80% 60% at 50% 38%, rgba(0,119,181,.22) 0%, rgba(5,10,20,.92) 100%);
+            transition:background .7s ease;
+        }
+        #li-scan-overlay::after {
+            content:''; position:absolute; inset:0; pointer-events:none;
+            background-image: linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px), linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+            background-size:44px 44px;
+        }
+        #li-ov-reticle {
+            position:relative; z-index:2; width:96px; height:96px;
+            display:flex; align-items:center; justify-content:center; margin-bottom:24px;
+        }
+        #li-ov-reticle svg.li-ring-outer { position:absolute; inset:0; animation:li-spin 3s linear infinite; }
+        #li-ov-reticle svg.li-ring-inner { position:absolute; inset:12px; animation:li-spin-r 2s linear infinite; }
+        #li-ov-ping { position:absolute; inset:28px; border-radius:50%; border:1.5px solid rgba(0,160,220,.6); animation:li-ping 1.8s ease-out infinite; }
+        #li-ov-icon { width:36px; height:36px; border-radius:50%; background:rgba(0,119,181,.85); box-shadow:0 0 0 8px rgba(0,119,181,.12); display:flex; align-items:center; justify-content:center; position:relative; z-index:1; }
+        #li-ov-label { position:relative; z-index:2; font-size:17px; font-weight:700; color:#fff; text-align:center; margin-bottom:6px; }
+        #li-ov-sub   { position:relative; z-index:2; font-size:11.5px; color:rgba(255,255,255,.42); text-align:center; margin-bottom:32px; }
+        #li-ov-bar-wrap { position:relative; z-index:2; width:160px; height:3px; border-radius:2px; background:rgba(255,255,255,.1); overflow:hidden; margin-bottom:28px; }
+        #li-ov-bar-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,#0077b5,#00a0dc); width:0%; transition:width .5s ease; }
+        #li-ov-steps { position:relative; z-index:2; display:flex; align-items:center; gap:6px; }
+        .li-ov-step { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:rgba(255,255,255,.28); }
+        .li-ov-step.active { color:rgba(255,255,255,.9); }
+        .li-ov-step-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+        .li-ov-step-div { width:18px; height:1px; background:rgba(255,255,255,.15); }
+        @keyframes li-spin   { to { transform:rotate(360deg);  } }
+        @keyframes li-spin-r { to { transform:rotate(-360deg); } }
+        @keyframes li-ping   { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(1.7);opacity:0} }
+        @keyframes li-ov-in  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+    </style>
+    <div id="li-preview-panel">
+        <div id="li-preview-hdr">
+            <img src="https://www.google.com/s2/favicons?domain=linkedin.com&sz=16" alt="">
+            <span id="li-preview-title">Scanning LinkedIn Profile…</span>
+        </div>
+        <div id="li-preview-body">
+            <iframe id="li-preview-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+            <div id="li-scan-overlay">
+                <div id="li-ov-bg"></div>
+                <div id="li-ov-reticle">
+                    <div id="li-ov-ping"></div>
+                    <svg class="li-ring-outer" viewBox="0 0 96 96" fill="none">
+                        <circle cx="48" cy="48" r="44" stroke="rgba(255,255,255,.06)" stroke-width="1.5"/>
+                        <path d="M48 4 A44 44 0 0 1 92 48" stroke="#0077b5" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <svg class="li-ring-inner" viewBox="0 0 72 72" fill="none">
+                        <circle cx="36" cy="36" r="32" stroke="rgba(255,255,255,.05)" stroke-width="1.5"/>
+                        <path d="M36 4 A32 32 0 0 1 68 36" stroke="rgba(0,160,220,.5)" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <div id="li-ov-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                    </div>
+                </div>
+                <div id="li-ov-label">Opening LinkedIn…</div>
+                <div id="li-ov-sub">Loading your profile</div>
+                <div id="li-ov-bar-wrap"><div id="li-ov-bar-fill"></div></div>
+                <div id="li-ov-steps">
+                    <div class="li-ov-step active" id="li-step-load"><div class="li-ov-step-dot"></div>Load</div>
+                    <div class="li-ov-step-div"></div>
+                    <div class="li-ov-step" id="li-step-read"><div class="li-ov-step-dot"></div>Read</div>
+                    <div class="li-ov-step-div"></div>
+                    <div class="li-ov-step" id="li-step-save"><div class="li-ov-step-dot"></div>Save</div>
+                </div>
             </div>
         </div>
     </div>

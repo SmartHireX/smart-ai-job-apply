@@ -13,7 +13,8 @@
         "alarms",
         "notifications",
         "declarativeNetRequest",
-        "history"
+        "history",
+        "windows"
     ],
     "host_permissions": [
         "https://generativelanguage.googleapis.com/*",

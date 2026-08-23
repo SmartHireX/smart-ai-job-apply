@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize AI Import
     initAIImport();
 
+    // Initialize LinkedIn sync
+    initLinkedInSync();
+
     // Load existing data
     await loadAllData();
 
@@ -1261,6 +1264,132 @@ async function distributeParsedData(data) {
             });
         });
     }
+}
+
+// ============================================
+// LINKEDIN SYNC
+// ============================================
+
+function initLinkedInSync() {
+    const btn    = document.getElementById('linkedin-sync-btn');
+    const urlEl  = document.getElementById('linkedin-sync-url');
+    const status = document.getElementById('linkedin-sync-status');
+    if (!btn || !urlEl) return;
+
+    // Pre-fill URL from saved profile if available
+    chrome.runtime.sendMessage({ type: 'GET_RESUME' }, res => {
+        const saved = res?.data?.personal?.linkedin;
+        if (saved && !urlEl.value) urlEl.value = saved;
+    });
+
+    const panel   = document.getElementById('li-preview-panel');
+    const iframe  = document.getElementById('li-preview-iframe');
+    const titleEl = document.getElementById('li-preview-title');
+    const label   = document.getElementById('li-ov-label');
+    const sub     = document.getElementById('li-ov-sub');
+    const bar     = document.getElementById('li-ov-bar-fill');
+    const stepLoad = document.getElementById('li-step-load');
+    const stepRead = document.getElementById('li-step-read');
+    const stepSave = document.getElementById('li-step-save');
+
+    function liSetStep(active) {
+        [stepLoad, stepRead, stepSave].forEach(el => el?.classList.remove('active'));
+        active?.classList.add('active');
+    }
+    function liSetBar(pct, lbl, s) {
+        if (bar)   bar.style.width   = pct + '%';
+        if (label) label.textContent = lbl;
+        if (sub)   sub.textContent   = s;
+    }
+    function liOpen() {
+        if (titleEl) titleEl.textContent = 'Scanning LinkedIn Profile…';
+        panel?.classList.add('li-panel-open');
+    }
+    function liClose() {
+        panel?.classList.remove('li-panel-open');
+    }
+
+    btn.addEventListener('click', async () => {
+        const url = urlEl.value.trim();
+        if (!url || !/linkedin\.com\/in\//i.test(url)) {
+            status.style.color = '#dc2626';
+            status.textContent = 'Please enter a valid LinkedIn profile URL (linkedin.com/in/…)';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Syncing…';
+        status.textContent = '';
+
+        // Show the slide-in panel with scanning animation
+        liOpen();
+        liSetBar(10, 'Opening LinkedIn…', 'Loading your profile page');
+        liSetStep(stepLoad);
+
+        // Animate bar while background tab scrapes
+        let pct = 10;
+        const barTimer = setInterval(() => {
+            if (pct < 75) { pct += 2; liSetBar(pct, label?.textContent || '', sub?.textContent || ''); }
+        }, 800);
+
+        try {
+            // After a moment switch overlay to "reading" state
+            setTimeout(() => {
+                liSetBar(pct, 'Reading profile data…', 'Extracting name, experience, skills…');
+                liSetStep(stepRead);
+            }, 3000);
+
+            const res = await new Promise(resolve => {
+                chrome.runtime.sendMessage({ type: 'SCRAPE_LINKEDIN_PROFILE', url }, resolve);
+            });
+            clearInterval(barTimer);
+
+            if (!res?.success) throw new Error(res?.error || 'Scrape failed');
+
+            const scraped = res.data;
+            console.log('[LinkedIn Sync] scraped:', JSON.stringify(scraped, null, 2));
+
+            liSetBar(90, 'Saving to your profile…', 'Merging data');
+            liSetStep(stepSave);
+
+            const cur = await window.ResumeManager.getResumeData() || {};
+            if (!cur.personal) cur.personal = {};
+            const sp = scraped.personal || {};
+            if (sp.firstName) cur.personal.firstName = sp.firstName;
+            if (sp.lastName)  cur.personal.lastName  = sp.lastName;
+            if (sp.location)  cur.personal.location  = sp.location;
+            if (sp.linkedin)  cur.personal.linkedin  = sp.linkedin;
+
+            if (scraped.summary?.length > 20)              cur.summary    = scraped.summary;
+            if (scraped.experience?.length && !cur.experience?.length) cur.experience = scraped.experience;
+            if (scraped.education?.length  && !cur.education?.length)  cur.education  = scraped.education;
+            if (scraped.skills?.technical?.length) {
+                if (!cur.skills) cur.skills = { technical: [], soft: [], languages: [], certifications: [] };
+                cur.skills.technical = [...new Set([...(cur.skills.technical || []), ...scraped.skills.technical])];
+                if (scraped.skills.certifications?.length)
+                    cur.skills.certifications = [...new Set([...(cur.skills.certifications || []), ...scraped.skills.certifications])];
+            }
+
+            await window.ResumeManager.saveResumeData(cur);
+            liSetBar(100, 'Done!', 'Profile synced successfully');
+
+            await new Promise(r => setTimeout(r, 900));
+            liClose();
+            await loadAllData();
+
+            status.style.color = '#16a34a';
+            status.textContent = '✓ Profile synced! Review and save your changes above.';
+            showToast('LinkedIn profile synced successfully', 'success');
+        } catch (err) {
+            clearInterval(barTimer);
+            liClose();
+            status.style.color = '#dc2626';
+            status.textContent = 'Sync failed: ' + (err.message || 'Could not load profile.');
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Sync Profile';
+    });
 }
 
 // ============================================

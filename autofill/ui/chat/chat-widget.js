@@ -282,20 +282,22 @@
         }
     }
 
-    function _sessRenderList() {
+    function _sessRenderList(query = '') {
         _sessLoadAll().then(map => {
             const listEl = document.getElementById('nw-sessions-list');
             if (!listEl) return;
             const sorted = Object.values(map).sort((a, b) => b.ts - a.ts);
-            if (!sorted.length) {
+            const q = query.toLowerCase().trim();
+            const items = q ? sorted.filter(s => (s.title || '').toLowerCase().includes(q)) : sorted;
+            if (!items.length) {
                 listEl.innerHTML = `<div class="nw-sessions-empty">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    No saved sessions yet
+                    ${q ? 'No sessions match.' : 'No saved sessions yet'}
                 </div>`;
                 return;
             }
             listEl.innerHTML = '';
-            sorted.forEach(sess => {
+            items.forEach(sess => {
                 const item = document.createElement('div');
                 item.className = 'nw-session-item' + (sess.id === _activeSessionId ? ' active' : '');
                 item.dataset.id = sess.id;
@@ -345,7 +347,6 @@
     try {
         const saved = JSON.parse(localStorage.getItem('nova_widget_state') || '{}');
         if (saved.w) state = { ...state, ...saved };
-        // clamp to viewport
         state.x = Math.max(0, Math.min(state.x, window.innerWidth  - state.w));
         state.y = Math.max(0, Math.min(state.y, window.innerHeight - state.h));
     } catch (e) {}
@@ -509,6 +510,28 @@
             justify-content: center; padding: 40px 20px; color: #9ca3af;
             font-size: 12px; text-align: center; gap: 8px;
         }
+        .nw-sessions-search-wrap {
+            display: flex; align-items: center; gap: 6px;
+            margin: 8px 12px 2px; padding: 6px 10px;
+            background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; flex-shrink: 0;
+        }
+        .nw-sessions-search-wrap svg { flex-shrink: 0; color: #9ca3af; }
+        .nw-sessions-search-input {
+            background: transparent; border: none; outline: none;
+            font-size: 11.5px; color: #374151; width: 100%; font-family: inherit;
+        }
+        .nw-sessions-search-input::placeholder { color: #9ca3af; }
+        .nw-sessions-search-wrap {
+            display: flex; align-items: center; gap: 6px;
+            margin: 8px 12px 0; padding: 6px 10px;
+            background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; flex-shrink: 0;
+        }
+        .nw-sessions-search-wrap svg { flex-shrink: 0; color: #9ca3af; }
+        .nw-sessions-search-input {
+            background: transparent; border: none; outline: none;
+            font-size: 11.5px; color: #374151; width: 100%; font-family: inherit;
+        }
+        .nw-sessions-search-input::placeholder { color: #9ca3af; }
         /* ── Clipboard History panel ── */
         .nw-cb-panel {
             position: absolute; inset: 0; background: #f8f9fb; z-index: 5;
@@ -669,101 +692,87 @@
         }
         .nw-sp-panel.open { display: flex; }
         /* two-pane */
-        .nw-sp-body { display: flex; flex: 1; overflow: hidden; }
-        .nw-sp-sidebar {
-            width: 185px; min-width: 185px; display: flex; flex-direction: column;
-            border-right: 1px solid #e5e7eb; background: #f8fafc; overflow: hidden;
-        }
-        .nw-sp-sidebar-header {
-            display: flex; align-items: center; gap: 6px;
-            padding: 9px 10px 8px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
-            background: linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);
+        /* ── Saved pages — full-width list ── */
+        .nw-sp-panel-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 14px; height: 50px;
+            border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+            background: #fff;
         }
         .nw-sp-panel-back {
-            width: 26px; height: 26px; border: 1px solid rgba(16,185,129,0.25);
+            width: 28px; height: 28px; border: 1px solid rgba(16,185,129,0.3);
             border-radius: 7px; background: rgba(255,255,255,0.85); color: #059669;
             cursor: pointer; display: flex; align-items: center;
             justify-content: center; transition: all 0.15s; flex-shrink: 0;
         }
         .nw-sp-panel-back:hover { background: #fff; box-shadow: 0 1px 4px rgba(16,185,129,0.2); }
-        .nw-sp-sidebar-title {
-            flex: 1; font-size: 12px; font-weight: 700; color: #065f46;
-            letter-spacing: -0.01em;
-        }
-        .nw-sp-panel-count { font-size: 10px; color: #059669; font-weight: 600; }
+        .nw-sp-panel-title { flex: 1; font-size: 13px; font-weight: 700; color: #065f46; }
+        .nw-sp-panel-count { font-size: 11px; color: #059669; font-weight: 600; }
         .nw-sp-search-wrap {
-            display: flex; align-items: center; gap: 6px;
-            margin: 8px 8px 0; padding: 5px 9px;
-            background: #fff; border: 1.5px solid #e2e8f0; border-radius: 8px;
+            display: flex; align-items: center; gap: 7px;
+            margin: 10px 12px 4px; padding: 6px 11px;
+            background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px;
             transition: border-color 0.15s; flex-shrink: 0;
         }
-        .nw-sp-search-wrap:focus-within { border-color: #10b981; }
+        .nw-sp-search-wrap:focus-within { border-color: #10b981; background: #fff; }
         .nw-sp-search-wrap svg { flex-shrink: 0; color: #9ca3af; }
         .nw-sp-search-input {
             flex: 1; border: none; outline: none; background: transparent;
-            font-size: 11.5px; color: #111827; font-family: inherit;
+            font-size: 12.5px; color: #111827; font-family: inherit;
         }
-        .nw-sp-search-input::placeholder { color: #b0b8c8; }
+        .nw-sp-search-input::placeholder { color: #9ca3af; }
         .nw-sp-list {
-            flex: 1; overflow-y: auto; padding: 7px 7px;
-            display: flex; flex-direction: column; gap: 5px;
+            flex: 1; overflow-y: auto; padding: 8px 12px;
+            display: flex; flex-direction: column; gap: 8px;
         }
         .nw-sp-list::-webkit-scrollbar { width: 4px; }
         .nw-sp-list::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
-        .nw-sp-empty { font-size: 12px; color: #9ca3af; text-align: center; padding: 24px 12px; line-height: 1.7; }
-        /* page note editor pane */
+        .nw-sp-empty { font-size: 12px; color: #9ca3af; text-align: center; padding: 32px 0; line-height: 1.6; }
+        /* note editor — slides in over the list */
         .nw-sp-editor {
-            flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #fff;
+            position: absolute; inset: 0; background: #fff; z-index: 2;
+            display: none; flex-direction: column;
         }
-        .nw-sp-editor-empty {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            color: #9ca3af; font-size: 12.5px; text-align: center;
-            padding: 24px; gap: 5px;
+        .nw-sp-editor.open { display: flex; }
+        .nw-sp-editor-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 14px; height: 50px;
+            border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+            background: #fff;
         }
-        .nw-sp-editor-main { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-        .nw-sp-editor-topbar {
-            padding: 10px 14px 8px; border-bottom: 1px solid #f0f2f8; flex-shrink: 0;
+        .nw-sp-editor-back {
+            width: 28px; height: 28px; border: 1px solid rgba(16,185,129,0.3);
+            border-radius: 7px; background: rgba(255,255,255,0.85); color: #059669;
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: all 0.15s; flex-shrink: 0;
         }
-        .nw-sp-editor-pagetitle {
-            font-size: 13px; font-weight: 700; color: #111827; line-height: 1.3;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            margin-bottom: 4px;
-        }
-        .nw-sp-editor-meta {
-            display: flex; align-items: center; gap: 6px;
-        }
-        .nw-sp-editor-url {
-            flex: 1; font-size: 10px; color: #10b981; font-weight: 600;
+        .nw-sp-editor-back:hover { background: #fff; }
+        .nw-sp-editor-headtitle {
+            flex: 1; font-size: 13px; font-weight: 700; color: #065f46;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .nw-sp-editor-open {
-            display: flex; align-items: center; gap: 3px; padding: 3px 8px;
-            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;
-            font-size: 10.5px; font-weight: 600; color: #059669;
+            display: flex; align-items: center; gap: 3px; padding: 4px 10px;
+            background: #fff; border: 1px solid #bbf7d0; border-radius: 7px;
+            font-size: 11px; font-weight: 600; color: #059669;
             text-decoration: none; flex-shrink: 0; transition: all 0.15s;
         }
         .nw-sp-editor-open:hover { background: #dcfce7; }
         .nw-sp-editor-del {
             background: none; border: none; cursor: pointer;
-            font-size: 14px; opacity: 0.35; padding: 2px 4px;
+            font-size: 15px; opacity: 0.35; padding: 2px 5px;
             transition: opacity 0.15s; flex-shrink: 0;
         }
         .nw-sp-editor-del:hover { opacity: 1; }
-        .nw-sp-editor-label {
-            font-size: 10.5px; font-weight: 600; color: #9ca3af;
-            padding: 7px 14px 3px; letter-spacing: 0.04em; text-transform: uppercase;
-            flex-shrink: 0;
-        }
         .nw-sp-editor-ta {
             flex: 1; border: none; outline: none; resize: none;
-            padding: 6px 14px 12px; font-size: 13px; line-height: 1.65;
+            padding: 14px 16px; font-size: 13px; line-height: 1.7;
             font-family: inherit; color: #1c1917; background: #fff; overflow-y: auto;
         }
         .nw-sp-editor-ta::placeholder { color: #c4c9d4; }
         .nw-sp-editor-footer {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 3px 14px; background: #fafbff; border-top: 1px solid #f0f2f8;
+            padding: 4px 16px; background: #fafafa; border-top: 1px solid #f0f2f8;
             flex-shrink: 0;
         }
         .nw-sp-editor-wc { font-size: 9.5px; color: #c4c9d4; }
@@ -779,6 +788,19 @@
             opacity: 0; transition: opacity 0.2s;
         }
         .nw-save-toast.show { opacity: 1; }
+        .nw-undo-toast {
+            position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; color: #fff; padding: 7px 14px; border-radius: 10px;
+            font-size: 11.5px; font-weight: 500; white-space: nowrap; z-index: 99;
+            display: flex; align-items: center; gap: 10px; pointer-events: none; opacity: 0;
+            transition: opacity 0.18s; box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+        }
+        .nw-undo-toast.show { opacity: 1; pointer-events: auto; }
+        .nw-undo-toast-btn {
+            background: #6366f1; border: none; color: #fff; padding: 2px 9px;
+            border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit;
+        }
+        .nw-undo-toast-btn:hover { background: #4f46e5; }
         /* ── Context bar ── */
         .nw-context {
             display: flex; align-items: center; gap: 6px;
@@ -1205,46 +1227,48 @@
         .nw-scan-podium-medal { font-size:13px; line-height:1; }
         .nw-scan-podium-name  { font-size:10px; font-weight:700; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
         .nw-scan-podium-score { font-size:10px; font-weight:800; color:#6366f1; }
-        /* ── Saved pages ── */
+        /* ── Saved pages cards ── */
         .nw-sp-card {
-            background: #fff; border: 1px solid #e8ecf4;
-            border-left: 3px solid #10b981;
-            border-radius: 9px; padding: 9px 10px 8px;
-            cursor: pointer;
+            background: #fff; border: 1px solid #e5e7eb;
+            border-left: 3.5px solid #10b981;
+            border-radius: 12px; padding: 11px 12px 10px;
             transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
         .nw-sp-card:hover {
-            box-shadow: 0 3px 12px rgba(16,185,129,0.13);
-            border-color: #bbf7d0;
-            transform: translateY(-1px);
-        }
-        .nw-sp-card.active {
-            border-color: #bbf7d0; border-left-color: #059669;
-            background: #f0fdf4;
-            box-shadow: 0 2px 10px rgba(16,185,129,0.14);
+            box-shadow: 0 4px 14px rgba(16,185,129,0.12);
+            border-color: #bbf7d0; transform: translateY(-1px);
         }
         .nw-sp-card-has-note { border-left-color: #6366f1; }
-        .nw-sp-card.active.nw-sp-card-has-note { border-left-color: #4f46e5; background: #f5f3ff; }
-        .nw-sp-title {
-            font-size: 11.5px; font-weight: 700; color: #111827; line-height: 1.3;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-            overflow: hidden; margin-bottom: 4px;
-        }
+        .nw-sp-title { font-size: 12px; font-weight: 700; color: #111827; line-height: 1.35; margin-bottom: 3px; }
         .nw-sp-note-preview {
-            font-size: 10.5px; color: #6b7280; line-height: 1.45;
+            font-size: 11px; color: #6b7280; line-height: 1.5; font-style: italic;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-            overflow: hidden; margin-bottom: 5px; font-style: italic;
+            overflow: hidden; margin-bottom: 6px;
         }
-        .nw-sp-card-meta {
-            display: flex; align-items: center; justify-content: space-between; gap: 4px;
+        .nw-sp-url { font-size: 10px; color: #9ca3af; margin-bottom: 7px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .nw-sp-actions { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+        .nw-sp-open {
+            display: inline-flex; align-items: center; gap: 3px; padding: 3px 9px;
+            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;
+            font-size: 10.5px; font-weight: 600; color: #059669;
+            text-decoration: none; transition: all 0.12s;
         }
-        .nw-sp-url { font-size: 9.5px; color: #9ca3af; font-weight: 500;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
-        .nw-sp-date { font-size: 9.5px; color: #b0b8c8; flex-shrink: 0; }
-        .nw-sp-actions { display: none; }
-        .nw-sp-open { display: none; }
-        .nw-sp-remove { display: none; }
+        .nw-sp-open:hover { background: #dcfce7; }
+        .nw-sp-note-btn {
+            display: inline-flex; align-items: center; gap: 3px; padding: 3px 9px;
+            background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 6px;
+            font-size: 10.5px; font-weight: 600; color: #6366f1;
+            cursor: pointer; font-family: inherit; transition: all 0.12s;
+        }
+        .nw-sp-note-btn:hover { background: #ede9fe; }
+        .nw-sp-date { font-size: 10px; color: #9ca3af; margin-left: auto; }
+        .nw-sp-remove {
+            margin-left: auto; background: none; border: none; cursor: pointer;
+            font-size: 13px; color: #9ca3af; padding: 2px 4px; transition: color 0.12s;
+        }
+        .nw-sp-remove:hover { color: #ef4444; }
         .nw-sp-tag { display: none; }
         /* Highlight & Explain tooltip */
         #nova-explain-tooltip {
@@ -1506,50 +1530,53 @@
             cursor: pointer; font-family: inherit; transition: background 0.15s; flex-shrink: 0;
         }
         .nw-np-panel-new:hover { background: #4f46e5; }
-        .nw-np-panel-badge {
-            font-size: 10px; font-weight: 600; background: #f3f4f6;
-            color: #6b7280; padding: 2px 7px; border-radius: 999px;
+        /* List button in header */
+        .nw-np-list-btn {
+            display: flex; align-items: center; gap: 5px;
+            padding: 5px 10px; background: #f3f4f6; color: #374151;
+            border: 1px solid #e5e7eb; border-radius: 7px; font-size: 11px; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink: 0;
         }
-        /* Two-pane body */
-        .nw-np-body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
-        /* Sidebar */
-        .nw-np-sidebar {
-            width: 180px; background: #0f172a; display: flex; flex-direction: column;
-            border-right: 1px solid #1e293b; flex-shrink: 0; overflow: hidden;
+        .nw-np-list-btn:hover { background: #e5e7eb; }
+        .nw-np-list-btn.active { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+        /* Notes list overlay — slides over the editor when list button is clicked */
+        .nw-np-list-overlay {
+            position: absolute; top: 52px; left: 0; right: 0; bottom: 0;
+            background: #fff; z-index: 8; display: none; flex-direction: column; overflow: hidden;
         }
+        .nw-np-list-overlay.open { display: flex; }
         .nw-np-search-wrap {
             display: flex; align-items: center; gap: 6px;
-            margin: 10px 8px 4px; padding: 6px 10px;
-            background: rgba(255,255,255,0.06); border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.08);
+            margin: 10px 12px 4px; padding: 6px 10px;
+            background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; flex-shrink: 0;
         }
-        .nw-np-search-wrap svg { flex-shrink: 0; color: #475569; }
+        .nw-np-search-wrap svg { flex-shrink: 0; color: #9ca3af; }
         .nw-np-search-input {
             background: transparent; border: none; outline: none;
-            font-size: 11.5px; color: #e2e8f0; width: 100%; font-family: inherit;
+            font-size: 11.5px; color: #374151; width: 100%; font-family: inherit;
         }
-        .nw-np-search-input::placeholder { color: #475569; }
+        .nw-np-search-input::placeholder { color: #9ca3af; }
         .nw-np-section-label {
-            font-size: 9px; font-weight: 700; color: #475569; text-transform: uppercase;
-            letter-spacing: 0.06em; padding: 6px 14px 2px;
+            font-size: 9px; font-weight: 700; color: #9ca3af; text-transform: uppercase;
+            letter-spacing: 0.06em; padding: 6px 14px 2px; flex-shrink: 0;
         }
-        .nw-np-list { flex: 1; overflow-y: auto; padding: 2px 6px 10px; }
+        .nw-np-list { flex: 1; overflow-y: auto; padding: 4px 10px 10px; }
         .nw-np-list::-webkit-scrollbar { width: 3px; }
-        .nw-np-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+        .nw-np-list::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 3px; }
         .nw-np-item {
-            padding: 8px 10px; border-radius: 8px; cursor: pointer;
-            transition: background 0.1s; margin-bottom: 2px;
-            border-left: 3px solid transparent;
+            padding: 10px 12px; border-radius: 10px; cursor: pointer;
+            transition: background 0.1s; margin-bottom: 4px;
+            border-left: 3px solid transparent; border: 1px solid #f1f5f9;
         }
-        .nw-np-item:hover { background: rgba(255,255,255,0.05); }
-        .nw-np-item.active { background: rgba(99,102,241,0.12); }
+        .nw-np-item:hover { background: #f9fafb; border-color: #e5e7eb; }
+        .nw-np-item.active { background: #eef2ff; border-color: #c7d2fe; border-left-color: #6366f1; }
         .nw-np-item-header { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
         .nw-np-item-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
         .nw-np-item-title {
-            font-size: 11.5px; font-weight: 600; color: #cbd5e1;
+            font-size: 12px; font-weight: 600; color: #111827;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
         }
-        .nw-np-item.active .nw-np-item-title { color: #a5b4fc; }
+        .nw-np-item.active .nw-np-item-title { color: #4338ca; }
         .nw-np-item-pin {
             font-size: 10px; opacity: 0; cursor: pointer;
             background: none; border: none; padding: 0; line-height: 1;
@@ -1559,11 +1586,11 @@
         .nw-np-item.active .nw-np-item-pin { opacity: 0.5; }
         .nw-np-item-pin.pinned { opacity: 1 !important; filter: none; }
         .nw-np-item-preview {
-            font-size: 10.5px; color: #475569; white-space: nowrap;
+            font-size: 10.5px; color: #6b7280; white-space: nowrap;
             overflow: hidden; text-overflow: ellipsis; line-height: 1.4;
         }
-        .nw-np-empty-list { padding: 24px 12px; text-align: center; color: #334155; font-size: 11px; line-height: 1.8; }
-        /* Editor pane */
+        .nw-np-empty-list { padding: 24px 12px; text-align: center; color: #9ca3af; font-size: 11px; line-height: 1.8; }
+        /* Editor — full width */
         .nw-np-editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
         .nw-np-color-accent { height: 3px; flex-shrink: 0; }
         .nw-np-title-wrap { padding: 12px 16px 0; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
@@ -1736,6 +1763,14 @@
                     New chat
                 </button>
             </div>
+            <div class="nw-sessions-search-wrap">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input class="nw-sessions-search-input" id="nw-sessions-search" placeholder="Search sessions…" autocomplete="off"/>
+            </div>
+            <div class="nw-sessions-search-wrap">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input class="nw-sessions-search-input" id="nw-sessions-search" placeholder="Search sessions…" autocomplete="off"/>
+            </div>
             <div class="nw-sessions-list" id="nw-sessions-list"></div>
         </div>
         <!-- Clipboard history panel -->
@@ -1757,48 +1792,35 @@
         </div>
         <!-- Saved pages panel -->
         <div class="nw-sp-panel" id="nw-sp-panel">
-            <div class="nw-sp-body">
-                <!-- LEFT sidebar -->
-                <div class="nw-sp-sidebar">
-                    <div class="nw-sp-sidebar-header">
-                        <button class="nw-sp-panel-back" id="nw-sp-back">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-                        </button>
-                        <span class="nw-sp-sidebar-title">🔖 Saved Pages</span>
-                        <span class="nw-sp-panel-count" id="nw-sp-count"></span>
-                    </div>
-                    <div class="nw-sp-search-wrap">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <input class="nw-sp-search-input" id="nw-sp-search" placeholder="Search pages…" autocomplete="off"/>
-                    </div>
-                    <div class="nw-sp-list" id="nw-sp-list"></div>
+            <div class="nw-sp-panel-header">
+                <button class="nw-sp-panel-back" id="nw-sp-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="nw-sp-panel-title">🔖 Saved Pages</div>
+                <div class="nw-sp-panel-count" id="nw-sp-count"></div>
+            </div>
+            <div class="nw-sp-search-wrap">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input class="nw-sp-search-input" id="nw-sp-search" placeholder="Search pages…" autocomplete="off"/>
+            </div>
+            <div class="nw-sp-list" id="nw-sp-list"></div>
+            <!-- Note editor — slides over the list -->
+            <div class="nw-sp-editor" id="nw-sp-editor">
+                <div class="nw-sp-editor-header">
+                    <button class="nw-sp-editor-back" id="nw-sp-editor-back">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <span class="nw-sp-editor-headtitle" id="nw-sp-editor-headtitle"></span>
+                    <a class="nw-sp-editor-open" id="nw-sp-editor-open" href="#" target="_blank" rel="noopener">
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        Open
+                    </a>
+                    <button class="nw-sp-editor-del" id="nw-sp-editor-del" title="Remove page">🗑</button>
                 </div>
-                <!-- RIGHT note editor -->
-                <div class="nw-sp-editor" id="nw-sp-editor">
-                    <div class="nw-sp-editor-empty" id="nw-sp-editor-empty">
-                        <div style="font-size:30px;opacity:0.45;">🔖</div>
-                        <div style="font-size:13px;font-weight:600;color:#6b7280;">Page notes</div>
-                        <div style="font-size:11.5px;color:#9ca3af;line-height:1.6;">Select a saved page to<br>view or add a note</div>
-                    </div>
-                    <div class="nw-sp-editor-main" id="nw-sp-editor-main" style="display:none;flex-direction:column;height:100%;">
-                        <div class="nw-sp-editor-topbar">
-                            <div class="nw-sp-editor-pagetitle" id="nw-sp-editor-pagetitle"></div>
-                            <div class="nw-sp-editor-meta">
-                                <span class="nw-sp-editor-url" id="nw-sp-editor-url"></span>
-                                <a class="nw-sp-editor-open" id="nw-sp-editor-open" href="#" target="_blank" rel="noopener">
-                                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                    Open
-                                </a>
-                                <button class="nw-sp-editor-del" id="nw-sp-editor-del" title="Remove page">🗑</button>
-                            </div>
-                        </div>
-                        <div class="nw-sp-editor-label">Notes</div>
-                        <textarea class="nw-sp-editor-ta" id="nw-sp-editor-ta" placeholder="Add a note about this page… markdown supported" spellcheck="false"></textarea>
-                        <div class="nw-sp-editor-footer">
-                            <span class="nw-sp-editor-wc" id="nw-sp-editor-wc">0w</span>
-                            <span class="nw-sp-editor-status" id="nw-sp-editor-status">Notes auto-saved</span>
-                        </div>
-                    </div>
+                <textarea class="nw-sp-editor-ta" id="nw-sp-editor-ta" placeholder="Add a note about this page… markdown supported" spellcheck="false"></textarea>
+                <div class="nw-sp-editor-footer">
+                    <span class="nw-sp-editor-wc" id="nw-sp-editor-wc">0w</span>
+                    <span class="nw-sp-editor-status" id="nw-sp-editor-status">Auto-saved</span>
                 </div>
             </div>
         </div>
@@ -1809,24 +1831,27 @@
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                 </button>
                 <div class="nw-np-panel-title">🗒 Notepad</div>
-                <span class="nw-np-panel-badge" id="nw-np-panel-badge">0 notes</span>
+                <button class="nw-np-list-btn" id="nw-np-list-btn">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    Notes
+                </button>
                 <button class="nw-np-panel-new" id="nw-np-panel-new">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    New note
+                    New
                 </button>
             </div>
-            <div class="nw-np-body">
-                <div class="nw-np-sidebar">
-                    <div class="nw-np-search-wrap">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <input class="nw-np-search-input" id="nw-np-search" placeholder="Search…" autocomplete="off"/>
-                    </div>
-                    <div class="nw-np-section-label">Notes</div>
-                    <div class="nw-np-list" id="nw-np-list"></div>
+            <div class="nw-np-editor" id="nw-np-editor"></div>
+            <!-- Notes list overlay — shown when list button is clicked -->
+            <div class="nw-np-list-overlay" id="nw-np-list-overlay">
+                <div class="nw-np-search-wrap">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input class="nw-np-search-input" id="nw-np-search" placeholder="Search notes…" autocomplete="off"/>
                 </div>
-                <div class="nw-np-editor" id="nw-np-editor"></div>
+                <div class="nw-np-section-label">All notes</div>
+                <div class="nw-np-list" id="nw-np-list"></div>
             </div>
         </div>
+        <div class="nw-undo-toast" id="nw-undo-toast"><span id="nw-undo-toast-msg">Deleted</span><button class="nw-undo-toast-btn" id="nw-undo-toast-btn">Undo</button></div>
         <div class="nw-save-toast" id="nw-save-toast"></div>
     `;
     document.body.appendChild(widget);
@@ -1848,7 +1873,9 @@
     applyState();
 
     function saveState() {
-        try { localStorage.setItem('nova_widget_state', JSON.stringify(state)); } catch (e) {}
+        try {
+            localStorage.setItem('nova_widget_state', JSON.stringify(state));
+        } catch (e) {}
     }
 
     // ── Page content (compressed) ─────────────────────────────────────────────
@@ -2070,6 +2097,8 @@
 
     document.getElementById('nw-sessions-btn').addEventListener('click', () => {
         closeAllPanels();
+        const sessSearchEl = document.getElementById('nw-sessions-search');
+        if (sessSearchEl) { sessSearchEl.value = ''; }
         _sessRenderList();
         sessionsPanel.classList.add('open');
     });
@@ -2077,9 +2106,15 @@
         sessionsPanel.classList.remove('open');
     });
     document.getElementById('nw-sessions-new').addEventListener('click', () => {
+        const sessSearchEl = document.getElementById('nw-sessions-search');
+        if (sessSearchEl) { sessSearchEl.value = ''; }
+        _sessRenderList();
         sessionsPanel.classList.remove('open');
         _sessCreate(true);
     });
+
+    const sessSearchEl = document.getElementById('nw-sessions-search');
+    if (sessSearchEl) sessSearchEl.addEventListener('input', () => _sessRenderList(sessSearchEl.value));
 
     // ── Saved pages panel ─────────────────────────────────────────────────────
     const spPanel    = document.getElementById('nw-sp-panel');
@@ -2095,16 +2130,37 @@
         toastTimer = setTimeout(() => saveToast.classList.remove('show'), 2500);
     }
 
-    // ── SP inline editor state ─────────────────────────────────────────────────
-    let _spActiveId      = null;
-    let _spEditorSaveTimer;
-    let _spSearchQuery   = '';
+    let _undoTimer = null;
+    let _undoPending = null;
 
-    const spEditorEmpty  = document.getElementById('nw-sp-editor-empty');
-    const spEditorMain   = document.getElementById('nw-sp-editor-main');
-    const spEditorTitle  = document.getElementById('nw-sp-editor-pagetitle');
-    const spEditorUrl    = document.getElementById('nw-sp-editor-url');
+    function showUndoToast(msg, undoFn) {
+        const toast = document.getElementById('nw-undo-toast');
+        const msgEl = document.getElementById('nw-undo-toast-msg');
+        const btn   = document.getElementById('nw-undo-toast-btn');
+        if (!toast) return;
+        clearTimeout(_undoTimer);
+        _undoPending = undoFn;
+        msgEl.textContent = msg;
+        toast.classList.add('show');
+        btn.onclick = () => {
+            if (_undoPending) { _undoPending(); _undoPending = null; }
+            toast.classList.remove('show');
+            clearTimeout(_undoTimer);
+        };
+        _undoTimer = setTimeout(() => {
+            toast.classList.remove('show');
+            _undoPending = null;
+        }, 4000);
+    }
+
+    // ── SP editor state ────────────────────────────────────────────────────────
+    let _spActiveId        = null;
+    let _spEditorSaveTimer;
+    let _spSearchQuery     = '';
+
+    const spEditorEl     = document.getElementById('nw-sp-editor');
     const spEditorOpenA  = document.getElementById('nw-sp-editor-open');
+    const spEditorHeadT  = document.getElementById('nw-sp-editor-headtitle');
     const spEditorTa     = document.getElementById('nw-sp-editor-ta');
     const spEditorStatus = document.getElementById('nw-sp-editor-status');
     const spEditorWc     = document.getElementById('nw-sp-editor-wc');
@@ -2119,31 +2175,29 @@
 
     function _spSetStatus(state) {
         spEditorStatus.className = 'nw-sp-editor-status' + (state === 'saving' ? ' saving' : state === 'saved' ? ' saved' : '');
-        spEditorStatus.textContent = state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved ✓' : 'Notes auto-saved';
+        spEditorStatus.textContent = state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved ✓' : 'Auto-saved';
     }
 
     function _spOpenEditor(page) {
         _spActiveId = page.id;
-        spEditorTitle.textContent = page.title || page.url;
-        spEditorUrl.textContent   = page.host || page.url.replace(/^https?:\/\/(www\.)?/,'').slice(0,40);
+        spEditorHeadT.textContent = page.title || page.url;
         spEditorOpenA.href        = page.url;
         spEditorTa.value          = page.notes || '';
         _spSetStatus('');
         _spWc();
-        spEditorEmpty.style.display = 'none';
-        spEditorMain.style.display  = 'flex';
+        spEditorEl.classList.add('open');
         spEditorTa.focus();
-        spList.querySelectorAll('.nw-sp-card').forEach(c => {
-            c.classList.toggle('active', c.dataset.id === String(page.id));
-        });
     }
 
     function _spClearEditor() {
         _spActiveId = null;
-        spEditorEmpty.style.display = '';
-        spEditorMain.style.display  = 'none';
-        spList.querySelectorAll('.nw-sp-card').forEach(c => c.classList.remove('active'));
+        spEditorEl.classList.remove('open');
     }
+
+    document.getElementById('nw-sp-editor-back').addEventListener('click', () => {
+        _spClearEditor();
+        buildSpList();
+    });
 
     spEditorTa.addEventListener('input', () => {
         _spSetStatus('saving');
@@ -2157,7 +2211,6 @@
                 page.notes = spEditorTa.value;
                 await spSave(pages);
                 _spSetStatus('saved');
-                buildSpList(true); // redraw list to update note preview
             }
         }, 700);
     });
@@ -2174,10 +2227,10 @@
 
     if (spSearch) spSearch.addEventListener('input', e => {
         _spSearchQuery = e.target.value.toLowerCase();
-        buildSpList(true);
+        buildSpList();
     });
 
-    async function buildSpList(keepEditor = false) {
+    async function buildSpList() {
         const pages = await spLoad();
         const q = _spSearchQuery;
         const filtered = q
@@ -2191,23 +2244,45 @@
             spList.innerHTML = q
                 ? `<div class="nw-sp-empty">No pages match.</div>`
                 : `<div class="nw-sp-empty">No saved pages yet.<br>Say <strong>"save this page"</strong><br>or use the bookmark button.</div>`;
-            if (!keepEditor) _spClearEditor();
             return;
         }
 
         filtered.forEach(page => {
             const card = document.createElement('div');
-            card.className = 'nw-sp-card' + (page.notes ? ' nw-sp-card-has-note' : '') + (_spActiveId === page.id ? ' active' : '');
+            card.className = 'nw-sp-card' + (page.notes ? ' nw-sp-card-has-note' : '');
             card.dataset.id = String(page.id);
             const notePreview = page.notes ? page.notes.slice(0, 80) + (page.notes.length > 80 ? '…' : '') : '';
             card.innerHTML = `
                 <div class="nw-sp-title">${esc(page.title)}</div>
                 ${notePreview ? `<div class="nw-sp-note-preview">${esc(notePreview)}</div>` : ''}
-                <div class="nw-sp-card-meta">
-                    <span class="nw-sp-url">${esc(page.host || '')}</span>
+                <div class="nw-sp-url">${esc(page.host || '')}</div>
+                <div class="nw-sp-actions">
+                    <a class="nw-sp-open" href="${esc(page.url)}" target="_blank" rel="noopener">
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        Open
+                    </a>
+                    <button class="nw-sp-note-btn">${page.notes ? '✏ Edit note' : '＋ Add note'}</button>
                     <span class="nw-sp-date">${esc(page.date || '')}</span>
+                    <button class="nw-sp-remove" title="Remove">✕</button>
                 </div>`;
-            card.addEventListener('click', () => _spOpenEditor(page));
+            card.querySelector('.nw-sp-note-btn').addEventListener('click', e => {
+                e.stopPropagation();
+                _spOpenEditor(page);
+            });
+            card.querySelector('.nw-sp-remove').addEventListener('click', async e => {
+                e.stopPropagation();
+                // Stage the delete — execute immediately but allow undo
+                const snapshot = await spLoad();
+                const updated = snapshot.filter(p => p.id !== page.id);
+                await spSave(updated);
+                renderChips();
+                buildSpList();
+                showUndoToast(`"${page.title.slice(0,30)}" removed`, async () => {
+                    await spSave(snapshot);
+                    renderChips();
+                    buildSpList();
+                });
+            });
             spList.appendChild(card);
         });
     }
@@ -2880,10 +2955,27 @@
             _showQuickSearch(truncated, e.clientX, e.clientY);
         });
 
-        noteBtn.addEventListener('click', e => {
+        noteBtn.addEventListener('click', async e => {
             e.stopPropagation();
             tt.remove();
-            _snOpen(truncated);
+            // Open notepad panel and create/append to a note
+            _npNotes = await _npLoadAll();
+            const ids = _npSortedIds();
+            if (ids.length && _npActiveId && _npNotes[_npActiveId]) {
+                // Append to current active note
+                _npNotes[_npActiveId].content = (_npNotes[_npActiveId].content || '') + '\n\n' + truncated;
+                _npNotes[_npActiveId].text    = _npNotes[_npActiveId].content;
+                _npNotes[_npActiveId].ts      = Date.now();
+            } else {
+                // Create a new note with the selection as content
+                const id = _npGenId();
+                _npNotes[id] = { title: document.title.slice(0,60), content: truncated, text: truncated, ts: Date.now(), pinned: false };
+                _npActiveId = id;
+            }
+            await _npSaveAll(_npNotes);
+            _npBadge();
+            await _npOpenPanel();
+            showSaveToast('📝 Added to notepad');
         });
 
         // Auto-hide if user clicks elsewhere
@@ -7242,11 +7334,12 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         return note.color || NP_COLORS[idx % NP_COLORS.length];
     }
 
-    const npPanel    = document.getElementById('nw-np-panel');
-    const npList     = document.getElementById('nw-np-list');
-    const npEditor   = document.getElementById('nw-np-editor');
-    const npBadgeEl  = document.getElementById('nw-np-panel-badge');
-    const npSearch   = document.getElementById('nw-np-search');
+    const npPanel       = document.getElementById('nw-np-panel');
+    const npList        = document.getElementById('nw-np-list');
+    const npEditor      = document.getElementById('nw-np-editor');
+    const npListOverlay = document.getElementById('nw-np-list-overlay');
+    const npListBtn     = document.getElementById('nw-np-list-btn');
+    const npSearch      = document.getElementById('nw-np-search');
 
     let _npNotes = {};
 
@@ -7260,7 +7353,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
     function _npBadge() {
         const c = Object.keys(_npNotes).length;
-        if (npBadgeEl) npBadgeEl.textContent = `${c} note${c !== 1 ? 's' : ''}`;
+        if (npListBtn) npListBtn.title = `${c} note${c !== 1 ? 's' : ''}`;
     }
 
     function _npRenderList(query = '') {
@@ -7293,6 +7386,8 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             item.addEventListener('click', e => {
                 if (e.target.closest('.nw-np-item-pin')) return;
                 _npActiveId = item.dataset.id;
+                npListOverlay.classList.remove('open');
+                npListBtn.classList.remove('active');
                 _npRenderList(npSearch.value);
                 _npRenderEditor();
             });
@@ -7400,6 +7495,8 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
         npEditor.querySelector('#nw-np-delete').addEventListener('click', async () => {
             if (!confirm(`Delete "${_npNotes[_npActiveId]?.title || 'Untitled'}"?`)) return;
+            const snapshot = JSON.parse(JSON.stringify(_npNotes));
+            const deletedTitle = _npNotes[_npActiveId]?.title || 'Untitled';
             const delId = _npActiveId;
             delete _npNotes[delId];
             const remaining = _npSortedIds();
@@ -7408,6 +7505,14 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             _npBadge();
             _npRenderList(npSearch.value);
             _npRenderEditor();
+            showUndoToast(`"${deletedTitle.slice(0,30)}" deleted`, async () => {
+                _npNotes = snapshot;
+                await _npSaveAll(_npNotes);
+                _npActiveId = delId;
+                _npBadge();
+                _npRenderList();
+                _npRenderEditor();
+            });
         });
     }
 
@@ -7422,16 +7527,38 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         _npBadge();
         _npRenderList();
         _npRenderEditor();
+        // if no notes yet, open the list so user can see it's empty
+        if (!ids.length) {
+            npListOverlay.classList.add('open');
+            npListBtn.classList.add('active');
+        }
     }
 
-    document.getElementById('nw-np-panel-back').addEventListener('click', () => npPanel.classList.remove('open'));
+    document.getElementById('nw-np-panel-back').addEventListener('click', () => {
+        npListOverlay.classList.remove('open');
+        npListBtn.classList.remove('active');
+        npPanel.classList.remove('open');
+    });
+
+    npListBtn.addEventListener('click', () => {
+        const isOpen = npListOverlay.classList.toggle('open');
+        npListBtn.classList.toggle('active', isOpen);
+        if (isOpen) {
+            _npRenderList(npSearch.value);
+            npSearch.focus();
+        }
+    });
+
     npSearch.addEventListener('input', e => _npRenderList(e.target.value));
+
     document.getElementById('nw-np-panel-new').addEventListener('click', async () => {
         const id = _npGenId();
         _npNotes[id] = { title: '', content: '', text: '', ts: Date.now(), pinned: false };
         _npActiveId = id;
         await _npSaveAll(_npNotes);
         _npBadge();
+        npListOverlay.classList.remove('open');
+        npListBtn.classList.remove('active');
         _npRenderList();
         _npRenderEditor();
         npEditor.querySelector('#nw-np-title')?.focus();
