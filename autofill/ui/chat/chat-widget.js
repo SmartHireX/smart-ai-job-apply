@@ -5666,7 +5666,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                     type: 'AI_REQUEST',
                     prompt,
                     systemInstruction,
-                    options: { maxTokens: 512, temperature: 0.7, provider: activeProvider, ...extraOpts }
+                    options: { maxTokens: 4096, temperature: 0.7, provider: activeProvider, ...extraOpts }
                 }, result => {
                     const err = chrome.runtime.lastError;
                     if (err) {
