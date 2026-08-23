@@ -9,12 +9,24 @@
         "tabs",
         "storage",
         "scripting",
-        "contextMenus"
+        "contextMenus",
+        "alarms",
+        "notifications",
+        "declarativeNetRequest"
     ],
     "host_permissions": [
         "https://generativelanguage.googleapis.com/*",
         "*://*/*"
     ],
+    "declarative_net_request": {
+        "rule_resources": [
+            {
+                "id": "yt_adblock",
+                "enabled": false,
+                "path": "rules/yt-adblock.json"
+            }
+        ]
+    },
     "action": {
         "default_icon": {
             "16": "icons/icon16.png",
@@ -33,9 +45,7 @@
     },
     "content_scripts": [
         {
-            "matches": [
-                "<all_urls>"
-            ],
+            "matches": ["<all_urls>"],
             "js": [
                 "common/infrastructure/constants.js",
                 "autofill/core/constants.js",
@@ -47,6 +57,12 @@
             ],
             "run_at": "document_idle",
             "all_frames": true
+        },
+        {
+            "matches": ["*://*.youtube.com/*"],
+            "js": ["autofill/yt-ad-patch/yt-ad-injector.js"],
+            "run_at": "document_start",
+            "all_frames": false
         }
     ],
     "web_accessible_resources": [
@@ -117,7 +133,8 @@
                 "autofill/handlers/autofill-message-handler.js",
                 "autofill/handlers/undo-handler.js",
                 "common/messaging/message-router.js",
-                "autofill/core/autofill-orchestrator.js"
+                "autofill/core/autofill-orchestrator.js",
+                "autofill/yt-ad-patch/yt-ad-patch.js"
             ],
             "matches": [
                 "<all_urls>"

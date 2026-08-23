@@ -125,6 +125,9 @@
         { label: '📄 Summarize',    prompt: 'Please summarize this page for me.' },
         { label: '✦ Key points',    prompt: 'What are the most important key points on this page?' },
         { label: '⊞ Extract data',  prompt: 'Extract the key data and facts from this page into a structured list.' },
+        { label: '🔍 Keyword match', prompt: 'analyze keyword match with my resume' },
+        { label: '👤 Profile score', prompt: 'show my profile completeness score' },
+        { label: '📋 Daily briefing', prompt: 'show my daily briefing' },
         { label: '🔖 Save page',    prompt: 'save this page' },
     ];
 
@@ -136,6 +139,7 @@
                 return [
                     { label: '⚡ Fill form',       prompt: 'fill this form' },
                     { label: '🎯 Check fit',       prompt: 'How well do I match this job? Analyze my fit.' },
+                    { label: '🔍 Keywords',       prompt: 'analyze keyword match with my resume' },
                     { label: '📝 Cover letter',    prompt: 'Write a tailored cover letter for this job posting.' },
                     { label: '💾 Save job',        prompt: 'save this job' },
                 ];
@@ -208,20 +212,36 @@ Possible outputs:
 {"intent":"fill","fields":"<fields or all>"}
 {"intent":"compatibility"}
 Use {"intent":"fill"} when the user wants to fill, autofill, complete, apply, or submit a form — e.g. "fill this form", "fill in the fields", "autofill", "complete the application", "apply for me", "help me fill this", "fill out the form", "submit my application".
+{"intent":"daily_briefing"}
+{"intent":"wiki_search","query":"<search term>"}
+{"intent":"list_clips","query":"<optional search term>"}
+{"intent":"save_clip"}
+{"intent":"compare_jobs"}
+{"intent":"export_jobs"}
 {"intent":"save_job"}
 {"intent":"list_jobs"}
+{"intent":"keyword_match"}
+{"intent":"profile_score"}
 {"intent":"save_page"}
 {"intent":"list_pages"}
 {"intent":"scan_jobs"}
 {"intent":"multi","intents":[<obj>,<obj>]}
 {"intent":"chat"}
 
+Use {"intent":"daily_briefing"} when user asks for daily briefing, today's summary, what's on my plate, morning briefing, show today's overview.
+Use {"intent":"wiki_search","query":"<term>"} when user says find X, search my saves, search for X, what did I save about X, look up X in my stuff, search my notes, find that article about X.
 Use {"intent":"compatibility"} ONLY when the user is asking about a SINGLE job — the one currently open — using words like "this job", "this role", "this position", "am I a good fit", "do I qualify for this". The page must be a single job posting, not a search results list.
 Use {"intent":"scan_jobs"} when the user refers to multiple jobs or a list — "jobs" (plural without "this"), "these jobs", "jobs on this page", "all jobs", "check compatibility of jobs", "which jobs match me", "scan jobs", "rank these jobs", "show which jobs I can apply for", "check all jobs", "find best matching jobs". If the page looks like a job search results page (list of jobs), always prefer scan_jobs over compatibility.
+Use {"intent":"compare_jobs"} when user says compare jobs, compare my applications, show job comparison, side by side jobs, compare saved jobs.
+Use {"intent":"export_jobs"} when user says export jobs, download jobs, export tracker, save jobs to file, export my applications, download my tracker.
 Use {"intent":"save_job"} when the user says save this job, bookmark this, add to tracker, remember this job.
 Use {"intent":"list_jobs"} when the user says show saved jobs, my job list, tracked jobs, show my applications, job tracker.
+Use {"intent":"keyword_match"} when user asks about keyword match, keywords in resume vs job, keyword gap, missing keywords, keyword analysis, how well resume matches, keyword comparison.
+Use {"intent":"profile_score"} when user asks about their profile completeness, resume score, what's missing from their profile, or profile strength.
 Use {"intent":"save_page"} when the user says save this page, bookmark this page, remember this link, save this link, add to reading list, save this article.
 Use {"intent":"list_pages"} when the user says show saved pages, my saved links, my bookmarks, reading list, show my pages.
+Use {"intent":"list_clips","query":"<term>"} when user asks to show clips, my saved clips, show my clippings, search clips, find clip about X. Include a query if they mention a topic.
+Use {"intent":"save_clip"} when user says clip this, save this text, save selection, clip this paragraph.
 
 JSON:`;
     }

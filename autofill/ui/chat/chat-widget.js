@@ -41,6 +41,131 @@
     let _lastScanResults = null;
     let activeProvider = localStorage.getItem('nova_provider') || 'gemini';
 
+    // ── Field history picker ──────────────────────────────────────────────────
+    const FIELD_HISTORY_KEY = 'nova_field_history';
+    function _fhLoad() { try { return JSON.parse(localStorage.getItem(FIELD_HISTORY_KEY) || '{}'); } catch { return {}; } }
+    function _fhSave(map) { try { localStorage.setItem(FIELD_HISTORY_KEY, JSON.stringify(map)); } catch {} }
+    function _fhBucketKey(el) {
+        const t = (el.type || 'text').toLowerCase();
+        const name = (el.name || el.id || el.placeholder || '').toLowerCase();
+        if (/email/.test(name) || t === 'email') return 'email';
+        if (/phone|tel|mobile/.test(name) || t === 'tel') return 'phone';
+        if (/name/.test(name)) return 'name';
+        if (/company|employer|organization/.test(name)) return 'company';
+        if (/title|position|role/.test(name)) return 'title';
+        if (/location|city|address/.test(name)) return 'location';
+        if (/salary|compensation|pay/.test(name)) return 'salary';
+        if (/linkedin/.test(name)) return 'linkedin';
+        if (/github|portfolio|website|url/.test(name) || t === 'url') return 'url';
+        if (t === 'textarea') return 'textarea_' + name.slice(0, 20);
+        return t + '_' + name.slice(0, 20);
+    }
+    function _fhRecord(el) {
+        if (!el.value?.trim()) return;
+        const key = _fhBucketKey(el);
+        const map = _fhLoad();
+        const list = (map[key] || []).filter(v => v !== el.value).slice(0, 4);
+        list.unshift(el.value);
+        map[key] = list.slice(0, 3);
+        _fhSave(map);
+    }
+    function _fhShowPicker(el) {
+        document.getElementById('nova-fh-picker')?.remove();
+        const key = _fhBucketKey(el);
+        const suggestions = (_fhLoad()[key] || []);
+        if (!suggestions.length) return;
+        const rect = el.getBoundingClientRect();
+        const picker = document.createElement('div');
+        picker.id = 'nova-fh-picker';
+        picker.style.cssText = `position:fixed;z-index:2147483647;left:${rect.left}px;top:${rect.bottom + 4}px;min-width:${Math.max(rect.width, 160)}px;max-width:320px;background:white;border:1.5px solid #e0e7ff;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.12);overflow:hidden;font-family:-apple-system,sans-serif;`;
+        picker.innerHTML = `<div style="padding:5px 10px 3px;font-size:9.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;background:#f8f9ff;border-bottom:1px solid #f1f5f9;">Recent values</div>` +
+            suggestions.map((v, i) => `<div class="nova-fh-item" data-i="${i}" style="padding:7px 10px;font-size:12.5px;color:#1e293b;cursor:pointer;border-bottom:1px solid #f8f9ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${v}">${v}</div>`).join('');
+        document.body.appendChild(picker);
+        picker.querySelectorAll('.nova-fh-item').forEach(item => {
+            item.addEventListener('mousedown', e => {
+                e.preventDefault();
+                el.value = suggestions[+item.dataset.i];
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+                picker.remove();
+            });
+            item.addEventListener('mouseenter', () => item.style.background = '#f0f4ff');
+            item.addEventListener('mouseleave', () => item.style.background = '');
+        });
+        setTimeout(() => {
+            const close = (e) => { if (!picker.contains(e.target) && e.target !== el) { picker.remove(); document.removeEventListener('mousedown', close); } };
+            document.addEventListener('mousedown', close);
+        }, 0);
+    }
+
+    // ── Form Autosave ─────────────────────────────────────────────────────────
+    const FORM_AUTOSAVE_KEY = 'nova_form_autosave';
+    let _autosaveTimer = null;
+
+    function _autosaveStart() {
+        _autosaveStop();
+        _autosaveTimer = setInterval(() => {
+            try {
+                const inputs = Array.from(document.querySelectorAll('input,textarea,select'))
+                    .filter(el => el.offsetParent !== null && !el.closest('#nova-chat-widget') && el.value?.trim());
+                if (!inputs.length) return;
+                const snapshot = inputs.reduce((acc, el) => {
+                    const key = el.id || el.name || el.placeholder || el.type;
+                    if (key) acc[key] = el.value;
+                    return acc;
+                }, {});
+                const store = _asLoad();
+                store[location.href] = { ts: Date.now(), snapshot, url: location.href, title: document.title.replace(/\s*[\|\-–—].*$/, '').trim() };
+                // Keep only last 20 pages
+                const keys = Object.keys(store);
+                if (keys.length > 20) {
+                    const oldest = keys.sort((a, b) => store[a].ts - store[b].ts)[0];
+                    delete store[oldest];
+                }
+                localStorage.setItem(FORM_AUTOSAVE_KEY, JSON.stringify(store));
+            } catch {}
+        }, 30000);
+    }
+
+    function _autosaveStop() {
+        if (_autosaveTimer) { clearInterval(_autosaveTimer); _autosaveTimer = null; }
+    }
+
+    function _asLoad() {
+        try { return JSON.parse(localStorage.getItem(FORM_AUTOSAVE_KEY) || '{}'); } catch { return {}; }
+    }
+
+    // ── Reading Progress Tracker ──────────────────────────────────────────────
+    const READ_PROGRESS_KEY = 'nova_read_progress';
+    function _rpLoad() { try { return JSON.parse(localStorage.getItem(READ_PROGRESS_KEY) || '{}'); } catch { return {}; } }
+    function _rpSave(map) { try { localStorage.setItem(READ_PROGRESS_KEY, JSON.stringify(map)); } catch {} }
+    function _rpPageHeight() { return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight); }
+    function _rpScrollPct() {
+        const scrolled = window.scrollY || document.documentElement.scrollTop;
+        const total = _rpPageHeight() - window.innerHeight;
+        return total > 0 ? Math.round((scrolled / total) * 100) : 0;
+    }
+
+    // ── Web Clipper ───────────────────────────────────────────────────────────
+    const CLIPS_KEY = 'nova_clips';
+    function _clipsLoad() { try { return JSON.parse(localStorage.getItem(CLIPS_KEY) || '[]'); } catch { return []; } }
+    function _clipsSave(clips) { try { localStorage.setItem(CLIPS_KEY, JSON.stringify(clips)); } catch {} }
+
+    function _saveClip(text, pageTitle, url, annotation = '') {
+        const clips = _clipsLoad();
+        clips.unshift({
+            id: Date.now(),
+            text: text.slice(0, 800),
+            title: pageTitle.replace(/\s*[\|\-–—].*$/, '').trim().slice(0, 60),
+            url,
+            annotation,
+            ts: Date.now(),
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        });
+        // Keep last 200 clips
+        _clipsSave(clips.slice(0, 200));
+    }
+
     const _seed = [];
 
     const chatHistory = new Proxy(_seed, {
@@ -661,6 +786,38 @@
             display: inline-block; padding: 1px 6px; border-radius: 999px;
             font-size: 9px; font-weight: 600; background: #f3f4f6; color: #6b7280;
         }
+        /* Highlight & Explain tooltip */
+        #nova-explain-tooltip {
+            position: fixed; z-index: 2147483646;
+            display: flex; align-items: center; gap: 4px;
+            background: #1e293b; border-radius: 8px;
+            padding: 5px 7px; box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+            font-family: -apple-system, sans-serif;
+            animation: nova-tooltip-in 0.12s ease;
+            pointer-events: auto;
+        }
+        @keyframes nova-tooltip-in {
+            from { opacity: 0; transform: translateY(4px) scale(0.96); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        #nova-explain-tooltip button {
+            padding: 3px 9px; border: none; border-radius: 5px;
+            font-size: 11.5px; font-weight: 700; cursor: pointer;
+            font-family: inherit; white-space: nowrap;
+            transition: background 0.12s;
+        }
+        #nova-explain-tooltip .nova-tt-explain {
+            background: #6366f1; color: white;
+        }
+        #nova-explain-tooltip .nova-tt-explain:hover { background: #4f46e5; }
+        #nova-explain-tooltip .nova-tt-ask {
+            background: rgba(255,255,255,0.12); color: #e2e8f0;
+        }
+        #nova-explain-tooltip .nova-tt-ask:hover { background: rgba(255,255,255,0.2); }
+        #nova-explain-tooltip .nova-tt-clip {
+            background: rgba(255,255,255,0.12); color: #e2e8f0;
+        }
+        #nova-explain-tooltip .nova-tt-clip:hover { background: rgba(255,255,255,0.2); }
     `;
     document.head.appendChild(styleEl);
 
@@ -710,7 +867,19 @@
                                 <button class="nw-provider-btn active" id="nw-use-gemini">Gemini</button>
                                 <button class="nw-provider-btn" id="nw-use-groq">Groq</button>
                             </div>
+                            <div id="nw-groq-nudge" style="display:none;margin-top:7px;padding:6px 8px;background:#fefce8;border:1px solid #fde68a;border-radius:6px;font-size:10.5px;color:#92400e;line-height:1.4;">
+                                💡 <strong>Get free AI tokens</strong> — add a free Groq key in Settings. Chat, summarize &amp; explain use it automatically, saving your Gemini quota.
+                                <button id="nw-groq-nudge-btn" style="display:block;width:100%;margin-top:5px;padding:4px 0;background:#f59e0b;color:white;border:none;border-radius:5px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;">⚡ Get free Groq key →</button>
+                            </div>
                         </div>
+                        <button class="nw-menu-item" id="nw-menu-focus">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg>
+                            Focus Mode
+                        </button>
+                        <button class="nw-menu-item" id="nw-menu-adblock">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                            Remove Ads
+                        </button>
                         <button class="nw-menu-item" id="nw-menu-settings">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                             Settings
@@ -788,11 +957,35 @@
         try { localStorage.setItem('nova_widget_state', JSON.stringify(state)); } catch (e) {}
     }
 
-    // ── Page content ──────────────────────────────────────────────────────────
+    // ── Page content (compressed) ─────────────────────────────────────────────
+    function _compressPage(rawText, url) {
+        // For job pages: extract structured fields instead of raw prose
+        const isJobPage = /job|career|position|apply|opening|role|hiring/i.test(url + document.title);
+        if (isJobPage) {
+            const lines = rawText.split(/[\n.]{1,3}/).map(l => l.trim()).filter(l => l.length > 15);
+            const title    = document.querySelector('h1')?.innerText?.trim() || document.title.replace(/\s*[\|\-–—].*$/, '').trim();
+            const company  = document.querySelector('[class*="company"],[class*="employer"],[data-company]')?.innerText?.trim() || '';
+            // Extract bullet-like requirement sentences
+            const reqLines = lines.filter(l => /require|must|experience|skill|qualif|responsib|duty|duties|you will|you have|looking for/i.test(l)).slice(0, 12);
+            const otherLines = lines.filter(l => !reqLines.includes(l)).slice(0, 6);
+            const parts = [
+                title    ? `Role: ${title}` : '',
+                company  ? `Company: ${company}` : '',
+                reqLines.length ? `Requirements:\n${reqLines.map(l => `• ${l.slice(0, 120)}`).join('\n')}` : '',
+                otherLines.length ? `Context:\n${otherLines.map(l => l.slice(0, 120)).join('\n')}` : '',
+            ].filter(Boolean);
+            return parts.join('\n\n').slice(0, 2000);
+        }
+        // For article/general pages: keep first meaningful paragraphs
+        const lines = rawText.split(/\n+/).map(l => l.trim()).filter(l => l.length > 40);
+        return lines.slice(0, 20).join('\n').slice(0, 2000);
+    }
+
     try {
         const clone = document.body.cloneNode(true);
         clone.querySelectorAll(`script, style, #${WIDGET_ID}`).forEach(el => el.remove());
-        pageContent = (clone.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 8000);
+        const raw = (clone.innerText || '').replace(/\s+/g, ' ').trim();
+        pageContent = _compressPage(raw, location.href);
         document.getElementById('nw-page-title').textContent = document.title || location.hostname;
     } catch (e) {
         document.getElementById('nw-page-title').textContent = location.hostname;
@@ -926,9 +1119,22 @@
     const menuBtn  = document.getElementById('nw-menu-btn');
     const menuEl   = document.getElementById('nw-menu');
 
-    function openMenu()  { menuEl.classList.add('open'); }
+    function openMenu()  {
+        menuEl.classList.add('open');
+        chrome.runtime.sendMessage({ type: 'GET_GROQ_CONFIG' }, r => {
+            if (groqNudgeEl) groqNudgeEl.style.display = r?.key ? 'none' : 'block';
+        });
+    }
     function closeMenu() { menuEl.classList.remove('open'); }
     function toggleMenu() { menuEl.classList.contains('open') ? closeMenu() : openMenu(); }
+
+    // Groq nudge — show when menu opens if no Groq key configured
+    const groqNudgeEl  = document.getElementById('nw-groq-nudge');
+    const groqNudgeBtn = document.getElementById('nw-groq-nudge-btn');
+    groqNudgeBtn?.addEventListener('click', () => {
+        closeMenu();
+        chrome.runtime.sendMessage({ type: 'OPEN_OPTIONS' });
+    });
 
     menuBtn.addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
     document.addEventListener('click', e => {
@@ -1019,6 +1225,339 @@
     document.getElementById('nw-menu-pages').addEventListener('click', openSpPanel);
     document.getElementById('nw-sp-back').addEventListener('click', closeSpPanel);
 
+    // ── Focus Mode & Ad Remover ───────────────────────────────────────────────
+    const FOCUS_SELECTORS = {
+        'linkedin.com': [
+            // Sidebars and recommendations
+            '.scaffold-layout__aside',
+            '.ad-banner-container',
+            '[data-ad-banner]',
+            '.jobs-premium-upsell',
+            '.reusable-search__result-container ~ .reusable-search__result-container ~ .reusable-search__result-container ~ .reusable-search__result-container ~ .reusable-search__result-container',
+            '.feed-follows-module',
+            '.pymk-hcard',
+            '.scaffold-finite-scroll__load-button',
+            '[data-view-name="profile-card"]',
+            '.news-module',
+            '.ad-banner',
+            '.jobs-company-info__ads',
+            // "People also viewed", "More jobs like this"
+            '.jobs-similar-jobs',
+            '.jobs-details__right-rail',
+            '.p-ads',
+        ],
+        'indeed.com': [
+            '.mosaic-zone[id*="mosaic-afterJobResults"]',
+            '.mosaic-zone[id*="mosaic-aboveFullJobDescription"]',
+            '#mosaic-provider-jobsearch-feedback',
+            '.indeed-ad',
+            '[class*="sponsoredJob"]',
+            '.jobsearch-SerpJobCard-sponsoredJob',
+            '#indeed-share-widget',
+            '.icl-WhatWhere ~ div[class*="Carousel"]',
+            '.salaryGuide',
+            '.resumeIncentive',
+        ],
+        'glassdoor.com': [
+            '[class*="EIJobsSideBar"]',
+            '[class*="AdDisplay"]',
+            '[class*="ad-unit"]',
+            '.tightAll',
+        ],
+        'youtube.com': [
+            // Top banner and masthead ads
+            '#masthead-ad',
+            'ytd-banner-promo-renderer',
+            'ytd-statement-banner-renderer',
+            // Sidebar promoted / ad slots
+            'ytd-ad-slot-renderer',
+            'ytd-promoted-sparkles-web-renderer',
+            'ytd-promoted-video-renderer',
+            'ytd-display-ad-renderer',
+            'ytd-compact-promoted-item-renderer',
+            // In-feed promoted items
+            '[class*="ytd-ad"]',
+            // In-player overlay ads (banner over video)
+            '.ytp-ad-overlay-container',
+            '.ytp-ad-text-overlay',
+            '.ytp-ad-image-overlay',
+            '.ytp-ad-module',
+            '.ytp-ad-player-overlay',
+            '.ytp-ad-player-overlay-instream-info',
+            '.ytp-ad-preview-container',
+            // Shorts ads
+            'ytd-reel-shelf-renderer',
+            'ytd-shorts-lockup-view-model',
+            // Survey / feedback modals YouTube injects
+            'ytd-mealbar-promo-renderer',
+            // "Primetime channels" / premium upsell rows
+            'ytd-primetime-promo-renderer',
+            // Right-rail recommendations that are promoted
+            '#related ytd-compact-promoted-video-renderer',
+            // Info card overlays (sponsored)
+            '.ytp-ce-element[class*="ad"]',
+            // Shopping shelf ads below video
+            'ytd-merch-shelf-renderer',
+            'ytd-action-companion-ad-renderer',
+            // Survey/opinion prompts
+            '#survey-url-endpoint-id',
+        ],
+    };
+
+    // Generic ad/noise selectors that work on most sites
+    const GENERIC_AD_SELECTORS = [
+        'ins.adsbygoogle',
+        '[id*="google_ads"]',
+        '[id*="ad-slot"]',
+        '[id*="ad_slot"]',
+        '[class*="ad-container"]',
+        '[class*="adContainer"]',
+        '[class*="advertisement"]',
+        '[class*="ad-wrapper"]',
+        '[class*="sponsored-content"]',
+        '[class*="promo-banner"]',
+        '[aria-label*="advertisement" i]',
+        '[aria-label*="sponsored" i]',
+        'iframe[src*="doubleclick"]',
+        'iframe[src*="googlesyndication"]',
+        'iframe[src*="adservice"]',
+        '[data-ad-client]',
+        '[data-google-query-id]',
+        '.widget_media_image + div[class*="ad"]',
+    ];
+
+    let _focusActive = false;
+    let _focusStyleEl = null;
+
+    function _buildFocusCSS() {
+        const host = location.hostname.replace('www.', '');
+        const siteKey = Object.keys(FOCUS_SELECTORS).find(k => host.includes(k));
+        const siteSelectors = siteKey ? FOCUS_SELECTORS[siteKey] : [];
+        const allSelectors = [...siteSelectors, ...GENERIC_AD_SELECTORS];
+        return allSelectors.map(s => `${s} { display: none !important; visibility: hidden !important; }`).join('\n');
+    }
+
+    function _toggleFocus(on) {
+        _focusActive = on;
+        const btn = document.getElementById('nw-menu-focus');
+        if (on) {
+            if (!_focusStyleEl) {
+                _focusStyleEl = document.createElement('style');
+                _focusStyleEl.id = 'nova-focus-styles';
+                document.head.appendChild(_focusStyleEl);
+            }
+            _focusStyleEl.textContent = _buildFocusCSS();
+            if (btn) { btn.style.color = '#6366f1'; btn.style.fontWeight = '700'; btn.textContent = ''; btn.insertAdjacentHTML('afterbegin', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg> Focus Mode ✓'); }
+            localStorage.setItem('nova_focus_mode', '1');
+        } else {
+            if (_focusStyleEl) { _focusStyleEl.textContent = ''; }
+            if (btn) { btn.style.color = ''; btn.style.fontWeight = ''; btn.textContent = ''; btn.insertAdjacentHTML('afterbegin', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg> Focus Mode'); }
+            localStorage.removeItem('nova_focus_mode');
+        }
+    }
+
+    // ── YouTube ad skipper (Brave-inspired) ──────────────────────────────────
+    let _ytObserver = null;
+    let _ytSkipTimer = null;
+    let _ytAdCount = 0;
+    let _ytSkipping = false;
+    let _ytCoverEl = null;    // thumbnail cover shown over player while ad plays silently
+
+    const YT_SKIP_SELECTORS = [
+        '.ytp-skip-ad-button',
+        '.ytp-ad-skip-button',
+        '.ytp-ad-skip-button-modern',
+        '.ytp-skip-ad-button__text',
+        '[class*="skip-ad-button"]',
+        '.ytp-ad-overlay-close-button',
+        'button.ytp-ad-skip-button-container',
+        '[id*="skip-button"]',
+    ].join(', ');
+
+    // Get the real video's thumbnail URL from the page
+    function _ytGetThumb() {
+        const canonical = document.querySelector('link[rel="canonical"]');
+        const href = canonical?.href || location.href;
+        const m = href.match(/[?&]v=([^&]+)/);
+        const vid = m?.[1];
+        if (!vid) return null;
+        // maxresdefault → hqdefault as fallback
+        return `https://i.ytimg.com/vi/${vid}/maxresdefault.jpg`;
+    }
+
+    // Overlay a static thumbnail over the player so user sees zero ad content
+    function _ytShowCover() {
+        if (_ytCoverEl) return;
+        const player = document.querySelector('#movie_player, .html5-video-player');
+        if (!player) return;
+        const thumb = _ytGetThumb();
+        const cover = document.createElement('div');
+        cover.id = 'nova-yt-cover';
+        cover.style.cssText = `
+            position:absolute;inset:0;z-index:9998;
+            background:#000 ${thumb ? `url("${thumb}") center/cover no-repeat` : ''};
+            display:flex;align-items:center;justify-content:center;
+            pointer-events:none;
+        `;
+        // "Ad skipped" badge
+        const badge = document.createElement('div');
+        badge.textContent = '⚡ Ad blocked by Nova';
+        badge.style.cssText = `
+            background:rgba(0,0,0,.65);color:#fff;font-size:13px;font-family:sans-serif;
+            padding:6px 14px;border-radius:20px;backdrop-filter:blur(4px);
+            border:1px solid rgba(255,255,255,.15);
+        `;
+        cover.appendChild(badge);
+        // Player must be positioned so the absolute cover sits inside it
+        if (getComputedStyle(player).position === 'static') player.style.position = 'relative';
+        player.appendChild(cover);
+        _ytCoverEl = cover;
+    }
+
+    // Fade the cover out smoothly once the ad is gone
+    function _ytHideCover() {
+        if (!_ytCoverEl) return;
+        const el = _ytCoverEl;
+        _ytCoverEl = null;
+        el.style.transition = 'opacity 0.35s ease';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 380);
+    }
+
+    function _ytSkipAds() {
+        if (_ytSkipping) return;
+        _ytSkipping = true;
+        try {
+            const player = document.querySelector('.html5-video-player, #movie_player');
+            if (!player) return;
+
+            const isAdPlaying = player.classList.contains('ad-showing') ||
+                                player.classList.contains('ad-interrupting');
+            const video = document.querySelector('video.html5-main-video, video');
+
+            if (!isAdPlaying) {
+                // Ad is over — restore video and remove cover
+                if (video && video._novaMuted) {
+                    video.muted = false;
+                    video.playbackRate = 1;
+                    video._novaMuted = false;
+                }
+                _ytHideCover();
+                return;
+            }
+
+            // Strategy 1: click skip button — instant, no cover needed
+            const skipBtn = document.querySelector(YT_SKIP_SELECTORS);
+            if (skipBtn) { skipBtn.click(); _ytAdCount++; return; }
+
+            // Strategy 2: show cover + mute + 16× speed so user sees nothing.
+            // Never seek — seeking causes the black-screen frame drop.
+            _ytShowCover();
+            if (video) {
+                if (!video._novaMuted) { video.muted = true; video._novaMuted = true; }
+                if (video.playbackRate < 16) video.playbackRate = 16;
+            }
+        } finally {
+            _ytSkipping = false;
+        }
+    }
+
+    function _startYtObserver() {
+        if (_ytObserver) return;
+        _ytAdCount = 0;
+        _ytSkipAds();
+
+        const watchTarget = document.querySelector('#movie_player, .html5-video-player') || document.body;
+        _ytObserver = new MutationObserver((mutations) => {
+            let needsCheck = false;
+            for (const m of mutations) {
+                if (m.type === 'attributes' && m.attributeName === 'class') { needsCheck = true; break; }
+                if (m.type === 'childList' && m.addedNodes.length) { needsCheck = true; break; }
+            }
+            if (needsCheck) _ytSkipAds();
+        });
+        _ytObserver.observe(watchTarget, {
+            attributes: true,
+            attributeFilter: ['class'],
+            childList: true,
+            subtree: true
+        });
+        _ytSkipTimer = setInterval(_ytSkipAds, 300);
+    }
+
+    function _stopYtObserver() {
+        _ytObserver?.disconnect(); _ytObserver = null;
+        clearInterval(_ytSkipTimer); _ytSkipTimer = null;
+        const video = document.querySelector('video.html5-main-video, video');
+        if (video && video._novaMuted) { video.muted = false; video.playbackRate = 1; video._novaMuted = false; }
+        _ytHideCover();
+        _ytAdCount = 0;
+    }
+
+    let _adBlockActive = false;
+    let _adBlockStyleEl = null;
+
+    function _toggleAdBlock(on) {
+        _adBlockActive = on;
+        const btn = document.getElementById('nw-menu-adblock');
+        if (on) {
+            if (!_adBlockStyleEl) {
+                _adBlockStyleEl = document.createElement('style');
+                _adBlockStyleEl.id = 'nova-adblock-styles';
+                document.head.appendChild(_adBlockStyleEl);
+            }
+            const isYT = location.hostname.includes('youtube.com');
+            const ytSelectors = isYT ? (FOCUS_SELECTORS['youtube.com'] || []) : [];
+            const allSelectors = [...GENERIC_AD_SELECTORS, ...ytSelectors];
+            _adBlockStyleEl.textContent = allSelectors
+                .map(s => `${s} { display: none !important; }`)
+                .join('\n');
+            // Physically remove already-rendered ad elements
+            let removed = 0;
+            document.querySelectorAll(allSelectors.join(',')).forEach(el => {
+                if (!el.closest(`#${WIDGET_ID}`)) { el.remove(); removed++; }
+            });
+            // Start YouTube-specific ad skipper (MutationObserver + video skip)
+            if (isYT) {
+                _startYtObserver();
+                // Enable network-level YouTube ad blocking via declarativeNetRequest
+                chrome.runtime.sendMessage({ type: 'TOGGLE_YT_ADBLOCK', enable: true });
+            }
+            if (btn) { btn.style.color = '#6366f1'; btn.style.fontWeight = '700'; btn.textContent = ''; btn.insertAdjacentHTML('afterbegin', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Remove Ads ✓'); }
+            localStorage.setItem('nova_adblock', '1');
+            const msg = isYT
+                ? `🚫 YouTube ad blocker active — network requests blocked, banner ads hidden, video ads auto-skipped. Unskippable ads are muted and fast-forwarded.`
+                : `🚫 Removed ${removed} ad element${removed !== 1 ? 's' : ''} from this page. Ads are now blocked for this session.`;
+            appendMsg('ai', msg);
+        } else {
+            if (_adBlockStyleEl) { _adBlockStyleEl.textContent = ''; }
+            _stopYtObserver();
+            // Disable network-level blocking
+            chrome.runtime.sendMessage({ type: 'TOGGLE_YT_ADBLOCK', enable: false });
+            if (btn) { btn.style.color = ''; btn.style.fontWeight = ''; btn.textContent = ''; btn.insertAdjacentHTML('afterbegin', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Remove Ads'); }
+            localStorage.removeItem('nova_adblock');
+        }
+    }
+
+    document.getElementById('nw-menu-focus').addEventListener('click', () => {
+        closeMenu();
+        _toggleFocus(!_focusActive);
+    });
+    document.getElementById('nw-menu-adblock').addEventListener('click', () => {
+        closeMenu();
+        _toggleAdBlock(!_adBlockActive);
+    });
+
+    // Restore on init if previously enabled
+    if (localStorage.getItem('nova_focus_mode')) _toggleFocus(true);
+    if (localStorage.getItem('nova_adblock')) {
+        _toggleAdBlock(true);
+        // Re-arm network rules on YouTube (declarativeNetRequest persists across sessions but reinforce it)
+        if (location.hostname.includes('youtube.com')) {
+            chrome.runtime.sendMessage({ type: 'TOGGLE_YT_ADBLOCK', enable: true });
+        }
+    }
+
     // ── Bookmark button in context bar ────────────────────────────────────────
     const bookmarkBtn = document.getElementById('nw-bookmark-btn');
 
@@ -1074,6 +1613,25 @@
         if (e.key === 'Escape' && widget.style.display !== 'none') minimize();
     });
 
+    // ── Update summary chip (Feature 11) ─────────────────────────────────
+    function _updateSummaryChip() {
+        const existing = chipsEl.querySelector('#nw-summary-chip');
+        if (existing) existing.remove();
+        if (chatHistory.length < 5) return;
+        const summaryBtn = document.createElement('button');
+        summaryBtn.id = 'nw-summary-chip';
+        summaryBtn.className = 'nw-chip';
+        summaryBtn.textContent = '📋 Summarize session';
+        summaryBtn.addEventListener('click', () => {
+            chipsEl.style.display = 'none';
+            const lines = chatHistory.slice(-20).map(m => `${m.role === 'user' ? '• You:' : '• Nova:'} ${m.text?.slice(0, 120) || ''}`);
+            const summary = lines.join('\n');
+            appendMsg('ai', '**Session summary:**\n' + summary);
+            chatHistory.push({ role: 'ai', text: 'Session summary generated.', ts: Date.now() });
+        });
+        chipsEl.appendChild(summaryBtn);
+    }
+
     // ── Domain-aware chips (data from Core) ──────────────────────────────────
     function renderChips() {
         chipsEl.innerHTML = '';
@@ -1088,9 +1646,142 @@
             });
             chipsEl.appendChild(btn);
         });
+        // Quick re-fill chip — show if this domain was filled before (Feature 10)
+        try {
+            const fh = JSON.parse(localStorage.getItem('nova_domain_fills') || '{}');
+            const host = location.hostname.replace('www.', '');
+            if (fh[host]) {
+                const refillBtn = document.createElement('button');
+                refillBtn.className = 'nw-chip';
+                refillBtn.textContent = '⚡ Re-fill';
+                refillBtn.title = 'Fill form like last time';
+                refillBtn.style.cssText = 'background:#eef2ff;border-color:#a5b4fc;color:#4f46e5;';
+                refillBtn.addEventListener('click', () => {
+                    inputEl.value = 'fill this form';
+                    inputEl.dispatchEvent(new Event('input'));
+                    doSend();
+                });
+                chipsEl.appendChild(refillBtn);
+            }
+        } catch {}
+        // Session summary chip — show after 5+ messages (Feature 11)
+        _updateSummaryChip();
     }
 
     renderChips();
+
+    // ── Highlight & Explain tooltip ───────────────────────────────────────────
+    let _ttHideTimer = null;
+    function _showExplainTooltip(selectedText, x, y) {
+        document.getElementById('nova-explain-tooltip')?.remove();
+        const tt = document.createElement('div');
+        tt.id = 'nova-explain-tooltip';
+        // Position above the selection end point
+        tt.style.left = Math.min(x, window.innerWidth - 220) + 'px';
+        tt.style.top  = Math.max(y - 46, 8) + 'px';
+
+        const explainBtn = document.createElement('button');
+        explainBtn.className = 'nova-tt-explain';
+        explainBtn.textContent = '✨ Explain';
+
+        const askBtn = document.createElement('button');
+        askBtn.className = 'nova-tt-ask';
+        askBtn.textContent = '💬 Ask';
+
+        const clipBtn = document.createElement('button');
+        clipBtn.className = 'nova-tt-clip';
+        clipBtn.textContent = '📎 Clip';
+
+        tt.appendChild(explainBtn);
+        tt.appendChild(askBtn);
+        tt.appendChild(clipBtn);
+        document.body.appendChild(tt);
+
+        const truncated = selectedText.slice(0, 400);
+
+        explainBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            tt.remove();
+            // Open widget
+            widget.style.display = 'flex';
+            widget.dataset.minimized = 'false';
+            document.getElementById('nova-mini-bubble')?.style && (document.getElementById('nova-mini-bubble').style.display = 'none');
+            const question = `Explain this in plain English:\n\n"${truncated}"`;
+            inputEl.value = question;
+            inputEl.dispatchEvent(new Event('input'));
+            setTimeout(doSend, 80);
+        });
+
+        askBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            tt.remove();
+            widget.style.display = 'flex';
+            widget.dataset.minimized = 'false';
+            document.getElementById('nova-mini-bubble')?.style && (document.getElementById('nova-mini-bubble').style.display = 'none');
+            inputEl.value = `"${truncated}"\n\n`;
+            inputEl.dispatchEvent(new Event('input'));
+            inputEl.focus();
+            // Position cursor at end so user can type their question
+            inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+        });
+
+        clipBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            tt.remove();
+            _saveClip(truncated, document.title, location.href);
+            // Quick visual confirmation
+            const confirm = document.createElement('div');
+            confirm.style.cssText = 'position:fixed;bottom:80px;right:24px;z-index:2147483647;background:#1e293b;color:white;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;font-family:-apple-system,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.2);animation:nova-tooltip-in 0.12s ease;';
+            confirm.textContent = '📎 Clipped!';
+            document.body.appendChild(confirm);
+            setTimeout(() => confirm.remove(), 1800);
+        });
+
+        // Auto-hide if user clicks elsewhere
+        setTimeout(() => {
+            const hide = (ev) => {
+                if (!tt.contains(ev.target)) { tt.remove(); document.removeEventListener('mousedown', hide); }
+            };
+            document.addEventListener('mousedown', hide);
+        }, 0);
+    }
+
+    document.addEventListener('mouseup', e => {
+        if (e.target.closest('#nova-chat-widget') || e.target.closest('#nova-explain-tooltip')) return;
+        clearTimeout(_ttHideTimer);
+        _ttHideTimer = setTimeout(() => {
+            const sel = window.getSelection();
+            const text = sel?.toString().trim();
+            if (!text || text.length < 10) { document.getElementById('nova-explain-tooltip')?.remove(); return; }
+            _showExplainTooltip(text, e.clientX, e.clientY);
+        }, 200);
+    });
+
+    document.addEventListener('selectionchange', () => {
+        const sel = window.getSelection();
+        if (!sel?.toString().trim()) {
+            clearTimeout(_ttHideTimer);
+            // Small delay so tooltip click doesn't hide immediately
+            setTimeout(() => {
+                if (!window.getSelection()?.toString().trim()) document.getElementById('nova-explain-tooltip')?.remove();
+            }, 300);
+        }
+    });
+
+    // Field history picker — show on focus of any page input
+    document.addEventListener('focusin', e => {
+        const el = e.target;
+        if (!el.matches('input[type=text],input[type=email],input[type=tel],input[type=url],input:not([type]),textarea')) return;
+        if (el.closest('#nova-chat-widget')) return;
+        _fhShowPicker(el);
+    });
+    document.addEventListener('focusout', e => {
+        const el = e.target;
+        if (!el.matches('input,textarea')) return;
+        if (el.closest('#nova-chat-widget')) return;
+        _fhRecord(el);
+        setTimeout(() => document.getElementById('nova-fh-picker')?.remove(), 150);
+    });
 
     // Re-show chips on page context change (SPA like LinkedIn)
     let _lastChipUrl = location.href;
@@ -1101,6 +1792,199 @@
             renderChips();
         }
     });
+
+    // Duplicate application detector — check on load
+    (function _checkDuplicateApp() {
+        const jobs = jtLoad();
+        if (!jobs.length) return;
+        const currentHost = location.hostname.replace('www.', '');
+        const currentTitle = document.title.replace(/\s*[\|\-–—].*$/, '').trim().toLowerCase().slice(0, 40);
+        const match = jobs.find(j => {
+            const jobHost = (() => { try { return new URL(j.url).hostname.replace('www.', ''); } catch { return ''; } })();
+            const jobTitle = (j.title || '').toLowerCase().slice(0, 40);
+            return jobHost === currentHost && (
+                j.url === location.href ||
+                (currentTitle.length > 10 && jobTitle.includes(currentTitle.slice(0, 20)))
+            );
+        });
+        if (!match) return;
+        const statusLabel = { saved: 'saved', applied: 'already applied to', interview: 'in interview stage for', offer: 'got an offer for', rejected: 'marked rejected for' };
+        const label = statusLabel[match.status] || 'saved';
+        setTimeout(() => {
+            const warn = appendMsg('ai', `👋 Heads up — you've ${label} **${match.title}** on ${match.date}. Want to apply again or update the status?`);
+            const btns = document.createElement('div');
+            btns.style.cssText = 'display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;';
+            const applyBtn = document.createElement('button');
+            applyBtn.textContent = '⚡ Fill anyway';
+            applyBtn.style.cssText = 'padding:5px 12px;background:#6366f1;color:white;border:none;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;';
+            applyBtn.addEventListener('click', () => dispatchIntent({ intent: 'fill' }, '', null));
+            const updateBtn = document.createElement('button');
+            updateBtn.textContent = '📋 View tracker';
+            updateBtn.style.cssText = 'padding:5px 12px;background:#f1f5f9;color:#374151;border:1px solid #e5e7eb;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;';
+            updateBtn.addEventListener('click', () => renderJobTracker());
+            btns.appendChild(applyBtn);
+            btns.appendChild(updateBtn);
+            warn?.querySelector('.nw-bubble')?.appendChild(btns);
+        }, 1200);
+    })();
+
+    // Page re-visit detector
+    (function _checkRevisit() {
+        const pages = spLoad();
+        if (!pages.length) return;
+        const currentUrl = location.href;
+        const match = pages.find(p => p.url === currentUrl);
+        if (!match) return;
+        // Don't show if dup-app detector already fired (avoids double message)
+        const jobs = jtLoad();
+        const currentHost = location.hostname.replace('www.', '');
+        const alreadyHasJobMatch = jobs.some(j => {
+            const jh = (() => { try { return new URL(j.url).hostname.replace('www.', ''); } catch { return ''; } })();
+            return jh === currentHost && j.url === currentUrl;
+        });
+        if (alreadyHasJobMatch) return;
+
+        // Only show on pages that look like job postings
+        const looksLikeJob = /apply|job|position|career|role|opening/i.test(currentUrl + document.title);
+        if (!looksLikeJob) return;
+
+        setTimeout(() => {
+            const revisit = appendMsg('ai', `👀 You saved **${match.title.slice(0, 50)}** on ${match.date}. Ready to apply now?`);
+            const btns = document.createElement('div');
+            btns.style.cssText = 'display:flex;gap:6px;margin-top:8px;';
+            const fillBtn = document.createElement('button');
+            fillBtn.textContent = '⚡ Fill form';
+            fillBtn.style.cssText = 'padding:5px 12px;background:#6366f1;color:white;border:none;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;';
+            fillBtn.addEventListener('click', () => dispatchIntent({ intent: 'fill' }, '', null));
+            btns.appendChild(fillBtn);
+            revisit?.querySelector('.nw-bubble')?.appendChild(btns);
+        }, 1800);
+    })();
+
+    // Form autosave restore — check if we have a snapshot for this URL
+    (function _checkAutosave() {
+        const store = _asLoad();
+        const saved = store[location.href];
+        if (!saved) return;
+        const ageMs = Date.now() - saved.ts;
+        if (ageMs > 86400000 * 3) return; // ignore if >3 days old
+        const fieldCount = Object.keys(saved.snapshot).length;
+        if (!fieldCount) return;
+
+        setTimeout(() => {
+            const msg = appendMsg('ai', `💾 Found a saved form snapshot for this page (${fieldCount} fields, saved ${Math.round(ageMs / 60000)} min ago). Want to restore it?`);
+            const btns = document.createElement('div');
+            btns.style.cssText = 'display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;';
+
+            const restoreBtn = document.createElement('button');
+            restoreBtn.textContent = '↩ Restore fields';
+            restoreBtn.style.cssText = 'padding:5px 12px;background:#6366f1;color:white;border:none;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;';
+            restoreBtn.addEventListener('click', () => {
+                let restored = 0;
+                Object.entries(saved.snapshot).forEach(([key, val]) => {
+                    const el = document.getElementById(key) || document.querySelector(`[name="${key}"]`) || document.querySelector(`[placeholder="${key}"]`);
+                    if (el && !el.value) {
+                        el.value = val;
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        restored++;
+                    }
+                });
+                appendMsg('ai', `✅ Restored ${restored} field${restored !== 1 ? 's' : ''}. Review them before submitting.`);
+                btns.style.display = 'none';
+            });
+
+            const dismissBtn = document.createElement('button');
+            dismissBtn.textContent = 'Dismiss';
+            dismissBtn.style.cssText = 'padding:5px 12px;background:#f1f5f9;color:#374151;border:1px solid #e5e7eb;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;';
+            dismissBtn.addEventListener('click', () => {
+                const store2 = _asLoad();
+                delete store2[location.href];
+                localStorage.setItem(FORM_AUTOSAVE_KEY, JSON.stringify(store2));
+                btns.style.display = 'none';
+            });
+
+            btns.appendChild(restoreBtn);
+            btns.appendChild(dismissBtn);
+            msg?.querySelector('.nw-bubble')?.appendChild(btns);
+        }, 2200);
+    })();
+
+    // Reading progress — save scroll position every 5 seconds while reading
+    // Only track pages that are long enough to be "readable" content
+    (function _initReadingProgress() {
+        const minHeight = 2000; // Only track pages taller than 2000px
+        if (_rpPageHeight() < minHeight) return;
+        // Skip forms, job application pages — not reading content
+        if (/apply|login|signin|checkout|cart/i.test(location.href)) return;
+
+        let _rpSaveTimer = null;
+        const _doSave = () => {
+            const pct = _rpScrollPct();
+            if (pct < 5) return; // Don't save if barely scrolled
+            if (pct > 95) {
+                // Mark as finished — remove entry
+                const map = _rpLoad();
+                delete map[location.href];
+                _rpSave(map);
+                return;
+            }
+            const map = _rpLoad();
+            map[location.href] = {
+                pct,
+                ts: Date.now(),
+                title: document.title.replace(/\s*[\|\-–—].*$/, '').trim().slice(0, 60),
+                scrollY: window.scrollY
+            };
+            // Keep only 50 most recent pages
+            const keys = Object.keys(map);
+            if (keys.length > 50) {
+                const oldest = keys.sort((a, b) => map[a].ts - map[b].ts)[0];
+                delete map[oldest];
+            }
+            _rpSave(map);
+        };
+
+        window.addEventListener('scroll', () => {
+            clearTimeout(_rpSaveTimer);
+            _rpSaveTimer = setTimeout(_doSave, 5000);
+        }, { passive: true });
+
+        // Check if we have a saved position for this URL
+        const saved = _rpLoad()[location.href];
+        if (!saved) return;
+        const ageHours = (Date.now() - saved.ts) / 3600000;
+        if (ageHours > 168) return; // Ignore if >1 week old
+        if (saved.pct < 10) return; // Don't bother if barely scrolled
+
+        setTimeout(() => {
+            const msg = appendMsg('ai', `📖 You were **${saved.pct}%** through **${saved.title}** — want to pick up where you left off?`);
+            const btns = document.createElement('div');
+            btns.style.cssText = 'display:flex;gap:6px;margin-top:8px;';
+
+            const continueBtn = document.createElement('button');
+            continueBtn.textContent = '↓ Continue reading';
+            continueBtn.style.cssText = 'padding:5px 12px;background:#6366f1;color:white;border:none;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;';
+            continueBtn.addEventListener('click', () => {
+                window.scrollTo({ top: saved.scrollY, behavior: 'smooth' });
+                btns.style.display = 'none';
+            });
+
+            const dismissBtn = document.createElement('button');
+            dismissBtn.textContent = 'Start over';
+            dismissBtn.style.cssText = 'padding:5px 12px;background:#f1f5f9;color:#374151;border:1px solid #e5e7eb;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;';
+            dismissBtn.addEventListener('click', () => {
+                const map = _rpLoad();
+                delete map[location.href];
+                _rpSave(map);
+                btns.style.display = 'none';
+            });
+
+            btns.appendChild(continueBtn);
+            btns.appendChild(dismissBtn);
+            msg?.querySelector('.nw-bubble')?.appendChild(btns);
+        }, 1500);
+    })();
 
     // ─────────────────────────────────────────────────────────────────────────
     // INTENT ENGINE  (two-step, fully AI-driven)
@@ -1261,10 +2145,10 @@ If "all" or no specific fields mentioned, set matchedFields to ["all"].`,
 Job URL: ${location.href}
 
 --- JOB POSTING ---
-${pageContent.slice(0, 5000)}
+${pageContent.slice(0, 2000)}
 
 --- CANDIDATE RESUME ---
-${resumeText.slice(0, 3000)}
+${resumeText.slice(0, 1500)}
 
 Return ONLY a JSON object, nothing else:
 {
@@ -1541,10 +2425,10 @@ Return ONLY a JSON object, nothing else:
 `You are a career advisor. Score this job against the candidate's resume.
 ${urlLine}
 --- JOB POSTING ---
-${jobText.slice(0, 4000)}
+${jobText.slice(0, 1800)}
 
 --- CANDIDATE RESUME ---
-${resumeText.slice(0, 2500)}
+${resumeText.slice(0, 1200)}
 
 If the job posting text above is incomplete or unclear, use the Job URL to infer the role and company.
 
@@ -2077,6 +2961,363 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
+    function _downloadFile(filename, content, mimeType) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([content], { type: mimeType }));
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+
+    function renderDailyBriefing() {
+        const ts = Date.now();
+        const wrap = document.createElement('div');
+        wrap.className = 'nw-msg ai';
+
+        // Jobs needing follow-up: status saved/applied, saved >3 days ago
+        const allJobs = jtLoad();
+        const followUpJobs = allJobs.filter(j => {
+            const daysOld = (Date.now() - j.id) / 86400000;
+            return (j.status === 'saved' || j.status === 'applied') && daysOld > 3;
+        });
+
+        // Unread saved pages: saved but no re-visit recorded in read progress
+        let savedPages = spLoad();
+        let readProgress = {};
+        try { readProgress = JSON.parse(localStorage.getItem('nova_read_progress') || '{}'); } catch {}
+        const unreadPages = savedPages.filter(p => !readProgress[p.url]);
+
+        // Clips saved today
+        let clips = [];
+        try { clips = JSON.parse(localStorage.getItem('nova_clips') || '[]'); } catch {}
+        const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const todayClips = clips.filter(c => c.date === today);
+
+        const hasAnything = followUpJobs.length || unreadPages.length || todayClips.length || allJobs.length;
+
+        const bubble = document.createElement('div');
+        bubble.className = 'nw-bubble';
+        bubble.style.cssText = 'padding:0;overflow:hidden;min-width:260px;';
+        bubble.innerHTML = `
+            <div style="padding:10px 14px 8px;background:linear-gradient(135deg,#1e293b,#334155);color:white;">
+                <div style="font-size:13px;font-weight:700;">📋 Daily Briefing</div>
+                <div style="font-size:10.5px;opacity:0.75;margin-top:1px;">${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+            </div>`;
+
+        const addRow = (emoji, label, count, color, onClick) => {
+            if (!count && !onClick) return;
+            const row = document.createElement('div');
+            row.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #f8f9fa;${onClick ? 'cursor:pointer;' : ''}`;
+            row.innerHTML = `
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:15px;">${emoji}</span>
+                    <span style="font-size:12px;color:#374151;font-weight:500;">${label}</span>
+                </div>
+                <span style="padding:2px 9px;background:${color}1a;color:${color};border-radius:20px;font-size:11.5px;font-weight:700;border:1px solid ${color}33;">${count}</span>`;
+            if (onClick) {
+                row.addEventListener('click', onClick);
+                row.style.cursor = 'pointer';
+                row.addEventListener('mouseenter', () => row.style.background = '#f8f9ff');
+                row.addEventListener('mouseleave', () => row.style.background = '');
+            }
+            bubble.appendChild(row);
+        };
+
+        addRow('💼', 'Jobs to follow up', followUpJobs.length || 0, '#b45309', followUpJobs.length ? () => renderJobTracker() : null);
+        addRow('📌', 'Saved jobs total', allJobs.length, '#6366f1', () => renderJobTracker());
+        addRow('🔖', 'Unread saved pages', unreadPages.length || 0, '#0891b2', unreadPages.length ? () => renderSavedPages() : null);
+        addRow('📎', 'Clips saved today', todayClips.length || 0, '#7c3aed', todayClips.length ? () => renderClips() : null);
+
+        if (!hasAnything) {
+            bubble.insertAdjacentHTML('beforeend', '<div style="padding:12px 14px;font-size:12px;color:#6b7280;">Nothing to catch up on. Start saving jobs and pages!</div>');
+        }
+
+        const msgWrap = document.createElement('div');
+        msgWrap.className = 'nw-msg-wrap';
+        msgWrap.appendChild(bubble);
+        msgWrap.appendChild(makeTimeEl(ts));
+        wrap.appendChild(Object.assign(document.createElement('div'), { className: 'nw-avatar', textContent: 'N' }));
+        wrap.appendChild(msgWrap);
+        messagesEl.appendChild(wrap);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function renderWikiSearch(query) {
+        if (!query?.trim()) {
+            appendMsg('ai', 'What would you like to search for? Try: **"find React hooks"** or **"search my saves for Google"**');
+            return;
+        }
+        const q = query.trim().toLowerCase();
+        const ts = Date.now();
+
+        // Search jobs
+        const jobs = jtLoad().filter(j =>
+            j.title?.toLowerCase().includes(q) ||
+            j.company?.toLowerCase().includes(q) ||
+            (j.notes || '').toLowerCase().includes(q));
+
+        // Search saved pages
+        const pages = spLoad().filter(p =>
+            p.title?.toLowerCase().includes(q) ||
+            p.url?.toLowerCase().includes(q));
+
+        // Search clips
+        let clips = [];
+        try { clips = JSON.parse(localStorage.getItem('nova_clips') || '[]').filter(c =>
+            c.text?.toLowerCase().includes(q) ||
+            c.title?.toLowerCase().includes(q) ||
+            (c.annotation || '').toLowerCase().includes(q)); } catch {}
+
+        // Search recent chat history
+        const chats = chatHistory.filter(m =>
+            m.text?.toLowerCase().includes(q)).slice(0, 5);
+
+        const totalResults = jobs.length + pages.length + clips.length + chats.length;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'nw-msg ai';
+
+        if (!totalResults) {
+            wrap.innerHTML = `
+                <div class="nw-avatar">N</div>
+                <div class="nw-msg-wrap">
+                    <div class="nw-bubble">
+                        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:4px;">🔎 No results for "${esc(query)}"</div>
+                        <div style="font-size:11.5px;color:#6b7280;">Nothing found in your saved jobs, pages, or clips.</div>
+                    </div>
+                </div>`;
+            wrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(ts));
+            messagesEl.appendChild(wrap);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return;
+        }
+
+        const bubble = document.createElement('div');
+        bubble.className = 'nw-bubble';
+        bubble.style.cssText = 'padding:0;overflow:hidden;min-width:260px;';
+        bubble.innerHTML = `
+            <div style="padding:10px 14px 8px;background:linear-gradient(135deg,#0f172a,#1e293b);color:white;">
+                <div style="font-size:13px;font-weight:700;">🔎 Search: "${esc(query)}"</div>
+                <div style="font-size:10.5px;opacity:0.75;margin-top:1px;">${totalResults} result${totalResults !== 1 ? 's' : ''} across your saved data</div>
+            </div>`;
+
+        const addSection = (title, items, renderFn) => {
+            if (!items.length) return;
+            const sec = document.createElement('div');
+            sec.style.cssText = 'border-top:1px solid #f1f5f9;padding:6px 14px 4px;';
+            sec.innerHTML = `<div style="font-size:9.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;">${title}</div>`;
+            items.slice(0, 3).forEach(item => {
+                const row = document.createElement('div');
+                row.style.cssText = 'padding:4px 0;border-bottom:1px solid #f8f9fa;';
+                row.innerHTML = renderFn(item);
+                sec.appendChild(row);
+            });
+            if (items.length > 3) {
+                sec.insertAdjacentHTML('beforeend', `<div style="font-size:10.5px;color:#9ca3af;padding:3px 0;">+${items.length - 3} more</div>`);
+            }
+            bubble.appendChild(sec);
+        };
+
+        addSection('Jobs', jobs, j =>
+            `<a href="${esc(j.url)}" target="_blank" rel="noopener" style="display:block;text-decoration:none;">
+                <div style="font-size:12px;font-weight:600;color:#111827;">${esc(j.title)}</div>
+                <div style="font-size:10.5px;color:#6b7280;">${esc(j.company)} · ${esc(j.status)}</div>
+            </a>`);
+
+        addSection('Saved Pages', pages, p =>
+            `<a href="${esc(p.url)}" target="_blank" rel="noopener" style="display:block;text-decoration:none;">
+                <div style="font-size:12px;font-weight:600;color:#111827;">${esc(p.title)}</div>
+                <div style="font-size:10px;color:#9ca3af;">${esc(p.url.slice(0, 50))}${p.url.length > 50 ? '…' : ''}</div>
+            </a>`);
+
+        addSection('Clips', clips, c =>
+            `<div>
+                <div style="font-size:11.5px;color:#374151;">"${esc(c.text.slice(0, 80))}${c.text.length > 80 ? '…' : ''}"</div>
+                <div style="font-size:10px;color:#9ca3af;">${esc(c.title)}</div>
+            </div>`);
+
+        addSection('Chat history', chats, m =>
+            `<div style="font-size:11.5px;color:#374151;">${esc(m.text?.slice(0, 100) || '')}${(m.text?.length || 0) > 100 ? '…' : ''}</div>`);
+
+        const msgWrap = document.createElement('div');
+        msgWrap.className = 'nw-msg-wrap';
+        msgWrap.appendChild(bubble);
+        msgWrap.appendChild(makeTimeEl(ts));
+        wrap.appendChild(Object.assign(document.createElement('div'), { className: 'nw-avatar', textContent: 'N' }));
+        wrap.appendChild(msgWrap);
+        messagesEl.appendChild(wrap);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function renderClips(query = '') {
+        const clips = _clipsLoad();
+        const ts = Date.now();
+        const wrap = document.createElement('div');
+        wrap.className = 'nw-msg ai';
+
+        const filtered = query
+            ? clips.filter(c =>
+                c.text.toLowerCase().includes(query.toLowerCase()) ||
+                c.title.toLowerCase().includes(query.toLowerCase()) ||
+                (c.annotation || '').toLowerCase().includes(query.toLowerCase()))
+            : clips;
+
+        if (!filtered.length) {
+            wrap.innerHTML = `
+                <div class="nw-avatar">N</div>
+                <div class="nw-msg-wrap">
+                    <div class="nw-bubble">
+                        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;">📎 Saved Clips</div>
+                        <div style="font-size:12px;color:#6b7280;">${query ? `No clips match "${esc(query)}"` : 'No clips saved yet. Select text on any page and click 📎 Clip.'}</div>
+                    </div>
+                </div>`;
+            wrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(ts));
+            messagesEl.appendChild(wrap);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return;
+        }
+
+        const bubble = document.createElement('div');
+        bubble.className = 'nw-bubble';
+        bubble.style.cssText = 'padding:0;overflow:hidden;min-width:260px;';
+        bubble.innerHTML = `
+            <div style="padding:10px 14px 8px;background:linear-gradient(135deg,#0f172a,#1e293b);color:white;">
+                <div style="font-size:13px;font-weight:700;">📎 Saved Clips</div>
+                <div style="font-size:10.5px;opacity:0.75;margin-top:1px;">${filtered.length} clip${filtered.length !== 1 ? 's' : ''}${query ? ` matching "${esc(query)}"` : ''}</div>
+            </div>`;
+
+        filtered.slice(0, 8).forEach(clip => {
+            const card = document.createElement('div');
+            card.style.cssText = 'padding:9px 14px;border-bottom:1px solid #f1f5f9;';
+            card.innerHTML = `
+                <div style="font-size:11.5px;color:#1e293b;line-height:1.5;margin-bottom:4px;">"${esc(clip.text.slice(0, 120))}${clip.text.length > 120 ? '…' : ''}"</div>
+                ${clip.annotation ? `<div style="font-size:11px;color:#6366f1;margin-bottom:3px;font-style:italic;">${esc(clip.annotation)}</div>` : ''}
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="font-size:10px;color:#9ca3af;">${esc(clip.title)} · ${clip.date}</div>
+                    <div style="display:flex;gap:5px;">
+                        <a href="${esc(clip.url)}" target="_blank" rel="noopener" style="font-size:10.5px;color:#6366f1;font-weight:600;text-decoration:none;">↗</a>
+                        <button data-clip-id="${clip.id}" style="background:none;border:none;cursor:pointer;font-size:10.5px;color:#ef4444;padding:0;font-family:inherit;">✕</button>
+                    </div>
+                </div>`;
+            card.querySelector('button')?.addEventListener('click', () => {
+                const all = _clipsLoad().filter(c => c.id !== clip.id);
+                _clipsSave(all);
+                card.style.opacity = '0';
+                card.style.transition = 'opacity 0.15s';
+                setTimeout(() => card.remove(), 150);
+            });
+            bubble.appendChild(card);
+        });
+
+        if (filtered.length > 8) {
+            const more = document.createElement('div');
+            more.style.cssText = 'padding:8px 14px;font-size:11px;color:#9ca3af;text-align:center;';
+            more.textContent = `+${filtered.length - 8} more clips`;
+            bubble.appendChild(more);
+        }
+
+        const msgWrap = document.createElement('div');
+        msgWrap.className = 'nw-msg-wrap';
+        msgWrap.appendChild(bubble);
+        msgWrap.appendChild(makeTimeEl(ts));
+
+        const avatarEl = document.createElement('div');
+        avatarEl.className = 'nw-avatar';
+        avatarEl.textContent = 'N';
+
+        wrap.appendChild(avatarEl);
+        wrap.appendChild(msgWrap);
+        messagesEl.appendChild(wrap);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function renderJobComparison() {
+        const jobs = jtLoad();
+        if (jobs.length < 2) {
+            appendMsg('ai', 'You need at least 2 saved jobs to compare. Save some jobs first by saying **"save this job"** on any job posting.');
+            return;
+        }
+
+        const compareJobs = jobs.slice(0, 3); // Compare up to 3 most recent
+        const ts = Date.now();
+        const wrap = document.createElement('div');
+        wrap.className = 'nw-msg ai';
+
+        const STATUS_COLORS = { saved: '#6366f1', applied: '#0891b2', interview: '#d97706', offer: '#15803d', rejected: '#dc2626' };
+        const STATUS_BG    = { saved: '#eef2ff', applied: '#e0f2fe', interview: '#fffbeb', offer: '#f0fdf4', rejected: '#fef2f2' };
+
+        const colW = compareJobs.length === 2 ? '50%' : '33.33%';
+
+        const headerCells = compareJobs.map(j =>
+            `<th style="width:${colW};padding:8px 10px;text-align:left;border-right:1px solid #f1f5f9;vertical-align:top;">
+                <div style="font-size:12px;font-weight:700;color:#111827;line-height:1.3;">${esc(j.title)}</div>
+                <div style="font-size:10.5px;color:#6b7280;margin-top:2px;">${esc(j.company)}</div>
+            </th>`
+        ).join('');
+
+        const statusCells = compareJobs.map(j =>
+            `<td style="padding:7px 10px;border-right:1px solid #f8f9fa;vertical-align:top;">
+                <span style="padding:2px 8px;background:${STATUS_BG[j.status]||'#f1f5f9'};color:${STATUS_COLORS[j.status]||'#374151'};border-radius:20px;font-size:10.5px;font-weight:700;">${JT_LABELS[j.status]||j.status}</span>
+            </td>`
+        ).join('');
+
+        const dateCells = compareJobs.map(j =>
+            `<td style="padding:7px 10px;border-right:1px solid #f8f9fa;font-size:11px;color:#374151;vertical-align:top;">${esc(j.date)}</td>`
+        ).join('');
+
+        const notesCells = compareJobs.map(j =>
+            `<td style="padding:7px 10px;border-right:1px solid #f8f9fa;font-size:11px;color:#374151;vertical-align:top;max-width:120px;">${j.notes ? esc(j.notes.slice(0, 80)) + (j.notes.length > 80 ? '…' : '') : '<span style="color:#cbd5e1;">—</span>'}</td>`
+        ).join('');
+
+        const linkCells = compareJobs.map(j =>
+            `<td style="padding:7px 10px;border-right:1px solid #f8f9fa;vertical-align:top;">
+                <a href="${esc(j.url)}" target="_blank" rel="noopener" style="color:#6366f1;font-size:11px;font-weight:600;text-decoration:none;">↗ Open</a>
+            </td>`
+        ).join('');
+
+        wrap.innerHTML = `
+            <div class="nw-avatar">N</div>
+            <div class="nw-msg-wrap">
+                <div class="nw-bubble" style="padding:0;overflow:hidden;min-width:260px;">
+                    <div style="padding:10px 14px 8px;background:linear-gradient(135deg,#6366f1,#818cf8);color:white;">
+                        <div style="font-size:13px;font-weight:700;">⚖ Job Comparison</div>
+                        <div style="font-size:10.5px;opacity:0.85;margin-top:1px;">Comparing ${compareJobs.length} most recent jobs</div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-family:inherit;">
+                            <thead style="background:#f8f9ff;">
+                                <tr><th style="padding:6px 10px;text-align:left;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;border-right:1px solid #f1f5f9;width:60px;">Field</th>${headerCells}</tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-top:1px solid #f1f5f9;">
+                                    <td style="padding:7px 10px;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;border-right:1px solid #f1f5f9;">Status</td>
+                                    ${statusCells}
+                                </tr>
+                                <tr style="border-top:1px solid #f1f5f9;background:#fafbff;">
+                                    <td style="padding:7px 10px;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;border-right:1px solid #f1f5f9;">Saved</td>
+                                    ${dateCells}
+                                </tr>
+                                <tr style="border-top:1px solid #f1f5f9;">
+                                    <td style="padding:7px 10px;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;border-right:1px solid #f1f5f9;">Notes</td>
+                                    ${notesCells}
+                                </tr>
+                                <tr style="border-top:1px solid #f1f5f9;background:#fafbff;">
+                                    <td style="padding:7px 10px;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;border-right:1px solid #f1f5f9;">Link</td>
+                                    ${linkCells}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="padding:8px 14px;font-size:10.5px;color:#9ca3af;border-top:1px solid #f1f5f9;">Showing ${compareJobs.length} most recently saved jobs. Say <strong>"show my saved jobs"</strong> to manage all.</div>
+                </div>
+            </div>`;
+        wrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(ts));
+        messagesEl.appendChild(wrap);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
     function renderJobTracker() {
         const jobs = jtLoad();
         const wrap = document.createElement('div');
@@ -2101,7 +3342,46 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
         const bubble = document.createElement('div');
         bubble.className = 'nw-bubble';
-        bubble.innerHTML = `<div class="nw-jt-header">📋 Job Tracker (${jobs.length} job${jobs.length !== 1 ? 's' : ''})</div>`;
+        const statusCounts = JT_STATUSES.reduce((acc, s) => { acc[s] = jobs.filter(j => j.status === s).length; return acc; }, {});
+        const STATUS_COLORS = { saved: '#6366f1', applied: '#0891b2', interview: '#d97706', offer: '#15803d', rejected: '#dc2626' };
+        const STATUS_BG    = { saved: '#eef2ff', applied: '#e0f2fe', interview: '#fffbeb', offer: '#f0fdf4', rejected: '#fef2f2' };
+        const statsHtml = JT_STATUSES.filter(s => statusCounts[s] > 0).map(s =>
+            `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;background:${STATUS_BG[s]};color:${STATUS_COLORS[s]};border:1px solid ${STATUS_COLORS[s]}33;">
+                ${statusCounts[s]} ${s}
+            </span>`).join('');
+        bubble.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <div class="nw-jt-header" style="margin-bottom:0;">📋 Job Tracker (${jobs.length} job${jobs.length !== 1 ? 's' : ''})</div>
+                <div style="display:flex;gap:5px;">
+                    <button id="nw-jt-compare" style="padding:3px 9px;background:#fdf4ff;color:#7e22ce;border:1px solid #d8b4fe;border-radius:6px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit;">⚖ Compare</button>
+                    <button id="nw-jt-export-csv" style="padding:3px 9px;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:6px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit;">↓ CSV</button>
+                    <button id="nw-jt-export-json" style="padding:3px 9px;background:#eef2ff;color:#4f46e5;border:1px solid #a5b4fc;border-radius:6px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit;">↓ JSON</button>
+                </div>
+            </div>
+            ${statsHtml ? `<div style="display:flex;flex-wrap:wrap;gap:5px;padding:0 0 10px;">${statsHtml}</div>` : ''}
+        `;
+
+        // Compare button
+        bubble.querySelector('#nw-jt-compare')?.addEventListener('click', () => renderJobComparison());
+
+        // Export buttons
+        bubble.querySelector('#nw-jt-export-csv')?.addEventListener('click', () => {
+            const rows = [['Title', 'Company', 'Status', 'Date', 'URL', 'Notes']];
+            jtLoad().forEach(j => rows.push([
+                `"${(j.title || '').replace(/"/g, '""')}"`,
+                `"${(j.company || '').replace(/"/g, '""')}"`,
+                j.status || '',
+                j.date || '',
+                j.url || '',
+                `"${(j.notes || '').replace(/"/g, '""')}"`
+            ]));
+            const csv = rows.map(r => r.join(',')).join('\n');
+            _downloadFile('nova_jobs.csv', csv, 'text/csv');
+        });
+
+        bubble.querySelector('#nw-jt-export-json')?.addEventListener('click', () => {
+            _downloadFile('nova_jobs.json', JSON.stringify(jtLoad(), null, 2), 'application/json');
+        });
 
         jobs.forEach(job => {
             const card = document.createElement('div');
@@ -2144,14 +3424,93 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 }, 200);
             });
 
+            const savedMs = job.id || 0;
+            const daysOld = savedMs ? Math.floor((Date.now() - savedMs) / 86400000) : 0;
+            const staleHtml = (daysOld >= 7 && job.status === 'saved')
+                ? `<span style="margin-left:6px;padding:1px 7px;background:#fef3c7;color:#92400e;border-radius:20px;font-size:9.5px;font-weight:700;">${daysOld}d old</span>`
+                : '';
             card.innerHTML = `
-                <div class="nw-job-title">${esc(job.title)}</div>
+                <div class="nw-job-title">${esc(job.title)}${staleHtml}</div>
                 <div class="nw-job-meta">${esc(job.company)} · ${esc(job.date)}</div>
                 <div class="nw-job-actions"></div>`;
             const actions = card.querySelector('.nw-job-actions');
             actions.appendChild(statusBtn);
             actions.insertAdjacentHTML('beforeend', `<a class="nw-job-link" href="${esc(job.url)}" target="_blank" rel="noopener">↗ Open</a>`);
+
+            // Follow-up reminder button
+            const remindBtn = document.createElement('button');
+            remindBtn.className = 'nw-job-remove';
+            remindBtn.textContent = '🔔 Remind';
+            remindBtn.title = 'Set a follow-up reminder';
+            remindBtn.addEventListener('click', () => {
+                // Replace button with inline picker
+                remindBtn.style.display = 'none';
+                const picker = document.createElement('div');
+                picker.style.cssText = 'display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap;';
+                picker.innerHTML = `<span style="font-size:10.5px;color:#6b7280;">Remind in:</span>`;
+                const opts = [
+                    { label: '1d', days: 1 }, { label: '3d', days: 3 },
+                    { label: '1w', days: 7 }, { label: '2w', days: 14 }
+                ];
+                opts.forEach(o => {
+                    const btn = document.createElement('button');
+                    btn.textContent = o.label;
+                    btn.style.cssText = 'padding:2px 8px;background:#eef2ff;color:#4f46e5;border:1px solid #a5b4fc;border-radius:6px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit;';
+                    btn.addEventListener('click', () => {
+                        chrome.runtime.sendMessage({
+                            type: 'SET_REMINDER',
+                            jobId: job.id,
+                            jobTitle: job.title,
+                            delayMinutes: o.days * 24 * 60
+                        }, () => {
+                            picker.innerHTML = `<span style="font-size:10.5px;color:#15803d;font-weight:600;">✓ Reminder set for ${o.label}</span>`;
+                            setTimeout(() => { picker.remove(); remindBtn.style.display = ''; }, 2000);
+                        });
+                    });
+                    picker.appendChild(btn);
+                });
+                const cancelBtn = document.createElement('button');
+                cancelBtn.textContent = '✕';
+                cancelBtn.style.cssText = 'padding:2px 6px;background:#f8f9fa;color:#94a3b8;border:1px solid #e5e7eb;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit;';
+                cancelBtn.addEventListener('click', () => { picker.remove(); remindBtn.style.display = ''; });
+                picker.appendChild(cancelBtn);
+                card.appendChild(picker);
+            });
+
             actions.appendChild(removeBtn);
+            actions.appendChild(remindBtn);
+
+            // Notes toggle
+            const notesBtn = document.createElement('button');
+            notesBtn.className = 'nw-job-remove';
+            notesBtn.textContent = job.notes ? '📝 Notes ✓' : '📝 Notes';
+            notesBtn.title = 'Add private notes';
+
+            const notesArea = document.createElement('div');
+            notesArea.style.cssText = 'display:none;padding:6px 0 2px;';
+            notesArea.innerHTML = `<textarea placeholder="Interview notes, salary discussed, contacts..." style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #e0e7ff;border-radius:6px;font-size:11.5px;color:#1e293b;resize:vertical;min-height:52px;font-family:inherit;outline:none;background:#fafbff;">${job.notes ? esc(job.notes) : ''}</textarea>`;
+            const textarea = notesArea.querySelector('textarea');
+
+            textarea.addEventListener('blur', () => {
+                const val = textarea.value.trim();
+                const all = jtLoad();
+                const entry = all.find(j => j.id === job.id);
+                if (entry) {
+                    entry.notes = val;
+                    jtSave(all);
+                    job.notes = val;
+                    notesBtn.textContent = val ? '📝 Notes ✓' : '📝 Notes';
+                }
+            });
+
+            notesBtn.addEventListener('click', () => {
+                const open = notesArea.style.display === 'block';
+                notesArea.style.display = open ? 'none' : 'block';
+                if (!open) setTimeout(() => textarea.focus(), 50);
+            });
+
+            actions.appendChild(notesBtn);
+            card.appendChild(notesArea);
             bubble.appendChild(card);
         });
 
@@ -2168,6 +3527,196 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         wrap.appendChild(msgWrap);
         messagesEl.appendChild(wrap);
         messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // ── Resume Score ──────────────────────────────────────────────────────────
+
+    function renderResumeScore(resumeData) {
+        const ts = Date.now();
+        const checks = [
+            { key: 'name',       label: 'Full name',       val: resumeData?.basics?.name || resumeData?.name },
+            { key: 'email',      label: 'Email',            val: resumeData?.basics?.email || resumeData?.email },
+            { key: 'phone',      label: 'Phone',            val: resumeData?.basics?.phone || resumeData?.phone },
+            { key: 'location',   label: 'Location',         val: resumeData?.basics?.location || resumeData?.location },
+            { key: 'summary',    label: 'Summary/Bio',      val: resumeData?.basics?.summary || resumeData?.summary },
+            { key: 'linkedin',   label: 'LinkedIn URL',     val: resumeData?.basics?.linkedin || resumeData?.linkedin || resumeData?.basics?.profiles?.find?.(p => /linkedin/i.test(p.network))?.url },
+            { key: 'github',     label: 'GitHub/Portfolio', val: resumeData?.basics?.github || resumeData?.github || resumeData?.portfolio || resumeData?.basics?.profiles?.find?.(p => /github/i.test(p.network))?.url },
+            { key: 'experience', label: 'Work experience',  val: (resumeData?.experience || resumeData?.work || []).length },
+            { key: 'education',  label: 'Education',        val: (resumeData?.education || resumeData?.schools || []).length },
+            { key: 'skills',     label: 'Skills',           val: (resumeData?.skills || []).length },
+        ];
+        const filled = checks.filter(c => c.val && c.val !== 0).length;
+        const pct = Math.round((filled / checks.length) * 100);
+        const missing = checks.filter(c => !c.val || c.val === 0).map(c => c.label);
+
+        const color = pct >= 80 ? '#15803d' : pct >= 50 ? '#b45309' : '#dc2626';
+        const bg    = pct >= 80 ? '#f0fdf4' : pct >= 50 ? '#fffbeb' : '#fef2f2';
+        const border= pct >= 80 ? '#bbf7d0' : pct >= 50 ? '#fde68a' : '#fecaca';
+        const emoji = pct >= 80 ? '🟢' : pct >= 50 ? '🟡' : '🔴';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'nw-msg ai';
+        wrap.innerHTML = `
+            <div class="nw-avatar">N</div>
+            <div class="nw-msg-wrap">
+                <div class="nw-bubble" style="padding:0;overflow:hidden;min-width:240px;">
+                    <div style="padding:12px 14px 10px;border-bottom:1px solid #f3f4f6;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="flex:1;">
+                                <div style="font-size:13px;font-weight:700;color:#111827;">Profile Completeness</div>
+                                <div style="font-size:11px;color:#6b7280;margin-top:2px;">${filled}/${checks.length} sections filled</div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:${bg};border:1.5px solid ${border};border-radius:10px;">
+                                <span style="font-size:15px;">${emoji}</span>
+                                <span style="font-size:18px;font-weight:800;color:${color};">${pct}%</span>
+                            </div>
+                        </div>
+                        <div style="margin-top:10px;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;">
+                            <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width 0.6s ease;"></div>
+                        </div>
+                    </div>
+                    ${missing.length ? `
+                    <div style="padding:10px 14px;">
+                        <div style="font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Missing</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+                            ${missing.map(m => `<span style="padding:2px 9px;background:#fef2f2;border:1px solid #fecaca;border-radius:20px;font-size:11px;color:#dc2626;font-weight:500;">${m}</span>`).join('')}
+                        </div>
+                        <button style="margin-top:10px;width:100%;padding:7px 0;background:#6366f1;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;" onclick="chrome.runtime.sendMessage({type:'OPEN_OPTIONS'})">⚙️ Complete Profile</button>
+                    </div>` : `<div style="padding:10px 14px;font-size:12px;color:#15803d;">✓ Your profile looks complete!</div>`}
+                </div>
+            </div>`;
+        wrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(ts));
+        messagesEl.appendChild(wrap);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // ── Keyword Gap Overlay ───────────────────────────────────────────────────
+    function renderKeywordOverlay() {
+        // Extract page text (job description)
+        const clone = document.body.cloneNode(true);
+        clone.querySelectorAll(`script, style, #nova-chat-widget`).forEach(el => el.remove());
+        const pageText = (clone.innerText || clone.textContent || '').toLowerCase().replace(/\s+/g, ' ');
+
+        // Extract keywords from page — nouns, tech words, role titles
+        const stopwords = new Set(['and','the','for','with','you','your','our','will','have','this','that','are','from','which','their','they','must','about','more','also','can','all','any','its','into','been','has','was','not','but','per','use','who','how','what','when','where','why','one','two','new','get','let','set','put','see','may','each','both','such','than','over','after','before','while','these','those','other','some','very','just','even','then','there','here','been','have','were','work','team','role','job','time','year','years','day','days','able','make','take','give','come','need','help','well','good','best','high','low','first','last','next','many','much','way','ways']);
+        const words = pageText.match(/\b[a-z][a-z0-9+#.\-]{2,}\b/g) || [];
+        const freq = {};
+        words.forEach(w => { if (!stopwords.has(w)) freq[w] = (freq[w] || 0) + 1; });
+        // Top 30 keywords by frequency
+        const topKw = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 30).map(([w]) => w);
+
+        // Remove existing overlay
+        document.getElementById('nova-kw-overlay')?.remove();
+
+        chrome.runtime.sendMessage({ type: 'GET_RESUME_TEXT' }, result => {
+            const resumeText = (result?.text || '').toLowerCase();
+            if (!resumeText) {
+                appendMsg('ai', '⚠️ No resume found. Add your profile in Settings first to compare keywords.');
+                return;
+            }
+
+            const matched = topKw.filter(k => resumeText.includes(k));
+            const missing = topKw.filter(k => !resumeText.includes(k));
+            const matchPct = topKw.length ? Math.round((matched.length / topKw.length) * 100) : 0;
+            const color = matchPct >= 70 ? '#15803d' : matchPct >= 40 ? '#b45309' : '#dc2626';
+
+            // Show summary in chat
+            const ts = Date.now();
+            const wrap = document.createElement('div');
+            wrap.className = 'nw-msg ai';
+            wrap.innerHTML = `
+                <div class="nw-avatar">N</div>
+                <div class="nw-msg-wrap">
+                    <div class="nw-bubble" style="padding:0;overflow:hidden;min-width:260px;">
+                        <div style="padding:10px 14px 8px;background:linear-gradient(135deg,#6366f1,#818cf8);color:white;">
+                            <div style="font-size:13px;font-weight:700;">🔍 Keyword Match</div>
+                            <div style="font-size:11px;opacity:0.85;margin-top:2px;">${matched.length}/${topKw.length} keywords matched — <strong style="color:white;">${matchPct}%</strong></div>
+                        </div>
+                        <div style="padding:10px 14px;">
+                            <div style="font-size:10.5px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;">✓ In your resume</div>
+                            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+                                ${matched.slice(0, 15).map(k => `<span style="padding:2px 8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;font-size:11px;color:#15803d;">${k}</span>`).join('')}
+                            </div>
+                            <div style="font-size:10.5px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;">✗ Missing from resume</div>
+                            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                                ${missing.slice(0, 15).map(k => `<span style="padding:2px 8px;background:#fef2f2;border:1px solid #fecaca;border-radius:20px;font-size:11px;color:#dc2626;">${k}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div style="padding:0 14px 10px;">
+                            <button id="nova-kw-highlight-btn" style="width:100%;padding:7px 0;background:#6366f1;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Highlight on page</button>
+                        </div>
+                    </div>
+                </div>`;
+            wrap.querySelector('.nw-msg-wrap').appendChild(makeTimeEl(ts));
+            messagesEl.appendChild(wrap);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+            // Highlight button — inject overlay on page
+            wrap.querySelector('#nova-kw-highlight-btn')?.addEventListener('click', () => {
+                document.getElementById('nova-kw-overlay')?.remove();
+                const overlay = document.createElement('div');
+                overlay.id = 'nova-kw-overlay';
+                overlay.style.cssText = 'position:fixed;top:70px;right:16px;z-index:2147483646;width:220px;max-height:60vh;overflow-y:auto;background:white;border:1.5px solid #e0e7ff;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.15);font-family:-apple-system,sans-serif;';
+                overlay.innerHTML = `
+                    <div style="padding:8px 12px 6px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:12px;font-weight:700;color:white;">Keyword Overlay</span>
+                        <button id="nova-kw-close" style="background:none;border:none;color:white;cursor:pointer;font-size:14px;padding:0;line-height:1;">✕</button>
+                    </div>
+                    <div style="padding:8px 10px;">
+                        <div style="font-size:9.5px;font-weight:700;color:#15803d;text-transform:uppercase;margin-bottom:4px;">✓ Matched (${matched.length})</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px;">${matched.map(k => `<span style="padding:1px 7px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;font-size:10.5px;color:#15803d;">${k}</span>`).join('')}</div>
+                        <div style="font-size:9.5px;font-weight:700;color:#dc2626;text-transform:uppercase;margin-bottom:4px;">✗ Missing (${missing.length})</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:3px;">${missing.map(k => `<span style="padding:1px 7px;background:#fef2f2;border:1px solid #fecaca;border-radius:20px;font-size:10.5px;color:#dc2626;">${k}</span>`).join('')}</div>
+                    </div>`;
+                document.body.appendChild(overlay);
+                overlay.querySelector('#nova-kw-close')?.addEventListener('click', () => overlay.remove());
+
+                // Highlight matched keywords in page body text
+                _kwHighlightPage(matched, missing);
+            });
+        });
+    }
+
+    function _kwHighlightPage(matched, missing) {
+        // Remove previous highlights
+        document.querySelectorAll('.nova-kw-hl').forEach(el => {
+            el.outerHTML = el.textContent;
+        });
+        const all = [...matched, ...missing];
+        if (!all.length) return;
+        const pattern = new RegExp(`\\b(${all.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`, 'gi');
+        const matchedSet = new Set(matched);
+        // Walk text nodes in body (skip widget)
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+            acceptNode: n => {
+                if (n.parentElement?.closest('#nova-chat-widget')) return NodeFilter.FILTER_REJECT;
+                if (n.parentElement?.closest('script,style,textarea,input')) return NodeFilter.FILTER_REJECT;
+                if (!n.textContent.trim()) return NodeFilter.FILTER_SKIP;
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node => {
+            if (!pattern.test(node.textContent)) return;
+            pattern.lastIndex = 0;
+            const frag = document.createDocumentFragment();
+            let last = 0, m;
+            while ((m = pattern.exec(node.textContent)) !== null) {
+                if (m.index > last) frag.appendChild(document.createTextNode(node.textContent.slice(last, m.index)));
+                const span = document.createElement('span');
+                span.className = 'nova-kw-hl';
+                const isMatch = matchedSet.has(m[0].toLowerCase());
+                span.style.cssText = isMatch
+                    ? 'background:#bbf7d0;color:#14532d;border-radius:3px;padding:0 2px;'
+                    : 'background:#fecaca;color:#7f1d1d;border-radius:3px;padding:0 2px;';
+                span.textContent = m[0];
+                frag.appendChild(span);
+                last = m.index + m[0].length;
+            }
+            if (last < node.textContent.length) frag.appendChild(document.createTextNode(node.textContent.slice(last)));
+            node.parentNode.replaceChild(frag, node);
+        });
     }
 
     // ── Saved Pages ───────────────────────────────────────────────────────────
@@ -2206,10 +3755,10 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     // For content intents: AI generates the actual response
     async function resolveContent(intent, userText) {
         const ctx = pageContent
-            ? `--- Page content ---\n${pageContent.slice(0, 6000)}\n---\n\n`
+            ? `--- Page content ---\n${pageContent.slice(0, 2500)}\n---\n\n`
             : '';
         const history = chatHistory.slice(-4)
-            .map(m => `${m.role === 'user' ? 'User' : 'Nova'}: ${m.text}`)
+            .map(m => `${m.role === 'user' ? 'User' : 'Nova'}: ${(m.text || '').slice(0, 200)}`)
             .join('\n');
 
         let prompt;
@@ -2227,14 +3776,14 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             // chat
             const needsPage = pageContent && /\b(page|this|here|content|article|post|job|profile)\b/i.test(userText);
             const scanCtx = _lastScanResults && _lastScanResults.length
-                ? `--- Recent job scan results ---\n${_lastScanResults.map((j, i) =>
-                    `${i + 1}. ${j.title} — ${j.score}/10\n   Match: ${j.match || 'N/A'}\n   Gap: ${j.gap || 'N/A'}\n   URL: ${j.url}`
+                ? `--- Recent job scan results ---\n${_lastScanResults.slice(0, 5).map((j, i) =>
+                    `${i + 1}. ${j.title} — ${j.score}/10`
                   ).join('\n')}\n---\n\n`
                 : '';
             prompt = `${scanCtx}${needsPage ? ctx : ''}${history ? history + '\n' : ''}User: ${userText}`;
         }
 
-        return callAI(prompt, NOVA_SYSTEM);
+        return callAI(prompt, NOVA_SYSTEM, { intent: intent.intent });
     }
 
     // ── Action handlers ───────────────────────────────────────────────────────
@@ -2341,13 +3890,17 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 }
 
                 // Build field list with labels
-                const fields = rawFields.slice(0, 14).map(el => ({
+                const allMappedFields = rawFields.slice(0, 14).map(el => ({
                     el,
                     id: el.id || el.name || '',
+                    alreadyFilled: !!(el.value && el.value.trim() && !el.classList.contains('nova-filled')),
                     label: (document.querySelector(`label[for="${el.id}"]`)?.textContent?.trim()
                         || el.getAttribute('aria-label') || el.placeholder || el.name || el.id || el.type)
                         .replace(/[*:]/g, '').trim()
                 })).filter(f => f.label);
+
+                const preFilledCount = allMappedFields.filter(f => f.alreadyFilled).length;
+                const fields = allMappedFields.filter(f => !f.alreadyFilled);
 
                 const fillCardId = 'nw-fill-card-' + Date.now();
                 const fillTs = Date.now();
@@ -2366,10 +3919,12 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 // Field row — used in both preview and active fill states
                 const mkRows = (prefix) => fields.map(f => {
                     const rid = `${prefix}-${f.id.replace(/[^a-z0-9]/gi, '_')}`;
+                    const isRequired = f.el.required || f.el.getAttribute('aria-required') === 'true' ||
+                        document.querySelector(`label[for="${f.el.id}"]`)?.textContent?.includes('*');
                     return `<div id="${rid}" style="display:flex;align-items:center;gap:10px;padding:7px 16px;border-bottom:1px solid #f1f5f9;transition:background 0.15s;">
                         <span id="${rid}-dot" style="width:7px;height:7px;border-radius:50%;background:#e2e8f0;flex-shrink:0;transition:all 0.25s;"></span>
                         <span style="color:#64748b;flex-shrink:0;display:flex;align-items:center;">${_fieldIcon(f.el)}</span>
-                        <span style="font-size:12px;color:#1e293b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">${esc(f.label)}</span>
+                        <span style="font-size:12px;color:#1e293b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">${esc(f.label)}${isRequired ? '<span style="color:#ef4444;margin-left:3px;font-size:10px;">*</span>' : ''}</span>
                         <span id="${rid}-val" style="font-size:10.5px;color:#94a3b8;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
                     </div>`;
                 }).join('');
@@ -2406,7 +3961,9 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                                         </div>
                                         <div>
                                             <div style="font-size:13px;font-weight:700;color:white;letter-spacing:-0.1px;">Application Form</div>
-                                            <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:1px;">${fields.length} field${fields.length !== 1 ? 's' : ''} detected</div>
+                                            <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:1px;">
+                                                ${fields.length} field${fields.length !== 1 ? 's' : ''} to fill${preFilledCount > 0 ? ` · ${preFilledCount} already filled` : ''} · ${allMappedFields.length <= 5 ? '🟢 Simple' : allMappedFields.length <= 10 ? '🟡 Moderate' : '🔴 Complex'}
+                                            </div>
                                         </div>
                                         <div style="margin-left:auto;background:rgba(255,255,255,0.2);padding:3px 9px;border-radius:20px;font-size:10.5px;color:white;font-weight:600;">Ready</div>
                                     </div>
@@ -3121,6 +4678,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                                 window._novaTeardownWatchers();
                                 window._novaTeardownWatchers = null;
                             }
+                            _autosaveStop();
                             window._novaFillCardId      = null;
                             window._novaFillStats       = null;
                             window._novaOnFillComplete  = null;
@@ -3133,6 +4691,46 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                             window._novaOrigShowWidget = window._novaOrigUpdateProgress =
                                 window._novaOrigShowSidebar = window._novaOrigShowSuccessToast =
                                 window._novaOrigTriggerConfetti = null;
+                            // Record this domain was filled for quick-refill chip (Feature 10)
+                            try {
+                                const fh = JSON.parse(localStorage.getItem('nova_domain_fills') || '{}');
+                                const host = location.hostname.replace('www.', '');
+                                fh[host] = { ts: Date.now(), fieldCount: filledCount };
+                                localStorage.setItem('nova_domain_fills', JSON.stringify(fh));
+                            } catch {}
+                            // Prompt user to save this job after a successful fill
+                            if (filledCount > 0) {
+                                try {
+                                    const jobs = jtLoad();
+                                    const alreadySaved = jobs.some(j => j.url === location.href);
+                                    if (!alreadySaved) {
+                                        const { title, company } = extractJobInfo();
+                                        setTimeout(() => {
+                                            const toastWrap = appendMsg('ai', `Great work! Want to save **${title}** to your job tracker?`);
+                                            const btns = document.createElement('div');
+                                            btns.style.cssText = 'display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;';
+                                            const saveBtn = document.createElement('button');
+                                            saveBtn.textContent = '💾 Save as Applied';
+                                            saveBtn.style.cssText = 'padding:5px 12px;background:#6366f1;color:white;border:none;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;';
+                                            saveBtn.addEventListener('click', () => {
+                                                const all = jtLoad();
+                                                if (!all.some(j => j.url === location.href)) {
+                                                    all.unshift({ id: Date.now(), title, company, url: location.href, date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), status: 'applied' });
+                                                    jtSave(all);
+                                                }
+                                                btns.innerHTML = '<span style="font-size:11.5px;color:#15803d;font-weight:600;">✓ Saved to tracker as Applied</span>';
+                                            });
+                                            const skipBtn = document.createElement('button');
+                                            skipBtn.textContent = 'Skip';
+                                            skipBtn.style.cssText = 'padding:5px 12px;background:#f1f5f9;color:#374151;border:1px solid #e5e7eb;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;';
+                                            skipBtn.addEventListener('click', () => btns.style.display = 'none');
+                                            btns.appendChild(saveBtn);
+                                            btns.appendChild(skipBtn);
+                                            toastWrap?.querySelector('.nw-bubble')?.appendChild(btns);
+                                        }, 800);
+                                    }
+                                } catch {}
+                            }
                         };
                     };
 
@@ -3149,6 +4747,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                         }
                     };
 
+                    _autosaveStart();
                     if (window.__NOVA_LOADED && window.FormProcessor) {
                         _doFill();
                     } else if (typeof loadAllScripts === 'function') {
@@ -3206,11 +4805,83 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 break;
             }
 
+            case 'daily_briefing': {
+                removeThinking(thinkId);
+                renderDailyBriefing();
+                chatHistory.push({ role: 'ai', text: 'Showing daily briefing.', ts: Date.now() });
+                return;
+            }
+
+            case 'wiki_search': {
+                removeThinking(thinkId);
+                renderWikiSearch(intent.query || '');
+                chatHistory.push({ role: 'ai', text: `Searched for "${intent.query}".`, ts: Date.now() });
+                return;
+            }
+
+            case 'list_clips': {
+                const q = intent.query || '';
+                renderClips(q);
+                chatHistory.push({ role: 'ai', text: `Showing saved clips${q ? ` matching "${q}"` : ''}.`, ts: Date.now() });
+                break;
+            }
+
+            case 'save_clip': {
+                const sel = window.getSelection()?.toString().trim();
+                if (sel && sel.length > 10) {
+                    _saveClip(sel, document.title, location.href);
+                    appendMsg('ai', `📎 Clipped "${sel.slice(0, 60)}${sel.length > 60 ? '…' : ''}" from this page.`);
+                } else {
+                    appendMsg('ai', 'Please select some text on the page first, then say "clip this".');
+                }
+                chatHistory.push({ role: 'ai', text: 'Clip saved.', ts: Date.now() });
+                break;
+            }
+
+            case 'compare_jobs': {
+                renderJobComparison();
+                chatHistory.push({ role: 'ai', text: 'Opened job comparison.', ts: Date.now() });
+                break;
+            }
+
+            case 'export_jobs': {
+                const jobs = jtLoad();
+                if (!jobs.length) {
+                    appendMsg('ai', 'No jobs in tracker to export yet.');
+                } else {
+                    _downloadFile('nova_jobs.csv',
+                        ['Title,Company,Status,Date,URL,Notes',
+                         ...jobs.map(j => `"${(j.title||'').replace(/"/g,'""')}","${(j.company||'').replace(/"/g,'""')}",${j.status||''},${j.date||''},${j.url||''},"${(j.notes||'').replace(/"/g,'""')}"`)]
+                        .join('\n'), 'text/csv');
+                    appendMsg('ai', `✅ Exported ${jobs.length} job${jobs.length !== 1 ? 's' : ''} as CSV.`);
+                    chatHistory.push({ role: 'ai', text: `Exported ${jobs.length} jobs as CSV.`, ts: Date.now() });
+                }
+                break;
+            }
+
             case 'list_jobs': {
                 renderJobTracker();
                 const jobs = jtLoad();
                 chatHistory.push({ role: 'ai', text: `Showing job tracker (${jobs.length} jobs).`, ts: Date.now() });
                 break;
+            }
+
+            case 'keyword_match': {
+                renderKeywordOverlay();
+                chatHistory.push({ role: 'ai', text: 'Analyzed keyword match.', ts: Date.now() });
+                break;
+            }
+
+            case 'profile_score': {
+                chrome.runtime.sendMessage({ type: 'GET_RESUME' }, result => {
+                    removeThinking(thinkId);
+                    if (!result?.success || !result.data) {
+                        appendMsg('ai', '⚠️ No profile found. Please add your resume in Settings first.');
+                    } else {
+                        renderResumeScore(result.data);
+                    }
+                });
+                return;
             }
 
             case 'save_page': {
@@ -3243,14 +4914,14 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     }
 
     // Single AI call function used for all AI-generated responses
-    async function callAI(prompt, systemInstruction) {
+    async function callAI(prompt, systemInstruction, extraOpts = {}) {
         return new Promise((resolve, reject) => {
             try {
                 chrome.runtime.sendMessage({
                     type: 'AI_REQUEST',
                     prompt,
                     systemInstruction,
-                    options: { maxTokens: 1024, temperature: 0.7, provider: activeProvider }
+                    options: { maxTokens: 512, temperature: 0.7, provider: activeProvider, ...extraOpts }
                 }, result => {
                     const err = chrome.runtime.lastError;
                     if (err) {
@@ -3352,6 +5023,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             console.error('[Nova widget] AI error:', msg);
         } finally {
             isThinking = false;
+            if (chatHistory.length >= 5) _updateSummaryChip();
         }
     }
 

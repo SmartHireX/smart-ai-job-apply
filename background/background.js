@@ -337,9 +337,58 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // keep message channel open for async sendResponse
     }
 
+    if (message.type === 'GET_GROQ_CONFIG') {
+        (async () => {
+            try {
+                const cfg = await self.AIClient.getGroqConfig?.();
+                sendResponse(cfg ? { key: cfg.key, model: cfg.model } : null);
+            } catch {
+                sendResponse(null);
+            }
+        })();
+        return true;
+    }
+
+    if (message.type === 'SET_REMINDER') {
+        const { jobId, jobTitle, delayMinutes } = message;
+        const alarmName = `nova_reminder_${jobId}`;
+        chrome.alarms.create(alarmName, { delayInMinutes: delayMinutes });
+        // Store alarm metadata
+        chrome.storage.local.get(['nova_reminders'], r => {
+            const reminders = r.nova_reminders || {};
+            reminders[alarmName] = { jobTitle, jobId, ts: Date.now() };
+            chrome.storage.local.set({ nova_reminders: reminders });
+        });
+        sendResponse({ success: true });
+        return false;
+    }
+
     if (message.type === 'OPEN_OPTIONS') {
         chrome.runtime.openOptionsPage();
         return false;
+    }
+
+    // Enable/disable YouTube network-level ad blocking via declarativeNetRequest
+    if (message.type === 'TOGGLE_YT_ADBLOCK') {
+        (async () => {
+            try {
+                if (message.enable) {
+                    await chrome.declarativeNetRequest.updateEnabledRulesets({
+                        enableRulesetIds: ['yt_adblock'],
+                        disableRulesetIds: []
+                    });
+                } else {
+                    await chrome.declarativeNetRequest.updateEnabledRulesets({
+                        enableRulesetIds: [],
+                        disableRulesetIds: ['yt_adblock']
+                    });
+                }
+                sendResponse({ success: true });
+            } catch (e) {
+                sendResponse({ success: false, error: e.message });
+            }
+        })();
+        return true;
     }
 
     // Navigate the active tab to a URL (proper MV3 pattern — avoids CSP issues)
@@ -378,6 +427,25 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 // Recreate on service worker startup (context menus don't persist across restarts)
 chrome.runtime.onStartup.addListener(createContextMenu);
+
+chrome.alarms.onAlarm.addListener(alarm => {
+    if (!alarm.name.startsWith('nova_reminder_')) return;
+    chrome.storage.local.get(['nova_reminders'], r => {
+        const reminder = r.nova_reminders?.[alarm.name];
+        const title = reminder?.jobTitle || 'a job';
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'icons/icon48.png',
+            title: 'Nova Apply — Follow-up Reminder',
+            message: `Time to follow up on "${title}". Open Nova to update your tracker.`,
+            priority: 1
+        });
+        // Clean up reminder
+        const reminders = r.nova_reminders || {};
+        delete reminders[alarm.name];
+        chrome.storage.local.set({ nova_reminders: reminders });
+    });
+});
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId !== 'nova-ask-selection') return;

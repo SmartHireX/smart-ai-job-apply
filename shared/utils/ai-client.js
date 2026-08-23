@@ -752,9 +752,29 @@ async function callGroq(prompt, systemInstruction = '', options = {}) {
  * Main AI call function — uses the provider specified in options.provider
  * ('gemini' | 'groq'), defaults to 'gemini'
  */
+// Intents that are cheap/general — route to Groq when available to save Gemini quota
+const GROQ_ELIGIBLE_INTENTS = new Set([
+    'summarize', 'explain', 'extract', 'translate', 'write', 'chat',
+    'scroll', 'copy', 'keyword_match'
+]);
+
 async function callAI(prompt, systemInstruction = '', options = {}) {
     const provider = options.provider || 'gemini';
+
+    // Explicit Groq request
     if (provider === 'groq') return callGroq(prompt, systemInstruction, options);
+
+    // Smart routing: use Groq for lightweight intents if a Groq key is configured
+    // Heavy intents (compatibility, fill AI, scan scoring) always go to Gemini
+    if (provider !== 'gemini_only' && options.intent && GROQ_ELIGIBLE_INTENTS.has(options.intent)) {
+        const groqCfg = await getGroqConfig();
+        if (groqCfg?.key) {
+            const result = await callGroq(prompt, systemInstruction, options);
+            if (result.success) return result;
+            // Groq failed — fall through to Gemini
+        }
+    }
+
     return callGemini(prompt, systemInstruction, options);
 }
 
