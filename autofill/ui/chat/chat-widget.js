@@ -1767,93 +1767,6 @@
                 </div>
             </div>
         </div>
-        <!-- Sessions panel (slides in from left) -->
-        <div class="nw-sessions-panel" id="nw-sessions-panel">
-            <div class="nw-sessions-header">
-                <button class="nw-sessions-back" id="nw-sessions-back">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <div class="nw-sessions-title">Chat Sessions</div>
-                <button class="nw-sessions-new" id="nw-sessions-new">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    New chat
-                </button>
-            </div>
-            <div class="nw-sessions-list" id="nw-sessions-list"></div>
-        </div>
-        <!-- Notepad panel (slides over chat) -->
-        <div class="nw-np-panel" id="nw-np-panel">
-            <div class="nw-np-panel-header">
-                <button class="nw-np-panel-back" id="nw-np-panel-back">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <div class="nw-np-panel-title">🗒 Notepad</div>
-                <span class="nw-np-panel-badge" id="nw-np-panel-badge">0 notes</span>
-                <button class="nw-np-panel-new" id="nw-np-panel-new">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    New note
-                </button>
-            </div>
-            <div class="nw-np-body">
-                <div class="nw-np-sidebar">
-                    <div class="nw-np-search-wrap">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <input class="nw-np-search-input" id="nw-np-search" placeholder="Search…" autocomplete="off"/>
-                    </div>
-                    <div class="nw-np-section-label">Notes</div>
-                    <div class="nw-np-list" id="nw-np-list"></div>
-                </div>
-                <div class="nw-np-editor" id="nw-np-editor"></div>
-            </div>
-        </div>
-        <!-- Clipboard history panel (slides over chat) -->
-        <div class="nw-cb-panel" id="nw-cb-panel">
-            <div class="nw-cb-panel-header">
-                <button class="nw-cb-panel-back" id="nw-cb-back">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <div class="nw-cb-panel-title">📋 Clipboard History</div>
-                <div class="nw-cb-count" id="nw-cb-count"></div>
-            </div>
-            <div class="nw-cb-search">
-                <div class="nw-cb-search-inner">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" id="nw-cb-search" placeholder="Search copies…" autocomplete="off"/>
-                </div>
-            </div>
-            <div class="nw-cb-list" id="nw-cb-list"></div>
-        </div>
-        <!-- Sticky Notes panel (slides over chat) -->
-        <div class="nw-sn-panel" id="nw-sn-panel">
-            <div class="nw-sn-panel-header">
-                <button class="nw-sn-panel-back" id="nw-sn-panel-back">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <div class="nw-sn-panel-title">📝 Sticky Notes</div>
-                <div class="nw-sn-panel-count" id="nw-sn-panel-count"></div>
-            </div>
-            <div class="nw-sn-toolbar">
-                <div class="nw-sn-search-wrap">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input class="nw-sn-search-input" id="nw-sn-search" placeholder="Search notes…" autocomplete="off"/>
-                </div>
-                <div class="nw-sn-tag-filters" id="nw-sn-tag-filters"></div>
-            </div>
-            <div class="nw-sn-list" id="nw-sn-list"></div>
-        </div>
-        <!-- Saved pages panel (slides over chat) -->
-        <div class="nw-sp-panel" id="nw-sp-panel">
-            <div class="nw-sp-panel-header">
-                <button class="nw-sp-panel-back" id="nw-sp-back">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <div class="nw-sp-panel-title">🔖 Saved Pages</div>
-                <div class="nw-sp-panel-count" id="nw-sp-count"></div>
-            </div>
-            <div class="nw-sp-list" id="nw-sp-list"></div>
-        </div>
-        <div class="nw-save-toast" id="nw-save-toast"></div>
-
         <div class="nw-context">
             <div class="nw-context-dot"></div>
             <div class="nw-context-text" id="nw-page-title">Loading...</div>
@@ -1882,6 +1795,94 @@
                 </button>
             </div>
         </div>
+
+        <!-- ── Overlay panels — placed last so they paint above all flex children ── -->
+        <!-- Sessions panel (slides in from left) -->
+        <div class="nw-sessions-panel" id="nw-sessions-panel">
+            <div class="nw-sessions-header">
+                <button class="nw-sessions-back" id="nw-sessions-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="nw-sessions-title">Chat Sessions</div>
+                <button class="nw-sessions-new" id="nw-sessions-new">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New chat
+                </button>
+            </div>
+            <div class="nw-sessions-list" id="nw-sessions-list"></div>
+        </div>
+        <!-- Clipboard history panel -->
+        <div class="nw-cb-panel" id="nw-cb-panel">
+            <div class="nw-cb-panel-header">
+                <button class="nw-cb-panel-back" id="nw-cb-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="nw-cb-panel-title">📋 Clipboard History</div>
+                <div class="nw-cb-count" id="nw-cb-count"></div>
+            </div>
+            <div class="nw-cb-search">
+                <div class="nw-cb-search-inner">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="nw-cb-search" placeholder="Search copies…" autocomplete="off"/>
+                </div>
+            </div>
+            <div class="nw-cb-list" id="nw-cb-list"></div>
+        </div>
+        <!-- Sticky Notes panel -->
+        <div class="nw-sn-panel" id="nw-sn-panel">
+            <div class="nw-sn-panel-header">
+                <button class="nw-sn-panel-back" id="nw-sn-panel-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="nw-sn-panel-title">📝 Sticky Notes</div>
+                <div class="nw-sn-panel-count" id="nw-sn-panel-count"></div>
+            </div>
+            <div class="nw-sn-toolbar">
+                <div class="nw-sn-search-wrap">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input class="nw-sn-search-input" id="nw-sn-search" placeholder="Search notes…" autocomplete="off"/>
+                </div>
+                <div class="nw-sn-tag-filters" id="nw-sn-tag-filters"></div>
+            </div>
+            <div class="nw-sn-list" id="nw-sn-list"></div>
+        </div>
+        <!-- Saved pages panel -->
+        <div class="nw-sp-panel" id="nw-sp-panel">
+            <div class="nw-sp-panel-header">
+                <button class="nw-sp-panel-back" id="nw-sp-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="nw-sp-panel-title">🔖 Saved Pages</div>
+                <div class="nw-sp-panel-count" id="nw-sp-count"></div>
+            </div>
+            <div class="nw-sp-list" id="nw-sp-list"></div>
+        </div>
+        <!-- Notepad panel — last so it's always on top -->
+        <div class="nw-np-panel" id="nw-np-panel">
+            <div class="nw-np-panel-header">
+                <button class="nw-np-panel-back" id="nw-np-panel-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="nw-np-panel-title">🗒 Notepad</div>
+                <span class="nw-np-panel-badge" id="nw-np-panel-badge">0 notes</span>
+                <button class="nw-np-panel-new" id="nw-np-panel-new">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New note
+                </button>
+            </div>
+            <div class="nw-np-body">
+                <div class="nw-np-sidebar">
+                    <div class="nw-np-search-wrap">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input class="nw-np-search-input" id="nw-np-search" placeholder="Search…" autocomplete="off"/>
+                    </div>
+                    <div class="nw-np-section-label">Notes</div>
+                    <div class="nw-np-list" id="nw-np-list"></div>
+                </div>
+                <div class="nw-np-editor" id="nw-np-editor"></div>
+            </div>
+        </div>
+        <div class="nw-save-toast" id="nw-save-toast"></div>
     `;
     document.body.appendChild(widget);
 
