@@ -7180,7 +7180,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
     // Sticky note chip is rendered in renderChips() above — no separate nudge needed
 
-    document.getElementById('nw-menu-sticky').addEventListener('click', () => { closeMenu(); _snOpen(); });
+    document.getElementById('nw-menu-sticky').addEventListener('click', () => { closeMenu(); openSnPanel(); });
 
     // ── Nova Notepad (integrated panel) ──────────────────────────────────────
     const NP_STORAGE_KEY = 'nova_notepad';
