@@ -4646,7 +4646,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         const wantsNotes     = /\b(note|notes?|notepad|wrote|saved note|my notes?|from my notes?)\b/i.test(uLow)
             || intentType === 'chat';
 
-        const wantsPages     = /\b(saved page|bookmark|reading list|saved link|article I saved)\b/i.test(uLow)
+        const wantsPages     = /\b(saved pages?|bookmarks?|reading list|saved links?|articles? I saved|my pages?)\b/i.test(uLow)
             || intentType === 'list_pages';
 
         const wantsClips     = /\b(clip|clips?|clipping|saved text|saved clip)\b/i.test(uLow)
@@ -5943,8 +5943,11 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 return;
             }
 
-            const NAV_PATTERN = /\b(open|go to|take me to|navigate to|visit|show me|bring me to|launch)\b|\bmy (profile|account|settings|dashboard|inbox|messages|notifications|jobs|feed|network|connections|page|resume)\b/i;
-            const isNav = NAV_PATTERN.test(text);
+            // Nav pattern: must look like a navigation intent, not a data/info request.
+            // Exclude messages asking about saved data, notes, clipboard, or asking for summaries.
+            const DATA_QUERY = /\b(summar|show|list|what|tell|give|find|search|summary|briefing|clipboard|saved|notes?|clips?|pages?|copied|history)\b/i;
+            const NAV_PATTERN = /\b(open|go to|take me to|navigate to|visit|bring me to|launch)\b|\bmy (profile|account|settings|dashboard|inbox|notifications|feed|network|connections|resume)\b/i;
+            const isNav = NAV_PATTERN.test(text) && !DATA_QUERY.test(text);
             console.log(`[Nova v${WIDGET_VERSION}] doSend: "${text}" | navPattern=${isNav}`);
 
             if (isNav) {
