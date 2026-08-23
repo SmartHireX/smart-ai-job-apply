@@ -2866,6 +2866,89 @@
     // ─────────────────────────────────────────────────────────────────────────
 
     // ── Step 1: Classify intent ───────────────────────────────────────────────
+    // Regex-based intent classifier — used as fallback when AI call fails
+    function classifyIntentRegex(userText) {
+        const t = userText.toLowerCase().trim();
+
+        // Navigation
+        if (/\b(go to|take me to|navigate to|visit|bring me to|launch)\b/i.test(t) &&
+            !/\b(summar|saved|notes?|clips?|pages?|clipboard|copied)\b/i.test(t))
+            return { intent: 'navigate', destination: userText };
+
+        // Search
+        const searchM = t.match(/\b(search|look up|find on|google|youtube|search for)\b.{0,60}/i);
+        if (searchM) {
+            const engine = /youtube/i.test(t) ? 'youtube' : /linkedin/i.test(t) ? 'linkedin' : 'google';
+            return { intent: 'search', query: userText.replace(/\b(search|look up|find|google)\b/i, '').trim(), engine };
+        }
+
+        // Scroll
+        if (/\b(scroll down|scroll up|go to top|go to bottom|page down|page up)\b/i.test(t))
+            return { intent: 'scroll', direction: /up|top/.test(t) ? 'up' : /bottom/.test(t) ? 'bottom' : /top/.test(t) ? 'top' : 'down' };
+
+        // Copy
+        if (/\b(copy (this |the )?(url|link|title|page|address))\b/i.test(t))
+            return { intent: 'copy', what: /title/.test(t) ? 'title' : /text/.test(t) ? 'text' : 'url' };
+
+        // Fill form
+        if (/\b(fill|autofill|auto-fill|complete|apply for me|fill (this |the )?(form|application)|submit my)\b/i.test(t))
+            return { intent: 'fill', fields: 'all' };
+
+        // Summarize
+        if (/\b(summar(ize|ise|y)|tldr|tl;dr|overview|brief me)\b/i.test(t))
+            return { intent: 'summarize' };
+
+        // Translate
+        const transM = t.match(/\btranslate( this| page)? (to |into )(\w+)/i);
+        if (transM) return { intent: 'translate', language: transM[3] };
+
+        // Extract
+        const extractM = t.match(/\bextract (.{3,40})/i);
+        if (extractM) return { intent: 'extract', what: extractM[1] };
+
+        // Explain
+        const explainM = t.match(/\b(explain|what is|what are|define|meaning of)\b.{0,60}/i);
+        if (explainM) {
+            const topic = userText.replace(/\b(explain|what is|what are|define|meaning of)\b/i, '').trim();
+            return { intent: 'explain', topic };
+        }
+
+        // Save / list jobs
+        if (/\b(save this job|bookmark this job|add to (tracker|applications))\b/i.test(t)) return { intent: 'save_job' };
+        if (/\b(saved jobs?|job tracker|my jobs?|my applications?|tracked jobs?)\b/i.test(t)) return { intent: 'list_jobs' };
+
+        // Save / list pages
+        if (/\b(save this page|bookmark this page|save this link|add to reading list)\b/i.test(t)) return { intent: 'save_page' };
+        if (/\b(saved pages?|my pages?|bookmarks?|reading list)\b/i.test(t)) return { intent: 'list_pages' };
+
+        // Clips
+        if (/\b(clip this|save this text|save selection|clip this paragraph)\b/i.test(t)) return { intent: 'save_clip' };
+        if (/\b(my clips?|saved clips?|show clips?|list clips?)\b/i.test(t)) return { intent: 'list_clips', query: '' };
+
+        // Compatibility / scan
+        if (/\b(am I (a good fit|qualified|compatible)|do I (qualify|match|fit)|this job|this role|this position)\b/i.test(t))
+            return { intent: 'compatibility' };
+        if (/\b(scan (all )?jobs?|jobs? on this page|all jobs?|these jobs?|which jobs? match)\b/i.test(t))
+            return { intent: 'scan_jobs' };
+
+        // Keyword match / profile
+        if (/\b(keyword|missing keyword|keyword (gap|match|analysis))\b/i.test(t)) return { intent: 'keyword_match' };
+        if (/\b(profile (score|completeness|strength)|resume score|what.s missing from my profile)\b/i.test(t)) return { intent: 'profile_score' };
+
+        // Daily briefing
+        if (/\b(daily briefing|morning briefing|today.s summary|what.s on my plate)\b/i.test(t)) return { intent: 'daily_briefing' };
+
+        // Wiki search
+        const wikiM = t.match(/\b(find|search (my )?saves?|look up|search my (notes?|clips?|pages?|stuff))\b.{0,60}/i);
+        if (wikiM) return { intent: 'wiki_search', query: userText.replace(/\b(find|search|look up)\b/i, '').trim() };
+
+        // Compare / export jobs
+        if (/\b(compare jobs?|job comparison|side.by.side)\b/i.test(t)) return { intent: 'compare_jobs' };
+        if (/\b(export jobs?|download (jobs?|tracker)|save jobs? to file)\b/i.test(t)) return { intent: 'export_jobs' };
+
+        return { intent: 'chat' };
+    }
+
     async function classifyIntent(userText) {
         const historyLines = chatHistory.slice(-2)
             .map(m => `${m.role === 'user' ? 'User' : 'Nova'}: ${m.text}`);
@@ -2879,21 +2962,20 @@
                 options: { maxTokens: 200, temperature: 0, provider: activeProvider }
             }, result => {
                 if (chrome.runtime.lastError || !result?.success) {
-                    console.warn('[Nova] classifyIntent call failed:', chrome.runtime.lastError?.message);
-                    return resolve({ intent: 'chat' });
+                    console.warn('[Nova] classifyIntent AI failed, using regex fallback:', chrome.runtime.lastError?.message);
+                    return resolve(classifyIntentRegex(userText));
                 }
                 const raw = (result.text || '').trim();
                 console.log('[Nova] classify raw:', raw);
                 try {
-                    // Extract first complete JSON object — handles any prefix/suffix text
                     const match = raw.match(/\{[\s\S]*\}/);
                     if (!match) throw new Error('no JSON block found');
                     const json = JSON.parse(match[0]);
                     console.log('[Nova] intent:', json);
                     resolve(json);
                 } catch (e) {
-                    console.warn('[Nova] intent parse failed:', e.message, '| raw:', raw);
-                    resolve({ intent: 'chat' });
+                    console.warn('[Nova] intent parse failed, using regex fallback:', e.message);
+                    resolve(classifyIntentRegex(userText));
                 }
             });
         });
@@ -5935,45 +6017,9 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         const thinkId = showThinking();
         isThinking = true;
         try {
-            const SCAN_PATTERN = /\b(scan|check|analyse|analyze|compare|rank|score|review)\b.{0,30}\bjobs?\b|\bjobs?\b.{0,30}\b(scan|check|match|fit|compatible|compatibility|suit|qualify)\b|\bwhich jobs?\b|\ball jobs?\b|\bthese jobs?\b|\bjob listings?\b/i;
-            if (SCAN_PATTERN.test(text)) {
-                removeThinking(thinkId);
-                isThinking = false;
-                await resolveScanJobs();
-                return;
-            }
+            console.log(`[Nova v${WIDGET_VERSION}] doSend: "${text}"`);
 
-            // Nav pattern: must look like a navigation intent, not a data/info request.
-            // Exclude messages asking about saved data, notes, clipboard, or asking for summaries.
-            const DATA_QUERY = /\b(summar|show|list|what|tell|give|find|search|summary|briefing|clipboard|saved|notes?|clips?|pages?|copied|history)\b/i;
-            const NAV_PATTERN = /\b(open|go to|take me to|navigate to|visit|bring me to|launch)\b|\bmy (profile|account|settings|dashboard|inbox|notifications|feed|network|connections|resume)\b/i;
-            const isNav = NAV_PATTERN.test(text) && !DATA_QUERY.test(text);
-            console.log(`[Nova v${WIDGET_VERSION}] doSend: "${text}" | navPattern=${isNav}`);
-
-            if (isNav) {
-                const resolved = await resolveUrl(text);
-                removeThinking(thinkId);
-                if (resolved?.url) {
-                    navigate(resolved.url, resolved.label);
-                    chatHistory.push({ role: 'ai', text: `Navigating to ${resolved.label || resolved.url}`, ts: Date.now() });
-                } else {
-                    const q = encodeURIComponent(text + ' ' + location.hostname);
-                    const searchUrl = `https://www.google.com/search?q=${q}`;
-                    const wrap2 = appendMsgRaw('ai', `Couldn't resolve that URL automatically.`);
-                    const btn2 = Object.assign(document.createElement('button'), {
-                        textContent: '🔍 Search on Google',
-                        style: 'display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 14px;background:#6366f1;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;'
-                    });
-                    btn2.addEventListener('click', () => {
-                        try { chrome.runtime.sendMessage({ type: 'NAVIGATE', url: searchUrl }); }
-                        catch { window.location.href = searchUrl; }
-                    });
-                    wrap2?.querySelector('.nw-bubble')?.appendChild(btn2);
-                }
-                isThinking = false; return;
-            }
-
-            // ── Step 1: classify intent (AI) ─────────────────────────────
+            // ── Step 1: classify intent (AI first, regex fallback on failure) ──
             const intent = await classifyIntent(text);
 
             // ── Step 2: dispatch ──────────────────────────────────────────
