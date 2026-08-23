@@ -719,6 +719,76 @@
         .nw-sn-card-tag {
             padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600;
         }
+        /* Sticky notes two-pane layout */
+        .nw-sn-body { display: flex; flex: 1; overflow: hidden; }
+        .nw-sn-sidebar {
+            width: 170px; min-width: 170px; display: flex; flex-direction: column;
+            border-right: 1px solid #e5e7eb; background: #f8fafc; overflow: hidden;
+        }
+        .nw-sn-sidebar-header {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 10px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        }
+        .nw-sn-sidebar-title {
+            flex: 1; font-size: 11.5px; font-weight: 700; color: #312e81;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .nw-sn-sidebar .nw-sn-search-wrap {
+            margin: 8px 8px 0; border-radius: 8px; padding: 5px 9px;
+        }
+        .nw-sn-sidebar .nw-sn-tag-filters { padding: 4px 8px; }
+        .nw-sn-sidebar .nw-sn-list {
+            flex: 1; overflow-y: auto; padding: 6px 6px; gap: 5px;
+        }
+        .nw-sn-sidebar .nw-sn-card {
+            padding: 8px 9px; border-radius: 8px;
+        }
+        .nw-sn-sidebar .nw-sn-card.active {
+            border-left-color: #4f46e5; background: #eef2ff;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.15);
+        }
+        .nw-sn-sidebar .nw-sn-card-footer { display: none; }
+        .nw-sn-editor {
+            flex: 1; display: flex; flex-direction: column;
+            overflow: hidden; background: #fff;
+        }
+        .nw-sn-editor-empty {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: #9ca3af; font-size: 12.5px; text-align: center;
+            padding: 24px;
+        }
+        .nw-sn-editor-main { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+        .nw-sn-editor-topbar {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 12px; border-bottom: 1px solid #e5e7eb;
+            background: #fafafa; flex-shrink: 0;
+        }
+        .nw-sn-editor-url {
+            flex: 1; font-size: 10.5px; color: #6366f1; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .nw-sn-editor-del {
+            background: none; border: none; cursor: pointer;
+            font-size: 14px; opacity: 0.5; padding: 2px 4px; transition: opacity 0.15s;
+        }
+        .nw-sn-editor-del:hover { opacity: 1; }
+        .nw-sn-editor-ta {
+            flex: 1; border: none; outline: none; resize: none;
+            padding: 12px 14px; font-size: 13px; line-height: 1.6;
+            font-family: inherit; color: #111827; background: #fff;
+            overflow-y: auto;
+        }
+        .nw-sn-editor-tags {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 5px;
+            padding: 6px 12px; border-top: 1px solid #e5e7eb;
+            background: #fafafa; min-height: 34px; flex-shrink: 0;
+        }
+        .nw-sn-editor-status {
+            font-size: 10px; color: #9ca3af; padding: 4px 14px;
+            background: #fafafa; border-top: 1px solid #f3f4f6; flex-shrink: 0;
+        }
         /* Tag input area in note widget */
         .nova-sn-tags-row {
             display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
@@ -1827,24 +1897,42 @@
         </div>
         <!-- Sticky Notes panel -->
         <div class="nw-sn-panel" id="nw-sn-panel">
-            <div class="nw-sn-panel-header">
-                <button class="nw-sn-panel-back" id="nw-sn-panel-back">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <div class="nw-sn-panel-title">📝 Sticky Notes</div>
-                <button class="nw-sn-panel-new" id="nw-sn-panel-new">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    New
-                </button>
-            </div>
-            <div class="nw-sn-toolbar">
-                <div class="nw-sn-search-wrap">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input class="nw-sn-search-input" id="nw-sn-search" placeholder="Search notes…" autocomplete="off"/>
+            <div class="nw-sn-body">
+                <!-- LEFT: list sidebar -->
+                <div class="nw-sn-sidebar" id="nw-sn-sidebar">
+                    <div class="nw-sn-sidebar-header">
+                        <button class="nw-sn-panel-back" id="nw-sn-panel-back">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <span class="nw-sn-sidebar-title">Sticky Notes</span>
+                        <button class="nw-sn-panel-new" id="nw-sn-panel-new">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </button>
+                    </div>
+                    <div class="nw-sn-search-wrap">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input class="nw-sn-search-input" id="nw-sn-search" placeholder="Search…" autocomplete="off"/>
+                    </div>
+                    <div class="nw-sn-tag-filters" id="nw-sn-tag-filters"></div>
+                    <div class="nw-sn-list" id="nw-sn-list"></div>
                 </div>
-                <div class="nw-sn-tag-filters" id="nw-sn-tag-filters"></div>
+                <!-- RIGHT: inline editor -->
+                <div class="nw-sn-editor" id="nw-sn-editor">
+                    <div class="nw-sn-editor-empty" id="nw-sn-editor-empty">
+                        <div style="font-size:28px;margin-bottom:8px;">📝</div>
+                        Select a note or create a new one
+                    </div>
+                    <div class="nw-sn-editor-main" id="nw-sn-editor-main" style="display:none;flex-direction:column;height:100%;">
+                        <div class="nw-sn-editor-topbar" id="nw-sn-editor-topbar">
+                            <span class="nw-sn-editor-url" id="nw-sn-editor-url"></span>
+                            <button class="nw-sn-editor-del" id="nw-sn-editor-del" title="Delete note">🗑</button>
+                        </div>
+                        <textarea class="nw-sn-editor-ta" id="nw-sn-editor-ta" placeholder="Write a note… Supports **bold**, *italic*, # heading, - list" spellcheck="false"></textarea>
+                        <div class="nw-sn-editor-tags" id="nw-sn-editor-tags"></div>
+                        <div class="nw-sn-editor-status" id="nw-sn-editor-status">Auto-saved</div>
+                    </div>
+                </div>
             </div>
-            <div class="nw-sn-list" id="nw-sn-list"></div>
         </div>
         <!-- Saved pages panel -->
         <div class="nw-sp-panel" id="nw-sp-panel">
@@ -7466,6 +7554,113 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         _snDrawList();
     }
 
+    // ── Inline editor state ───────────────────────────────────────────────────
+    let _snActiveUrl  = null;
+    let _snEditorTags = [];
+    let _snEditorSaveTimer;
+
+    const snEditorEmpty  = document.getElementById('nw-sn-editor-empty');
+    const snEditorMain   = document.getElementById('nw-sn-editor-main');
+    const snEditorUrl    = document.getElementById('nw-sn-editor-url');
+    const snEditorTa     = document.getElementById('nw-sn-editor-ta');
+    const snEditorTags   = document.getElementById('nw-sn-editor-tags');
+    const snEditorStatus = document.getElementById('nw-sn-editor-status');
+    const snEditorDel    = document.getElementById('nw-sn-editor-del');
+
+    async function _snPersistEditor() {
+        if (!_snActiveUrl) return;
+        const d = await _snLoad();
+        d[_snActiveUrl] = {
+            ...(d[_snActiveUrl] || {}),
+            text: snEditorTa.value,
+            tags: _snEditorTags,
+            ts: d[_snActiveUrl]?.ts || Date.now(),
+        };
+        await _snSave(d);
+        _snPanelData[_snActiveUrl] = d[_snActiveUrl];
+        renderChips();
+    }
+
+    function _snRenderEditorTags() {
+        snEditorTags.innerHTML = '';
+        _snEditorTags.forEach((tag, i) => {
+            const c = SN_TAG_COLORS[i % SN_TAG_COLORS.length];
+            const chip = document.createElement('span');
+            chip.className = 'nova-sn-tag-chip';
+            chip.style.cssText = `background:${c.bg};color:${c.color};border:1px solid ${c.border}`;
+            chip.innerHTML = `#${NovaChatCore.esc(tag)} <button class="nova-sn-tag-chip-del" data-tag="${NovaChatCore.esc(tag)}">✕</button>`;
+            chip.querySelector('.nova-sn-tag-chip-del').addEventListener('click', async () => {
+                _snEditorTags = _snEditorTags.filter(t => t !== tag);
+                _snRenderEditorTags();
+                await _snPersistEditor();
+                _snDrawList();
+            });
+            snEditorTags.appendChild(chip);
+        });
+        const inp = document.createElement('input');
+        inp.className = 'nova-sn-tag-input';
+        inp.placeholder = _snEditorTags.length ? '+tag' : '#add tag…';
+        inp.addEventListener('keydown', async e => {
+            if ((e.key === 'Enter' || e.key === ' ' || e.key === ',') && inp.value.trim()) {
+                e.preventDefault();
+                const t = inp.value.replace(/^#/, '').replace(/[,\s]/g, '').trim().slice(0, 20);
+                if (t && !_snEditorTags.includes(t)) _snEditorTags.push(t);
+                _snRenderEditorTags();
+                await _snPersistEditor();
+                _snDrawList();
+            } else if (e.key === 'Backspace' && !inp.value && _snEditorTags.length) {
+                _snEditorTags.pop();
+                _snRenderEditorTags();
+                await _snPersistEditor();
+            }
+        });
+        snEditorTags.appendChild(inp);
+    }
+
+    function _snOpenEditor(url, note) {
+        _snActiveUrl  = url;
+        _snEditorTags = [...(note.tags || [])];
+        snEditorUrl.textContent = url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60);
+        snEditorTa.value = note.text || '';
+        snEditorStatus.textContent = 'Auto-saved';
+        snEditorEmpty.style.display = 'none';
+        snEditorMain.style.display  = 'flex';
+        _snRenderEditorTags();
+        snEditorTa.focus();
+        // highlight active card
+        snPanelList.querySelectorAll('.nw-sn-card').forEach(c => {
+            c.classList.toggle('active', c.dataset.url === url);
+        });
+    }
+
+    function _snClearEditor() {
+        _snActiveUrl = null;
+        snEditorEmpty.style.display = '';
+        snEditorMain.style.display  = 'none';
+        snPanelList.querySelectorAll('.nw-sn-card').forEach(c => c.classList.remove('active'));
+    }
+
+    snEditorTa.addEventListener('input', () => {
+        snEditorStatus.textContent = 'Saving…';
+        clearTimeout(_snEditorSaveTimer);
+        _snEditorSaveTimer = setTimeout(async () => {
+            await _snPersistEditor();
+            snEditorStatus.textContent = 'Saved ✓';
+            _snDrawList();
+        }, 600);
+    });
+
+    snEditorDel.addEventListener('click', async () => {
+        if (!_snActiveUrl) return;
+        const d = await _snLoad();
+        delete d[_snActiveUrl];
+        await _snSave(d);
+        delete _snPanelData[_snActiveUrl];
+        renderChips();
+        _snClearEditor();
+        _snRenderPanel();
+    });
+
     function _snDrawList() {
         const q = _snSearchQuery.toLowerCase();
         const entries = Object.entries(_snPanelData)
@@ -7480,60 +7675,47 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
         if (!entries.length) {
             snPanelList.innerHTML = `<div class="nw-sn-empty"><div class="nw-sn-empty-icon">📝</div>${
-                q || _snActiveTag ? 'No notes match your filter.' : 'No sticky notes yet.<br>Open any page and add a note<br>from the menu.'
+                q || _snActiveTag ? 'No notes match your filter.' : 'No sticky notes yet.<br>Tap + to create one.'
             }</div>`;
+            _snClearEditor();
             return;
         }
 
-        // Collect all tags for color lookup
         const allTags = [...new Set(Object.values(_snPanelData).flatMap(n => n?.tags || []))];
 
         snPanelList.innerHTML = entries.map(([url, note]) => {
-            const display = url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 55);
-            const preview = note.text.length > 140 ? note.text.slice(0, 140) + '…' : note.text;
+            const display = url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40);
+            const preview = note.text.length > 80 ? note.text.slice(0, 80) + '…' : note.text;
             const tagsHtml = (note.tags || []).map(tag => {
                 const c = _snTagColor(tag, allTags);
                 return `<span class="nw-sn-card-tag" style="background:${c.bg};color:${c.color};border:1px solid ${c.border}">#${NovaChatCore.esc(tag)}</span>`;
             }).join('');
+            const isActive = _snActiveUrl === url;
             return `
-                <div class="nw-sn-card" data-url="${NovaChatCore.esc(url)}">
-                    <div class="nw-sn-card-url" title="${NovaChatCore.esc(url)}"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> ${NovaChatCore.esc(display)}</div>
+                <div class="nw-sn-card${isActive ? ' active' : ''}" data-url="${NovaChatCore.esc(url)}">
+                    <div class="nw-sn-card-url" title="${NovaChatCore.esc(url)}">
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        ${NovaChatCore.esc(display)}
+                    </div>
                     ${tagsHtml ? `<div class="nw-sn-card-tags">${tagsHtml}</div>` : ''}
                     <div class="nw-sn-card-text">${NovaChatCore.esc(preview)}</div>
-                    <div class="nw-sn-card-footer">
-                        <span class="nw-sn-card-ts">${_snTimestamp(note.ts)}</span>
-                        <div class="nw-sn-card-actions">
-                            <button class="nw-sn-card-btn open" data-url="${NovaChatCore.esc(url)}">Open page</button>
-                            <button class="nw-sn-card-btn del"  data-url="${NovaChatCore.esc(url)}">Delete</button>
-                        </div>
-                    </div>
                 </div>`;
         }).join('');
 
-        snPanelList.querySelectorAll('.nw-sn-card-btn.open').forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.stopPropagation();
-                chrome.runtime.sendMessage({ type: 'NAVIGATE', url: btn.dataset.url });
-            });
-        });
-
-        snPanelList.querySelectorAll('.nw-sn-card-btn.del').forEach(btn => {
-            btn.addEventListener('click', async e => {
-                e.stopPropagation();
-                const d = await _snLoad();
-                delete d[btn.dataset.url];
-                await _snSave(d);
-                delete _snPanelData[btn.dataset.url];
-                renderChips();
-                _snRenderPanel();
-            });
-        });
-
         snPanelList.querySelectorAll('.nw-sn-card').forEach(card => {
             card.addEventListener('click', () => {
-                chrome.runtime.sendMessage({ type: 'NAVIGATE', url: card.dataset.url });
+                const url  = card.dataset.url;
+                const note = _snPanelData[url];
+                if (note) _snOpenEditor(url, note);
             });
         });
+
+        // Re-highlight active card after redraw
+        if (_snActiveUrl) {
+            snPanelList.querySelectorAll('.nw-sn-card').forEach(c => {
+                c.classList.toggle('active', c.dataset.url === _snActiveUrl);
+            });
+        }
     }
 
     function openSnPanel() {
@@ -7545,10 +7727,21 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         snPanel.classList.add('open');
         _snRenderPanel();
     }
-    function closeSnPanel() { snPanel.classList.remove('open'); }
+    function closeSnPanel() { snPanel.classList.remove('open'); _snClearEditor(); }
 
     document.getElementById('nw-sn-panel-back').addEventListener('click', closeSnPanel);
-    document.getElementById('nw-sn-panel-new').addEventListener('click', () => { closeSnPanel(); _snOpen(); });
+    document.getElementById('nw-sn-panel-new').addEventListener('click', async () => {
+        // Create a new note for the current page URL
+        const url = location.href;
+        const d   = await _snLoad();
+        if (!d[url]) {
+            d[url] = { text: '', tags: [], ts: Date.now() };
+            await _snSave(d);
+        }
+        _snPanelData = await _snLoad();
+        _snDrawList();
+        _snOpenEditor(url, _snPanelData[url]);
+    });
 
     // Wire search input
     document.getElementById('nw-sn-search')?.addEventListener('input', e => {
