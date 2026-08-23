@@ -148,11 +148,17 @@
 
     // ── Web Clipper ───────────────────────────────────────────────────────────
     const CLIPS_KEY = 'nova_clips';
-    function _clipsLoad() { try { return JSON.parse(localStorage.getItem(CLIPS_KEY) || '[]'); } catch { return []; } }
-    function _clipsSave(clips) { try { localStorage.setItem(CLIPS_KEY, JSON.stringify(clips)); } catch {} }
+    async function _clipsLoad() {
+        const res = await NovaChatCore.sharedGet([CLIPS_KEY]);
+        return res[CLIPS_KEY] || [];
+    }
+    async function _clipsSave(clips) {
+        await NovaChatCore.sharedSet({ [CLIPS_KEY]: clips });
+    }
 
-    function _saveClip(text, pageTitle, url, annotation = '') {
-        const clips = _clipsLoad();
+    async function _saveClip(text, pageTitle, url, annotation = '') {
+        // Save to nova_clips (detailed record with title/annotation)
+        const clips = await _clipsLoad();
         clips.unshift({
             id: Date.now(),
             text: text.slice(0, 800),
@@ -162,8 +168,9 @@
             ts: Date.now(),
             date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         });
-        // Keep last 200 clips
-        _clipsSave(clips.slice(0, 200));
+        await _clipsSave(clips.slice(0, 200));
+        // Also add to clipboard history panel so it shows up immediately
+        await cbAdd(text.slice(0, 800));
     }
 
     const _seed = [];
@@ -388,6 +395,68 @@
             line-height: 1.6;
         }
         .nw-cb-empty-icon { font-size: 28px; margin-bottom: 8px; }
+        /* ── Sticky Notes panel ── */
+        .nw-sn-panel {
+            position: absolute; inset: 0; background: #f8f9fb; z-index: 5;
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+        .nw-sn-panel.open { transform: translateX(0); }
+        .nw-sn-panel-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 16px; height: 52px; background: #fff;
+            border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+        }
+        .nw-sn-panel-back {
+            width: 28px; height: 28px; border: 1px solid #e5e7eb;
+            border-radius: 7px; background: #fff; color: #6b7280;
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: all 0.15s; flex-shrink: 0;
+        }
+        .nw-sn-panel-back:hover { background: #f3f4f6; color: #111827; }
+        .nw-sn-panel-title { font-size: 13px; font-weight: 700; color: #111827; flex: 1; }
+        .nw-sn-panel-count {
+            font-size: 10.5px; font-weight: 600; color: #92400e;
+            background: #fef9c3; padding: 2px 8px; border-radius: 10px;
+        }
+        .nw-sn-list {
+            flex: 1; overflow-y: auto; padding: 8px 12px;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .nw-sn-card {
+            background: #fefce8; border: 1.5px solid #fde68a;
+            border-radius: 10px; padding: 10px 12px; cursor: pointer;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .nw-sn-card:hover { border-color: #f59e0b; box-shadow: 0 2px 8px rgba(245,158,11,0.15); }
+        .nw-sn-card-url {
+            font-size: 10px; color: #a16207; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-bottom: 5px;
+        }
+        .nw-sn-card-text {
+            font-size: 12px; color: #1c1917; line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .nw-sn-card-footer {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 7px;
+        }
+        .nw-sn-card-ts { font-size: 10px; color: #a16207; }
+        .nw-sn-card-actions { display: flex; gap: 5px; }
+        .nw-sn-card-btn {
+            padding: 3px 9px; border: none; border-radius: 5px;
+            font-size: 10.5px; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: background 0.1s;
+        }
+        .nw-sn-card-btn.open { background: #f59e0b; color: #fff; }
+        .nw-sn-card-btn.open:hover { background: #d97706; }
+        .nw-sn-card-btn.del { background: rgba(0,0,0,0.06); color: #78350f; }
+        .nw-sn-card-btn.del:hover { background: #fecaca; color: #b91c1c; }
+        .nw-sn-empty { padding: 40px 20px; text-align: center; color: #9ca3af; font-size: 12px; line-height: 1.6; }
+        .nw-sn-empty-icon { font-size: 28px; margin-bottom: 8px; }
         /* ── Tab Switcher overlay ── */
         .nw-tab-overlay {
             position: fixed; inset: 0; z-index: 2147483647;
@@ -973,6 +1042,51 @@
             background: rgba(255,255,255,0.12); color: #e2e8f0;
         }
         #nova-explain-tooltip .nova-tt-clip:hover { background: rgba(255,255,255,0.2); }
+        #nova-explain-tooltip .nova-tt-search {
+            background: rgba(255,255,255,0.12); color: #e2e8f0;
+        }
+        #nova-explain-tooltip .nova-tt-search:hover { background: rgba(255,255,255,0.2); }
+        /* Quick Search panel */
+        #nova-qs-panel {
+            position: fixed; z-index: 2147483645;
+            background: #fff; border-radius: 14px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+            width: 300px;
+            font-family: -apple-system, sans-serif;
+            animation: nova-tooltip-in 0.15s ease;
+            overflow: hidden;
+        }
+        #nova-qs-header {
+            padding: 10px 14px 8px;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        #nova-qs-query {
+            font-size: 12px; font-weight: 600; color: #374151;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 220px;
+        }
+        #nova-qs-close {
+            background: none; border: none; cursor: pointer;
+            color: #9ca3af; font-size: 16px; line-height: 1; padding: 0 2px;
+        }
+        #nova-qs-close:hover { color: #374151; }
+        .nova-qs-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 14px; cursor: pointer;
+            border-bottom: 1px solid #f9fafb;
+            transition: background 0.1s; text-decoration: none;
+        }
+        .nova-qs-item:last-child { border-bottom: none; }
+        .nova-qs-item:hover { background: #f5f3ff; }
+        .nova-qs-icon {
+            width: 28px; height: 28px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; flex-shrink: 0;
+        }
+        .nova-qs-label { font-size: 12.5px; font-weight: 600; color: #111827; }
+        .nova-qs-sub   { font-size: 11px; color: #6b7280; }
         /* Writing assistant toolbar */
         #nova-write-toolbar {
             position: fixed; z-index: 2147483646;
@@ -1023,47 +1137,115 @@
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         }
         .nova-lp-loading { font-size: 11px; color: #9ca3af; padding: 4px 0; }
-        /* Screen time badge */
-        #nova-st-badge {
-            position: fixed; bottom: 72px; right: 16px; z-index: 2147483640;
-            background: rgba(17,24,39,0.88); color: #fff;
-            border-radius: 20px; padding: 5px 12px;
+        /* ── Reading Mode ── */
+        body.nova-reading-mode > *:not(#nova-read-overlay):not(#${WIDGET_ID}) {
+            display: none !important;
+        }
+        #nova-read-overlay {
+            position: fixed; inset: 0; z-index: 2147483630;
+            background: #f9f6f1; overflow-y: auto;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+        #nova-read-content {
+            max-width: 680px; margin: 0 auto;
+            padding: 56px 32px 80px;
+            color: #1a1a1a;
+            font-size: 19px; line-height: 1.75;
+        }
+        #nova-read-content h1, #nova-read-content h2, #nova-read-content h3 {
             font-family: -apple-system, sans-serif;
-            font-size: 11px; font-weight: 600;
-            display: flex; align-items: center; gap: 6px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            cursor: pointer; backdrop-filter: blur(6px);
-            transition: opacity 0.2s;
+            line-height: 1.3; margin: 1.4em 0 0.5em;
+            color: #111;
         }
-        #nova-st-badge:hover { opacity: 0.85; }
-        #nova-st-badge .nova-st-dot {
-            width: 7px; height: 7px; border-radius: 50%; background: #10b981; flex-shrink: 0;
+        #nova-read-content h1 { font-size: 1.9em; }
+        #nova-read-content h2 { font-size: 1.4em; }
+        #nova-read-content h3 { font-size: 1.15em; }
+        #nova-read-content p { margin: 0 0 1.15em; }
+        #nova-read-content a { color: #6366f1; text-decoration: underline; }
+        #nova-read-content img {
+            max-width: 100%; height: auto; border-radius: 6px; margin: 1em 0;
         }
-        #nova-st-badge.warn .nova-st-dot { background: #f59e0b; }
-        #nova-st-badge.danger .nova-st-dot { background: #ef4444; }
-        /* Screen time panel */
-        .nova-st-panel {
-            position: fixed; bottom: 110px; right: 16px; z-index: 2147483641;
-            background: #fff; border-radius: 14px; width: 230px;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.14);
-            font-family: -apple-system, sans-serif;
-            overflow: hidden;
-            animation: nova-tooltip-in 0.15s ease;
+        #nova-read-content blockquote {
+            border-left: 3px solid #d1d5db; margin: 1.2em 0; padding: 0.5em 1em;
+            color: #555; font-style: italic;
         }
-        .nova-st-panel-header {
-            padding: 12px 14px 8px; border-bottom: 1px solid #f3f4f6;
-            font-size: 12px; font-weight: 700; color: #111827;
+        #nova-read-content pre, #nova-read-content code {
+            font-family: 'Fira Code', monospace; font-size: 0.85em;
+            background: #f3f4f6; border-radius: 4px; padding: 2px 6px;
         }
-        .nova-st-row {
+        #nova-read-content pre { padding: 14px 16px; overflow-x: auto; }
+        #nova-read-topbar {
+            position: sticky; top: 0; z-index: 1;
+            background: rgba(249,246,241,0.94); backdrop-filter: blur(8px);
+            border-bottom: 1px solid #e5e7eb;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 7px 14px; font-size: 11.5px; border-bottom: 1px solid #f9fafb;
+            padding: 10px 32px; max-width: 680px; margin: 0 auto;
         }
-        .nova-st-row:last-child { border-bottom: none; }
-        .nova-st-site { color: #374151; font-weight: 500; }
-        .nova-st-time { color: #6366f1; font-weight: 700; font-size: 11px; }
-        .nova-st-bar-wrap { height: 3px; background: #f3f4f6; border-radius: 2px; margin-top: 3px; }
-        .nova-st-bar { height: 3px; background: #6366f1; border-radius: 2px; transition: width 0.3s; }
+        #nova-read-title {
+            font-family: -apple-system, sans-serif;
+            font-size: 13px; font-weight: 600; color: #374151;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 480px;
+        }
+        #nova-read-close {
+            font-family: -apple-system, sans-serif;
+            background: #111827; color: #fff; border: none;
+            border-radius: 8px; padding: 6px 14px;
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            flex-shrink: 0;
+        }
+        #nova-read-close:hover { background: #374151; }
+        #nova-read-font-ctrl {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .nova-read-fc-btn {
+            font-family: -apple-system, sans-serif;
+            background: #f3f4f6; border: 1px solid #e5e7eb;
+            border-radius: 6px; padding: 4px 9px;
+            font-size: 12px; font-weight: 700; cursor: pointer; color: #374151;
+        }
+        .nova-read-fc-btn:hover { background: #e5e7eb; }
+        /* ── Sticky Notes ── */
+        #nova-sticky-note {
+            position: fixed; z-index: 2147483642;
+            width: 240px; background: #fefce8;
+            border: 1px solid #fde68a;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            display: flex; flex-direction: column;
+            font-family: -apple-system, sans-serif;
+            animation: nova-tooltip-in 0.15s ease;
+            overflow: hidden;
+        }
+        .nova-sn-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 10px 6px;
+            background: #fef08a; cursor: move; user-select: none;
+        }
+        .nova-sn-title {
+            font-size: 11px; font-weight: 700; color: #854d0e;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .nova-sn-actions { display: flex; gap: 4px; }
+        .nova-sn-btn {
+            width: 22px; height: 22px; border: none; border-radius: 5px;
+            background: rgba(0,0,0,0.08); color: #78350f;
+            cursor: pointer; font-size: 11px; display: flex;
+            align-items: center; justify-content: center;
+            transition: background 0.1s;
+        }
+        .nova-sn-btn:hover { background: rgba(0,0,0,0.16); }
+        .nova-sn-textarea {
+            flex: 1; border: none; outline: none; resize: none;
+            background: #fefce8; padding: 8px 10px;
+            font-size: 12.5px; line-height: 1.55; color: #1c1917;
+            font-family: inherit; min-height: 80px;
+        }
+        .nova-sn-footer {
+            padding: 4px 10px 6px; font-size: 9.5px; color: #a16207;
+            border-top: 1px solid #fde68a; display: flex;
+            align-items: center; justify-content: space-between;
+        }
     `;
     document.head.appendChild(styleEl);
 
@@ -1130,9 +1312,17 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
                             Remove Ads
                         </button>
-                        <button class="nw-menu-item" id="nw-menu-screentime">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            Screen Time
+                        <button class="nw-menu-item" id="nw-menu-readmode">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                            Reading Mode
+                        </button>
+                        <button class="nw-menu-item" id="nw-menu-sticky">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            Sticky Note
+                        </button>
+                        <button class="nw-menu-item" id="nw-menu-all-notes">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                            All Notes
                         </button>
                         <button class="nw-menu-item" id="nw-menu-settings">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -1163,6 +1353,17 @@
                 </div>
             </div>
             <div class="nw-cb-list" id="nw-cb-list"></div>
+        </div>
+        <!-- Sticky Notes panel (slides over chat) -->
+        <div class="nw-sn-panel" id="nw-sn-panel">
+            <div class="nw-sn-panel-header">
+                <button class="nw-sn-panel-back" id="nw-sn-panel-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="nw-sn-panel-title">📝 Sticky Notes</div>
+                <div class="nw-sn-panel-count" id="nw-sn-panel-count"></div>
+            </div>
+            <div class="nw-sn-list" id="nw-sn-list"></div>
         </div>
         <!-- Saved pages panel (slides over chat) -->
         <div class="nw-sp-panel" id="nw-sp-panel">
@@ -1454,8 +1655,9 @@
         toastTimer = setTimeout(() => saveToast.classList.remove('show'), 2500);
     }
 
-    function buildSpList() {
-        const pages = spLoad();
+    async function buildSpList() {
+        spList.innerHTML = `<div class="nw-sp-empty" style="color:#9ca3af">Loading…</div>`;
+        const pages = await spLoad();
         spCount.textContent = `${pages.length} saved`;
         spList.innerHTML = '';
         if (!pages.length) {
@@ -1474,12 +1676,14 @@
                     <span class="nw-sp-date">${esc(page.date)}</span>
                     <button class="nw-sp-remove" title="Remove">✕</button>
                 </div>`;
-            card.querySelector('.nw-sp-remove').addEventListener('click', () => {
-                const updated = spLoad().filter(p => p.id !== page.id);
-                spSave(updated);
+            card.querySelector('.nw-sp-remove').addEventListener('click', async () => {
+                const latest = await spLoad();
+                const updated = latest.filter(p => p.id !== page.id);
+                await spSave(updated);
                 card.remove();
                 spCount.textContent = `${updated.length} saved`;
                 if (!updated.length) spList.innerHTML = `<div class="nw-sp-empty">No saved pages yet.<br>Say <strong>"save this page"</strong> or use the chip on any page.</div>`;
+                renderChips();
             });
             spList.appendChild(card);
         });
@@ -1796,19 +2000,124 @@
         }
     }
 
+    // ── Reading Mode ─────────────────────────────────────────────────────────
+    let _rmActive = false;
+    let _rmOverlay = null;
+    let _rmFontSize = 19;
+
+    function _rmFindArticle() {
+        // Priority order: semantic tags → content attributes → largest text block
+        const candidates = [
+            document.querySelector('article'),
+            document.querySelector('[role="main"]'),
+            document.querySelector('[itemprop="articleBody"]'),
+            document.querySelector('main'),
+            document.querySelector('.post-content'),
+            document.querySelector('.article-body'),
+            document.querySelector('.entry-content'),
+            document.querySelector('.article__body'),
+            document.querySelector('.story-body'),
+            document.querySelector('#article-body'),
+            document.querySelector('#content'),
+        ].filter(Boolean);
+
+        if (candidates.length) return candidates[0];
+
+        // Fallback: find div with the most <p> text
+        let best = null, bestLen = 0;
+        document.querySelectorAll('div, section').forEach(el => {
+            if (el.closest(`#${WIDGET_ID}`)) return;
+            const text = el.innerText || '';
+            const ps = el.querySelectorAll('p');
+            if (ps.length >= 3 && text.length > bestLen) {
+                bestLen = text.length;
+                best = el;
+            }
+        });
+        return best;
+    }
+
+    function _rmOpen() {
+        const src = _rmFindArticle();
+        if (!src) {
+            appendMsg('ai', "Reading Mode couldn't find an article on this page. It works best on news articles and blog posts.");
+            return;
+        }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'nova-read-overlay';
+
+        const title = document.title || location.hostname;
+        const content = src.cloneNode(true);
+        // Strip scripts/styles/ads from the clone
+        content.querySelectorAll('script,style,iframe,ins,[class*="ad-"],[id*="ad-"],[class*="banner"],[class*="promo"]')
+            .forEach(el => el.remove());
+
+        overlay.innerHTML = `
+            <div id="nova-read-topbar">
+                <span id="nova-read-title">${NovaChatCore.esc(title)}</span>
+                <div id="nova-read-font-ctrl">
+                    <button class="nova-read-fc-btn" id="nova-read-font-down">A−</button>
+                    <button class="nova-read-fc-btn" id="nova-read-font-up">A+</button>
+                    <button id="nova-read-close">✕ Exit</button>
+                </div>
+            </div>
+            <div id="nova-read-content"></div>`;
+
+        overlay.querySelector('#nova-read-content').appendChild(content);
+        document.body.appendChild(overlay);
+        document.body.classList.add('nova-reading-mode');
+        _rmOverlay = overlay;
+        _rmActive = true;
+
+        const btn = document.getElementById('nw-menu-readmode');
+        if (btn) { btn.style.color = '#6366f1'; btn.style.fontWeight = '700'; }
+
+        overlay.querySelector('#nova-read-close').addEventListener('click', _rmClose);
+
+        overlay.querySelector('#nova-read-font-up').addEventListener('click', () => {
+            _rmFontSize = Math.min(28, _rmFontSize + 1);
+            overlay.querySelector('#nova-read-content').style.fontSize = _rmFontSize + 'px';
+        });
+        overlay.querySelector('#nova-read-font-down').addEventListener('click', () => {
+            _rmFontSize = Math.max(14, _rmFontSize - 1);
+            overlay.querySelector('#nova-read-content').style.fontSize = _rmFontSize + 'px';
+        });
+
+        // Esc key exits
+        const _rmEsc = (e) => { if (e.key === 'Escape') { _rmClose(); document.removeEventListener('keydown', _rmEsc); } };
+        document.addEventListener('keydown', _rmEsc);
+
+        appendMsg('ai', `📖 Reading Mode on — showing just the article. Use A+ / A− to adjust text size. Press Esc or ✕ to exit.`);
+    }
+
+    function _rmClose() {
+        if (_rmOverlay) { _rmOverlay.remove(); _rmOverlay = null; }
+        document.body.classList.remove('nova-reading-mode');
+        _rmActive = false;
+        const btn = document.getElementById('nw-menu-readmode');
+        if (btn) { btn.style.color = ''; btn.style.fontWeight = ''; }
+    }
+
+    document.getElementById('nw-menu-readmode').addEventListener('click', () => {
+        closeMenu();
+        if (_rmActive) _rmClose(); else _rmOpen();
+    });
+
     // ── Bookmark button in context bar ────────────────────────────────────────
     const bookmarkBtn = document.getElementById('nw-bookmark-btn');
 
-    function syncBookmarkBtn() {
-        const already = spLoad().some(p => p.url === location.href);
+    async function syncBookmarkBtn() {
+        const pages = await spLoad();
+        const already = pages.some(p => p.url === location.href);
         bookmarkBtn.classList.toggle('saved', already);
         bookmarkBtn.title = already ? 'Already saved' : 'Save this page';
         bookmarkBtn.querySelector('svg').setAttribute('fill', already ? 'currentColor' : 'none');
     }
     syncBookmarkBtn();
 
-    bookmarkBtn.addEventListener('click', () => {
-        const result = saveCurrentPage();
+    bookmarkBtn.addEventListener('click', async () => {
+        const result = await saveCurrentPage();
         if (result === '__PAGE_EXISTS__') {
             showSaveToast('Already saved');
         } else {
@@ -1817,6 +2126,7 @@
             if (spPanel.classList.contains('open')) buildSpList();
         }
         syncBookmarkBtn();
+        renderChips();
     });
 
     // ── Input ─────────────────────────────────────────────────────────────────
@@ -1902,6 +2212,50 @@
                 chipsEl.appendChild(refillBtn);
             }
         } catch {}
+        // Sticky note chips — loads async (cross-origin shared storage)
+        NovaChatCore.snSharedLoad().then(allNotes => {
+            const snKey  = location.href.split('#')[0].split('?')[0];
+            const snNote = allNotes[snKey];
+
+            if (snNote?.text) {
+                const snBtn = document.createElement('button');
+                snBtn.className = 'nw-chip';
+                snBtn.textContent = '📝 My note';
+                snBtn.title = snNote.text.length > 60 ? snNote.text.slice(0, 60) + '…' : snNote.text;
+                snBtn.style.cssText = 'background:#fefce8;border-color:#fde68a;color:#92400e;';
+                snBtn.addEventListener('click', _snOpen);
+                chipsEl.appendChild(snBtn);
+            }
+
+            const totalCount = Object.values(allNotes).filter(n => n?.text).length;
+            const otherCount = totalCount - (snNote?.text ? 1 : 0);
+            if (otherCount > 0) {
+                const allBtn = document.createElement('button');
+                allBtn.className = 'nw-chip';
+                allBtn.textContent = `🗒 ${totalCount} saved note${totalCount !== 1 ? 's' : ''}`;
+                allBtn.title = 'View notes from all pages';
+                allBtn.style.cssText = 'background:#f0fdf4;border-color:#86efac;color:#166534;';
+                allBtn.addEventListener('click', openSnPanel);
+                chipsEl.appendChild(allBtn);
+            }
+        }).catch(() => {});
+        // Saved pages chip — loads async (cross-origin shared storage)
+        spLoad().then(pages => {
+            if (!pages.length) return;
+            const currentSaved = pages.some(p => p.url === location.href);
+            const spBtn = document.createElement('button');
+            spBtn.className = 'nw-chip';
+            spBtn.id = 'nw-chip-saved-pages';
+            spBtn.textContent = `🔖 ${pages.length} saved page${pages.length !== 1 ? 's' : ''}`;
+            spBtn.title = currentSaved ? 'This page is saved — view all saved pages' : 'View your saved pages';
+            spBtn.style.cssText = currentSaved
+                ? 'background:#eef2ff;border-color:#a5b4fc;color:#4338ca;'
+                : 'background:#f0f9ff;border-color:#7dd3fc;color:#0369a1;';
+            spBtn.addEventListener('click', openSpPanel);
+            // Remove stale chip if renderChips ran again before this resolved
+            document.getElementById('nw-chip-saved-pages')?.remove();
+            chipsEl.appendChild(spBtn);
+        }).catch(() => {});
         // Session summary chip — show after 5+ messages (Feature 11)
         _updateSummaryChip();
     }
@@ -1934,10 +2288,15 @@
         writeBtn.className = 'nova-tt-ask';
         writeBtn.textContent = '✍️ Write';
 
+        const searchBtn = document.createElement('button');
+        searchBtn.className = 'nova-tt-search';
+        searchBtn.textContent = '🔍 Search';
+
         tt.appendChild(explainBtn);
         tt.appendChild(askBtn);
         tt.appendChild(writeBtn);
         tt.appendChild(clipBtn);
+        tt.appendChild(searchBtn);
         document.body.appendChild(tt);
 
         const truncated = selectedText.slice(0, 400);
@@ -1983,6 +2342,12 @@
             e.stopPropagation();
             tt.remove();
             _showWriteToolbar(truncated, e.clientX, e.clientY);
+        });
+
+        searchBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            tt.remove();
+            _showQuickSearch(truncated, e.clientX, e.clientY);
         });
 
         // Auto-hide if user clicks elsewhere
@@ -2077,8 +2442,8 @@
     })();
 
     // Page re-visit detector
-    (function _checkRevisit() {
-        const pages = spLoad();
+    (async function _checkRevisit() {
+        const pages = await spLoad();
         if (!pages.length) return;
         const currentUrl = location.href;
         const match = pages.find(p => p.url === currentUrl);
@@ -3219,7 +3584,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     }
 
-    function renderDailyBriefing() {
+    async function renderDailyBriefing() {
         const ts = Date.now();
         const wrap = document.createElement('div');
         wrap.className = 'nw-msg ai';
@@ -3232,14 +3597,13 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         });
 
         // Unread saved pages: saved but no re-visit recorded in read progress
-        let savedPages = spLoad();
+        let savedPages = await spLoad();
         let readProgress = {};
         try { readProgress = JSON.parse(localStorage.getItem('nova_read_progress') || '{}'); } catch {}
         const unreadPages = savedPages.filter(p => !readProgress[p.url]);
 
         // Clips saved today
-        let clips = [];
-        try { clips = JSON.parse(localStorage.getItem('nova_clips') || '[]'); } catch {}
+        const clips = await _clipsLoad();
         const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const todayClips = clips.filter(c => c.date === today);
 
@@ -3292,7 +3656,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    function renderWikiSearch(query) {
+    async function renderWikiSearch(query) {
         if (!query?.trim()) {
             appendMsg('ai', 'What would you like to search for? Try: **"find React hooks"** or **"search my saves for Google"**');
             return;
@@ -3307,16 +3671,17 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             (j.notes || '').toLowerCase().includes(q));
 
         // Search saved pages
-        const pages = spLoad().filter(p =>
+        const allPages = await spLoad();
+        const pages = allPages.filter(p =>
             p.title?.toLowerCase().includes(q) ||
             p.url?.toLowerCase().includes(q));
 
         // Search clips
-        let clips = [];
-        try { clips = JSON.parse(localStorage.getItem('nova_clips') || '[]').filter(c =>
+        const allClips = await _clipsLoad();
+        const clips = allClips.filter(c =>
             c.text?.toLowerCase().includes(q) ||
             c.title?.toLowerCase().includes(q) ||
-            (c.annotation || '').toLowerCase().includes(q)); } catch {}
+            (c.annotation || '').toLowerCase().includes(q));
 
         // Search recent chat history
         const chats = chatHistory.filter(m =>
@@ -3969,8 +4334,8 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
     // ── Saved Pages ───────────────────────────────────────────────────────────
 
-    function saveCurrentPage() {
-        const pages = spLoad();
+    async function saveCurrentPage() {
+        const pages = await spLoad();
         const url   = location.href;
         if (pages.find(p => p.url === url)) {
             return `__PAGE_EXISTS__`;
@@ -3985,7 +4350,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             date:  new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         };
         pages.unshift(page);
-        spSave(pages);
+        await spSave(pages);
         return `__PAGE_SAVED__:${JSON.stringify(page)}`;
     }
 
@@ -5528,21 +5893,21 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     const cbCount     = document.getElementById('nw-cb-count');
     const cbSearchEl  = document.getElementById('nw-cb-search');
 
-    function cbLoad() {
-        try { return JSON.parse(localStorage.getItem(CB_KEY) || '[]'); } catch { return []; }
+    async function cbLoad() {
+        const res = await NovaChatCore.sharedGet([CB_KEY]);
+        return res[CB_KEY] || [];
     }
-    function cbSave(items) {
-        try { localStorage.setItem(CB_KEY, JSON.stringify(items)); } catch {}
+    async function cbSave(items) {
+        await NovaChatCore.sharedSet({ [CB_KEY]: items });
     }
 
-    function cbAdd(text) {
+    async function cbAdd(text) {
         if (!text || text.length < 2 || text.length > 10000) return;
-        let items = cbLoad();
-        // Deduplicate — move to top if already exists
+        let items = await cbLoad();
         items = items.filter(i => i.text !== text);
         items.unshift({ text, ts: Date.now(), url: location.hostname });
         if (items.length > CB_MAX) items = items.slice(0, CB_MAX);
-        cbSave(items);
+        await cbSave(items);
     }
 
     function cbTimestamp(ts) {
@@ -5553,8 +5918,9 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         return Math.floor(diff / 86400000) + 'd ago';
     }
 
-    function cbRender(query) {
-        let items = cbLoad();
+    async function cbRender(query) {
+        cbList.innerHTML = `<div class="nw-cb-empty" style="color:#9ca3af">Loading…</div>`;
+        let items = await cbLoad();
         if (query) {
             const q = query.toLowerCase();
             items = items.filter(i => i.text.toLowerCase().includes(q));
@@ -5586,10 +5952,9 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             </div>
         `).join('');
 
-        cbList.querySelectorAll('.nw-cb-item').forEach(el => {
+        cbList.querySelectorAll('.nw-cb-item').forEach((el, idx) => {
             el.addEventListener('click', async () => {
-                const idx = +el.dataset.idx;
-                const text = cbLoad()[idx]?.text;
+                const text = items[idx]?.text;
                 if (!text) return;
                 await navigator.clipboard.writeText(text).catch(() => {});
                 const btn = el.querySelector('.nw-cb-copy-btn');
@@ -5830,6 +6195,98 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         }, 0);
     }
 
+    // ── Quick Search ──────────────────────────────────────────────────────────
+    function _showQuickSearch(query, x, y) {
+        document.getElementById('nova-qs-panel')?.remove();
+
+        const q = query.trim().slice(0, 200);
+        const enc = encodeURIComponent(q);
+
+        const engines = [
+            {
+                icon: '🌐',
+                bg: '#e8f0fe',
+                label: 'Google',
+                sub: 'Web search',
+                url: `https://www.google.com/search?q=${enc}`,
+            },
+            {
+                icon: '📖',
+                bg: '#fef3c7',
+                label: 'Wikipedia',
+                sub: 'Encyclopedia',
+                url: `https://en.wikipedia.org/w/index.php?search=${enc}`,
+            },
+            {
+                icon: '▶',
+                bg: '#fee2e2',
+                label: 'YouTube',
+                sub: 'Videos',
+                url: `https://www.youtube.com/results?search_query=${enc}`,
+            },
+            {
+                icon: '📚',
+                bg: '#ede9fe',
+                label: 'Dictionary',
+                sub: 'Definition',
+                url: `https://www.merriam-webster.com/dictionary/${enc}`,
+            },
+            {
+                icon: '🛒',
+                bg: '#d1fae5',
+                label: 'Amazon',
+                sub: 'Shop',
+                url: `https://www.amazon.com/s?k=${enc}`,
+            },
+        ];
+
+        const panel = document.createElement('div');
+        panel.id = 'nova-qs-panel';
+
+        const left = Math.min(x, window.innerWidth - 316);
+        const top  = Math.max(y - 10, 8);
+        panel.style.cssText = `left:${left}px;top:${top}px;`;
+
+        const short = q.length > 40 ? q.slice(0, 40) + '…' : q;
+        panel.innerHTML = `
+            <div id="nova-qs-header">
+                <span id="nova-qs-query">"${NovaChatCore.esc(short)}"</span>
+                <button id="nova-qs-close">✕</button>
+            </div>
+            ${engines.map(e => `
+                <a class="nova-qs-item" href="${e.url}" target="_blank" rel="noopener" data-url="${e.url}">
+                    <div class="nova-qs-icon" style="background:${e.bg}">${e.icon}</div>
+                    <div>
+                        <div class="nova-qs-label">${e.label}</div>
+                        <div class="nova-qs-sub">${e.sub}</div>
+                    </div>
+                </a>
+            `).join('')}`;
+
+        document.body.appendChild(panel);
+
+        panel.querySelector('#nova-qs-close').addEventListener('click', () => panel.remove());
+
+        // Open in new tab and close panel on item click
+        panel.querySelectorAll('.nova-qs-item').forEach(item => {
+            item.addEventListener('click', e => {
+                e.preventDefault();
+                window.open(item.dataset.url, '_blank', 'noopener');
+                panel.remove();
+            });
+        });
+
+        setTimeout(() => {
+            const hide = (ev) => {
+                if (!panel.contains(ev.target)) {
+                    panel.remove();
+                    document.removeEventListener('mousedown', hide);
+                }
+            };
+            document.addEventListener('mousedown', hide);
+        }, 0);
+    }
+
     // ── Link Preview on Hover ─────────────────────────────────────────────────
     let _lpTimer = null;
     let _lpCard  = null;
@@ -5900,121 +6357,175 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         _lpHide();
     }, true);
 
-    // ── Screen Time Tracker ───────────────────────────────────────────────────
-    const ST_KEY = 'nova_screen_time';
+    // ── Sticky Notes ──────────────────────────────────────────────────────────
+    const SN_KEY = 'nova_sticky_notes';
 
-    function _stLoad() {
-        try { return JSON.parse(localStorage.getItem(ST_KEY) || '{}'); } catch { return {}; }
+    async function _snLoad() { return NovaChatCore.snSharedLoad(); }
+    async function _snSave(d) { return NovaChatCore.snSharedSave(d); }
+    function _snUrlKey() { return location.href.split('#')[0].split('?')[0]; }
+
+    let _snEl = null;
+
+    async function _snOpen() {
+        if (_snEl) { _snEl.remove(); _snEl = null; return; }
+        const key   = _snUrlKey();
+        const notes = await _snLoad();
+        const saved = notes[key] || { text: '', x: null, y: null };
+
+        const el = document.createElement('div');
+        el.id = 'nova-sticky-note';
+        const startX = saved.x ?? (window.innerWidth  - 260);
+        const startY = saved.y ?? 80;
+        el.style.cssText = `left:${startX}px;top:${startY}px;`;
+
+        el.innerHTML = `
+            <div class="nova-sn-header" id="nova-sn-drag">
+                <div class="nova-sn-title">📝 Note for this page</div>
+                <div class="nova-sn-actions">
+                    <button class="nova-sn-btn" id="nova-sn-clear" title="Clear">🗑</button>
+                    <button class="nova-sn-btn" id="nova-sn-close" title="Close">✕</button>
+                </div>
+            </div>
+            <textarea class="nova-sn-textarea" id="nova-sn-text" placeholder="Write a note for this page…" spellcheck="false">${NovaChatCore.esc(saved.text)}</textarea>
+            <div class="nova-sn-footer">
+                <span id="nova-sn-status">Auto-saved</span>
+                <span>${location.hostname.replace('www.', '')}</span>
+            </div>`;
+        document.body.appendChild(el);
+        _snEl = el;
+
+        const textarea = el.querySelector('#nova-sn-text');
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+        // Auto-save on input
+        let _snSaveTimer;
+        textarea.addEventListener('input', () => {
+            el.querySelector('#nova-sn-status').textContent = 'Saving…';
+            clearTimeout(_snSaveTimer);
+            _snSaveTimer = setTimeout(async () => {
+                const d = await _snLoad();
+                d[key] = { text: textarea.value, ts: Date.now(), x: parseInt(el.style.left), y: parseInt(el.style.top) };
+                await _snSave(d);
+                el.querySelector('#nova-sn-status').textContent = 'Saved ✓';
+                renderChips();
+            }, 600);
+        });
+
+        el.querySelector('#nova-sn-close').addEventListener('click', () => { el.remove(); _snEl = null; renderChips(); });
+        el.querySelector('#nova-sn-clear').addEventListener('click', async () => {
+            textarea.value = '';
+            const d = await _snLoad();
+            delete d[key];
+            await _snSave(d);
+            el.querySelector('#nova-sn-status').textContent = 'Cleared';
+            renderChips();
+        });
+
+        // Drag
+        const dragHandle = el.querySelector('#nova-sn-drag');
+        let _dx, _dy, _dragging = false;
+        dragHandle.addEventListener('mousedown', e => {
+            _dragging = true; _dx = e.clientX - el.offsetLeft; _dy = e.clientY - el.offsetTop;
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', onDrop, { once: true });
+        });
+        function onDrag(e) {
+            if (!_dragging) return;
+            el.style.left = Math.max(0, Math.min(e.clientX - _dx, window.innerWidth  - 250)) + 'px';
+            el.style.top  = Math.max(0, Math.min(e.clientY - _dy, window.innerHeight - 100)) + 'px';
+        }
+        async function onDrop() {
+            _dragging = false;
+            document.removeEventListener('mousemove', onDrag);
+            const d = await _snLoad();
+            d[key] = { text: textarea.value, ts: d[key]?.ts || Date.now(), x: parseInt(el.style.left), y: parseInt(el.style.top) };
+            await _snSave(d);
+        }
     }
-    function _stSave(data) {
-        try { localStorage.setItem(ST_KEY, JSON.stringify(data)); } catch {}
-    }
-    function _stFmtTime(ms) {
-        const s = Math.floor(ms / 1000);
-        if (s < 60) return `${s}s`;
-        const m = Math.floor(s / 60);
-        if (m < 60) return `${m}m`;
-        return `${Math.floor(m / 60)}h ${m % 60}m`;
-    }
 
-    // Record time for current domain
-    const _stDomain   = location.hostname.replace('www.', '') || 'local';
-    const _stDateKey  = new Date().toISOString().slice(0, 10);
-    let   _stStart    = Date.now();
-    let   _stActive   = !document.hidden;
+    // Sticky note chip is rendered in renderChips() above — no separate nudge needed
 
-    function _stFlush() {
-        if (!_stActive) return;
-        const data  = _stLoad();
-        const day   = data[_stDateKey] || {};
-        const spent = Date.now() - _stStart;
-        day[_stDomain] = (day[_stDomain] || 0) + spent;
-        data[_stDateKey] = day;
-        _stSave(data);
-        _stStart = Date.now();
-        // Prune data older than 7 days
-        const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
-        Object.keys(data).forEach(k => { if (k < cutoff.toISOString().slice(0, 10)) delete data[k]; });
-        _stSave(data);
+    document.getElementById('nw-menu-sticky').addEventListener('click', () => { closeMenu(); _snOpen(); });
+
+    // ── All Notes panel ───────────────────────────────────────────────────────
+    const snPanel      = document.getElementById('nw-sn-panel');
+    const snPanelList  = document.getElementById('nw-sn-list');
+    const snPanelCount = document.getElementById('nw-sn-panel-count');
+
+    function _snTimestamp(ts) {
+        if (!ts) return '';
+        const diff = Date.now() - ts;
+        if (diff < 60000)    return 'just now';
+        if (diff < 3600000)  return Math.floor(diff / 60000) + 'm ago';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+        return new Date(ts).toLocaleDateString();
     }
 
-    document.addEventListener('visibilitychange', () => {
-        _stFlush();
-        _stActive = !document.hidden;
-        _stStart  = Date.now();
-    });
-    window.addEventListener('beforeunload', _stFlush);
-    setInterval(_stFlush, 30000);
+    async function _snRenderPanel() {
+        snPanelList.innerHTML = `<div class="nw-sn-empty" style="color:#9ca3af">Loading…</div>`;
+        const data    = await _snLoad();
+        const entries = Object.entries(data)
+            .filter(([, v]) => v?.text)
+            .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
 
-    // Badge showing today's time on current site
-    let _stBadgeEl = null;
-    let _stPanelEl = null;
-    let _stBadgeTimer = null;
+        snPanelCount.textContent = entries.length ? `${entries.length}` : '';
 
-    function _stUpdateBadge() {
-        const data    = _stLoad();
-        const today   = data[_stDateKey] || {};
-        const ms      = (today[_stDomain] || 0) + (Date.now() - _stStart);
-        const mins    = Math.floor(ms / 60000);
-        if (mins < 1) return; // Don't show badge until at least 1 minute
-
-        if (!_stBadgeEl) {
-            _stBadgeEl = document.createElement('div');
-            _stBadgeEl.id = 'nova-st-badge';
-            document.body.appendChild(_stBadgeEl);
-            _stBadgeEl.addEventListener('click', _stTogglePanel);
+        if (!entries.length) {
+            snPanelList.innerHTML = `<div class="nw-sn-empty"><div class="nw-sn-empty-icon">📝</div>No sticky notes yet.<br>Open any page and add a note<br>from the menu.</div>`;
+            return;
         }
 
-        _stBadgeEl.className = 'nova-st-badge' + (mins >= 120 ? ' danger' : mins >= 45 ? ' warn' : '');
-        _stBadgeEl.innerHTML = `<div class="nova-st-dot"></div>${_stFmtTime(ms)} on ${_stDomain}`;
-    }
-
-    function _stTogglePanel() {
-        if (_stPanelEl) { _stPanelEl.remove(); _stPanelEl = null; return; }
-        const data  = _stLoad();
-        const today = data[_stDateKey] || {};
-        // Add current session
-        today[_stDomain] = (today[_stDomain] || 0) + (Date.now() - _stStart);
-        const sorted = Object.entries(today).sort((a, b) => b[1] - a[1]).slice(0, 8);
-        const max    = sorted[0]?.[1] || 1;
-
-        const panel = document.createElement('div');
-        panel.className = 'nova-st-panel';
-        _stPanelEl = panel;
-        panel.innerHTML = `
-            <div class="nova-st-panel-header">⏱ Today's screen time</div>
-            ${sorted.map(([site, ms]) => `
-                <div class="nova-st-row">
-                    <div>
-                        <div class="nova-st-site">${NovaChatCore.esc(site)}</div>
-                        <div class="nova-st-bar-wrap"><div class="nova-st-bar" style="width:${Math.round(ms/max*100)}%"></div></div>
+        snPanelList.innerHTML = entries.map(([url, note]) => {
+            const display = url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 55);
+            const preview = note.text.length > 140 ? note.text.slice(0, 140) + '…' : note.text;
+            return `
+                <div class="nw-sn-card" data-url="${NovaChatCore.esc(url)}">
+                    <div class="nw-sn-card-url" title="${NovaChatCore.esc(url)}">🔗 ${NovaChatCore.esc(display)}</div>
+                    <div class="nw-sn-card-text">${NovaChatCore.esc(preview)}</div>
+                    <div class="nw-sn-card-footer">
+                        <span class="nw-sn-card-ts">${_snTimestamp(note.ts)}</span>
+                        <div class="nw-sn-card-actions">
+                            <button class="nw-sn-card-btn open" data-url="${NovaChatCore.esc(url)}">Open page</button>
+                            <button class="nw-sn-card-btn del"  data-url="${NovaChatCore.esc(url)}">Delete</button>
+                        </div>
                     </div>
-                    <div class="nova-st-time">${_stFmtTime(ms)}</div>
-                </div>
-            `).join('')}
-        `;
-        document.body.appendChild(panel);
+                </div>`;
+        }).join('');
 
-        setTimeout(() => {
-            const hide = (ev) => {
-                if (!panel.contains(ev.target) && ev.target !== _stBadgeEl) {
-                    panel.remove(); _stPanelEl = null;
-                    document.removeEventListener('mousedown', hide);
-                }
-            };
-            document.addEventListener('mousedown', hide);
-        }, 0);
+        snPanelList.querySelectorAll('.nw-sn-card-btn.open').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                chrome.runtime.sendMessage({ type: 'NAVIGATE', url: btn.dataset.url });
+            });
+        });
+
+        snPanelList.querySelectorAll('.nw-sn-card-btn.del').forEach(btn => {
+            btn.addEventListener('click', async e => {
+                e.stopPropagation();
+                const d = await _snLoad();
+                delete d[btn.dataset.url];
+                await _snSave(d);
+                renderChips();
+                _snRenderPanel();
+            });
+        });
+
+        snPanelList.querySelectorAll('.nw-sn-card').forEach(card => {
+            card.addEventListener('click', () => {
+                chrome.runtime.sendMessage({ type: 'NAVIGATE', url: card.dataset.url });
+            });
+        });
     }
 
-    // Update badge every 30 seconds
-    _stUpdateBadge();
-    _stBadgeTimer = setInterval(_stUpdateBadge, 30000);
+    function openSnPanel() {
+        snPanel.classList.add('open');
+        _snRenderPanel();
+    }
+    function closeSnPanel() { snPanel.classList.remove('open'); }
 
-    // Menu button toggles screen time panel
-    document.getElementById('nw-menu-screentime').addEventListener('click', () => {
-        closeMenu();
-        _stTogglePanel();
-    });
+    document.getElementById('nw-sn-panel-back').addEventListener('click', closeSnPanel);
+    document.getElementById('nw-menu-all-notes').addEventListener('click', () => { closeMenu(); openSnPanel(); });
 
     // ── Entrance pop animation ────────────────────────────────────────────────
     widget.style.opacity = '0';

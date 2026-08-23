@@ -422,6 +422,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    // Shared cross-origin storage (saved pages, sticky notes, clipboard)
+    if (message.type === 'SHARED_STORAGE_GET') {
+        chrome.storage.local.get(message.keys, result => {
+            sendResponse({ data: result });
+        });
+        return true;
+    }
+
+    if (message.type === 'SHARED_STORAGE_SET') {
+        chrome.storage.local.set(message.data, () => {
+            sendResponse({ success: true });
+        });
+        return true;
+    }
+
+    if (message.type === 'SHARED_STORAGE_REMOVE') {
+        chrome.storage.local.remove(message.keys, () => {
+            sendResponse({ success: true });
+        });
+        return true;
+    }
+
     // Navigate the active tab to a URL (proper MV3 pattern — avoids CSP issues)
     if (message.type === 'NAVIGATE') {
         (async () => {

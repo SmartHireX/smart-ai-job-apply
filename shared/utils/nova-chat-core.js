@@ -265,15 +265,60 @@ JSON:`;
         try { localStorage.setItem(JT_KEY, JSON.stringify(jobs)); } catch {}
     }
 
+    // ── Shared cross-origin storage via background ────────────────────────────
+    // localStorage is per-origin so data saved on linkedin.com is invisible on
+    // youtube.com. These helpers route through the background service worker which
+    // uses chrome.storage.local — one shared namespace for all origins.
+
+    function sharedGet(keys) {
+        return new Promise(resolve => {
+            try {
+                chrome.runtime.sendMessage({ type: 'SHARED_STORAGE_GET', keys }, res => {
+                    if (chrome.runtime.lastError) { resolve({}); return; }
+                    resolve(res?.data || {});
+                });
+            } catch { resolve({}); }
+        });
+    }
+
+    function sharedSet(data) {
+        return new Promise(resolve => {
+            try {
+                chrome.runtime.sendMessage({ type: 'SHARED_STORAGE_SET', data }, () => resolve());
+            } catch { resolve(); }
+        });
+    }
+
+    function sharedRemove(keys) {
+        return new Promise(resolve => {
+            try {
+                chrome.runtime.sendMessage({ type: 'SHARED_STORAGE_REMOVE', keys }, () => resolve());
+            } catch { resolve(); }
+        });
+    }
+
     // ── Saved pages storage ───────────────────────────────────────────────────
     const SP_KEY = 'nova_saved_pages';
 
-    function spLoad() {
-        try { return JSON.parse(localStorage.getItem(SP_KEY) || '[]'); } catch { return []; }
+    async function spLoad() {
+        const res = await sharedGet([SP_KEY]);
+        return res[SP_KEY] || [];
     }
 
-    function spSave(pages) {
-        try { localStorage.setItem(SP_KEY, JSON.stringify(pages)); } catch {}
+    async function spSave(pages) {
+        await sharedSet({ [SP_KEY]: pages });
+    }
+
+    // ── Sticky notes storage ──────────────────────────────────────────────────
+    const SN_SHARED_KEY = 'nova_sticky_notes';
+
+    async function snSharedLoad() {
+        const res = await sharedGet([SN_SHARED_KEY]);
+        return res[SN_SHARED_KEY] || {};
+    }
+
+    async function snSharedSave(notes) {
+        await sharedSet({ [SN_SHARED_KEY]: notes });
     }
 
     // ── Expose ────────────────────────────────────────────────────────────────
@@ -295,5 +340,11 @@ JSON:`;
         SP_KEY,
         spLoad,
         spSave,
+        SN_SHARED_KEY,
+        snSharedLoad,
+        snSharedSave,
+        sharedGet,
+        sharedSet,
+        sharedRemove,
     };
 })();
