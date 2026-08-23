@@ -626,6 +626,13 @@
             background: rgba(255,255,255,0.8); border: 1px solid rgba(99,102,241,0.25);
             padding: 2px 9px; border-radius: 20px;
         }
+        .nw-sn-panel-new {
+            display: flex; align-items: center; gap: 4px;
+            padding: 5px 11px; border-radius: 8px; border: none; cursor: pointer;
+            background: #6366f1; color: #fff; font-size: 12px; font-weight: 600;
+            transition: background 0.15s; flex-shrink: 0;
+        }
+        .nw-sn-panel-new:hover { background: #4f46e5; }
         /* Search + tag toolbar */
         .nw-sn-toolbar {
             padding: 10px 12px 6px; display: flex; flex-direction: column; gap: 7px;
@@ -1825,7 +1832,10 @@
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                 </button>
                 <div class="nw-sn-panel-title">📝 Sticky Notes</div>
-                <div class="nw-sn-panel-count" id="nw-sn-panel-count"></div>
+                <button class="nw-sn-panel-new" id="nw-sn-panel-new">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New
+                </button>
             </div>
             <div class="nw-sn-toolbar">
                 <div class="nw-sn-search-wrap">
@@ -7410,7 +7420,6 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     // ── All Notes panel ───────────────────────────────────────────────────────
     const snPanel      = document.getElementById('nw-sn-panel');
     const snPanelList  = document.getElementById('nw-sn-list');
-    const snPanelCount = document.getElementById('nw-sn-panel-count');
 
     function _snTimestamp(ts) {
         if (!ts) return '';
@@ -7468,8 +7477,6 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 return true;
             })
             .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
-
-        snPanelCount.textContent = entries.length ? `${entries.length}` : '';
 
         if (!entries.length) {
             snPanelList.innerHTML = `<div class="nw-sn-empty"><div class="nw-sn-empty-icon">📝</div>${
@@ -7541,6 +7548,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     function closeSnPanel() { snPanel.classList.remove('open'); }
 
     document.getElementById('nw-sn-panel-back').addEventListener('click', closeSnPanel);
+    document.getElementById('nw-sn-panel-new').addEventListener('click', () => { closeSnPanel(); _snOpen(); });
 
     // Wire search input
     document.getElementById('nw-sn-search')?.addEventListener('input', e => {
