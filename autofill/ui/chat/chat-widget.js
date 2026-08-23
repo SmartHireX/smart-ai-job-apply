@@ -455,11 +455,9 @@
         /* ── Sessions panel ── */
         .nw-sessions-panel {
             position: absolute; inset: 0; background: #fff; z-index: 6;
-            display: flex; flex-direction: column;
-            transform: translateX(-100%);
-            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+            display: none; flex-direction: column;
         }
-        .nw-sessions-panel.open { transform: translateX(0); }
+        .nw-sessions-panel.open { display: flex; }
         .nw-sessions-header {
             display: flex; align-items: center; gap: 10px;
             padding: 0 14px; height: 52px;
@@ -514,11 +512,9 @@
         /* ── Clipboard History panel ── */
         .nw-cb-panel {
             position: absolute; inset: 0; background: #f8f9fb; z-index: 5;
-            display: flex; flex-direction: column;
-            transform: translateX(100%);
-            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+            display: none; flex-direction: column;
         }
-        .nw-cb-panel.open { transform: translateX(0); }
+        .nw-cb-panel.open { display: flex; }
         .nw-cb-panel-header {
             display: flex; align-items: center; gap: 10px;
             padding: 0 16px; height: 52px;
@@ -608,11 +604,9 @@
         /* ── Sticky Notes panel ── */
         .nw-sn-panel {
             position: absolute; inset: 0; background: #f8fafc; z-index: 5;
-            display: flex; flex-direction: column;
-            transform: translateX(100%);
-            transition: transform 0.24s cubic-bezier(0.4,0,0.2,1);
+            display: none; flex-direction: column;
         }
-        .nw-sn-panel.open { transform: translateX(0); }
+        .nw-sn-panel.open { display: flex; }
         .nw-sn-panel-header {
             display: flex; align-items: center; gap: 10px;
             padding: 0 14px; height: 52px;
@@ -824,11 +818,9 @@
         /* ── Saved pages panel ── */
         .nw-sp-panel {
             position: absolute; inset: 0; background: #fff; z-index: 5;
-            display: flex; flex-direction: column;
-            transform: translateX(100%);
-            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+            display: none; flex-direction: column;
         }
-        .nw-sp-panel.open { transform: translateX(0); }
+        .nw-sp-panel.open { display: flex; }
         .nw-sp-panel-header {
             display: flex; align-items: center; gap: 10px;
             padding: 0 14px; height: 50px;
@@ -1550,11 +1542,9 @@
         /* ── Notepad panel (inside widget) ── */
         .nw-np-panel {
             position: absolute; inset: 0; background: #fff; z-index: 7;
-            display: flex; flex-direction: column;
-            transform: translateX(100%);
-            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+            display: none; flex-direction: column;
         }
-        .nw-np-panel.open { transform: translateX(0); }
+        .nw-np-panel.open { display: flex; }
         .nw-np-panel-header {
             display: flex; align-items: center; gap: 8px;
             padding: 0 14px; height: 52px;
