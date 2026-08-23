@@ -173,6 +173,157 @@
         await cbAdd(text.slice(0, 800));
     }
 
+    // ── Chat Sessions ─────────────────────────────────────────────────────────
+    const SESSIONS_KEY = 'nova_chat_sessions';
+    let _activeSessionId = null;
+
+    function _sessGenId() { return 'cs_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6); }
+
+    async function _sessLoadAll() {
+        const res = await NovaChatCore.sharedGet([SESSIONS_KEY]);
+        return res[SESSIONS_KEY] || {};
+    }
+
+    async function _sessSaveAll(map) {
+        await NovaChatCore.sharedSet({ [SESSIONS_KEY]: map });
+    }
+
+    function _sessRelTime(ts) {
+        const d = Date.now() - ts;
+        if (d < 60000) return 'just now';
+        if (d < 3600000) return Math.floor(d / 60000) + 'm ago';
+        if (d < 86400000) return Math.floor(d / 3600000) + 'h ago';
+        return Math.floor(d / 86400000) + 'd ago';
+    }
+
+    async function _sessSaveCurrent() {
+        if (!_activeSessionId) return;
+        const map = await _sessLoadAll();
+        const sess = map[_activeSessionId];
+        if (!sess) return;
+        sess.messages = _seed.slice(-60);
+        sess.ts = Date.now();
+        // Auto-title from first user message
+        if (!sess.titled) {
+            const first = sess.messages.find(m => m.role === 'user');
+            if (first) {
+                sess.title = first.text.slice(0, 40) + (first.text.length > 40 ? '…' : '');
+                sess.titled = true;
+                _updateHeaderTitle(sess.title);
+            }
+        }
+        await _sessSaveAll(map);
+    }
+
+    function _updateHeaderTitle(title) {
+        const el = document.getElementById('nw-session-title');
+        if (!el) return;
+        if (title) {
+            el.innerHTML = `${esc(title.slice(0, 28))}${title.length > 28 ? '…' : ''} <span>AI</span>`;
+        } else {
+            el.innerHTML = `Nova <span>AI</span>`;
+        }
+    }
+
+    async function _sessCreate(switchTo = true) {
+        const map = await _sessLoadAll();
+        const id = _sessGenId();
+        map[id] = { id, title: 'New chat', ts: Date.now(), messages: [], titled: false };
+        await _sessSaveAll(map);
+        if (switchTo) await _sessSwitchTo(id, map);
+        return id;
+    }
+
+    async function _sessSwitchTo(id, mapArg) {
+        const map = mapArg || await _sessLoadAll();
+        const sess = map[id];
+        if (!sess) return;
+
+        // Persist current session before switching
+        if (_activeSessionId && _activeSessionId !== id) {
+            await _sessSaveCurrent();
+        }
+
+        _activeSessionId = id;
+        try { chrome.storage.local.set({ nova_active_session: id }); } catch {}
+
+        // Swap in-memory history
+        _seed.length = 0;
+        if (Array.isArray(sess.messages)) _seed.push(...sess.messages);
+
+        // Re-render chat
+        const msgs = document.getElementById('nw-messages');
+        const chips = document.getElementById('nw-chips');
+        if (msgs) {
+            msgs.innerHTML = '';
+            if (_seed.length) {
+                _seed.forEach(m => renderMsg(m.role, m.text, m.ts, m.records));
+                if (chips) chips.style.display = 'none';
+            } else {
+                if (chips) { chips.style.display = 'flex'; renderChips(); }
+            }
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+        _updateHeaderTitle(sess.titled ? sess.title : null);
+        _lastScanResults = null;
+    }
+
+    async function _sessDelete(id) {
+        const map = await _sessLoadAll();
+        delete map[id];
+        await _sessSaveAll(map);
+        if (_activeSessionId === id) {
+            const remaining = Object.keys(map);
+            if (remaining.length) {
+                await _sessSwitchTo(remaining[remaining.length - 1]);
+            } else {
+                await _sessCreate(true);
+            }
+        }
+    }
+
+    function _sessRenderList() {
+        _sessLoadAll().then(map => {
+            const listEl = document.getElementById('nw-sessions-list');
+            if (!listEl) return;
+            const sorted = Object.values(map).sort((a, b) => b.ts - a.ts);
+            if (!sorted.length) {
+                listEl.innerHTML = `<div class="nw-sessions-empty">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    No saved sessions yet
+                </div>`;
+                return;
+            }
+            listEl.innerHTML = '';
+            sorted.forEach(sess => {
+                const item = document.createElement('div');
+                item.className = 'nw-session-item' + (sess.id === _activeSessionId ? ' active' : '');
+                item.dataset.id = sess.id;
+                item.innerHTML = `
+                    <div class="nw-session-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <div class="nw-session-info">
+                        <div class="nw-session-name">${esc(sess.title || 'New chat')}</div>
+                        <div class="nw-session-meta">${(sess.messages || []).filter(m => m.role === 'user').length} messages · ${_sessRelTime(sess.ts)}</div>
+                    </div>
+                    <button class="nw-session-del" title="Delete session">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    </button>`;
+                item.querySelector('.nw-session-del').addEventListener('click', e => {
+                    e.stopPropagation();
+                    _sessDelete(sess.id).then(() => _sessRenderList());
+                });
+                item.addEventListener('click', () => {
+                    _sessSwitchTo(sess.id).then(() => {
+                        document.getElementById('nw-sessions-panel').classList.remove('open');
+                    });
+                });
+                listEl.appendChild(item);
+            });
+        });
+    }
+
     const _seed = [];
 
     const chatHistory = new Proxy(_seed, {
@@ -180,8 +331,8 @@
             if (prop === 'push') {
                 return (...args) => {
                     const result = Array.prototype.push.apply(target, args);
-                    const slice = target.slice(-40);
-                    try { chrome.storage.local.set({ nova_chat_history: slice }); } catch {}
+                    // Save to active session
+                    _sessSaveCurrent();
                     return result;
                 };
             }
@@ -301,6 +452,65 @@
             display: flex; border: 1px solid #e5e7eb; border-radius: 7px; overflow: hidden;
         }
         .nw-menu-provider .nw-provider-btn { flex: 1; text-align: center; }
+        /* ── Sessions panel ── */
+        .nw-sessions-panel {
+            position: absolute; inset: 0; background: #fff; z-index: 6;
+            display: flex; flex-direction: column;
+            transform: translateX(-100%);
+            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+        .nw-sessions-panel.open { transform: translateX(0); }
+        .nw-sessions-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 14px; height: 52px;
+            background: #fff; border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+        }
+        .nw-sessions-back {
+            width: 28px; height: 28px; border: 1px solid #e5e7eb;
+            border-radius: 7px; background: #fff; color: #6b7280;
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: all 0.15s; flex-shrink: 0;
+        }
+        .nw-sessions-back:hover { background: #f3f4f6; color: #111827; }
+        .nw-sessions-title { font-size: 13px; font-weight: 700; color: #111827; flex: 1; }
+        .nw-sessions-new {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 11px; background: #6366f1; color: white;
+            border: none; border-radius: 8px; font-size: 11.5px; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink: 0;
+        }
+        .nw-sessions-new:hover { background: #4f46e5; }
+        .nw-sessions-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+        .nw-session-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 9px 14px; cursor: pointer;
+            transition: background 0.1s; position: relative;
+        }
+        .nw-session-item:hover { background: #f9fafb; }
+        .nw-session-item.active { background: #eef2ff; }
+        .nw-session-item.active .nw-session-name { color: #4338ca; font-weight: 600; }
+        .nw-session-icon {
+            width: 28px; height: 28px; background: #f3f4f6; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: #9ca3af; flex-shrink: 0;
+        }
+        .nw-session-item.active .nw-session-icon { background: #e0e7ff; color: #6366f1; }
+        .nw-session-info { flex: 1; min-width: 0; }
+        .nw-session-name { font-size: 12px; font-weight: 500; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .nw-session-meta { font-size: 10px; color: #9ca3af; margin-top: 1px; }
+        .nw-session-del {
+            opacity: 0; width: 22px; height: 22px; border: none; background: none;
+            color: #9ca3af; cursor: pointer; border-radius: 5px; padding: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s; flex-shrink: 0;
+        }
+        .nw-session-item:hover .nw-session-del { opacity: 1; }
+        .nw-session-del:hover { background: #fee2e2; color: #ef4444; }
+        .nw-sessions-empty {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 40px 20px; color: #9ca3af;
+            font-size: 12px; text-align: center; gap: 8px;
+        }
         /* ── Clipboard History panel ── */
         .nw-cb-panel {
             position: absolute; inset: 0; background: #f8f9fb; z-index: 5;
@@ -1523,8 +1733,11 @@
 
         <div class="nw-header" id="nw-header">
             <div class="nw-logo">N</div>
-            <div class="nw-title">Nova <span>AI</span></div>
+            <div class="nw-title" id="nw-session-title">Nova <span>AI</span></div>
             <div class="nw-actions">
+                <button class="nw-btn" id="nw-sessions-btn" title="Chat sessions">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </button>
                 <div class="nw-menu-wrap">
                     <button class="nw-btn" id="nw-menu-btn" title="Menu">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -1593,6 +1806,20 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <!-- Sessions panel (slides in from left) -->
+        <div class="nw-sessions-panel" id="nw-sessions-panel">
+            <div class="nw-sessions-header">
+                <button class="nw-sessions-back" id="nw-sessions-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="nw-sessions-title">Chat Sessions</div>
+                <button class="nw-sessions-new" id="nw-sessions-new">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New chat
+                </button>
+            </div>
+            <div class="nw-sessions-list" id="nw-sessions-list"></div>
         </div>
         <!-- Clipboard history panel (slides over chat) -->
         <div class="nw-cb-panel" id="nw-cb-panel">
@@ -1727,20 +1954,42 @@
         document.getElementById('nw-page-title').textContent = location.hostname;
     }
 
-    // ── Restore chat history ──────────────────────────────────────────────────
+    // ── Restore session ───────────────────────────────────────────────────────
     const messagesEl = document.getElementById('nw-messages');
-    try {
-        chrome.storage.local.get(['nova_chat_history'], result => {
-            const saved = result.nova_chat_history;
-            if (Array.isArray(saved) && saved.length) {
-                _seed.push(...saved);
-                messagesEl.innerHTML = '';
-                saved.forEach(m => renderMsg(m.role, m.text, m.ts, m.records));
-                document.getElementById('nw-chips').style.display = 'none';
-                messagesEl.scrollTop = messagesEl.scrollHeight;
+    (async () => {
+        try {
+            let map = await _sessLoadAll();
+            // Migrate legacy flat history if sessions store is empty
+            if (!Object.keys(map).length) {
+                const legacy = await new Promise(r => {
+                    try { chrome.storage.local.get(['nova_chat_history'], res => r(res.nova_chat_history)); }
+                    catch { r(null); }
+                });
+                const id = _sessGenId();
+                map[id] = {
+                    id, titled: !!legacy?.length,
+                    title: legacy?.find(m => m.role === 'user')?.text?.slice(0, 40) || 'New chat',
+                    ts: Date.now(),
+                    messages: Array.isArray(legacy) ? legacy.slice(-60) : []
+                };
+                await _sessSaveAll(map);
+                try { chrome.storage.local.remove('nova_chat_history'); } catch {}
             }
-        });
-    } catch {}
+            // Restore last active session
+            const activeId = await new Promise(r => {
+                try { chrome.storage.local.get(['nova_active_session'], res => r(res.nova_active_session)); }
+                catch { r(null); }
+            });
+            const targetId = (activeId && map[activeId]) ? activeId : Object.keys(map).sort((a, b) => map[b].ts - map[a].ts)[0];
+            if (targetId) {
+                await _sessSwitchTo(targetId, map);
+            } else {
+                await _sessCreate(true);
+            }
+        } catch (e) {
+            console.warn('[Nova] session restore failed:', e);
+        }
+    })();
 
     // ── Drag ──────────────────────────────────────────────────────────────────
     const header = document.getElementById('nw-header');
@@ -1882,16 +2131,22 @@
 
     document.getElementById('nw-menu-clear').addEventListener('click', () => {
         closeMenu();
-        chatHistory.length = 0;
-        _lastScanResults = null;
-        try { chrome.storage.local.remove('nova_chat_history'); } catch {}
-        messagesEl.innerHTML = `
-            <div class="nw-msg ai">
-                <div class="nw-avatar">N</div>
-                <div><div class="nw-bubble">Chat cleared. How can I help?</div></div>
-            </div>`;
-        chipsEl.style.display = 'flex';
-        renderChips();
+        _sessCreate(true);
+    });
+
+    // ── Sessions panel ────────────────────────────────────────────────────────
+    const sessionsPanel = document.getElementById('nw-sessions-panel');
+
+    document.getElementById('nw-sessions-btn').addEventListener('click', () => {
+        _sessRenderList();
+        sessionsPanel.classList.add('open');
+    });
+    document.getElementById('nw-sessions-back').addEventListener('click', () => {
+        sessionsPanel.classList.remove('open');
+    });
+    document.getElementById('nw-sessions-new').addEventListener('click', () => {
+        sessionsPanel.classList.remove('open');
+        _sessCreate(true);
     });
 
     // ── Saved pages panel ─────────────────────────────────────────────────────
