@@ -397,66 +397,159 @@
         .nw-cb-empty-icon { font-size: 28px; margin-bottom: 8px; }
         /* ── Sticky Notes panel ── */
         .nw-sn-panel {
-            position: absolute; inset: 0; background: #f8f9fb; z-index: 5;
+            position: absolute; inset: 0; background: #f8fafc; z-index: 5;
             display: flex; flex-direction: column;
             transform: translateX(100%);
-            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+            transition: transform 0.24s cubic-bezier(0.4,0,0.2,1);
         }
         .nw-sn-panel.open { transform: translateX(0); }
         .nw-sn-panel-header {
             display: flex; align-items: center; gap: 10px;
-            padding: 0 16px; height: 52px; background: #fff;
-            border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+            padding: 0 14px; height: 52px;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            border-bottom: 1px solid rgba(99,102,241,0.15); flex-shrink: 0;
         }
         .nw-sn-panel-back {
-            width: 28px; height: 28px; border: 1px solid #e5e7eb;
-            border-radius: 7px; background: #fff; color: #6b7280;
+            width: 28px; height: 28px; border: 1px solid rgba(99,102,241,0.25);
+            border-radius: 8px; background: rgba(255,255,255,0.8); color: #4338ca;
             cursor: pointer; display: flex; align-items: center;
             justify-content: center; transition: all 0.15s; flex-shrink: 0;
         }
-        .nw-sn-panel-back:hover { background: #f3f4f6; color: #111827; }
-        .nw-sn-panel-title { font-size: 13px; font-weight: 700; color: #111827; flex: 1; }
+        .nw-sn-panel-back:hover { background: #fff; box-shadow: 0 1px 4px rgba(99,102,241,0.15); }
+        .nw-sn-panel-title { font-size: 13px; font-weight: 700; color: #312e81; flex: 1; }
         .nw-sn-panel-count {
-            font-size: 10.5px; font-weight: 600; color: #92400e;
-            background: #fef9c3; padding: 2px 8px; border-radius: 10px;
+            font-size: 10.5px; font-weight: 700; color: #4338ca;
+            background: rgba(255,255,255,0.8); border: 1px solid rgba(99,102,241,0.25);
+            padding: 2px 9px; border-radius: 20px;
         }
+        /* Search + tag toolbar */
+        .nw-sn-toolbar {
+            padding: 10px 12px 6px; display: flex; flex-direction: column; gap: 7px;
+            border-bottom: 1px solid #e5e7eb; background: #fff; flex-shrink: 0;
+        }
+        .nw-sn-search-wrap {
+            display: flex; align-items: center; gap: 7px;
+            background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px;
+            padding: 6px 11px; transition: border-color 0.15s;
+        }
+        .nw-sn-search-wrap:focus-within { border-color: #6366f1; background: #fff; }
+        .nw-sn-search-wrap svg { flex-shrink: 0; color: #9ca3af; }
+        .nw-sn-search-input {
+            flex: 1; border: none; outline: none; background: transparent;
+            font-size: 12.5px; color: #111827; font-family: inherit;
+        }
+        .nw-sn-search-input::placeholder { color: #9ca3af; }
+        .nw-sn-tag-filters {
+            display: flex; gap: 5px; flex-wrap: wrap; padding-bottom: 2px;
+        }
+        .nw-sn-tag-pill {
+            padding: 3px 10px; border-radius: 20px; font-size: 10.5px; font-weight: 600;
+            cursor: pointer; border: 1.5px solid transparent; transition: all 0.12s;
+            font-family: inherit;
+        }
+        .nw-sn-tag-pill:hover { filter: brightness(0.95); }
+        .nw-sn-tag-pill.active { border-color: currentColor; box-shadow: 0 0 0 2px rgba(99,102,241,0.1); }
+        /* Note list */
         .nw-sn-list {
-            flex: 1; overflow-y: auto; padding: 8px 12px;
-            display: flex; flex-direction: column; gap: 6px;
+            flex: 1; overflow-y: auto; padding: 10px 10px;
+            display: flex; flex-direction: column; gap: 8px;
         }
         .nw-sn-card {
-            background: #fefce8; border: 1.5px solid #fde68a;
-            border-radius: 10px; padding: 10px 12px; cursor: pointer;
-            transition: border-color 0.15s, box-shadow 0.15s;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-left: 3.5px solid #6366f1;
+            border-radius: 12px; padding: 11px 12px 10px;
+            cursor: pointer;
+            transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
-        .nw-sn-card:hover { border-color: #f59e0b; box-shadow: 0 2px 8px rgba(245,158,11,0.15); }
+        .nw-sn-card:hover {
+            box-shadow: 0 4px 14px rgba(99,102,241,0.12);
+            border-color: #c7d2fe; border-left-color: #4f46e5;
+            transform: translateY(-1px);
+        }
         .nw-sn-card-url {
-            font-size: 10px; color: #a16207; font-weight: 600;
+            font-size: 10px; color: #6366f1; font-weight: 600;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            margin-bottom: 5px;
+            margin-bottom: 5px; display: flex; align-items: center; gap: 4px;
         }
         .nw-sn-card-text {
-            font-size: 12px; color: #1c1917; line-height: 1.5;
+            font-size: 12.5px; color: #1c1917; line-height: 1.55;
             display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
             overflow: hidden;
         }
         .nw-sn-card-footer {
             display: flex; align-items: center; justify-content: space-between;
-            margin-top: 7px;
+            margin-top: 8px; padding-top: 7px;
+            border-top: 1px solid #f1f5f9;
         }
-        .nw-sn-card-ts { font-size: 10px; color: #a16207; }
+        .nw-sn-card-ts { font-size: 10px; color: #6366f1; font-weight: 500; }
         .nw-sn-card-actions { display: flex; gap: 5px; }
         .nw-sn-card-btn {
-            padding: 3px 9px; border: none; border-radius: 5px;
+            padding: 3px 10px; border: none; border-radius: 6px;
             font-size: 10.5px; font-weight: 600; cursor: pointer;
-            font-family: inherit; transition: background 0.1s;
+            font-family: inherit; transition: all 0.12s;
         }
-        .nw-sn-card-btn.open { background: #f59e0b; color: #fff; }
-        .nw-sn-card-btn.open:hover { background: #d97706; }
-        .nw-sn-card-btn.del { background: rgba(0,0,0,0.06); color: #78350f; }
-        .nw-sn-card-btn.del:hover { background: #fecaca; color: #b91c1c; }
-        .nw-sn-empty { padding: 40px 20px; text-align: center; color: #9ca3af; font-size: 12px; line-height: 1.6; }
-        .nw-sn-empty-icon { font-size: 28px; margin-bottom: 8px; }
+        .nw-sn-card-btn.open {
+            background: linear-gradient(135deg,#6366f1,#4f46e5);
+            color: #fff; box-shadow: 0 1px 4px rgba(99,102,241,0.3);
+        }
+        .nw-sn-card-btn.open:hover { background: #4f46e5; box-shadow: 0 2px 8px rgba(99,102,241,0.4); }
+        .nw-sn-card-btn.del { background: #f8fafc; color: #6b7280; border: 1px solid #e2e8f0; }
+        .nw-sn-card-btn.del:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+        /* Empty state */
+        .nw-sn-empty {
+            padding: 48px 24px; text-align: center;
+            color: #9ca3af; font-size: 12.5px; line-height: 1.7;
+        }
+        .nw-sn-empty-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.7; }
+        /* Tags in note card */
+        .nw-sn-card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+        .nw-sn-card-tag {
+            padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600;
+        }
+        /* Tag input area in note widget */
+        .nova-sn-tags-row {
+            display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+            padding: 6px 12px 5px;
+            border-top: 1px solid rgba(99,102,241,0.15);
+            background: rgba(238,242,255,0.5); min-height: 32px;
+        }
+        .nova-sn-tag-chip {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 2px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 600;
+            cursor: default; letter-spacing: 0.01em;
+        }
+        .nova-sn-tag-chip-del {
+            cursor: pointer; opacity: 0.55; font-size: 9px; line-height: 1;
+            border: none; background: none; padding: 0 1px; color: inherit;
+            transition: opacity 0.1s;
+        }
+        .nova-sn-tag-chip-del:hover { opacity: 1; }
+        .nova-sn-tag-input {
+            border: none; outline: none; background: transparent; font-family: inherit;
+            font-size: 11px; color: #4338ca; min-width: 70px; flex: 1;
+        }
+        .nova-sn-tag-input::placeholder { color: #818cf8; opacity: 0.7; }
+        /* Markdown preview */
+        .nova-sn-preview {
+            flex: 1; padding: 12px 14px; font-size: 13px; line-height: 1.65;
+            color: #1c1917; overflow-y: auto; background: #ffffff;
+            min-height: 110px;
+        }
+        .nova-sn-preview h1,.nova-sn-preview h2,.nova-sn-preview h3 {
+            font-size: 13.5px; font-weight: 700; margin: 8px 0 4px; color: #312e81;
+        }
+        .nova-sn-preview p { margin: 0 0 7px; }
+        .nova-sn-preview ul,.nova-sn-preview ol { margin: 0 0 7px; padding-left: 18px; }
+        .nova-sn-preview li { margin-bottom: 3px; }
+        .nova-sn-preview code {
+            background: #eef2ff; border-radius: 4px; padding: 1px 5px;
+            font-size: 11.5px; font-family: monospace; color: #4f46e5;
+        }
+        .nova-sn-preview strong { font-weight: 700; }
+        .nova-sn-preview em { font-style: italic; color: #4f46e5; }
+        .nova-sn-preview a { color: #6366f1; text-decoration: underline; }
         /* ── Tab Switcher overlay ── */
         .nw-tab-overlay {
             position: fixed; inset: 0; z-index: 2147483647;
@@ -1138,7 +1231,7 @@
         }
         .nova-lp-loading { font-size: 11px; color: #9ca3af; padding: 4px 0; }
         /* ── Reading Mode ── */
-        body.nova-reading-mode > *:not(#nova-read-overlay):not(#${WIDGET_ID}) {
+        body.nova-reading-mode > *:not(#nova-read-overlay):not(#${WIDGET_ID}):not(#nova-explain-tooltip):not(#nova-sticky-note):not(#nova-qs-panel) {
             display: none !important;
         }
         #nova-read-overlay {
@@ -1208,43 +1301,65 @@
         /* ── Sticky Notes ── */
         #nova-sticky-note {
             position: fixed; z-index: 2147483642;
-            width: 240px; background: #fefce8;
-            border: 1px solid #fde68a;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            width: 300px;
+            background: #ffffff;
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
             display: flex; flex-direction: column;
             font-family: -apple-system, sans-serif;
-            animation: nova-tooltip-in 0.15s ease;
+            animation: nova-sn-in 0.18s cubic-bezier(0.34,1.56,0.64,1);
             overflow: hidden;
+        }
+        @keyframes nova-sn-in {
+            from { opacity: 0; transform: scale(0.94) translateY(6px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
         }
         .nova-sn-header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 8px 10px 6px;
-            background: #fef08a; cursor: move; user-select: none;
+            padding: 10px 12px 9px;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            cursor: move; user-select: none;
+            border-bottom: 1px solid rgba(99,102,241,0.15);
         }
         .nova-sn-title {
-            font-size: 11px; font-weight: 700; color: #854d0e;
-            display: flex; align-items: center; gap: 5px;
+            font-size: 11.5px; font-weight: 700; color: #312e81;
+            display: flex; align-items: center; gap: 6px; letter-spacing: 0.01em;
         }
-        .nova-sn-actions { display: flex; gap: 4px; }
+        .nova-sn-title-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
+        }
+        .nova-sn-actions { display: flex; gap: 3px; }
         .nova-sn-btn {
-            width: 22px; height: 22px; border: none; border-radius: 5px;
-            background: rgba(0,0,0,0.08); color: #78350f;
-            cursor: pointer; font-size: 11px; display: flex;
+            width: 24px; height: 24px; border: none; border-radius: 6px;
+            background: rgba(99,102,241,0.1); color: #4338ca;
+            cursor: pointer; font-size: 12px; display: flex;
             align-items: center; justify-content: center;
-            transition: background 0.1s;
+            transition: background 0.12s, transform 0.1s;
         }
-        .nova-sn-btn:hover { background: rgba(0,0,0,0.16); }
+        .nova-sn-btn:hover { background: rgba(99,102,241,0.2); transform: scale(1.1); }
         .nova-sn-textarea {
             flex: 1; border: none; outline: none; resize: none;
-            background: #fefce8; padding: 8px 10px;
-            font-size: 12.5px; line-height: 1.55; color: #1c1917;
-            font-family: inherit; min-height: 80px;
+            background: #ffffff; padding: 12px 14px;
+            font-size: 13px; line-height: 1.65; color: #1c1917;
+            font-family: inherit; min-height: 110px;
+            letter-spacing: 0.01em;
         }
+        .nova-sn-textarea::placeholder { color: #a5b4fc; opacity: 0.8; }
         .nova-sn-footer {
-            padding: 4px 10px 6px; font-size: 9.5px; color: #a16207;
-            border-top: 1px solid #fde68a; display: flex;
-            align-items: center; justify-content: space-between;
+            padding: 5px 12px 7px; font-size: 10px; color: #6366f1;
+            border-top: 1px solid rgba(99,102,241,0.12);
+            background: rgba(238,242,255,0.5);
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 6px;
+        }
+        .nova-sn-status {
+            display: flex; align-items: center; gap: 4px; font-weight: 500;
+        }
+        .nova-sn-status-dot {
+            width: 5px; height: 5px; border-radius: 50%; background: #10b981;
+            flex-shrink: 0;
         }
     `;
     document.head.appendChild(styleEl);
@@ -1284,22 +1399,6 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                             Fill Form
                         </button>
-                        <button class="nw-menu-item" id="nw-menu-clear">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-                            Clear chat
-                        </button>
-                        <div class="nw-menu-sep"></div>
-                        <div class="nw-menu-sub">
-                            <div class="nw-menu-sub-label">AI Provider</div>
-                            <div class="nw-menu-provider nw-provider-toggle">
-                                <button class="nw-provider-btn active" id="nw-use-gemini">Gemini</button>
-                                <button class="nw-provider-btn" id="nw-use-groq">Groq</button>
-                            </div>
-                            <div id="nw-groq-nudge" style="display:none;margin-top:7px;padding:6px 8px;background:#fefce8;border:1px solid #fde68a;border-radius:6px;font-size:10.5px;color:#92400e;line-height:1.4;">
-                                💡 <strong>Get free AI tokens</strong> — add a free Groq key in Settings. Chat, summarize &amp; explain use it automatically, saving your Gemini quota.
-                                <button id="nw-groq-nudge-btn" style="display:block;width:100%;margin-top:5px;padding:4px 0;background:#f59e0b;color:white;border:none;border-radius:5px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;">⚡ Get free Groq key →</button>
-                            </div>
-                        </div>
                         <button class="nw-menu-item" id="nw-menu-clipboard">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M14 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
                             Clipboard History
@@ -1329,6 +1428,21 @@
                             Settings
                         </button>
                         <div class="nw-menu-sep"></div>
+                        <div class="nw-menu-sub">
+                            <div class="nw-menu-sub-label">AI Provider</div>
+                            <div class="nw-menu-provider nw-provider-toggle">
+                                <button class="nw-provider-btn active" id="nw-use-gemini">Gemini</button>
+                                <button class="nw-provider-btn" id="nw-use-groq">Groq</button>
+                            </div>
+                            <div id="nw-groq-nudge" style="display:none;margin-top:7px;padding:6px 8px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;font-size:10.5px;color:#3730a3;line-height:1.4;">
+                                💡 <strong>Get free AI tokens</strong> — add a free Groq key in Settings. Chat, summarize &amp; explain use it automatically, saving your Gemini quota.
+                                <button id="nw-groq-nudge-btn" style="display:block;width:100%;margin-top:5px;padding:4px 0;background:#6366f1;color:white;border:none;border-radius:5px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;">⚡ Get free Groq key →</button>
+                            </div>
+                        </div>
+                        <button class="nw-menu-item" id="nw-menu-clear">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                            Clear chat
+                        </button>
                         <button class="nw-menu-item danger" id="nw-menu-close">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                             Close chat
@@ -1362,6 +1476,13 @@
                 </button>
                 <div class="nw-sn-panel-title">📝 Sticky Notes</div>
                 <div class="nw-sn-panel-count" id="nw-sn-panel-count"></div>
+            </div>
+            <div class="nw-sn-toolbar">
+                <div class="nw-sn-search-wrap">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input class="nw-sn-search-input" id="nw-sn-search" placeholder="Search notes…" autocomplete="off"/>
+                </div>
+                <div class="nw-sn-tag-filters" id="nw-sn-tag-filters"></div>
             </div>
             <div class="nw-sn-list" id="nw-sn-list"></div>
         </div>
@@ -2222,7 +2343,7 @@
                 snBtn.className = 'nw-chip';
                 snBtn.textContent = '📝 My note';
                 snBtn.title = snNote.text.length > 60 ? snNote.text.slice(0, 60) + '…' : snNote.text;
-                snBtn.style.cssText = 'background:#fefce8;border-color:#fde68a;color:#92400e;';
+                snBtn.style.cssText = 'background:#eef2ff;border-color:#c7d2fe;color:#4338ca;';
                 snBtn.addEventListener('click', _snOpen);
                 chipsEl.appendChild(snBtn);
             }
@@ -2292,11 +2413,16 @@
         searchBtn.className = 'nova-tt-search';
         searchBtn.textContent = '🔍 Search';
 
+        const noteBtn = document.createElement('button');
+        noteBtn.className = 'nova-tt-search';
+        noteBtn.textContent = '📝 Note';
+
         tt.appendChild(explainBtn);
         tt.appendChild(askBtn);
         tt.appendChild(writeBtn);
         tt.appendChild(clipBtn);
         tt.appendChild(searchBtn);
+        tt.appendChild(noteBtn);
         document.body.appendChild(tt);
 
         const truncated = selectedText.slice(0, 400);
@@ -2348,6 +2474,12 @@
             e.stopPropagation();
             tt.remove();
             _showQuickSearch(truncated, e.clientX, e.clientY);
+        });
+
+        noteBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            tt.remove();
+            _snOpen(truncated);
         });
 
         // Auto-hide if user clicks elsewhere
@@ -6366,55 +6498,182 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
     let _snEl = null;
 
-    async function _snOpen() {
-        if (_snEl) { _snEl.remove(); _snEl = null; return; }
+    // Tag colour palette (cycles by index)
+    const SN_TAG_COLORS = [
+        { bg: '#eef2ff', color: '#3730a3', border: '#c7d2fe' },
+        { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+        { bg: '#dcfce7', color: '#166534', border: '#86efac' },
+        { bg: '#fce7f3', color: '#9d174d', border: '#f9a8d4' },
+        { bg: '#ede9fe', color: '#5b21b6', border: '#c4b5fd' },
+        { bg: '#ffedd5', color: '#9a3412', border: '#fdba74' },
+    ];
+    function _snTagColor(tag, allTags) {
+        const idx = allTags.indexOf(tag) % SN_TAG_COLORS.length;
+        return SN_TAG_COLORS[Math.abs(idx)];
+    }
+
+    function _snMarkdown(text) {
+        return text
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/^## (.+)$/gm,  '<h2>$1</h2>')
+            .replace(/^# (.+)$/gm,   '<h1>$1</h1>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g,    '<em>$1</em>')
+            .replace(/`(.+?)`/g,      '<code>$1</code>')
+            .replace(/\[(.+?)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+            .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+            .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+            .replace(/\n{2,}/g, '</p><p>')
+            .replace(/\n/g, '<br>')
+            .replace(/^(?!<[hlu]|<\/p|<p)(.+)/, '<p>$1</p>');
+    }
+
+    async function _snOpen(prefillText = '') {
+        if (_snEl && !prefillText) { _snEl.remove(); _snEl = null; return; }
+        if (_snEl) _snEl.remove();
+
         const key   = _snUrlKey();
         const notes = await _snLoad();
-        const saved = notes[key] || { text: '', x: null, y: null };
+        const saved = notes[key] || { text: '', tags: [], x: null, y: null };
+
+        // If prefilling, append selection to existing text
+        const initialText = prefillText
+            ? (saved.text ? saved.text + '\n\n' + prefillText : prefillText)
+            : saved.text;
 
         const el = document.createElement('div');
         el.id = 'nova-sticky-note';
-        const startX = saved.x ?? (window.innerWidth  - 260);
+        const startX = saved.x ?? (window.innerWidth - 260);
         const startY = saved.y ?? 80;
         el.style.cssText = `left:${startX}px;top:${startY}px;`;
 
         el.innerHTML = `
             <div class="nova-sn-header" id="nova-sn-drag">
-                <div class="nova-sn-title">📝 Note for this page</div>
+                <div class="nova-sn-title">
+                    <div class="nova-sn-title-dot"></div>
+                    ${NovaChatCore.esc(location.hostname.replace('www.',''))}
+                </div>
                 <div class="nova-sn-actions">
-                    <button class="nova-sn-btn" id="nova-sn-clear" title="Clear">🗑</button>
+                    <button class="nova-sn-btn" id="nova-sn-preview-btn" title="Preview markdown">👁</button>
+                    <button class="nova-sn-btn" id="nova-sn-clear" title="Clear note">🗑</button>
                     <button class="nova-sn-btn" id="nova-sn-close" title="Close">✕</button>
                 </div>
             </div>
-            <textarea class="nova-sn-textarea" id="nova-sn-text" placeholder="Write a note for this page…" spellcheck="false">${NovaChatCore.esc(saved.text)}</textarea>
+            <textarea class="nova-sn-textarea" id="nova-sn-text" placeholder="Write a note…&#10;Supports **bold**, *italic*, # heading, - list" spellcheck="false">${NovaChatCore.esc(initialText)}</textarea>
+            <div class="nova-sn-preview" id="nova-sn-preview" style="display:none"></div>
+            <div class="nova-sn-tags-row" id="nova-sn-tags-row"></div>
             <div class="nova-sn-footer">
-                <span id="nova-sn-status">Auto-saved</span>
-                <span>${location.hostname.replace('www.', '')}</span>
+                <span class="nova-sn-status">
+                    <span class="nova-sn-status-dot" id="nova-sn-status-dot"></span>
+                    <span id="nova-sn-status">${prefillText ? 'Text added ✓' : 'Auto-saved'}</span>
+                </span>
+                <span style="opacity:0.6">${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
             </div>`;
         document.body.appendChild(el);
         _snEl = el;
 
+        // ── Tags ─────────────────────────────────────────────────────────────
+        let _tags = [...(saved.tags || [])];
+        const tagsRow = el.querySelector('#nova-sn-tags-row');
+
+        function _snRenderTags() {
+            tagsRow.innerHTML = '';
+            _tags.forEach((tag, i) => {
+                const c = SN_TAG_COLORS[i % SN_TAG_COLORS.length];
+                const chip = document.createElement('span');
+                chip.className = 'nova-sn-tag-chip';
+                chip.style.cssText = `background:${c.bg};color:${c.color};border:1px solid ${c.border}`;
+                chip.innerHTML = `#${NovaChatCore.esc(tag)} <button class="nova-sn-tag-chip-del" data-tag="${NovaChatCore.esc(tag)}">✕</button>`;
+                chip.querySelector('.nova-sn-tag-chip-del').addEventListener('click', async () => {
+                    _tags = _tags.filter(t => t !== tag);
+                    _snRenderTags();
+                    await _snPersist();
+                    renderChips();
+                });
+                tagsRow.appendChild(chip);
+            });
+            const input = document.createElement('input');
+            input.className = 'nova-sn-tag-input';
+            input.placeholder = _tags.length ? '+tag' : '#add tag…';
+            input.addEventListener('keydown', async e => {
+                if ((e.key === 'Enter' || e.key === ' ' || e.key === ',') && input.value.trim()) {
+                    e.preventDefault();
+                    const newTag = input.value.replace(/^#/, '').replace(/[,\s]/g, '').trim().slice(0, 20);
+                    if (newTag && !_tags.includes(newTag)) { _tags.push(newTag); }
+                    _snRenderTags();
+                    await _snPersist();
+                    renderChips();
+                } else if (e.key === 'Backspace' && !input.value && _tags.length) {
+                    _tags.pop();
+                    _snRenderTags();
+                    await _snPersist();
+                }
+            });
+            tagsRow.appendChild(input);
+        }
+        _snRenderTags();
+
+        // ── Textarea & auto-save ──────────────────────────────────────────────
         const textarea = el.querySelector('#nova-sn-text');
+        const preview  = el.querySelector('#nova-sn-preview');
+        let _preview = false;
+        let _snSaveTimer;
+
+        async function _snPersist() {
+            const d = await _snLoad();
+            d[key] = {
+                text: textarea.value,
+                tags: _tags,
+                ts:   d[key]?.ts || Date.now(),
+                x: parseInt(el.style.left),
+                y: parseInt(el.style.top),
+            };
+            await _snSave(d);
+        }
+
         textarea.focus();
         textarea.setSelectionRange(textarea.value.length, textarea.value.length);
 
-        // Auto-save on input
-        let _snSaveTimer;
         textarea.addEventListener('input', () => {
-            el.querySelector('#nova-sn-status').textContent = 'Saving…';
+            const statusEl = el.querySelector('#nova-sn-status');
+            const dotEl    = el.querySelector('#nova-sn-status-dot');
+            if (statusEl) statusEl.textContent = 'Saving…';
+            if (dotEl) dotEl.style.background = '#a5b4fc';
             clearTimeout(_snSaveTimer);
             _snSaveTimer = setTimeout(async () => {
-                const d = await _snLoad();
-                d[key] = { text: textarea.value, ts: Date.now(), x: parseInt(el.style.left), y: parseInt(el.style.top) };
-                await _snSave(d);
-                el.querySelector('#nova-sn-status').textContent = 'Saved ✓';
+                await _snPersist();
+                if (statusEl) statusEl.textContent = 'Saved ✓';
+                if (dotEl) dotEl.style.background = '#10b981';
                 renderChips();
             }, 600);
         });
 
-        el.querySelector('#nova-sn-close').addEventListener('click', () => { el.remove(); _snEl = null; renderChips(); });
+        // ── Markdown preview toggle ───────────────────────────────────────────
+        el.querySelector('#nova-sn-preview-btn').addEventListener('click', () => {
+            _preview = !_preview;
+            if (_preview) {
+                preview.innerHTML = _snMarkdown(textarea.value || '*Nothing to preview yet*');
+                preview.style.display = 'block';
+                textarea.style.display = 'none';
+                el.querySelector('#nova-sn-preview-btn').title = 'Back to edit';
+                el.querySelector('#nova-sn-preview-btn').textContent = '✏️';
+            } else {
+                preview.style.display = 'none';
+                textarea.style.display = 'block';
+                el.querySelector('#nova-sn-preview-btn').title = 'Preview markdown';
+                el.querySelector('#nova-sn-preview-btn').textContent = '👁';
+                textarea.focus();
+            }
+        });
+
+        el.querySelector('#nova-sn-close').addEventListener('click', () => {
+            el.remove(); _snEl = null; renderChips();
+        });
         el.querySelector('#nova-sn-clear').addEventListener('click', async () => {
-            textarea.value = '';
+            textarea.value = ''; _tags = [];
+            _snRenderTags();
             const d = await _snLoad();
             delete d[key];
             await _snSave(d);
@@ -6422,7 +6681,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             renderChips();
         });
 
-        // Drag
+        // ── Drag ─────────────────────────────────────────────────────────────
         const dragHandle = el.querySelector('#nova-sn-drag');
         let _dx, _dy, _dragging = false;
         dragHandle.addEventListener('mousedown', e => {
@@ -6438,9 +6697,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         async function onDrop() {
             _dragging = false;
             document.removeEventListener('mousemove', onDrag);
-            const d = await _snLoad();
-            d[key] = { text: textarea.value, ts: d[key]?.ts || Date.now(), x: parseInt(el.style.left), y: parseInt(el.style.top) };
-            await _snSave(d);
+            await _snPersist();
         }
     }
 
@@ -6462,26 +6719,77 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         return new Date(ts).toLocaleDateString();
     }
 
+    let _snPanelData   = {};   // full dataset, loaded once per open
+    let _snActiveTag   = null; // currently selected tag filter
+    let _snSearchQuery = '';
+
     async function _snRenderPanel() {
         snPanelList.innerHTML = `<div class="nw-sn-empty" style="color:#9ca3af">Loading…</div>`;
-        const data    = await _snLoad();
-        const entries = Object.entries(data)
+        _snPanelData = await _snLoad();
+
+        // Collect all tags across all notes
+        const allTags = [...new Set(
+            Object.values(_snPanelData).flatMap(n => n?.tags || [])
+        )];
+
+        // Render tag filter pills
+        const tagFilters = document.getElementById('nw-sn-tag-filters');
+        if (tagFilters) {
+            tagFilters.style.display = allTags.length ? '' : 'none';
+            tagFilters.innerHTML = allTags.map((tag, i) => {
+                const c = SN_TAG_COLORS[i % SN_TAG_COLORS.length];
+                const active = _snActiveTag === tag;
+                return `<button class="nw-sn-tag-pill${active ? ' active' : ''}" data-tag="${NovaChatCore.esc(tag)}"
+                    style="background:${c.bg};color:${c.color};border-color:${active ? c.color : 'transparent'}">#${NovaChatCore.esc(tag)}</button>`;
+            }).join('');
+            tagFilters.querySelectorAll('.nw-sn-tag-pill').forEach(pill => {
+                pill.addEventListener('click', () => {
+                    _snActiveTag = _snActiveTag === pill.dataset.tag ? null : pill.dataset.tag;
+                    _snDrawList();
+                    // re-render pills to update active state
+                    _snRenderPanel();
+                });
+            });
+        }
+
+        _snDrawList();
+    }
+
+    function _snDrawList() {
+        const q = _snSearchQuery.toLowerCase();
+        const entries = Object.entries(_snPanelData)
             .filter(([, v]) => v?.text)
+            .filter(([url, note]) => {
+                if (_snActiveTag && !(note.tags || []).includes(_snActiveTag)) return false;
+                if (q) return note.text.toLowerCase().includes(q) || url.toLowerCase().includes(q)
+                    || (note.tags || []).some(t => t.toLowerCase().includes(q));
+                return true;
+            })
             .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
 
         snPanelCount.textContent = entries.length ? `${entries.length}` : '';
 
         if (!entries.length) {
-            snPanelList.innerHTML = `<div class="nw-sn-empty"><div class="nw-sn-empty-icon">📝</div>No sticky notes yet.<br>Open any page and add a note<br>from the menu.</div>`;
+            snPanelList.innerHTML = `<div class="nw-sn-empty"><div class="nw-sn-empty-icon">📝</div>${
+                q || _snActiveTag ? 'No notes match your filter.' : 'No sticky notes yet.<br>Open any page and add a note<br>from the menu.'
+            }</div>`;
             return;
         }
+
+        // Collect all tags for color lookup
+        const allTags = [...new Set(Object.values(_snPanelData).flatMap(n => n?.tags || []))];
 
         snPanelList.innerHTML = entries.map(([url, note]) => {
             const display = url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 55);
             const preview = note.text.length > 140 ? note.text.slice(0, 140) + '…' : note.text;
+            const tagsHtml = (note.tags || []).map(tag => {
+                const c = _snTagColor(tag, allTags);
+                return `<span class="nw-sn-card-tag" style="background:${c.bg};color:${c.color};border:1px solid ${c.border}">#${NovaChatCore.esc(tag)}</span>`;
+            }).join('');
             return `
                 <div class="nw-sn-card" data-url="${NovaChatCore.esc(url)}">
-                    <div class="nw-sn-card-url" title="${NovaChatCore.esc(url)}">🔗 ${NovaChatCore.esc(display)}</div>
+                    <div class="nw-sn-card-url" title="${NovaChatCore.esc(url)}"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> ${NovaChatCore.esc(display)}</div>
+                    ${tagsHtml ? `<div class="nw-sn-card-tags">${tagsHtml}</div>` : ''}
                     <div class="nw-sn-card-text">${NovaChatCore.esc(preview)}</div>
                     <div class="nw-sn-card-footer">
                         <span class="nw-sn-card-ts">${_snTimestamp(note.ts)}</span>
@@ -6506,6 +6814,7 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
                 const d = await _snLoad();
                 delete d[btn.dataset.url];
                 await _snSave(d);
+                delete _snPanelData[btn.dataset.url];
                 renderChips();
                 _snRenderPanel();
             });
@@ -6519,12 +6828,22 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     }
 
     function openSnPanel() {
+        _snActiveTag   = null;
+        _snSearchQuery = '';
+        const searchEl = document.getElementById('nw-sn-search');
+        if (searchEl) searchEl.value = '';
         snPanel.classList.add('open');
         _snRenderPanel();
     }
     function closeSnPanel() { snPanel.classList.remove('open'); }
 
     document.getElementById('nw-sn-panel-back').addEventListener('click', closeSnPanel);
+
+    // Wire search input
+    document.getElementById('nw-sn-search')?.addEventListener('input', e => {
+        _snSearchQuery = e.target.value.trim();
+        _snDrawList();
+    });
     document.getElementById('nw-menu-all-notes').addEventListener('click', () => { closeMenu(); openSnPanel(); });
 
     // ── Entrance pop animation ────────────────────────────────────────────────
