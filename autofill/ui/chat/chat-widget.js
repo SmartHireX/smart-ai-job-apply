@@ -660,135 +660,190 @@
         }
         .nw-sn-tag-pill:hover { filter: brightness(0.95); }
         .nw-sn-tag-pill.active { border-color: currentColor; box-shadow: 0 0 0 2px rgba(99,102,241,0.1); }
-        /* Note list */
-        .nw-sn-list {
-            flex: 1; overflow-y: auto; padding: 10px 10px;
-            display: flex; flex-direction: column; gap: 8px;
-        }
-        .nw-sn-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-left: 3.5px solid #6366f1;
-            border-radius: 12px; padding: 11px 12px 10px;
-            cursor: pointer;
-            transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-        }
-        .nw-sn-card:hover {
-            box-shadow: 0 4px 14px rgba(99,102,241,0.12);
-            border-color: #c7d2fe; border-left-color: #4f46e5;
-            transform: translateY(-1px);
-        }
-        .nw-sn-card-url {
-            font-size: 10px; color: #6366f1; font-weight: 600;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            margin-bottom: 5px; display: flex; align-items: center; gap: 4px;
-        }
-        .nw-sn-card-text {
-            font-size: 12.5px; color: #1c1917; line-height: 1.55;
-            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .nw-sn-card-footer {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-top: 8px; padding-top: 7px;
-            border-top: 1px solid #f1f5f9;
-        }
-        .nw-sn-card-ts { font-size: 10px; color: #6366f1; font-weight: 500; }
-        .nw-sn-card-actions { display: flex; gap: 5px; }
-        .nw-sn-card-btn {
-            padding: 3px 10px; border: none; border-radius: 6px;
-            font-size: 10.5px; font-weight: 600; cursor: pointer;
-            font-family: inherit; transition: all 0.12s;
-        }
-        .nw-sn-card-btn.open {
-            background: linear-gradient(135deg,#6366f1,#4f46e5);
-            color: #fff; box-shadow: 0 1px 4px rgba(99,102,241,0.3);
-        }
-        .nw-sn-card-btn.open:hover { background: #4f46e5; box-shadow: 0 2px 8px rgba(99,102,241,0.4); }
-        .nw-sn-card-btn.del { background: #f8fafc; color: #6b7280; border: 1px solid #e2e8f0; }
-        .nw-sn-card-btn.del:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
-        /* Empty state */
-        .nw-sn-empty {
-            padding: 48px 24px; text-align: center;
-            color: #9ca3af; font-size: 12.5px; line-height: 1.7;
-        }
-        .nw-sn-empty-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.7; }
-        /* Tags in note card */
-        .nw-sn-card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
-        .nw-sn-card-tag {
-            padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600;
-        }
-        /* Sticky notes two-pane layout */
+        /* ── Sticky notes two-pane layout ── */
         .nw-sn-body { display: flex; flex: 1; overflow: hidden; }
+        /* Sidebar */
         .nw-sn-sidebar {
-            width: 170px; min-width: 170px; display: flex; flex-direction: column;
-            border-right: 1px solid #e5e7eb; background: #f8fafc; overflow: hidden;
+            width: 175px; min-width: 175px; display: flex; flex-direction: column;
+            border-right: 1px solid #e5e7eb; background: #f4f6fb; overflow: hidden;
         }
         .nw-sn-sidebar-header {
             display: flex; align-items: center; gap: 6px;
-            padding: 8px 10px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+            padding: 9px 10px 8px; border-bottom: 1px solid #e0e7ef; flex-shrink: 0;
             background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
         }
         .nw-sn-sidebar-title {
-            flex: 1; font-size: 11.5px; font-weight: 700; color: #312e81;
+            flex: 1; font-size: 12px; font-weight: 700; color: #312e81;
+            letter-spacing: -0.01em;
+        }
+        .nw-sn-panel-back {
+            width: 26px; height: 26px; border: 1px solid rgba(99,102,241,0.25);
+            border-radius: 7px; background: rgba(255,255,255,0.85); color: #4338ca;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s; flex-shrink: 0;
+        }
+        .nw-sn-panel-back:hover { background: #fff; box-shadow: 0 1px 4px rgba(99,102,241,0.2); }
+        .nw-sn-panel-new {
+            width: 26px; height: 26px; border: none; border-radius: 7px; cursor: pointer;
+            background: #6366f1; color: #fff; display: flex; align-items: center;
+            justify-content: center; transition: background 0.15s; flex-shrink: 0;
+        }
+        .nw-sn-panel-new:hover { background: #4f46e5; }
+        /* Search */
+        .nw-sn-search-wrap {
+            display: flex; align-items: center; gap: 6px;
+            margin: 8px 8px 0; padding: 5px 9px;
+            background: #fff; border: 1.5px solid #e2e8f0; border-radius: 8px;
+            transition: border-color 0.15s; flex-shrink: 0;
+        }
+        .nw-sn-search-wrap:focus-within { border-color: #6366f1; }
+        .nw-sn-search-wrap svg { flex-shrink: 0; color: #9ca3af; }
+        .nw-sn-search-input {
+            flex: 1; border: none; outline: none; background: transparent;
+            font-size: 11.5px; color: #111827; font-family: inherit;
+        }
+        .nw-sn-search-input::placeholder { color: #b0b8c8; }
+        .nw-sn-tag-filters {
+            display: flex; gap: 4px; flex-wrap: wrap; padding: 5px 8px 0;
+        }
+        .nw-sn-tag-pill {
+            padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600;
+            cursor: pointer; border: 1.5px solid transparent; transition: all 0.12s;
+            font-family: inherit;
+        }
+        .nw-sn-tag-pill:hover { filter: brightness(0.95); }
+        .nw-sn-tag-pill.active { border-color: currentColor; box-shadow: 0 0 0 2px rgba(99,102,241,0.1); }
+        /* Note list */
+        .nw-sn-list {
+            flex: 1; overflow-y: auto; padding: 7px 7px;
+            display: flex; flex-direction: column; gap: 5px;
+        }
+        .nw-sn-card {
+            background: #fff; border: 1px solid #e8ecf4;
+            border-left: 3px solid var(--sn-color, #6366f1);
+            border-radius: 9px; padding: 9px 10px 8px;
+            cursor: pointer; position: relative;
+            transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .nw-sn-card:hover {
+            box-shadow: 0 3px 12px rgba(99,102,241,0.13);
+            border-color: #c7d2fe;
+            transform: translateY(-1px);
+        }
+        .nw-sn-card.active {
+            border-color: #c7d2fe;
+            border-left-color: var(--sn-color, #4f46e5);
+            background: #f5f3ff;
+            box-shadow: 0 2px 10px rgba(99,102,241,0.14);
+        }
+        .nw-sn-card-title {
+            font-size: 12px; font-weight: 700; color: #111827; line-height: 1.3;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-bottom: 4px;
         }
-        .nw-sn-sidebar .nw-sn-search-wrap {
-            margin: 8px 8px 0; border-radius: 8px; padding: 5px 9px;
+        .nw-sn-card-preview {
+            font-size: 11px; color: #6b7280; line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; margin-bottom: 6px;
         }
-        .nw-sn-sidebar .nw-sn-tag-filters { padding: 4px 8px; }
-        .nw-sn-sidebar .nw-sn-list {
-            flex: 1; overflow-y: auto; padding: 6px 6px; gap: 5px;
+        .nw-sn-card-meta {
+            display: flex; align-items: center; justify-content: space-between; gap: 4px;
         }
-        .nw-sn-sidebar .nw-sn-card {
-            padding: 8px 9px; border-radius: 8px;
+        .nw-sn-card-src {
+            display: flex; align-items: center; gap: 3px;
+            font-size: 9.5px; color: #9ca3af; font-weight: 500;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;
         }
-        .nw-sn-sidebar .nw-sn-card.active {
-            border-left-color: #4f46e5; background: #eef2ff;
-            box-shadow: 0 2px 8px rgba(99,102,241,0.15);
+        .nw-sn-card-ts { font-size: 9.5px; color: #b0b8c8; font-weight: 500; flex-shrink: 0; }
+        /* Empty state */
+        .nw-sn-empty {
+            padding: 32px 16px; text-align: center;
+            color: #9ca3af; font-size: 12px; line-height: 1.7; flex-shrink: 0;
         }
-        .nw-sn-sidebar .nw-sn-card-footer { display: none; }
+        .nw-sn-empty-icon { font-size: 30px; margin-bottom: 8px; opacity: 0.65; }
+        .nw-sn-empty-cta {
+            margin-top: 10px; padding: 6px 14px; background: #6366f1; color: #fff;
+            border: none; border-radius: 8px; font-size: 11.5px; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: background 0.15s;
+        }
+        .nw-sn-empty-cta:hover { background: #4f46e5; }
+        /* Tags in card */
+        .nw-sn-card-tags { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 5px; }
+        .nw-sn-card-tag { padding: 1px 6px; border-radius: 20px; font-size: 9.5px; font-weight: 600; }
+        /* Editor pane */
         .nw-sn-editor {
-            flex: 1; display: flex; flex-direction: column;
-            overflow: hidden; background: #fff;
+            flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #fff;
         }
         .nw-sn-editor-empty {
             flex: 1; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            color: #9ca3af; font-size: 12.5px; text-align: center;
-            padding: 24px;
+            color: #9ca3af; font-size: 12.5px; text-align: center; padding: 24px;
+            gap: 6px;
         }
         .nw-sn-editor-main { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-        .nw-sn-editor-topbar {
+        /* Title row */
+        .nw-sn-editor-titlerow {
             display: flex; align-items: center; gap: 8px;
-            padding: 8px 12px; border-bottom: 1px solid #e5e7eb;
-            background: #fafafa; flex-shrink: 0;
+            padding: 10px 14px 8px; border-bottom: 1px solid #f0f2f8; flex-shrink: 0;
         }
-        .nw-sn-editor-url {
-            flex: 1; font-size: 10.5px; color: #6366f1; font-weight: 600;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        .nw-sn-editor-titleinp {
+            flex: 1; border: none; outline: none; background: transparent;
+            font-size: 14px; font-weight: 700; color: #111827; font-family: inherit;
+            line-height: 1.3; min-width: 0;
         }
+        .nw-sn-editor-titleinp::placeholder { color: #c4c9d4; font-weight: 600; }
         .nw-sn-editor-del {
-            background: none; border: none; cursor: pointer;
-            font-size: 14px; opacity: 0.5; padding: 2px 4px; transition: opacity 0.15s;
+            background: none; border: none; cursor: pointer; padding: 3px 5px;
+            font-size: 15px; opacity: 0.35; transition: opacity 0.15s; flex-shrink: 0;
         }
         .nw-sn-editor-del:hover { opacity: 1; }
+        /* Meta row: source chip + color picker */
+        .nw-sn-editor-metarow {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 14px 6px; border-bottom: 1px solid #f0f2f8;
+            background: #fafbff; flex-shrink: 0;
+        }
+        .nw-sn-editor-src {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 10px; color: #9ca3af; font-weight: 500;
+            background: #f0f2f8; border-radius: 6px; padding: 2px 8px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;
+            flex-shrink: 0;
+        }
+        .nw-sn-color-row {
+            display: flex; align-items: center; gap: 5px; flex: 1; justify-content: flex-end;
+        }
+        .nw-sn-color-dot {
+            width: 13px; height: 13px; border-radius: 50%; cursor: pointer;
+            border: 2px solid transparent; transition: transform 0.12s, border-color 0.12s;
+            flex-shrink: 0;
+        }
+        .nw-sn-color-dot:hover { transform: scale(1.25); }
+        .nw-sn-color-dot.active { border-color: #fff; box-shadow: 0 0 0 2px currentColor; }
+        /* Textarea */
         .nw-sn-editor-ta {
             flex: 1; border: none; outline: none; resize: none;
-            padding: 12px 14px; font-size: 13px; line-height: 1.6;
-            font-family: inherit; color: #111827; background: #fff;
-            overflow-y: auto;
+            padding: 12px 14px; font-size: 13px; line-height: 1.65;
+            font-family: inherit; color: #1c1917; background: #fff; overflow-y: auto;
         }
+        .nw-sn-editor-ta::placeholder { color: #c4c9d4; }
+        /* Tags row */
         .nw-sn-editor-tags {
             display: flex; align-items: center; flex-wrap: wrap; gap: 5px;
-            padding: 6px 12px; border-top: 1px solid #e5e7eb;
-            background: #fafafa; min-height: 34px; flex-shrink: 0;
+            padding: 6px 12px; border-top: 1px solid #f0f2f8;
+            background: #fafbff; min-height: 34px; flex-shrink: 0;
         }
-        .nw-sn-editor-status {
-            font-size: 10px; color: #9ca3af; padding: 4px 14px;
-            background: #fafafa; border-top: 1px solid #f3f4f6; flex-shrink: 0;
+        /* Footer status */
+        .nw-sn-editor-footer {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 3px 14px; background: #fafbff; border-top: 1px solid #f0f2f8;
+            flex-shrink: 0;
         }
+        .nw-sn-editor-wc { font-size: 9.5px; color: #c4c9d4; }
+        .nw-sn-editor-status { font-size: 9.5px; color: #b0b8c8; }
+        .nw-sn-editor-status.saving { color: #6366f1; }
+        .nw-sn-editor-status.saved { color: #10b981; }
         /* Tag input area in note widget */
         .nova-sn-tags-row {
             display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
@@ -1905,13 +1960,13 @@
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                         </button>
                         <span class="nw-sn-sidebar-title">Sticky Notes</span>
-                        <button class="nw-sn-panel-new" id="nw-sn-panel-new">
+                        <button class="nw-sn-panel-new" id="nw-sn-panel-new" title="New note">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         </button>
                     </div>
                     <div class="nw-sn-search-wrap">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <input class="nw-sn-search-input" id="nw-sn-search" placeholder="Search…" autocomplete="off"/>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input class="nw-sn-search-input" id="nw-sn-search" placeholder="Search notes…" autocomplete="off"/>
                     </div>
                     <div class="nw-sn-tag-filters" id="nw-sn-tag-filters"></div>
                     <div class="nw-sn-list" id="nw-sn-list"></div>
@@ -1919,17 +1974,29 @@
                 <!-- RIGHT: inline editor -->
                 <div class="nw-sn-editor" id="nw-sn-editor">
                     <div class="nw-sn-editor-empty" id="nw-sn-editor-empty">
-                        <div style="font-size:28px;margin-bottom:8px;">📝</div>
-                        Select a note or create a new one
+                        <div style="font-size:32px;opacity:0.5;">📝</div>
+                        <div style="font-size:13px;font-weight:600;color:#6b7280;margin-top:4px;">Your notes</div>
+                        <div style="font-size:11.5px;color:#9ca3af;line-height:1.6;">Pick a note from the list<br>or create a new one</div>
+                        <button class="nw-sn-empty-cta" id="nw-sn-editor-empty-cta">+ New note</button>
                     </div>
                     <div class="nw-sn-editor-main" id="nw-sn-editor-main" style="display:none;flex-direction:column;height:100%;">
-                        <div class="nw-sn-editor-topbar" id="nw-sn-editor-topbar">
-                            <span class="nw-sn-editor-url" id="nw-sn-editor-url"></span>
+                        <div class="nw-sn-editor-titlerow">
+                            <input class="nw-sn-editor-titleinp" id="nw-sn-editor-title" placeholder="Note title…" autocomplete="off" spellcheck="false"/>
                             <button class="nw-sn-editor-del" id="nw-sn-editor-del" title="Delete note">🗑</button>
                         </div>
-                        <textarea class="nw-sn-editor-ta" id="nw-sn-editor-ta" placeholder="Write a note… Supports **bold**, *italic*, # heading, - list" spellcheck="false"></textarea>
+                        <div class="nw-sn-editor-metarow">
+                            <span class="nw-sn-editor-src" id="nw-sn-editor-src">
+                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                <span id="nw-sn-editor-src-text"></span>
+                            </span>
+                            <div class="nw-sn-color-row" id="nw-sn-color-row"></div>
+                        </div>
+                        <textarea class="nw-sn-editor-ta" id="nw-sn-editor-ta" placeholder="Start writing… markdown supported" spellcheck="false"></textarea>
                         <div class="nw-sn-editor-tags" id="nw-sn-editor-tags"></div>
-                        <div class="nw-sn-editor-status" id="nw-sn-editor-status">Auto-saved</div>
+                        <div class="nw-sn-editor-footer">
+                            <span class="nw-sn-editor-wc" id="nw-sn-editor-wc">0w</span>
+                            <span class="nw-sn-editor-status" id="nw-sn-editor-status">Auto-saved</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -7555,25 +7622,56 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     }
 
     // ── Inline editor state ───────────────────────────────────────────────────
-    let _snActiveUrl  = null;
-    let _snEditorTags = [];
+    const SN_ACCENT_COLORS = ['#6366f1','#10b981','#f59e0b','#ec4899','#0ea5e9','#8b5cf6','#ef4444','#14b8a6'];
+
+    let _snActiveUrl   = null;
+    let _snEditorTags  = [];
+    let _snEditorColor = SN_ACCENT_COLORS[0];
     let _snEditorSaveTimer;
 
     const snEditorEmpty  = document.getElementById('nw-sn-editor-empty');
     const snEditorMain   = document.getElementById('nw-sn-editor-main');
-    const snEditorUrl    = document.getElementById('nw-sn-editor-url');
+    const snEditorTitleInp = document.getElementById('nw-sn-editor-title');
+    const snEditorSrcText  = document.getElementById('nw-sn-editor-src-text');
+    const snEditorColorRow = document.getElementById('nw-sn-color-row');
     const snEditorTa     = document.getElementById('nw-sn-editor-ta');
     const snEditorTags   = document.getElementById('nw-sn-editor-tags');
     const snEditorStatus = document.getElementById('nw-sn-editor-status');
+    const snEditorWc     = document.getElementById('nw-sn-editor-wc');
     const snEditorDel    = document.getElementById('nw-sn-editor-del');
+
+    function _snWc() {
+        const t = snEditorTa.value.trim();
+        const w = t ? t.split(/\s+/).length : 0;
+        snEditorWc.textContent = `${w}w · ${snEditorTa.value.length}c`;
+    }
+
+    function _snRenderColorRow() {
+        snEditorColorRow.innerHTML = '';
+        SN_ACCENT_COLORS.forEach(color => {
+            const dot = document.createElement('button');
+            dot.className = 'nw-sn-color-dot' + (_snEditorColor === color ? ' active' : '');
+            dot.style.cssText = `background:${color};color:${color};`;
+            dot.title = color;
+            dot.addEventListener('click', async () => {
+                _snEditorColor = color;
+                _snRenderColorRow();
+                await _snPersistEditor();
+                _snDrawList();
+            });
+            snEditorColorRow.appendChild(dot);
+        });
+    }
 
     async function _snPersistEditor() {
         if (!_snActiveUrl) return;
         const d = await _snLoad();
         d[_snActiveUrl] = {
             ...(d[_snActiveUrl] || {}),
-            text: snEditorTa.value,
-            tags: _snEditorTags,
+            title: snEditorTitleInp.value,
+            text:  snEditorTa.value,
+            tags:  _snEditorTags,
+            color: _snEditorColor,
             ts: d[_snActiveUrl]?.ts || Date.now(),
         };
         await _snSave(d);
@@ -7618,19 +7716,27 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     }
 
     function _snOpenEditor(url, note) {
-        _snActiveUrl  = url;
-        _snEditorTags = [...(note.tags || [])];
-        snEditorUrl.textContent = url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60);
+        _snActiveUrl   = url;
+        _snEditorTags  = [...(note.tags || [])];
+        _snEditorColor = note.color || SN_ACCENT_COLORS[0];
+        snEditorTitleInp.value = note.title || '';
+        snEditorSrcText.textContent = url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/.*$/, '').slice(0, 28);
         snEditorTa.value = note.text || '';
-        snEditorStatus.textContent = 'Auto-saved';
+        _snSetStatus('saved');
         snEditorEmpty.style.display = 'none';
         snEditorMain.style.display  = 'flex';
+        _snWc();
+        _snRenderColorRow();
         _snRenderEditorTags();
-        snEditorTa.focus();
-        // highlight active card
+        snEditorTitleInp.focus();
         snPanelList.querySelectorAll('.nw-sn-card').forEach(c => {
             c.classList.toggle('active', c.dataset.url === url);
         });
+    }
+
+    function _snSetStatus(state) {
+        snEditorStatus.className = 'nw-sn-editor-status' + (state === 'saving' ? ' saving' : state === 'saved' ? ' saved' : '');
+        snEditorStatus.textContent = state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved ✓' : 'Auto-saved';
     }
 
     function _snClearEditor() {
@@ -7640,15 +7746,19 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         snPanelList.querySelectorAll('.nw-sn-card').forEach(c => c.classList.remove('active'));
     }
 
-    snEditorTa.addEventListener('input', () => {
-        snEditorStatus.textContent = 'Saving…';
+    function _snAutoSave() {
+        _snSetStatus('saving');
+        _snWc();
         clearTimeout(_snEditorSaveTimer);
         _snEditorSaveTimer = setTimeout(async () => {
             await _snPersistEditor();
-            snEditorStatus.textContent = 'Saved ✓';
+            _snSetStatus('saved');
             _snDrawList();
         }, 600);
-    });
+    }
+
+    snEditorTitleInp.addEventListener('input', _snAutoSave);
+    snEditorTa.addEventListener('input', _snAutoSave);
 
     snEditorDel.addEventListener('click', async () => {
         if (!_snActiveUrl) return;
@@ -7661,44 +7771,64 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         _snRenderPanel();
     });
 
+    document.getElementById('nw-sn-editor-empty-cta').addEventListener('click', async () => {
+        const url = location.href;
+        const d   = await _snLoad();
+        if (!d[url]) { d[url] = { title: '', text: '', tags: [], color: SN_ACCENT_COLORS[0], ts: Date.now() }; await _snSave(d); }
+        _snPanelData = await _snLoad();
+        _snDrawList();
+        _snOpenEditor(url, _snPanelData[url]);
+    });
+
     function _snDrawList() {
         const q = _snSearchQuery.toLowerCase();
         const entries = Object.entries(_snPanelData)
-            .filter(([, v]) => v?.text)
+            .filter(([, v]) => v?.text || v?.title)
             .filter(([url, note]) => {
                 if (_snActiveTag && !(note.tags || []).includes(_snActiveTag)) return false;
-                if (q) return note.text.toLowerCase().includes(q) || url.toLowerCase().includes(q)
+                if (q) return (note.title || '').toLowerCase().includes(q)
+                    || note.text.toLowerCase().includes(q)
+                    || url.toLowerCase().includes(q)
                     || (note.tags || []).some(t => t.toLowerCase().includes(q));
                 return true;
             })
             .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
 
         if (!entries.length) {
-            snPanelList.innerHTML = `<div class="nw-sn-empty"><div class="nw-sn-empty-icon">📝</div>${
-                q || _snActiveTag ? 'No notes match your filter.' : 'No sticky notes yet.<br>Tap + to create one.'
-            }</div>`;
-            _snClearEditor();
+            snPanelList.innerHTML = `<div class="nw-sn-empty">
+                <div class="nw-sn-empty-icon">📝</div>
+                ${q || _snActiveTag
+                    ? '<strong>No matches</strong><br>Try a different search.'
+                    : '<strong>No notes yet</strong><br>Create one to get started.'}
+            </div>`;
+            if (!q && !_snActiveTag) _snClearEditor();
             return;
         }
 
         const allTags = [...new Set(Object.values(_snPanelData).flatMap(n => n?.tags || []))];
 
         snPanelList.innerHTML = entries.map(([url, note]) => {
-            const display = url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40);
-            const preview = note.text.length > 80 ? note.text.slice(0, 80) + '…' : note.text;
+            const color   = note.color || SN_ACCENT_COLORS[0];
+            const title   = note.title || note.text.split('\n')[0].replace(/^#+\s*/, '').slice(0, 40) || 'Untitled';
+            const preview = note.text.length > 70 ? note.text.slice(0, 70) + '…' : note.text;
+            const src     = url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/.*$/, '').slice(0, 22);
             const tagsHtml = (note.tags || []).map(tag => {
                 const c = _snTagColor(tag, allTags);
                 return `<span class="nw-sn-card-tag" style="background:${c.bg};color:${c.color};border:1px solid ${c.border}">#${NovaChatCore.esc(tag)}</span>`;
             }).join('');
             const isActive = _snActiveUrl === url;
             return `
-                <div class="nw-sn-card${isActive ? ' active' : ''}" data-url="${NovaChatCore.esc(url)}">
-                    <div class="nw-sn-card-url" title="${NovaChatCore.esc(url)}">
-                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        ${NovaChatCore.esc(display)}
-                    </div>
+                <div class="nw-sn-card${isActive ? ' active' : ''}" data-url="${NovaChatCore.esc(url)}" style="--sn-color:${color}">
+                    <div class="nw-sn-card-title">${NovaChatCore.esc(title)}</div>
+                    ${preview ? `<div class="nw-sn-card-preview">${NovaChatCore.esc(preview)}</div>` : ''}
                     ${tagsHtml ? `<div class="nw-sn-card-tags">${tagsHtml}</div>` : ''}
-                    <div class="nw-sn-card-text">${NovaChatCore.esc(preview)}</div>
+                    <div class="nw-sn-card-meta">
+                        <span class="nw-sn-card-src">
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            ${NovaChatCore.esc(src)}
+                        </span>
+                        <span class="nw-sn-card-ts">${_snTimestamp(note.ts)}</span>
+                    </div>
                 </div>`;
         }).join('');
 
@@ -7710,7 +7840,6 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
             });
         });
 
-        // Re-highlight active card after redraw
         if (_snActiveUrl) {
             snPanelList.querySelectorAll('.nw-sn-card').forEach(c => {
                 c.classList.toggle('active', c.dataset.url === _snActiveUrl);
@@ -7731,11 +7860,10 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
     document.getElementById('nw-sn-panel-back').addEventListener('click', closeSnPanel);
     document.getElementById('nw-sn-panel-new').addEventListener('click', async () => {
-        // Create a new note for the current page URL
         const url = location.href;
         const d   = await _snLoad();
         if (!d[url]) {
-            d[url] = { text: '', tags: [], ts: Date.now() };
+            d[url] = { title: '', text: '', tags: [], color: SN_ACCENT_COLORS[0], ts: Date.now() };
             await _snSave(d);
         }
         _snPanelData = await _snLoad();
