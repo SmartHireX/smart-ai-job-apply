@@ -1417,7 +1417,7 @@
         }
         .nova-lp-loading { font-size: 11px; color: #9ca3af; padding: 4px 0; }
         /* ── Reading Mode ── */
-        body.nova-reading-mode > *:not(#nova-read-overlay):not(#${WIDGET_ID}):not(#nova-explain-tooltip):not(#nova-sticky-note):not(#nova-qs-panel):not(#nova-notepad):not(#nova-sp-bubble) {
+        body.nova-reading-mode > *:not(#nova-read-overlay):not(#${WIDGET_ID}):not(#nova-explain-tooltip):not(#nova-sticky-note):not(#nova-qs-panel) {
             display: none !important;
         }
         #nova-read-overlay {
@@ -1547,172 +1547,136 @@
             width: 5px; height: 5px; border-radius: 50%; background: #10b981;
             flex-shrink: 0;
         }
-        /* ── Nova Notepad ── */
-        #nova-notepad {
-            position: fixed; z-index: 2147483643;
-            min-width: 580px; min-height: 400px;
-            max-width: calc(100vw - 16px); max-height: calc(100vh - 16px);
-            resize: both; overflow: hidden;
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.28), 0 4px 16px rgba(0,0,0,0.1);
+        /* ── Notepad panel (inside widget) ── */
+        .nw-np-panel {
+            position: absolute; inset: 0; background: #fff; z-index: 5;
             display: flex; flex-direction: column;
-            font-family: -apple-system, sans-serif;
-            animation: nova-np-in 0.18s ease;
+            transform: translateX(100%);
+            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
         }
-        @keyframes nova-np-in {
-            from { opacity:0; transform:translateY(10px) scale(0.98); }
-            to   { opacity:1; transform:none; }
+        .nw-np-panel.open { transform: translateX(0); }
+        .nw-np-panel-header {
+            display: flex; align-items: center; gap: 8px;
+            padding: 0 14px; height: 52px;
+            background: #fff; border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
         }
-        .nova-np-topbar {
-            display: flex; align-items: center; gap: 10px;
-            padding: 0 16px; height: 50px; flex-shrink: 0;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            border-radius: 16px 16px 0 0;
-            cursor: move; user-select: none;
+        .nw-np-panel-back {
+            width: 28px; height: 28px; border: 1px solid #e5e7eb;
+            border-radius: 7px; background: #fff; color: #6b7280;
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: all 0.15s; flex-shrink: 0;
         }
-        .nova-np-topbar-title {
-            font-size: 13px; font-weight: 700; color: #f1f5f9;
-            display: flex; align-items: center; gap: 8px; flex: 1;
-            pointer-events: none;
+        .nw-np-panel-back:hover { background: #f3f4f6; color: #111827; }
+        .nw-np-panel-title { font-size: 13px; font-weight: 700; color: #111827; flex: 1; }
+        .nw-np-panel-new {
+            display: flex; align-items: center; gap: 5px;
+            padding: 5px 10px; background: #6366f1; color: white;
+            border: none; border-radius: 7px; font-size: 11px; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: background 0.15s; flex-shrink: 0;
         }
-        .nova-np-topbar-badge {
-            font-size: 9.5px; font-weight: 700; color: #64748b;
-            background: rgba(255,255,255,0.08); border-radius: 20px;
-            padding: 2px 9px; letter-spacing: 0.04em;
+        .nw-np-panel-new:hover { background: #4f46e5; }
+        .nw-np-panel-badge {
+            font-size: 10px; font-weight: 600; background: #f3f4f6;
+            color: #6b7280; padding: 2px 7px; border-radius: 999px;
         }
-        .nova-np-topbar-btn {
-            height: 28px; border: none; border-radius: 8px; cursor: pointer;
-            font-size: 11.5px; font-weight: 600; font-family: inherit;
-            display: flex; align-items: center; gap: 5px; padding: 0 12px;
-            transition: all 0.12s; flex-shrink: 0;
-        }
-        .nova-np-topbar-btn.new { background: #6366f1; color: #fff; }
-        .nova-np-topbar-btn.new:hover { background: #4f46e5; }
-        .nova-np-topbar-btn.close { background: rgba(255,255,255,0.08); color: #94a3b8; padding: 0 10px; }
-        .nova-np-topbar-btn.close:hover { background: rgba(255,255,255,0.14); color: #f1f5f9; }
-        .nova-np-body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+        /* Two-pane body */
+        .nw-np-body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
         /* Sidebar */
-        .nova-np-sidebar {
-            width: 260px; flex-shrink: 0; background: #0f172a;
-            display: flex; flex-direction: column; overflow: hidden;
-            border-right: 1px solid rgba(255,255,255,0.05);
+        .nw-np-sidebar {
+            width: 180px; background: #0f172a; display: flex; flex-direction: column;
+            border-right: 1px solid #1e293b; flex-shrink: 0; overflow: hidden;
         }
-        .nova-np-search-wrap {
-            margin: 10px 10px 6px; display: flex; align-items: center; gap: 6px;
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 8px; padding: 6px 10px; flex-shrink: 0;
-            transition: border-color 0.15s;
+        .nw-np-search-wrap {
+            display: flex; align-items: center; gap: 6px;
+            margin: 10px 8px 4px; padding: 6px 10px;
+            background: rgba(255,255,255,0.06); border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.08);
         }
-        .nova-np-search-wrap:focus-within { border-color: rgba(99,102,241,0.5); }
-        .nova-np-search-wrap svg { flex-shrink: 0; color: #475569; }
-        .nova-np-search-input {
-            flex: 1; border: none; outline: none; background: transparent;
-            font-size: 12px; color: #e2e8f0; font-family: inherit;
+        .nw-np-search-wrap svg { flex-shrink: 0; color: #475569; }
+        .nw-np-search-input {
+            background: transparent; border: none; outline: none;
+            font-size: 11.5px; color: #e2e8f0; width: 100%; font-family: inherit;
         }
-        .nova-np-search-input::placeholder { color: #475569; }
-        .nova-np-section-label {
-            font-size: 9.5px; font-weight: 700; color: #334155;
-            text-transform: uppercase; letter-spacing: 0.07em;
-            padding: 8px 14px 4px; flex-shrink: 0;
+        .nw-np-search-input::placeholder { color: #475569; }
+        .nw-np-section-label {
+            font-size: 9px; font-weight: 700; color: #475569; text-transform: uppercase;
+            letter-spacing: 0.06em; padding: 6px 14px 2px;
         }
-        .nova-np-list { flex: 1; overflow-y: auto; padding: 2px 6px 10px; }
-        .nova-np-list::-webkit-scrollbar { width: 3px; }
-        .nova-np-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-        .nova-np-item {
-            padding: 9px 10px; border-radius: 8px; cursor: pointer;
-            transition: background 0.12s; margin-bottom: 2px;
+        .nw-np-list { flex: 1; overflow-y: auto; padding: 2px 6px 10px; }
+        .nw-np-list::-webkit-scrollbar { width: 3px; }
+        .nw-np-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+        .nw-np-item {
+            padding: 8px 10px; border-radius: 8px; cursor: pointer;
+            transition: background 0.1s; margin-bottom: 2px;
             border-left: 3px solid transparent;
         }
-        .nova-np-item:hover { background: rgba(255,255,255,0.05); }
-        .nova-np-item.active { background: rgba(99,102,241,0.12); }
-        .nova-np-item-header { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
-        .nova-np-item-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-        .nova-np-item-title {
-            font-size: 12.5px; font-weight: 600; color: #cbd5e1; flex: 1;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        .nw-np-item:hover { background: rgba(255,255,255,0.05); }
+        .nw-np-item.active { background: rgba(99,102,241,0.12); }
+        .nw-np-item-header { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+        .nw-np-item-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .nw-np-item-title {
+            font-size: 11.5px; font-weight: 600; color: #cbd5e1;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
         }
-        .nova-np-item.active .nova-np-item-title { color: #a5b4fc; }
-        .nova-np-item-pin {
-            border: none; background: none; cursor: pointer; padding: 0; margin: 0;
-            font-size: 11px; opacity: 0; transition: opacity 0.12s;
-            line-height: 1; flex-shrink: 0;
+        .nw-np-item.active .nw-np-item-title { color: #a5b4fc; }
+        .nw-np-item-pin {
+            font-size: 10px; opacity: 0; cursor: pointer;
+            background: none; border: none; padding: 0; line-height: 1;
+            transition: opacity 0.15s; filter: grayscale(1);
         }
-        .nova-np-item:hover .nova-np-item-pin,
-        .nova-np-item.active .nova-np-item-pin { opacity: 0.5; }
-        .nova-np-item-pin.pinned { opacity: 1 !important; filter: none; }
-        .nova-np-item-preview {
-            font-size: 11px; color: #475569;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            line-height: 1.4; padding-left: 14px;
+        .nw-np-item:hover .nw-np-item-pin,
+        .nw-np-item.active .nw-np-item-pin { opacity: 0.5; }
+        .nw-np-item-pin.pinned { opacity: 1 !important; filter: none; }
+        .nw-np-item-preview {
+            font-size: 10.5px; color: #475569; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; line-height: 1.4;
         }
-        .nova-np-empty-list { padding: 40px 16px; text-align: center; color: #334155; font-size: 12px; line-height: 1.8; }
-        /* Editor */
-        .nova-np-editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
-        .nova-np-color-accent { height: 3px; flex-shrink: 0; }
-        .nova-np-title-wrap { padding: 18px 24px 0; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
-        .nova-np-title-input {
+        .nw-np-empty-list { padding: 24px 12px; text-align: center; color: #334155; font-size: 11px; line-height: 1.8; }
+        /* Editor pane */
+        .nw-np-editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        .nw-np-color-accent { height: 3px; flex-shrink: 0; }
+        .nw-np-title-wrap { padding: 12px 16px 0; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
+        .nw-np-title-input {
             width: 100%; border: none; outline: none; background: transparent;
-            font-size: 22px; font-weight: 700; color: #0f172a;
-            font-family: inherit; padding-bottom: 14px; box-sizing: border-box; line-height: 1.3;
+            font-size: 16px; font-weight: 700; color: #0f172a;
+            font-family: inherit; padding-bottom: 10px; box-sizing: border-box; line-height: 1.3;
         }
-        .nova-np-title-input::placeholder { color: #e2e8f0; }
-        .nova-np-editor-toolbar {
-            display: flex; align-items: center; gap: 5px; flex-shrink: 0;
-            padding: 7px 24px; border-bottom: 1px solid #f1f5f9; background: #fafafa;
+        .nw-np-title-input::placeholder { color: #e2e8f0; }
+        .nw-np-editor-toolbar {
+            display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+            padding: 5px 14px; border-bottom: 1px solid #f1f5f9; background: #fafafa;
         }
-        .nova-np-tb-btn {
-            height: 26px; padding: 0 10px; border: 1px solid #e2e8f0;
-            border-radius: 6px; background: #ffffff; color: #374151;
-            font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit;
-            transition: all 0.12s; display: flex; align-items: center; gap: 4px;
+        .nw-np-tb-btn {
+            height: 24px; padding: 0 8px; border: 1px solid #e2e8f0;
+            border-radius: 5px; background: #fff; color: #374151;
+            font-size: 10.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+            transition: all 0.12s; display: flex; align-items: center; gap: 3px;
         }
-        .nova-np-tb-btn:hover { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
-        .nova-np-tb-btn.active { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
-        .nova-np-tb-btn.danger:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
-        .nova-np-tb-sep { width: 1px; height: 16px; background: #e2e8f0; margin: 0 3px; flex-shrink: 0; }
-        .nova-np-wc { font-size: 10.5px; color: #9ca3af; margin-left: auto; white-space: nowrap; }
-        .nova-np-textarea {
+        .nw-np-tb-btn:hover { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+        .nw-np-tb-btn.active { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+        .nw-np-tb-btn.danger:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+        .nw-np-tb-sep { width: 1px; height: 14px; background: #e2e8f0; margin: 0 2px; flex-shrink: 0; }
+        .nw-np-wc { font-size: 10px; color: #9ca3af; margin-left: auto; white-space: nowrap; }
+        .nw-np-textarea {
             flex: 1; border: none; outline: none; resize: none;
-            background: #ffffff; padding: 18px 24px;
-            font-size: 14px; line-height: 1.85; color: #1e293b;
-            font-family: inherit; letter-spacing: 0.01em; overflow-y: auto;
+            background: #fff; padding: 12px 16px;
+            font-size: 13px; line-height: 1.85; color: #1e293b;
+            font-family: inherit; overflow-y: auto;
         }
-        .nova-np-textarea::placeholder { color: #e2e8f0; }
-        .nova-np-textarea.font-sm { font-size: 12px; line-height: 1.75; }
-        .nova-np-textarea.font-lg { font-size: 16px; line-height: 1.9; }
-        .nova-np-editor-footer {
-            padding: 6px 24px 8px; font-size: 10.5px; color: #9ca3af;
+        .nw-np-textarea::placeholder { color: #e2e8f0; }
+        .nw-np-textarea.font-sm { font-size: 11px; }
+        .nw-np-textarea.font-lg { font-size: 15px; }
+        .nw-np-editor-footer {
+            padding: 4px 16px 5px; font-size: 10px; color: #9ca3af;
             border-top: 1px solid #f1f5f9; background: #fafafa; flex-shrink: 0;
             display: flex; align-items: center; justify-content: space-between;
         }
-        .nova-np-status { display: flex; align-items: center; gap: 4px; font-weight: 500; }
-        .nova-np-status-dot { width: 5px; height: 5px; border-radius: 50%; background: #10b981; flex-shrink: 0; }
-        .nova-np-empty-editor {
+        .nw-np-status { display: flex; align-items: center; gap: 4px; font-weight: 500; }
+        .nw-np-status-dot { width: 5px; height: 5px; border-radius: 50%; background: #10b981; flex-shrink: 0; }
+        .nw-np-empty-editor {
             flex: 1; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            color: #cbd5e1; gap: 14px; font-size: 13px; text-align: center; padding: 24px;
-        }
-        .nova-np-empty-editor-icon { font-size: 48px; opacity: 0.35; }
-        /* Notepad trigger bubble */
-        #nova-sp-bubble {
-            position: fixed; z-index: 2147483641;
-            right: 20px; bottom: 72px;
-            width: 36px; height: 36px;
-            background: #1e293b; border-radius: 50%;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 16px;
-            transition: transform 0.15s, box-shadow 0.15s;
-            border: 2px solid rgba(255,255,255,0.1);
-        }
-        #nova-sp-bubble:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
-        #nova-sp-bubble .nova-np-count {
-            position: absolute; top: -4px; right: -4px;
-            min-width: 16px; height: 16px; border-radius: 8px;
-            background: #6366f1; color: #fff; font-size: 9px; font-weight: 700;
-            display: flex; align-items: center; justify-content: center;
-            border: 2px solid #fff; padding: 0 3px; font-family: -apple-system, sans-serif;
+            color: #cbd5e1; gap: 10px; font-size: 12px; text-align: center; padding: 20px;
         }
     `;
     document.head.appendChild(styleEl);
@@ -1777,7 +1741,7 @@
                         </button>
                         <button class="nw-menu-item" id="nw-menu-all-notes">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                            All Notes
+                            Notepad
                         </button>
                         <button class="nw-menu-item" id="nw-menu-scratch">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
@@ -1820,6 +1784,31 @@
                 </button>
             </div>
             <div class="nw-sessions-list" id="nw-sessions-list"></div>
+        </div>
+        <!-- Notepad panel (slides over chat) -->
+        <div class="nw-np-panel" id="nw-np-panel">
+            <div class="nw-np-panel-header">
+                <button class="nw-np-panel-back" id="nw-np-panel-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="nw-np-panel-title">🗒 Notepad</div>
+                <span class="nw-np-panel-badge" id="nw-np-panel-badge">0 notes</span>
+                <button class="nw-np-panel-new" id="nw-np-panel-new">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New note
+                </button>
+            </div>
+            <div class="nw-np-body">
+                <div class="nw-np-sidebar">
+                    <div class="nw-np-search-wrap">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input class="nw-np-search-input" id="nw-np-search" placeholder="Search…" autocomplete="off"/>
+                    </div>
+                    <div class="nw-np-section-label">Notes</div>
+                    <div class="nw-np-list" id="nw-np-list"></div>
+                </div>
+                <div class="nw-np-editor" id="nw-np-editor"></div>
+            </div>
         </div>
         <!-- Clipboard history panel (slides over chat) -->
         <div class="nw-cb-panel" id="nw-cb-panel">
@@ -2893,13 +2882,13 @@
     document.addEventListener('focusin', e => {
         const el = e.target;
         if (!el.matches('input[type=text],input[type=email],input[type=tel],input[type=url],input:not([type]),textarea')) return;
-        if (el.closest('#nova-chat-widget') || el.closest('#nova-notepad') || el.closest('#nova-sticky-note')) return;
+        if (el.closest('#nova-chat-widget') || el.closest('#nova-sticky-note')) return;
         _fhShowPicker(el);
     });
     document.addEventListener('focusout', e => {
         const el = e.target;
         if (!el.matches('input,textarea')) return;
-        if (el.closest('#nova-chat-widget') || el.closest('#nova-notepad') || el.closest('#nova-sticky-note')) return;
+        if (el.closest('#nova-chat-widget') || el.closest('#nova-sticky-note')) return;
         _fhRecord(el);
         setTimeout(() => document.getElementById('nova-fh-picker')?.remove(), 150);
     });
@@ -7195,13 +7184,11 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
 
     document.getElementById('nw-menu-sticky').addEventListener('click', () => { closeMenu(); _snOpen(); });
 
-    // ── Nova Notepad ─────────────────────────────────────────────────────────
-    // Multi-note professional notepad — persists in shared storage across all origins.
+    // ── Nova Notepad (integrated panel) ──────────────────────────────────────
     const NP_STORAGE_KEY = 'nova_notepad';
-    let _npEl      = null;
-    let _npBubble  = null;
     let _npSaveTimer;
     let _npActiveId = null;
+    let _npFontSize = 'md';
 
     async function _npLoadAll() {
         const res = await NovaChatCore.sharedGet([NP_STORAGE_KEY]);
@@ -7210,299 +7197,215 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
     async function _npSaveAll(notes) {
         await NovaChatCore.sharedSet({ [NP_STORAGE_KEY]: notes });
     }
-
     function _npGenId() { return 'np_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
-
-    function _npWc(text) {
-        const w = text.trim() ? text.trim().split(/\s+/).length : 0;
-        return `${w} word${w !== 1 ? 's' : ''} · ${text.length} chars`;
+    function _npWc(text) { const w = text.trim() ? text.trim().split(/\s+/).length : 0; return `${w}w · ${text.length}c`; }
+    function _npColor(note, idx) {
+        const NP_COLORS = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6','#ef4444','#14b8a6'];
+        return note.color || NP_COLORS[idx % NP_COLORS.length];
     }
 
-    function _npUpdateBubble(notes) {
-        if (!_npBubble) return;
-        const count = Object.keys(notes).length;
-        let badge = _npBubble.querySelector('.nova-np-count');
-        if (count > 0) {
-            if (!badge) { badge = document.createElement('span'); badge.className = 'nova-np-count'; _npBubble.appendChild(badge); }
-            badge.textContent = count > 99 ? '99+' : count;
-        } else {
-            badge?.remove();
+    const npPanel    = document.getElementById('nw-np-panel');
+    const npList     = document.getElementById('nw-np-list');
+    const npEditor   = document.getElementById('nw-np-editor');
+    const npBadgeEl  = document.getElementById('nw-np-panel-badge');
+    const npSearch   = document.getElementById('nw-np-search');
+
+    let _npNotes = {};
+
+    function _npSortedIds() {
+        return Object.keys(_npNotes).sort((a, b) => {
+            if (_npNotes[a].pinned && !_npNotes[b].pinned) return -1;
+            if (!_npNotes[a].pinned && _npNotes[b].pinned) return 1;
+            return (_npNotes[b].ts || 0) - (_npNotes[a].ts || 0);
+        });
+    }
+
+    function _npBadge() {
+        const c = Object.keys(_npNotes).length;
+        if (npBadgeEl) npBadgeEl.textContent = `${c} note${c !== 1 ? 's' : ''}`;
+    }
+
+    function _npRenderList(query = '') {
+        const ids = _npSortedIds();
+        const q = query.toLowerCase().trim();
+        const filtered = ids.filter(id => {
+            if (!q) return true;
+            const n = _npNotes[id];
+            return (n.title || '').toLowerCase().includes(q) || (n.content || n.text || '').toLowerCase().includes(q);
+        });
+        if (!filtered.length) {
+            npList.innerHTML = `<div class="nw-np-empty-list">${q ? 'No notes match.' : 'No notes yet.\nClick "+ New note".'}</div>`;
+            return;
         }
-    }
+        npList.innerHTML = filtered.map((id, i) => {
+            const n = _npNotes[id];
+            const color = _npColor(n, ids.indexOf(id));
+            const body = (n.content || n.text || '').replace(/\n/g, ' ').trim().slice(0, 45) || 'Empty note';
+            return `<div class="nw-np-item${id === _npActiveId ? ' active' : ''}" data-id="${id}" style="${id === _npActiveId ? `border-left-color:${color}` : ''}">
+                <div class="nw-np-item-header">
+                    <span class="nw-np-item-dot" style="background:${color}"></span>
+                    <span class="nw-np-item-title">${NovaChatCore.esc(n.title || 'Untitled')}</span>
+                    <button class="nw-np-item-pin${n.pinned ? ' pinned' : ''}" data-id="${id}">${n.pinned ? '📌' : '📍'}</button>
+                </div>
+                <div class="nw-np-item-preview">${NovaChatCore.esc(body)}</div>
+            </div>`;
+        }).join('');
 
-    // Note color palette (cycles by creation order)
-    const NP_COLORS = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6','#ef4444','#14b8a6'];
-    function _npColor(note, idx) { return note.color || NP_COLORS[idx % NP_COLORS.length]; }
-
-    let _npFontSize = 'md'; // sm | md | lg
-
-    async function _npOpen() {
-        if (_npEl) { _npEl.remove(); _npEl = null; return; }
-
-        const notes = await _npLoadAll();
-
-        // Sort: pinned first, then by ts desc
-        function _sortedIds() {
-            return Object.keys(notes).sort((a, b) => {
-                if (notes[a].pinned && !notes[b].pinned) return -1;
-                if (!notes[a].pinned && notes[b].pinned)  return 1;
-                return (notes[b].ts || 0) - (notes[a].ts || 0);
+        npList.querySelectorAll('.nw-np-item').forEach(item => {
+            item.addEventListener('click', e => {
+                if (e.target.closest('.nw-np-item-pin')) return;
+                _npActiveId = item.dataset.id;
+                _npRenderList(npSearch.value);
+                _npRenderEditor();
             });
+        });
+        npList.querySelectorAll('.nw-np-item-pin').forEach(btn => {
+            btn.addEventListener('click', async e => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                _npNotes[id].pinned = !_npNotes[id].pinned;
+                await _npSaveAll(_npNotes);
+                _npRenderList(npSearch.value);
+            });
+        });
+    }
+
+    function _npRenderEditor() {
+        if (!_npActiveId || !_npNotes[_npActiveId]) {
+            npEditor.innerHTML = `
+                <div class="nw-np-empty-editor">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#e2e8f0" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <div>Select a note or create a new one</div>
+                </div>`;
+            return;
         }
-        let ids = _sortedIds();
+        const note  = _npNotes[_npActiveId];
+        const ids   = _npSortedIds();
+        const color = _npColor(note, ids.indexOf(_npActiveId));
+        const fsClass = _npFontSize === 'sm' ? 'font-sm' : _npFontSize === 'lg' ? 'font-lg' : '';
+        const body  = note.content || note.text || '';
 
-        if (!_npActiveId || !notes[_npActiveId]) {
-            _npActiveId = ids.length ? ids[0] : null;
-        }
-
-        const el = document.createElement('div');
-        el.id = 'nova-notepad';
-
-        // Position centered on first open
-        const vw = window.innerWidth, vh = window.innerHeight;
-        const w = Math.min(980, vw - 32), h = Math.min(660, vh - 48);
-        el.style.cssText = `width:${w}px;height:${h}px;left:${Math.round((vw-w)/2)}px;top:${Math.round((vh-h)/2)}px;`;
-
-        el.innerHTML = `
-            <div class="nova-np-topbar" id="nova-np-drag">
-                <div class="nova-np-topbar-title">
-                    🗒 Nova Notepad
-                    <span class="nova-np-topbar-badge" id="nova-np-badge">${ids.length} note${ids.length !== 1 ? 's' : ''}</span>
-                </div>
-                <button class="nova-np-topbar-btn new" id="nova-np-new">+ New Note</button>
-                <button class="nova-np-topbar-btn close" id="nova-np-close">✕</button>
+        npEditor.innerHTML = `
+            <div class="nw-np-color-accent" style="background:${color}"></div>
+            <div class="nw-np-title-wrap">
+                <input class="nw-np-title-input" id="nw-np-title" value="${NovaChatCore.esc(note.title || '')}" placeholder="Note title…" spellcheck="false" autocomplete="off"/>
             </div>
-            <div class="nova-np-body">
-                <div class="nova-np-sidebar">
-                    <div class="nova-np-search-wrap">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <input class="nova-np-search-input" id="nova-np-search" placeholder="Search notes…" autocomplete="off"/>
-                    </div>
-                    <div class="nova-np-section-label">Notes</div>
-                    <div class="nova-np-list" id="nova-np-list"></div>
-                </div>
-                <div class="nova-np-editor" id="nova-np-editor"></div>
+            <div class="nw-np-editor-toolbar">
+                <button class="nw-np-tb-btn" id="nw-np-copy">📋 Copy</button>
+                <div class="nw-np-tb-sep"></div>
+                <button class="nw-np-tb-btn${_npFontSize==='sm'?' active':''}" id="nw-np-fs-sm">A−</button>
+                <button class="nw-np-tb-btn${_npFontSize==='md'?' active':''}" id="nw-np-fs-md">A</button>
+                <button class="nw-np-tb-btn${_npFontSize==='lg'?' active':''}" id="nw-np-fs-lg">A+</button>
+                <div class="nw-np-tb-sep"></div>
+                <button class="nw-np-tb-btn danger" id="nw-np-delete">🗑 Delete</button>
+                <span class="nw-np-wc" id="nw-np-wc">${_npWc(body)}</span>
+            </div>
+            <textarea class="nw-np-textarea ${fsClass}" id="nw-np-text" placeholder="Start writing…" spellcheck="true" autocomplete="off">${NovaChatCore.esc(body)}</textarea>
+            <div class="nw-np-editor-footer">
+                <span class="nw-np-status">
+                    <span class="nw-np-status-dot" id="nw-np-dot"></span>
+                    <span id="nw-np-status">Auto-saved</span>
+                </span>
+                <span id="nw-np-wc2">${_npWc(body)}</span>
             </div>`;
 
-        document.body.appendChild(el);
-        _npEl = el;
+        const titleInput = npEditor.querySelector('#nw-np-title');
+        const textarea   = npEditor.querySelector('#nw-np-text');
+        const statusEl   = npEditor.querySelector('#nw-np-status');
+        const dotEl      = npEditor.querySelector('#nw-np-dot');
+        const wcEl       = npEditor.querySelector('#nw-np-wc');
+        const wc2El      = npEditor.querySelector('#nw-np-wc2');
 
-        // ── Drag topbar to move ───────────────────────────────────────────────
-        let _ndx = 0, _ndy = 0, _ndragging = false;
-        el.querySelector('#nova-np-drag').addEventListener('mousedown', e => {
-            if (e.target.closest('button')) return;
-            _ndragging = true;
-            _ndx = e.clientX - el.offsetLeft;
-            _ndy = e.clientY - el.offsetTop;
-            document.addEventListener('mousemove', _onNpDrag);
-            document.addEventListener('mouseup', () => { _ndragging = false; document.removeEventListener('mousemove', _onNpDrag); }, { once: true });
-        });
-        function _onNpDrag(e) {
-            if (!_ndragging) return;
-            el.style.left = Math.max(0, Math.min(e.clientX - _ndx, window.innerWidth  - el.offsetWidth))  + 'px';
-            el.style.top  = Math.max(0, Math.min(e.clientY - _ndy, window.innerHeight - el.offsetHeight)) + 'px';
-        }
+        textarea.focus();
 
-        // ── Render sidebar list ───────────────────────────────────────────────
-        function _npBadge() {
-            el.querySelector('#nova-np-badge').textContent = Object.keys(notes).length + ' note' + (Object.keys(notes).length !== 1 ? 's' : '');
-        }
-
-        function _npRenderList(query = '') {
-            const listEl = el.querySelector('#nova-np-list');
-            ids = _sortedIds();
-            const q = query.toLowerCase().trim();
-            const filtered = ids.filter(id => {
-                if (!q) return true;
-                const n = notes[id];
-                return (n.title || '').toLowerCase().includes(q) || (n.text || '').toLowerCase().includes(q);
-            });
-            if (!filtered.length) {
-                listEl.innerHTML = `<div class="nova-np-empty-list">${q ? 'No notes match your search.' : 'Click "+ New Note" to create\nyour first note.'}</div>`;
-                return;
-            }
-            listEl.innerHTML = filtered.map((id, i) => {
-                const n = notes[id];
-                const color = _npColor(n, ids.indexOf(id));
-                const preview = (n.text || '').replace(/\n/g, ' ').trim().slice(0, 55) || 'Empty note';
-                return `<div class="nova-np-item${id === _npActiveId ? ' active' : ''}" data-id="${id}" style="${id === _npActiveId ? `border-left-color:${color}` : ''}">
-                    <div class="nova-np-item-header">
-                        <span class="nova-np-item-dot" style="background:${color}"></span>
-                        <span class="nova-np-item-title">${NovaChatCore.esc(n.title || 'Untitled')}</span>
-                        <button class="nova-np-item-pin${n.pinned ? ' pinned' : ''}" data-id="${id}" title="${n.pinned ? 'Unpin' : 'Pin'}">${n.pinned ? '📌' : '📍'}</button>
-                    </div>
-                    <div class="nova-np-item-preview">${NovaChatCore.esc(preview)}</div>
-                </div>`;
-            }).join('');
-
-            listEl.querySelectorAll('.nova-np-item').forEach(item => {
-                item.addEventListener('click', e => {
-                    if (e.target.closest('.nova-np-item-pin')) return;
-                    _npActiveId = item.dataset.id;
-                    _npRenderList(el.querySelector('#nova-np-search').value);
-                    _npRenderEditor();
-                });
-            });
-            listEl.querySelectorAll('.nova-np-item-pin').forEach(btn => {
-                btn.addEventListener('click', async e => {
-                    e.stopPropagation();
-                    const id = btn.dataset.id;
-                    notes[id].pinned = !notes[id].pinned;
-                    await _npSaveAll(notes);
-                    _npRenderList(el.querySelector('#nova-np-search').value);
-                });
-            });
-        }
-
-        // ── Render editor ─────────────────────────────────────────────────────
-        function _npRenderEditor() {
-            const editorEl = el.querySelector('#nova-np-editor');
-            if (!_npActiveId || !notes[_npActiveId]) {
-                editorEl.innerHTML = `
-                    <div class="nova-np-empty-editor">
-                        <div class="nova-np-empty-editor-icon">📝</div>
-                        <div>Select a note from the list<br>or create a new one to get started.</div>
-                    </div>`;
-                return;
-            }
-            const note  = notes[_npActiveId];
-            const color = _npColor(note, ids.indexOf(_npActiveId));
-            const fsClass = _npFontSize === 'sm' ? 'font-sm' : _npFontSize === 'lg' ? 'font-lg' : '';
-
-            editorEl.innerHTML = `
-                <div class="nova-np-color-accent" style="background:${color}"></div>
-                <div class="nova-np-title-wrap">
-                    <input class="nova-np-title-input" id="nova-np-title" value="${NovaChatCore.esc(note.title || '')}" placeholder="Note title…" spellcheck="false" autocomplete="off"/>
-                </div>
-                <div class="nova-np-editor-toolbar">
-                    <button class="nova-np-tb-btn" id="nova-np-copy">📋 Copy</button>
-                    <div class="nova-np-tb-sep"></div>
-                    <button class="nova-np-tb-btn${_npFontSize==='sm'?' active':''}" id="nova-np-fs-sm" title="Small text">A−</button>
-                    <button class="nova-np-tb-btn${_npFontSize==='md'?' active':''}" id="nova-np-fs-md" title="Normal text">A</button>
-                    <button class="nova-np-tb-btn${_npFontSize==='lg'?' active':''}" id="nova-np-fs-lg" title="Large text">A+</button>
-                    <div class="nova-np-tb-sep"></div>
-                    <button class="nova-np-tb-btn danger" id="nova-np-delete">🗑 Delete</button>
-                    <span class="nova-np-wc" id="nova-np-wc">${_npWc(note.text || '')}</span>
-                </div>
-                <textarea class="nova-np-textarea ${fsClass}" id="nova-np-text" placeholder="Start writing your note here…" spellcheck="true" autocomplete="off">${NovaChatCore.esc(note.text || '')}</textarea>
-                <div class="nova-np-editor-footer">
-                    <span class="nova-np-status">
-                        <span class="nova-np-status-dot" id="nova-np-dot"></span>
-                        <span id="nova-np-status">Auto-saved</span>
-                    </span>
-                    <span>${_npWc(note.text || '')}</span>
-                </div>`;
-
-            const titleInput = editorEl.querySelector('#nova-np-title');
-            const textarea   = editorEl.querySelector('#nova-np-text');
-            const statusEl   = editorEl.querySelector('#nova-np-status');
-            const dotEl      = editorEl.querySelector('#nova-np-dot');
-            const wcEl       = editorEl.querySelector('#nova-np-wc');
-
-            textarea.focus();
-
-            async function _save() {
-                if (!notes[_npActiveId]) return;
-                notes[_npActiveId].title = titleInput.value.trim() || 'Untitled';
-                notes[_npActiveId].text  = textarea.value;
-                notes[_npActiveId].ts    = Date.now();
-                await _npSaveAll(notes);
-                statusEl.textContent = 'Saved ✓';
-                dotEl.style.background = '#10b981';
-                _npUpdateBubble(notes);
-                _npRenderList(el.querySelector('#nova-np-search').value);
-                _npBadge();
-            }
-
-            function _onInput() {
-                wcEl.textContent = _npWc(textarea.value);
-                editorEl.querySelector('.nova-np-editor-footer span:last-child').textContent = _npWc(textarea.value);
-                statusEl.textContent = 'Saving…';
-                dotEl.style.background = '#a5b4fc';
-                clearTimeout(_npSaveTimer);
-                _npSaveTimer = setTimeout(_save, 600);
-            }
-
-            textarea.addEventListener('input', _onInput);
-            titleInput.addEventListener('input', () => { clearTimeout(_npSaveTimer); _npSaveTimer = setTimeout(_save, 600); });
-
-            // Font size
-            ['sm','md','lg'].forEach(sz => {
-                editorEl.querySelector(`#nova-np-fs-${sz}`).addEventListener('click', () => {
-                    _npFontSize = sz;
-                    _npRenderEditor();
-                    el.querySelector('#nova-np-text').focus();
-                });
-            });
-
-            editorEl.querySelector('#nova-np-copy').addEventListener('click', () => {
-                const full = (titleInput.value.trim() ? titleInput.value.trim() + '\n\n' : '') + textarea.value;
-                navigator.clipboard.writeText(full).then(() => {
-                    const btn = editorEl.querySelector('#nova-np-copy');
-                    btn.textContent = '✓ Copied';
-                    setTimeout(() => { btn.textContent = '📋 Copy'; }, 1500);
-                });
-            });
-
-            editorEl.querySelector('#nova-np-delete').addEventListener('click', async () => {
-                if (!confirm(`Delete "${notes[_npActiveId]?.title || 'Untitled'}"?`)) return;
-                const delId = _npActiveId;
-                delete notes[delId];
-                ids = _sortedIds();
-                _npActiveId = ids.length ? ids[0] : null;
-                await _npSaveAll(notes);
-                _npUpdateBubble(notes);
-                _npRenderList(el.querySelector('#nova-np-search').value);
-                _npRenderEditor();
-                _npBadge();
-            });
-        }
-
-        // ── New note ──────────────────────────────────────────────────────────
-        el.querySelector('#nova-np-new').addEventListener('click', async () => {
-            const id = _npGenId();
-            notes[id] = { title: '', text: '', ts: Date.now(), pinned: false };
-            ids = _sortedIds();
-            _npActiveId = id;
-            await _npSaveAll(notes);
-            _npUpdateBubble(notes);
-            _npRenderList();
-            _npRenderEditor();
+        async function _save() {
+            if (!_npNotes[_npActiveId]) return;
+            _npNotes[_npActiveId].title   = titleInput.value.trim() || 'Untitled';
+            _npNotes[_npActiveId].content = textarea.value;
+            _npNotes[_npActiveId].text    = textarea.value;
+            _npNotes[_npActiveId].ts      = Date.now();
+            await _npSaveAll(_npNotes);
+            statusEl.textContent = 'Saved ✓';
+            dotEl.style.background = '#10b981';
             _npBadge();
-            el.querySelector('#nova-np-title')?.focus();
+            _npRenderList(npSearch.value);
+        }
+
+        function _onInput() {
+            const wc = _npWc(textarea.value);
+            if (wcEl) wcEl.textContent = wc;
+            if (wc2El) wc2El.textContent = wc;
+            statusEl.textContent = 'Saving…';
+            dotEl.style.background = '#a5b4fc';
+            clearTimeout(_npSaveTimer);
+            _npSaveTimer = setTimeout(_save, 600);
+        }
+
+        textarea.addEventListener('input', _onInput);
+        titleInput.addEventListener('input', () => { clearTimeout(_npSaveTimer); _npSaveTimer = setTimeout(_save, 600); });
+
+        ['sm','md','lg'].forEach(sz => {
+            npEditor.querySelector(`#nw-np-fs-${sz}`).addEventListener('click', () => {
+                _npFontSize = sz; _npRenderEditor();
+                npEditor.querySelector('#nw-np-text')?.focus();
+            });
         });
 
-        el.querySelector('#nova-np-search').addEventListener('input', e => _npRenderList(e.target.value));
-        el.querySelector('#nova-np-close').addEventListener('click', () => { el.remove(); _npEl = null; });
+        npEditor.querySelector('#nw-np-copy').addEventListener('click', () => {
+            const full = (titleInput.value.trim() ? titleInput.value.trim() + '\n\n' : '') + textarea.value;
+            navigator.clipboard.writeText(full).then(() => {
+                const btn = npEditor.querySelector('#nw-np-copy');
+                btn.textContent = '✓ Copied';
+                setTimeout(() => { btn.textContent = '📋 Copy'; }, 1500);
+            });
+        });
 
-        const _npEsc = e => { if (e.key === 'Escape' && _npEl) { _npEl.remove(); _npEl = null; document.removeEventListener('keydown', _npEsc); } };
-        document.addEventListener('keydown', _npEsc);
-
-        _npRenderList();
-        _npRenderEditor();
+        npEditor.querySelector('#nw-np-delete').addEventListener('click', async () => {
+            if (!confirm(`Delete "${_npNotes[_npActiveId]?.title || 'Untitled'}"?`)) return;
+            const delId = _npActiveId;
+            delete _npNotes[delId];
+            const remaining = _npSortedIds();
+            _npActiveId = remaining.length ? remaining[0] : null;
+            await _npSaveAll(_npNotes);
+            _npBadge();
+            _npRenderList(npSearch.value);
+            _npRenderEditor();
+        });
     }
 
-    // Persistent trigger bubble
-    (async () => {
-        const bubble = document.createElement('div');
-        bubble.id = 'nova-sp-bubble';
-        bubble.title = 'Notepad (Alt+S)';
-        bubble.textContent = '🗒';
-        document.body.appendChild(bubble);
-        _npBubble = bubble;
+    async function _npOpenPanel() {
+        _npNotes = await _npLoadAll();
+        const ids = _npSortedIds();
+        if (!_npActiveId || !_npNotes[_npActiveId]) {
+            _npActiveId = ids.length ? ids[0] : null;
+        }
+        _npBadge();
+        _npRenderList();
+        _npRenderEditor();
+        npPanel.classList.add('open');
+    }
 
-        const notes = await _npLoadAll();
-        _npUpdateBubble(notes);
+    document.getElementById('nw-np-panel-back').addEventListener('click', () => npPanel.classList.remove('open'));
+    npSearch.addEventListener('input', e => _npRenderList(e.target.value));
+    document.getElementById('nw-np-panel-new').addEventListener('click', async () => {
+        const id = _npGenId();
+        _npNotes[id] = { title: '', content: '', text: '', ts: Date.now(), pinned: false };
+        _npActiveId = id;
+        await _npSaveAll(_npNotes);
+        _npBadge();
+        _npRenderList();
+        _npRenderEditor();
+        npEditor.querySelector('#nw-np-title')?.focus();
+    });
 
-        bubble.addEventListener('click', _npOpen);
-    })();
-
-    document.getElementById('nw-menu-scratch').addEventListener('click', () => { closeMenu(); _npOpen(); });
+    document.getElementById('nw-menu-scratch').addEventListener('click', () => { closeMenu(); _npOpenPanel(); });
+    document.getElementById('nw-menu-all-notes') && document.getElementById('nw-menu-all-notes').addEventListener('click', () => { closeMenu(); _npOpenPanel(); });
 
     document.addEventListener('keydown', e => {
         if (e.altKey && e.key === 's' && !e.target.matches('input,textarea,[contenteditable]')) {
             e.preventDefault();
-            _npOpen();
+            if (npPanel.classList.contains('open')) npPanel.classList.remove('open');
+            else _npOpenPanel();
         }
     });
 
@@ -7645,7 +7548,6 @@ GAP: <1-2 missing requirements, or "None" if strong match>`;
         _snSearchQuery = e.target.value.trim();
         _snDrawList();
     });
-    document.getElementById('nw-menu-all-notes').addEventListener('click', () => { closeMenu(); openSnPanel(); });
 
     // ── Entrance pop animation ────────────────────────────────────────────────
     widget.style.opacity = '0';
